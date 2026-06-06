@@ -1,7 +1,7 @@
 /* ============================================================
-   EL CLUB DE LA GENTE — Módulo 2 · Lógica de autenticación
-   + Algoritmo de numerología pitagórica (silencioso)
+   EL CLUB DE LA GENTE — Módulo 2 · Autenticación con Supabase
    ============================================================ */
+import { supabase } from './supabase.js';
 
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
@@ -22,18 +22,12 @@ const ARQUETIPOS = {
   33: { nombre: "El Maestro Sanador",  tono: "amoroso y sanador" },
 };
 
-/* ---------- ALGORITMO PITAGÓRICO ----------
-   Suma todos los dígitos de la fecha y reduce a una cifra,
-   conservando los números maestros 11, 22 y 33.
-   Entrada: "YYYY-MM-DD" (input date nativo)            */
 function calcularMision(fechaISO) {
   if (!fechaISO) return null;
-  const digitos = fechaISO.replace(/\D/g, "");        // "20010628"
+  const digitos = fechaISO.replace(/\D/g, "");
   const sumar = (s) => [...s].reduce((a, d) => a + (+d), 0);
   let n = sumar(digitos);
-  while (n > 9 && n !== 11 && n !== 22 && n !== 33) {
-    n = sumar(String(n));
-  }
+  while (n > 9 && n !== 11 && n !== 22 && n !== 33) n = sumar(String(n));
   return n;
 }
 
@@ -66,11 +60,27 @@ function elegirRol(rol) {
   if (window.lucide) lucide.createIcons();
 }
 
+/* ---------- HELPERS DE UI ---------- */
+function setLoading(btn, loading, texto) {
+  btn.disabled = loading;
+  btn.textContent = loading ? "Un momento..." : texto;
+}
+function mostrarError(msg) {
+  let el = $("#auth-error");
+  if (!el) {
+    el = document.createElement("p");
+    el.id = "auth-error";
+    el.style.cssText = "color:#c0392b;font-size:13px;margin-top:8px;text-align:center;";
+    $("#reg-form-wrap")?.appendChild(el);
+  }
+  el.textContent = msg;
+  setTimeout(() => { if (el) el.textContent = ""; }, 5000);
+}
+
 /* ---------- INIT ---------- */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   if (window.lucide) lucide.createIcons();
 
-  // Estado inicial según parámetro ?tab= o ?plan=
   const params = new URLSearchParams(location.search);
   const planElegido = params.get("plan");
   if (planElegido) localStorage.setItem("ecdlg_plan", planElegido);
@@ -79,78 +89,140 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Tabs
   $$(".auth-tab").forEach(t => t.addEventListener("click", () => setTab(t.dataset.tab)));
-
-  // Switches inferiores
   $$("[data-goto]").forEach(b => b.addEventListener("click", () => setTab(b.dataset.goto)));
 
-  // Selección de rol (Miembro / Aliado)
+  // Selección de rol
   $$("[data-role]").forEach(b => b.addEventListener("click", () => elegirRol(b.dataset.role)));
   $("#reg-back")?.addEventListener("click", resetRoles);
 
-  // Botones Google (demo → van directo a registro completado simulando OAuth)
-  $$(".btn-google").forEach(b => b.addEventListener("click", () => {
-    // En el prototipo, "Continuar con Google" precarga el formulario de registro
-    if (b.dataset.ctx === "login") {
-      // login: simulamos sesión y vamos al perfil/plan
-      irAExito({ nombre: "Ana María", fechaISO: "1990-03-14", login: true });
-    } else {
-      // registro: enfocamos el formulario visible para completar datos
-      const visible = $("#form-aliado").hidden ? $("#form-registro") : $("#form-aliado");
-      const first = visible.querySelector("input");
-      first?.focus();
-      visible.animate(
-        [{ boxShadow: "0 0 0 0 rgba(0,128,0,0)" }, { boxShadow: "0 0 0 4px rgba(0,128,0,.12)" }, { boxShadow: "0 0 0 0 rgba(0,128,0,0)" }],
-        { duration: 900 }
-      );
-    }
+  // Google auth
+  $$(".btn-google").forEach(b => b.addEventListener("click", async () => {
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+    if (error) mostrarError("Error al conectar con Google.");
   }));
 
-  // Login con usuario y contraseña
-  $("#form-login")?.addEventListener("submit", (e) => {
+  // ---------- LOGIN ----------
+  $("#form-login")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const user = $("#login-user").value.trim() || "Carlos Andrés";
-    irAExito({ nombre: user, fechaISO: "", login: true });
+    const btn = e.target.querySelector("button[type=submit]");
+    const email = $("#login-user").value.trim();
+    const pass = $("#login-pass").value;
+    setLoading(btn, true, "Iniciar sesión →");
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    setLoading(btn, false, "Iniciar sesión →");
+
+    if (error) {
+      mostrarError("Usuario o contraseña incorrectos.");
+      return;
+    }
+
+    const perfil = data.user?.user_metadata || {};
+    localStorage.setItem("ecdlg_perfil", JSON.stringify({
+      nombre: perfil.nombre || email,
+      primerNombre: (perfil.nombre || email).split(" ")[0],
+      rol: perfil.rol || "miembro",
+    }));
+    irAExito({ nombre: perfil.nombre || email, login: true });
   });
 
-  // Postulación de aliado
-  $("#form-aliado")?.addEventListener("submit", (e) => {
+  // ---------- REGISTRO MIEMBRO ----------
+  $("#form-registro")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    localStorage.setItem("ecdlg_rol", "aliado");
-    const negocio = $("#al-negocio").value.trim() || "Tu negocio";
-    const nombre = $("#al-nombre").value.trim() || "Aliado del Club";
-    localStorage.setItem("ecdlg_perfil", JSON.stringify({ nombre, primerNombre: nombre.split(" ")[0], negocio, rol: "aliado" }));
-    irAExitoAliado(negocio, nombre);
-  });
-
-  // Envío del formulario de registro
-  $("#form-registro").addEventListener("submit", (e) => {
-    e.preventDefault();
-    localStorage.setItem("ecdlg_rol", "miembro");
+    const btn = e.target.querySelector("button[type=submit]");
     const nombre = $("#campo-nombre").value.trim();
     const fechaISO = $("#campo-fecha").value;
     const whatsapp = $("#campo-wa").value.trim();
+    const email = whatsapp + "@clubdelagente.app";
+
+    if (!nombre || !whatsapp) { mostrarError("Completa todos los campos."); return; }
+
+    setLoading(btn, true, "Crear mi cuenta →");
+
+    // Generamos password temporal con el número de WhatsApp
+    const password = "Club" + whatsapp.replace(/\D/g, "") + "!";
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { nombre, whatsapp, fecha_nacimiento: fechaISO, rol: "miembro" }
+      }
+    });
+
+    if (error) {
+      setLoading(btn, false, "Crear mi cuenta →");
+      mostrarError(error.message === "User already registered"
+        ? "Este WhatsApp ya tiene una cuenta. Inicia sesión."
+        : "Error al crear la cuenta. Intenta de nuevo.");
+      return;
+    }
+
+    // Guardar perfil en tabla perfiles
+    if (data.user) {
+      const mision = calcularMision(fechaISO);
+      const arquetipo = ARQUETIPOS[mision] || ARQUETIPOS[1];
+      await supabase.from("perfiles").upsert({
+        id: data.user.id,
+        nombre,
+        whatsapp,
+        fecha_nacimiento: fechaISO || null,
+        rol: "miembro",
+        plan: localStorage.getItem("ecdlg_plan") || "basica",
+      });
+      localStorage.setItem("ecdlg_perfil", JSON.stringify({
+        nombre, primerNombre: nombre.split(" ")[0], fechaISO, whatsapp, mision, arquetipo
+      }));
+    }
+
+    setLoading(btn, false, "Crear mi cuenta →");
     irAExito({ nombre, fechaISO, whatsapp, login: false });
+  });
+
+  // ---------- REGISTRO ALIADO ----------
+  $("#form-aliado")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    const negocio = $("#al-negocio").value.trim();
+    const categoria = $("#al-cat").value.trim();
+    const nombre = $("#al-nombre").value.trim();
+    const whatsapp = $("#al-wa").value.trim();
+
+    if (!negocio || !nombre || !whatsapp) { mostrarError("Completa todos los campos."); return; }
+
+    setLoading(btn, true, "Enviar postulación →");
+
+    const { error } = await supabase.from("aliados_postulaciones").insert({
+      nombre_negocio: negocio,
+      categoria,
+      nombre_responsable: nombre,
+      whatsapp,
+    });
+
+    setLoading(btn, false, "Enviar postulación →");
+
+    if (error) {
+      mostrarError("Error al enviar. Intenta de nuevo.");
+      return;
+    }
+
+    localStorage.setItem("ecdlg_rol", "aliado");
+    localStorage.setItem("ecdlg_perfil", JSON.stringify({ nombre, primerNombre: nombre.split(" ")[0], negocio, rol: "aliado" }));
+    irAExitoAliado(negocio, nombre);
   });
 });
 
 /* ---------- PANTALLA DE ÉXITO ---------- */
 function irAExito({ nombre, fechaISO, whatsapp, login }) {
-  // 1) Cálculo SILENCIOSO de numerología — se guarda, no se muestra
   const mision = calcularMision(fechaISO);
   const arquetipo = ARQUETIPOS[mision] || ARQUETIPOS[1];
   const primerNombre = (nombre || "").split(" ")[0] || "Miembro";
 
-  localStorage.setItem("ecdlg_perfil", JSON.stringify({
-    nombre, primerNombre, fechaISO, whatsapp: whatsapp || "", mision, arquetipo,
-  }));
-
-  // 2) Render de la vista de éxito (sin revelar el número — eso vive en el perfil)
   $("#exito-nombre").textContent = `¡Bienvenido al club, ${primerNombre}!`;
   $("#exito-msg").innerHTML = login
     ? `Sesión iniciada, ${primerNombre}. Tu club te está esperando.`
-    : `Tu perfil ha sido creado, ${primerNombre}. Ya eres parte del club. En pocos minutos recibirás un mensaje de bienvenida personalizado en tu WhatsApp.`;
+    : `Tu perfil ha sido creado, ${primerNombre}. Ya eres parte del club. En pocos minutos recibirás un mensaje de bienvenida en tu WhatsApp.`;
 
-  // Login → ir al perfil; nuevo registro → elegir plan
   const cta = $("#exito-cta");
   if (login) {
     cta.setAttribute("href", "Perfil.html");
@@ -163,13 +235,12 @@ function irAExito({ nombre, fechaISO, whatsapp, login }) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-/* ---------- ÉXITO PARA ALIADOS ---------- */
 function irAExitoAliado(negocio, nombre) {
   $("#exito-eyebrow").textContent = "Postulación recibida";
   $("#exito-nombre").textContent = `¡Gracias, ${negocio}!`;
-  $("#exito-msg").innerHTML = `Recibimos la postulación de <b>${negocio}</b>. Nuestro equipo revisará tu caso en particular y, una vez aprobado, tendrás acceso a tu panel de aliado con las estadísticas de tu negocio.`;
+  $("#exito-msg").innerHTML = `Recibimos la postulación de <b>${negocio}</b>. Nuestro equipo revisará tu caso y, una vez aprobado, tendrás acceso a tu panel de aliado.`;
   $("#exito-wa-title").textContent = "Te contactaremos por WhatsApp";
-  $("#exito-wa-msg").textContent = "En los próximos días un asesor del Club se comunicará contigo para coordinar los detalles de tu alianza y el beneficio que ofrecerás a los miembros.";
+  $("#exito-wa-msg").textContent = "En los próximos días un asesor del Club se comunicará contigo para coordinar los detalles de tu alianza.";
   const cta = $("#exito-cta");
   cta.setAttribute("href", "Perfil.html?rol=aliado");
   cta.innerHTML = `Ver mi panel de aliado <span class="ar">&rarr;</span>`;
