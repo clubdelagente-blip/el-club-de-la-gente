@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Club de la Gente — Elige tu plan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="checkout.css">
+</head>
+<body class="checkout-body">
+
+  <div class="checkout-grain" aria-hidden="true"></div>
+
+  <!-- Topbar -->
+  <header class="checkout-top">
+    <a class="checkout-back" href="El Club de la Gente.html"><i data-lucide="arrow-left"></i> Volver al inicio</a>
+    <a class="logo" href="El Club de la Gente.html" aria-label="El Club de la Gente">
+      <span class="logo__mark">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="20" cy="20" r="18.5" stroke="#0E0E0E" stroke-width="1.4"/>
+          <circle cx="20" cy="20" r="14" stroke="#008000" stroke-width="1.4"/>
+          <line x1="0" y1="20" x2="4.5" y2="20" stroke="#0E0E0E" stroke-width="1.4"/>
+          <line x1="35.5" y1="20" x2="40" y2="20" stroke="#0E0E0E" stroke-width="1.4"/>
+          <text x="20" y="20" text-anchor="middle" dominant-baseline="central" font-family="Cormorant Garamond, serif" font-size="20" font-weight="700" fill="#0E0E0E">G</text>
+        </svg>
+      </span>
+    </a>
+    <span class="checkout-secure"><i data-lucide="shield-check"></i> Seguro · Encriptado</span>
+  </header>
+
+  <!-- Wizard -->
+  <nav class="wizard" aria-label="Progreso">
+    <span class="wstep done" data-step="1"><span class="wstep__dot">✓</span><span class="wstep__lbl">Registro</span></span>
+    <span class="wstep__line"></span>
+    <span class="wstep" data-step="2"><span class="wstep__dot">2</span><span class="wstep__lbl">Plan</span></span>
+    <span class="wstep__line"></span>
+    <span class="wstep" data-step="3"><span class="wstep__dot">3</span><span class="wstep__lbl">Pago</span></span>
+    <span class="wstep__line"></span>
+    <span class="wstep" data-step="4"><span class="wstep__dot">4</span><span class="wstep__lbl">Listo</span></span>
+  </nav>
+
+  <div class="checkout-wrap">
+
+    <!-- ============================================================
+         VISTA 1 — SELECCIÓN DE PLAN
+         ============================================================ -->
+    <section class="checkout-view" id="view-plan" data-screen-label="Plan">
+      <div class="checkout-head">
+        <span class="checkout-eyebrow">03 — Elige tu plan</span>
+        <h1 class="checkout-title">¿Cómo quieres pertenecer?</h1>
+        <p class="checkout-sub">Cancela cuando quieras. Sin cláusulas. Sin letra pequeña.</p>
+      </div>
+
+      <div class="plan-grid">
+        <!-- BÁSICA -->
+        <article class="plan-pick" data-plan="basica">
+          <div class="plan-pick__head">
+            <span class="plan-pick__tag">Plan básica</span>
+            <span class="radio"></span>
+          </div>
+          <div class="plan-pick__precio-row">
+            <span class="plan-pick__antes">Antes $30.000</span>
+            <span class="plan-pick__ahorra">Ahorra 33%</span>
+          </div>
+          <div class="plan-pick__precio">$10k<small> /mes</small></div>
+          <div class="plan-pick__ciclo">Sin cláusulas · cancela cuando quieras</div>
+          <ul class="plan-pick__bens">
+            <li><span class="dot"></span>Acceso a todos los aliados con descuento</li>
+            <li><span class="dot"></span>ClubCard digital en tu perfil</li>
+            <li><span class="dot"></span>Calculadora de ahorro y comprobantes</li>
+            <li><span class="dot"></span>Resumen mensual de ahorros por WhatsApp</li>
+          </ul>
+          <div class="plan-pick__state">Elegir básica</div>
+        </article>
+
+        <!-- PREMIUM -->
+        <article class="plan-pick plan-pick--premium" data-plan="premium">
+          <span class="plan-pick__badge-rec" id="badge-rec">Recomendado</span>
+          <div class="plan-pick__head">
+            <span class="plan-pick__tag">Plan premium</span>
+            <span class="radio"></span>
+          </div>
+          <div class="plan-pick__precio-row">
+            <span class="plan-pick__antes">Antes $50.000</span>
+            <span class="plan-pick__ahorra">Ahorra 40%</span>
+          </div>
+          <div class="plan-pick__precio">$20k<small> /mes</small></div>
+          <div class="plan-pick__ciclo">Sin cláusulas · cancela cuando quieras</div>
+          <ul class="plan-pick__bens">
+            <li><span class="dot"></span>Todo lo de la membresía básica</li>
+            <li><span class="dot"></span>ClubCard física enviada a tu casa</li>
+            <li><span class="dot"></span>Descuentos premium y beneficios ampliados</li>
+            <li><span class="dot"></span>Acceso prioritario a eventos del Club</li>
+          </ul>
+          <div class="plan-pick__state">Elegir premium</div>
+        </article>
+      </div>
+
+      <div class="checkout-actions">
+        <button class="btn btn--primario" id="btn-continuar">Continuar al pago <span class="ar">&rarr;</span></button>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         VISTA 2 — PAGO
+         ============================================================ -->
+    <section class="checkout-view" id="view-pago" data-screen-label="Pago">
+      <div class="checkout-head">
+        <span class="checkout-eyebrow">03 — Pago seguro</span>
+        <h1 class="checkout-title">Confirma tu membresía.</h1>
+        <p class="checkout-sub">Pago protegido y encriptado, procesado por Wompi · Bancolombia.</p>
+      </div>
+
+      <form id="form-pago">
+        <div class="pago-layout">
+          <div class="pago-main">
+
+            <!-- Envío ClubCard (solo Premium) -->
+            <div class="panel" id="envio-premium">
+              <div class="panel__title">Envío de ClubCard física</div>
+              <div class="form-grid">
+                <div class="campo">
+                  <label>Departamento</label>
+                  <input type="text" value="Cundinamarca">
+                </div>
+                <div class="campo">
+                  <label>Ciudad</label>
+                  <input type="text" value="Fusagasugá">
+                </div>
+                <div class="campo col-2">
+                  <label>Dirección de envío</label>
+                  <input type="text" placeholder="Calle, carrera, número, barrio">
+                </div>
+                <div class="campo col-2">
+                  <label>Referencias <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label>
+                  <input type="text" placeholder="Apto, piso, indicaciones de entrega">
+                </div>
+                <div class="campo col-2">
+                  <label>Teléfono de contacto</label>
+                  <input type="tel" placeholder="300 000 0000">
+                </div>
+              </div>
+            </div>
+
+            <!-- Método de pago -->
+            <div class="panel">
+              <div class="panel__title">
+                Método de pago
+                <span class="badge-seg"><i data-lucide="lock"></i> Seguro · Encriptado</span>
+              </div>
+              <div class="metodos">
+                <label class="metodo is-on" data-metodo="tarjeta"><span class="metodo__radio"></span><i class="metodo__ic" data-lucide="credit-card"></i> Tarjeta crédito/débito</label>
+                <label class="metodo" data-metodo="nequi"><span class="metodo__radio"></span><i class="metodo__ic" data-lucide="smartphone"></i> Nequi</label>
+                <label class="metodo" data-metodo="bancolombia"><span class="metodo__radio"></span><i class="metodo__ic" data-lucide="landmark"></i> Bancolombia</label>
+                <label class="metodo" data-metodo="pse"><span class="metodo__radio"></span><i class="metodo__ic" data-lucide="building-2"></i> PSE</label>
+              </div>
+              <div class="recurrente">
+                <i data-lucide="repeat"></i>
+                <span>Pago recurrente automático. El cobro se realizará mensualmente. Puedes cancelar en cualquier momento desde tu perfil. Procesado por Wompi · Bancolombia.</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Resumen -->
+          <aside class="resumen">
+            <div class="resumen__lbl">Resumen</div>
+            <div class="resumen__plan">
+              <span class="resumen__plan-name"><small id="res-tag">PLAN BÁSICO</small><span id="res-nombre"></span></span>
+              <span class="resumen__plan-precio" id="res-precio"></span>
+            </div>
+            <div class="resumen__line"><span id="res-antes">Antes $50.000</span><span id="res-ahorra" style="color:var(--verde);font-weight:600">Ahorro 40%</span></div>
+            <div class="resumen__total">
+              <span class="lbl">Total hoy</span>
+              <span class="val" id="res-total"></span>
+            </div>
+            <button type="submit" class="btn btn--primario btn--bloque" id="btn-pagar">Confirmar y pagar <span class="ar">&rarr;</span></button>
+            <button type="button" class="resumen__cambiar" id="btn-cambiar-plan">&larr; Cambiar de plan</button>
+          </aside>
+        </div>
+      </form>
+    </section>
+
+    <!-- ============================================================
+         VISTA 3 — ÉXITO POST-PAGO
+         ============================================================ -->
+    <section class="checkout-view" id="view-exito" data-screen-label="Éxito pago">
+      <div class="exito">
+        <div class="exito__check">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <span class="exito__eyebrow">Pago confirmado</span>
+        <h1 class="exito__title">¡Ya eres parte del club!</h1>
+        <p class="exito__msg">Tu membresía está activa. Bienvenido a la familia de El Club de la Gente — desde hoy empiezas a ahorrar, aprender  y a apoyar tu comunidad.</p>
+
+        <!-- ClubCard física personalizable (Premium) -->
+        <div id="exito-clubcard">
+          <div class="cc-perso" id="cc-perso">
+            <div class="ccv2">
+              <div class="ccv2__flip" id="cc-flip">
+                <div class="ccv2-card ccv2-card--front">
+                  <div class="ccv2-frame"></div>
+                  <span class="ccv2-corner tl"></span><span class="ccv2-corner tr"></span><span class="ccv2-corner bl"></span><span class="ccv2-corner br"></span>
+                  <div class="ccv2-front__in">
+                    <span class="ccv2-brand">CLUBCARD</span>
+                    <div class="ccv2-mid">
+                      <div class="ccv2-logo">
+                        <span class="ccv2-logo__el">EL</span>
+                        <span class="ccv2-logo__club">CLUB DE LA</span>
+                        <span class="ccv2-logo__gente">GENTE</span>
+                        <span class="ccv2-logo__g">G</span>
+                      </div>
+                      <div class="ccv2-codigo">
+                        <span class="ccv2-codigo__lbl">Código:</span>
+                        <span class="ccv2-codigo__val" id="cc-prev-codigo">300 000 0000</span>
+                      </div>
+                    </div>
+                    <div class="ccv2-name" id="cc-prev-name">TU NOMBRE</div>
+                  </div>
+                </div>
+                <div class="ccv2-card ccv2-card--back">
+                  <div class="ccv2-frame"></div>
+                  <div class="ccv2-back__in">
+                    <span class="ccv2-orn"></span>
+                    <div class="ccv2-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data=file%3A%2F%2F%2FC%3A%2FUsers%2Fjulia%2FDocuments%2Fel-club-de-la-gente%2FDirectorio.html" alt="Código QR del Club" loading="lazy"></div>
+                    <div class="ccv2-renueva">Renovación: <span id="cc-renueva">27/10</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <form class="cc-perso__form" id="form-clubcard">
+              <div class="panel__title">Personaliza tu ClubCard</div>
+              <div class="form-grid">
+                <div class="campo"><label>Nombre</label><input id="cc-in-nombre" placeholder="Ej: John"></div>
+                <div class="campo"><label>Apellido</label><input id="cc-in-apellido" placeholder="Ej: Dylan"></div>
+                <div class="campo col-2"><label>Código (tu WhatsApp)</label><input id="cc-in-codigo" type="tel" placeholder="300 000 0000"></div>
+              </div>
+              <button type="submit" class="btn btn--primario btn--bloque">Confirmar mi ClubCard <span class="ar">&rarr;</span></button>
+              <p class="cc-perso__hint"><i data-lucide="info"></i> Tu tarjeta física se imprimirá con estos datos. Revisa que estén correctos.</p>
+            </form>
+          </div>
+
+          <div class="cc-plazo" id="cc-plazo" hidden>
+            <span class="cc-plazo__ic"><i data-lucide="truck"></i></span>
+            <div>
+              <h4>Tu ClubCard está en producción</h4>
+              <p>Plazo estimado de entrega: <b>7 días hábiles</b>. Te avisaremos por WhatsApp cuando vaya en camino.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="wa-card">
+          <div class="wa-card__ic"><i data-lucide="message-circle"></i></div>
+          <div>
+            <h4>Tu WhatsApp personalizado</h4>
+            <p>Recibirás un mensaje con tus beneficios activos, tus aliados más cercanos y tus categorías favoritas.</p>
+          </div>
+        </div>
+
+        <a class="btn btn--primario btn--bloque" href="Perfil.html?nuevo=1" style="max-width:460px;margin:0 auto;">Ver mi perfil <span class="ar">&rarr;</span></a>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="checkout.js"></script>
+
+  <!-- ============================================================
+       TWEAKS PANEL
+       ============================================================ -->
+  <div id="tweaks-root"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel">
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "accent": "#008000",
+      "badgePos": "Centrado",
+      "showRecomendado": true
+    }/*EDITMODE-END*/;
+
+    function PlanesTweaks() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+      React.useEffect(() => {
+        const r = document.documentElement.style;
+        r.setProperty("--verde", t.accent);
+        r.setProperty("--verde-hover", `color-mix(in srgb, ${t.accent}, #000 18%)`);
+        r.setProperty("--verde-soft", `color-mix(in srgb, ${t.accent} 10%, transparent)`);
+        r.setProperty("--verde-claro", `color-mix(in srgb, ${t.accent}, #fff 35%)`);
+      }, [t.accent]);
+
+      React.useEffect(() => {
+        const b = document.getElementById("badge-rec");
+        if (!b) return;
+        b.classList.toggle("is-hidden", !t.showRecomendado);
+        b.classList.toggle("pos-corner", t.badgePos === "Esquina");
+      }, [t.badgePos, t.showRecomendado]);
+
+      return (
+        <TweaksPanel>
+          <TweakSection label="Plan recomendado" />
+          <TweakToggle label="Mostrar “Recomendado”" value={t.showRecomendado}
+            onChange={(v) => setTweak("showRecomendado", v)} />
+          <TweakRadio label="Posición" value={t.badgePos}
+            options={["Centrado", "Esquina"]}
+            onChange={(v) => setTweak("badgePos", v)} />
+          <TweakSection label="Marca" />
+          <TweakColor label="Color de acento" value={t.accent}
+            options={["#008000", "#0E7C4B", "#1C7C8C", "#3B5BDB"]}
+            onChange={(v) => setTweak("accent", v)} />
+        </TweaksPanel>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("tweaks-root")).render(<PlanesTweaks />);
+  </script>
+
+  <template id="__bundler_thumbnail">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" fill="#F8F6F1"/>
+      <rect x="22" y="34" width="56" height="36" rx="5" fill="#1A1A1A"/>
+      <rect x="29" y="44" width="13" height="9" rx="2" fill="#c9a44e"/>
+      <circle cx="68" cy="44" r="5" fill="none" stroke="#6fdc8c" stroke-width="1.4"/>
+    </svg>
+  </template>
+
+</body>
+</html>

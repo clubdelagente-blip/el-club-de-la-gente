@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Club de la Gente — Únete al club</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="auth.css">
+</head>
+<body class="auth-body">
+
+  <!-- ============================================================
+       PANEL IZQUIERDO — editorial
+       ============================================================ -->
+  <aside class="auth-aside" data-screen-label="Auth · panel">
+    <div class="auth-aside__top">
+      <a class="logo" href="El Club de la Gente.html" aria-label="El Club de la Gente">
+        <span class="logo__mark">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="18.5" stroke="#F8F6F1" stroke-width="1.4"/>
+            <circle cx="20" cy="20" r="14" stroke="#6fdc8c" stroke-width="1.4"/>
+            <line x1="0" y1="20" x2="4.5" y2="20" stroke="#F8F6F1" stroke-width="1.4"/>
+            <line x1="35.5" y1="20" x2="40" y2="20" stroke="#F8F6F1" stroke-width="1.4"/>
+            <text x="20" y="20" text-anchor="middle" dominant-baseline="central"
+                  font-family="Cormorant Garamond, serif" font-size="20" font-weight="700" fill="#F8F6F1">G</text>
+          </svg>
+        </span>
+        <span class="logo__type">
+          <span class="l1">El</span>
+          <span>Club de la</span>
+          <span>Gente</span>
+        </span>
+      </a>
+      <div class="auth-aside__meta">
+</div>
+    </div>
+
+    <div class="auth-aside__mid">
+      <p class="auth-aside__quote">Pertenecer <em>vale</em> más que pagar.</p>
+      <p class="auth-aside__sub">Crea tu cuenta y empieza a ahorrar con nuestros aliados de nuestra  ciudad mientras tu membresía apoya causas que importan.</p>
+    </div>
+
+    <ul class="auth-aside__list">
+      <li><span class="n">01</span><i data-lucide="badge-percent"></i><span>Descuentos reales todos los días</span></li>
+      <li><span class="n">02</span><i data-lucide="message-circle-heart"></i><span>Un agente de WhatsApp solo para ti</span></li>
+      <li><span class="n">03</span><i data-lucide="hand-heart"></i><span>Tu compra apoya programas sociales</span></li>
+    </ul>
+  </aside>
+
+  <!-- ============================================================
+       PANEL DERECHO — formulario
+       ============================================================ -->
+  <main class="auth-main">
+    <div class="auth-grain" aria-hidden="true"></div>
+
+    <div class="auth-main__bar">
+      <a class="auth-back" href="El Club de la Gente.html"><i data-lucide="arrow-left"></i> Volver al inicio</a>
+      <div class="stepper">
+        <span class="st is-active"><span class="num">1</span><span>Registro</span></span>
+        <span class="sep"></span>
+        <span class="st"><span class="num">2</span><span>Plan</span></span>
+        <span class="sep"></span>
+        <span class="st"><span class="num">3</span><span>Pago</span></span>
+      </div>
+    </div>
+
+    <div class="auth-main__center">
+      <div class="auth-card">
+
+        <!-- Tabs -->
+        <div class="auth-tabs" id="auth-tabs">
+          <button class="auth-tab" data-tab="login">Iniciar sesión</button>
+          <button class="auth-tab" data-tab="registro">Registrarse</button>
+        </div>
+
+        <!-- VISTA LOGIN -->
+        <section class="auth-view" id="view-login" data-screen-label="Login">
+          <span class="auth-eyebrow">Bienvenido de nuevo</span>
+          <h1 class="auth-title">Tu club te espera.</h1>
+          <p class="auth-desc">Inicia sesión para acceder a tus beneficios, descuentos y comunidad.</p>
+
+          <form class="auth-form" id="form-login">
+            <div class="campo">
+              <label for="login-user">Usuario o WhatsApp</label>
+              <input type="text" id="login-user" required placeholder="Tu usuario o número" autocomplete="username">
+            </div>
+            <div class="campo">
+              <label for="login-pass">Contraseña</label>
+              <input type="password" id="login-pass" required placeholder="Tu contraseña" autocomplete="current-password">
+            </div>
+            <a class="auth-forgot" href="#">¿Olvidaste tu contraseña?</a>
+            <button type="submit" class="btn btn--primario btn--bloque">Iniciar sesión <span class="ar">&rarr;</span></button>
+          </form>
+
+          <div class="auth-divider">o</div>
+
+          <button class="btn-google" data-ctx="login">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1Z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38Z"/></svg>
+            Continuar con Google
+          </button>
+
+          <div class="auth-switch">¿No tienes cuenta? <button data-goto="registro">Regístrate gratis</button></div>
+        </section>
+
+        <!-- VISTA REGISTRO -->
+        <section class="auth-view" id="view-registro" data-screen-label="Registro">
+
+          <!-- Paso 1: elegir rol -->
+          <div id="reg-roles">
+            <span class="auth-eyebrow">Crea tu cuenta</span>
+            <h1 class="auth-title">Únete al club.</h1>
+            <p class="auth-desc">¿Cómo quieres ser parte de El Club de la Gente?</p>
+            <div class="role-cards">
+              <button class="role-card" data-role="miembro">
+                <span class="role-card__ic"><i data-lucide="user-round"></i></span>
+                <span class="role-card__txt">
+                  <span class="role-card__name">Unirme como miembro</span>
+                  <span class="role-card__desc">Ahorra con descuentos exclusivos y apoya causas sociales.</span>
+                </span>
+                <i class="role-card__ar" data-lucide="arrow-right"></i>
+              </button>
+              <button class="role-card" data-role="aliado">
+                <span class="role-card__ic"><i data-lucide="store"></i></span>
+                <span class="role-card__txt">
+                  <span class="role-card__name">Unirme como aliado</span>
+                  <span class="role-card__desc">Suma tu negocio al Club y llégales a miles de miembros.</span>
+                </span>
+                <i class="role-card__ar" data-lucide="arrow-right"></i>
+              </button>
+            </div>
+            <div class="auth-switch">¿Ya eres miembro? <button data-goto="login">Inicia sesión</button></div>
+          </div>
+
+          <!-- Paso 2: formulario según rol -->
+          <div id="reg-form-wrap" hidden>
+            <button class="auth-role-back" id="reg-back"><i data-lucide="arrow-left"></i> Cambiar</button>
+            <span class="auth-eyebrow" id="reg-eyebrow">Crea tu cuenta · Miembro</span>
+            <h1 class="auth-title" id="reg-title">Únete al club.</h1>
+
+            <button class="btn-google" data-ctx="registro">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1Z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38Z"/></svg>
+              Continuar con Google
+            </button>
+
+            <div class="auth-divider">o completa tus datos</div>
+
+            <!-- Formulario MIEMBRO -->
+            <form class="auth-form" id="form-registro">
+              <div class="campo">
+                <label for="campo-nombre">Nombre completo</label>
+                <input type="text" id="campo-nombre" placeholder="Como aparece en tu cédula" autocomplete="name">
+              </div>
+              <div class="campo">
+                <label for="campo-fecha">Fecha de nacimiento</label>
+                <input type="date" id="campo-fecha" max="2012-12-31" min="1920-01-01">
+                <span class="auth-hint">La usamos para personalizar tu experiencia en el club.</span>
+              </div>
+              <div class="campo">
+                <label for="campo-wa">WhatsApp</label>
+                <input type="tel" id="campo-wa" placeholder="300 000 0000" autocomplete="tel">
+              </div>
+              <button type="submit" class="btn btn--primario btn--bloque">Crear mi cuenta <span class="ar">&rarr;</span></button>
+              <p class="auth-legal">Al registrarte aceptas los <a href="#">Términos y condiciones</a> y la <a href="#">Política de privacidad</a>.</p>
+            </form>
+
+            <!-- Formulario ALIADO -->
+            <form class="auth-form" id="form-aliado" hidden>
+              <div class="campo">
+                <label for="al-negocio">Nombre del negocio</label>
+                <input type="text" id="al-negocio" placeholder="Ej: Café del Parque">
+              </div>
+              <div class="campo">
+                <label for="al-cat">Categoría o tipo de negocio</label>
+                <input type="text" id="al-cat" placeholder="Ej: Restaurante, salud, ropa…">
+              </div>
+              <div class="campo">
+                <label for="al-nombre">Nombre del responsable</label>
+                <input type="text" id="al-nombre" placeholder="Tu nombre y apellido" autocomplete="name">
+              </div>
+              <div class="campo">
+                <label for="al-wa">WhatsApp de contacto</label>
+                <input type="tel" id="al-wa" placeholder="300 000 0000" autocomplete="tel">
+              </div>
+              <button type="submit" class="btn btn--primario btn--bloque">Enviar postulación <span class="ar">&rarr;</span></button>
+              <p class="auth-legal">Revisaremos tu caso en particular y te contactaremos por WhatsApp.</p>
+            </form>
+          </div>
+
+        </section>
+
+        <!-- VISTA ÉXITO -->
+        <section class="auth-view success" id="view-exito" data-screen-label="Éxito">
+          <div class="success__check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </div>
+          <span class="success__eyebrow" id="exito-eyebrow">Cuenta creada</span>
+          <h1 class="success__title" id="exito-nombre">¡Bienvenido al club!</h1>
+          <p class="success__msg" id="exito-msg"></p>
+
+          <div class="wa-card">
+            <div class="wa-card__ic"><i data-lucide="message-circle"></i></div>
+            <div>
+              <h4 id="exito-wa-title">Tu agente de WhatsApp está en camino</h4>
+              <p id="exito-wa-msg">En pocos minutos recibirás un mensaje de bienvenida personalizado desde El Club de la Gente. Él será tu acompañante dentro del club.</p>
+            </div>
+          </div>
+
+          <a class="btn btn--primario btn--bloque" id="exito-cta" href="Planes.html">Elegir mi plan <span class="ar">&rarr;</span></a>
+
+          <div class="success__steps">
+            <span class="dot on"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="auth.js"></script>
+
+  <template id="__bundler_thumbnail">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" fill="#0E0E0E"/>
+      <circle cx="50" cy="50" r="30" fill="none" stroke="#F8F6F1" stroke-width="2.4"/>
+      <circle cx="50" cy="50" r="22" fill="none" stroke="#6fdc8c" stroke-width="2.4"/>
+      <text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-family="Georgia, serif" font-size="30" font-weight="700" fill="#F8F6F1">G</text>
+    </svg>
+  </template>
+
+</body>
+</html>

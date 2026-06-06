@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Club de la Gente — Mi perfil</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="checkout.css">
+  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="agente.css">
+</head>
+<body class="dash-body">
+
+  <div class="dash" id="dash">
+    <div class="dash-backdrop" id="dash-backdrop"></div>
+
+    <!-- ============================================================
+         SIDEBAR
+         ============================================================ -->
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <span class="logo__mark">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="18.5" stroke="#0E0E0E" stroke-width="1.4"/>
+            <circle cx="20" cy="20" r="14" stroke="#008000" stroke-width="1.4"/>
+            <text x="20" y="20" text-anchor="middle" dominant-baseline="central" font-family="Cormorant Garamond, serif" font-size="20" font-weight="700" fill="#0E0E0E">G</text>
+          </svg>
+        </span>
+        <span class="logo__type"><span class="l1">El</span><span>Club de la</span><span>Gente</span></span>
+      </div>
+
+      <div class="sb-user">
+        <div class="sb-avatar" data-ini>CP</div>
+        <div>
+          <div class="sb-user__name" id="sb-name">Carlos Andrés Pérez</div>
+          <div class="sb-user__num" id="sb-num">Miembro #2048</div>
+        </div>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-section__lbl" id="sb-section-lbl">Mi cuenta</div>
+        <ul class="sb-nav">
+          <li><button class="sb-link" data-panel="inicio"><i data-lucide="layout-dashboard"></i> Inicio</button></li>
+          <li id="sb-negocio-li" hidden><button class="sb-link" data-panel="negocio"><i data-lucide="store"></i> Mi negocio <span class="sb-link__badge">Aliado</span></button></li>
+          <li><button class="sb-link" data-panel="perfil"><i data-lucide="user"></i> Mi perfil</button></li>
+          <li><button class="sb-link" data-panel="clubcard"><i data-lucide="credit-card"></i> Mi ClubCard</button></li>
+          <li><button class="sb-link" data-panel="descuentos"><i data-lucide="receipt"></i> Mis descuentos</button></li>
+          <li><button class="sb-link" data-panel="agente"><i data-lucide="message-circle"></i> Mi Agente <span class="sb-link__badge">WhatsApp</span></button></li>
+        </ul>
+      </div>
+
+      <div class="sb-section">
+        <div class="sb-section__lbl">Explorar</div>
+        <ul class="sb-nav">
+          <li><a class="sb-link" href="Directorio.html"><i data-lucide="store"></i> Aliados</a></li>
+          <li><a class="sb-link" href="El Club de la Gente.html#programas"><i data-lucide="heart-handshake"></i> Programas</a></li>
+          <li><a class="sb-link" href="El Club de la Gente.html"><i data-lucide="users"></i> Comunidad</a></li>
+        </ul>
+      </div>
+
+      <div class="sb-plan">
+        <div class="sb-plan__lbl">Plan activo</div>
+        <div class="sb-plan__name" id="sb-plan-name">Premium</div>
+        <div class="sb-plan__estado"><span class="dot"></span> Activo</div>
+        <div class="sb-plan__renueva">Renueva el 1 de julio de 2026</div>
+      </div>
+
+      <div class="sb-bottom">
+        <ul class="sb-nav">
+          <li><button class="sb-link" data-panel="config"><i data-lucide="settings"></i> Configuración</button></li>
+          <li><button class="sb-link" id="sb-logout"><i data-lucide="log-out"></i> Cerrar sesión</button></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- ============================================================
+         MAIN
+         ============================================================ -->
+    <div class="dash-main">
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <button class="topbar__burger" id="topbar-burger"><i data-lucide="menu"></i></button>
+          <span class="topbar__title" id="topbar-title">Mi cuenta · <b>Inicio</b></span>
+        </div>
+        <div class="topbar__actions">
+          <button class="icon-btn"><i data-lucide="search"></i></button>
+          <button class="icon-btn"><i data-lucide="bell"></i><span class="badge-dot"></span></button>
+          <div class="topbar__avatar" data-ini>CP</div>
+        </div>
+      </header>
+
+      <div class="dash-content">
+
+        <!-- ============================================================
+             PANEL: INICIO
+             ============================================================ -->
+        <section class="panel-view" data-panel="inicio" data-screen-label="Dashboard inicio">
+          <div class="dash-greet">
+            <h1 id="greet-name">Hola, Carlos.</h1>
+            <p>Este mes ya estás aprovechando tu membresía. Esto es lo que llevas.</p>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <div class="stat__top"><span class="stat__ic"><i data-lucide="piggy-bank"></i></span><span class="stat__trend"><i data-lucide="trending-up"></i> +18%</span></div>
+              <div class="stat__num">$22.140</div>
+              <div class="stat__lbl">Ahorro total del mes</div>
+            </div>
+            <div class="stat">
+              <div class="stat__top"><span class="stat__ic"><i data-lucide="ticket-percent"></i></span></div>
+              <div class="stat__num">4</div>
+              <div class="stat__lbl">Descuentos usados este mes</div>
+            </div>
+            <div class="stat">
+              <div class="stat__top"><span class="stat__ic"><i data-lucide="store"></i></span></div>
+              <div class="stat__num">4</div>
+              <div class="stat__lbl">Aliados visitados este mes</div>
+            </div>
+            <div class="stat">
+              <div class="stat__top"><span class="stat__ic"><i data-lucide="sparkles"></i></span></div>
+              <div class="stat__num">$76.140</div>
+              <div class="stat__lbl">Ahorro acumulado total</div>
+            </div>
+          </div>
+
+          <div class="dash-grid">
+            <!-- ClubCard -->
+            <div class="card">
+              <div class="card__head">
+                <span class="card__title">Mi ClubCard</span>
+                <button class="card__link" data-goto-panel="clubcard">Ver y escanear <i data-lucide="arrow-right"></i></button>
+              </div>
+              <div class="ccv2">
+                <div class="ccv2__flip">
+                  <div class="ccv2-card ccv2-card--front">
+                    <div class="ccv2-frame"></div>
+                    <span class="ccv2-corner tl"></span><span class="ccv2-corner tr"></span><span class="ccv2-corner bl"></span><span class="ccv2-corner br"></span>
+                    <div class="ccv2-front__in">
+                      <span class="ccv2-brand">CLUBCARD</span>
+                      <div class="ccv2-mid">
+                        <div class="ccv2-logo">
+                          <span class="ccv2-logo__el">EL</span>
+                          <span class="ccv2-logo__club">CLUB DE LA</span>
+                          <span class="ccv2-logo__gente">GENTE</span>
+                          <span class="ccv2-logo__g">G</span>
+                        </div>
+                        <div class="ccv2-codigo">
+                          <span class="ccv2-codigo__lbl">Código:</span>
+                          <span class="ccv2-codigo__val cc-card-codigo">300 412 8890</span>
+                        </div>
+                      </div>
+                      <div class="ccv2-name cc-card-name">CARLOS ANDRÉS PÉREZ</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Aliados activos -->
+            <div class="card">
+              <div class="card__head">
+                <span class="card__title">Aliados activos</span>
+                <a class="card__link" href="Directorio.html">Ver todos <i data-lucide="arrow-right"></i></a>
+              </div>
+              <div class="aliados-strip" id="aliados-strip"></div>
+            </div>
+          </div>
+
+          <!-- Actividad reciente -->
+          <div class="card" style="margin-bottom:20px;">
+            <div class="card__head">
+              <span class="card__title">Actividad reciente</span>
+              <button class="card__link" data-goto-panel="descuentos">Ver historial <i data-lucide="arrow-right"></i></button>
+            </div>
+            <ul class="actividad" id="actividad"></ul>
+          </div>
+
+          <!-- Banner WhatsApp -->
+          <div class="wa-banner">
+            <div class="wa-banner__txt">
+              <h3>Tu resumen llega por WhatsApp</h3>
+              <p>El 1 de julio recibirás un resumen de todo lo que ahorraste este mes directamente en tu WhatsApp, junto con tus aliados más cercanos.</p>
+            </div>
+            <a class="btn btn--primario" href="#"><i data-lucide="message-circle" style="width:18px;height:18px"></i> Ver en WhatsApp</a>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             PANEL: MI PERFIL
+             ============================================================ -->
+        <section class="panel-view" data-panel="perfil" data-screen-label="Mi perfil">
+          <div class="dash-greet">
+            <h1>Mi perfil</h1>
+            <p>Tu identidad dentro del Club y las categorías que personalizan tu experiencia.</p>
+          </div>
+
+          <div class="perfil-grid">
+            <div class="perfil-id">
+              <div class="perfil-id__avatar" data-ini>CP</div>
+              <div class="perfil-id__name" id="perfil-name">Carlos Andrés Pérez</div>
+              <div class="perfil-id__num" id="perfil-num">Miembro #2048</div>
+              <div class="perfil-id__rows">
+                <div class="perfil-id__row"><span class="k">Plan</span><span class="v" id="perfil-plan">Premium</span></div>
+                <div class="perfil-id__row"><span class="k">Fecha de nacimiento</span><span class="v" id="perfil-fecha">28 de junio de 2001</span></div>
+                <div class="perfil-id__row"><span class="k">Miembro desde</span><span class="v" id="perfil-desde">junio 2026</span></div>
+                <div class="perfil-id__row"><span class="k">Estado</span><span class="v" style="color:var(--verde)">Activo</span></div>
+              </div>
+            </div>
+
+            <div class="perfil-side">
+              <div class="card perfil-cats">
+                <div class="card__head">
+                  <span class="card__title">Mis categorías de interés</span>
+                  <button class="card__link" id="editar-cats">Actualizar <i data-lucide="sliders-horizontal"></i></button>
+                </div>
+                <p class="perfil-cats__hint">Las eliges al unirte al Club. Con ellas personalizamos los descuentos, aliados y mensajes que recibes.</p>
+                <div class="chips" id="perfil-cats">
+                  <span class="chip-int">Bienestar y salud</span>
+                  <span class="chip-int">Veterinaria</span>
+                  <span class="chip-int">Canasta familiar</span>
+                  <span class="chip-int">Odontología</span>
+                  <span class="chip-int">Educación financiera</span>
+                  <span class="chip-int">Programas sociales</span>
+                </div>
+              </div>
+
+              <div class="card perfil-wa">
+                <span class="perfil-wa__ic"><i data-lucide="message-circle"></i></span>
+                <div>
+                  <div class="card__title">Tu resumen por WhatsApp</div>
+                  <p class="perfil-wa__txt">Cada mes recibes tu ahorro del mes y tus aliados más cercanos directamente en tu WhatsApp.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             PANEL: MI CLUBCARD
+             ============================================================ -->
+        <section class="panel-view" data-panel="clubcard" data-screen-label="Mi ClubCard">
+          <div class="dash-greet">
+            <h1>Mi ClubCard</h1>
+            <p>Tu tarjeta digital. Voltéala para mostrar el QR y acceder a tus beneficios en cualquier aliado.</p>
+          </div>
+
+          <div class="clubcard-panel">
+            <div class="ccv2" style="margin-bottom:22px">
+              <div class="ccv2__flip" id="cc-flip">
+                <div class="ccv2-card ccv2-card--front">
+                  <div class="ccv2-frame"></div>
+                  <span class="ccv2-corner tl"></span><span class="ccv2-corner tr"></span><span class="ccv2-corner bl"></span><span class="ccv2-corner br"></span>
+                  <div class="ccv2-front__in">
+                    <span class="ccv2-brand">CLUBCARD</span>
+                    <div class="ccv2-mid">
+                      <div class="ccv2-logo">
+                        <span class="ccv2-logo__el">EL</span>
+                        <span class="ccv2-logo__club">CLUB DE LA</span>
+                        <span class="ccv2-logo__gente">GENTE</span>
+                        <span class="ccv2-logo__g">G</span>
+                      </div>
+                      <div class="ccv2-codigo">
+                        <span class="ccv2-codigo__lbl">Código:</span>
+                        <span class="ccv2-codigo__val cc-card-codigo">300 412 8890</span>
+                      </div>
+                    </div>
+                    <div class="ccv2-name cc-card-name">CARLOS ANDRÉS PÉREZ</div>
+                  </div>
+                </div>
+                <div class="ccv2-card ccv2-card--back">
+                  <div class="ccv2-frame"></div>
+                  <div class="ccv2-back__in">
+                    <span class="ccv2-orn"></span>
+                    <div class="ccv2-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data=file%3A%2F%2F%2FC%3A%2FUsers%2Fjulia%2FDocuments%2Fel-club-de-la-gente%2FDirectorio.html" alt="Código QR del Club" loading="lazy"></div>
+                    <div class="ccv2-renueva">Renovación: <span class="cc-card-renueva">27/06/2027</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn--secundario cc-benefits-btn" id="cc-flip-toggle"><i data-lucide="qr-code" style="width:17px;height:17px"></i> Quiero acceder a mis beneficios</button>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             PANEL: MIS DESCUENTOS
+             ============================================================ -->
+        <section class="panel-view" data-panel="descuentos" data-screen-label="Mis descuentos">
+          <div class="dash-greet">
+            <h1>Mis descuentos</h1>
+            <p>Todo lo que has ahorrado usando tu membresía en los aliados del Club.</p>
+          </div>
+          <div class="card">
+            <table class="tabla">
+              <thead>
+                <tr><th>Aliado</th><th>Fecha</th><th>Descuento</th><th>Compra</th><th>Ahorraste</th></tr>
+              </thead>
+              <tbody id="tabla-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             PANEL: MI AGENTE (Módulo 7 — Agente de WhatsApp)
+             ============================================================ -->
+        <section class="panel-view" data-panel="agente" data-screen-label="Mi Agente de WhatsApp">
+          <div class="dash-greet">
+            <h1>Mi Agente de WhatsApp</h1>
+            <p>Tu asistente personal del Club. Te avisa de tus ahorros, descuentos nuevos y aliados según lo que te interesa — directo en tu WhatsApp.</p>
+          </div>
+
+          <div class="agente-grid">
+
+            <!-- TELÉFONO -->
+            <div class="ag-phone-col">
+              <div class="ag-phone">
+                <div class="ag-screen">
+                  <span class="ag-notch"></span>
+
+                  <div class="ag-bar">
+                    <span class="ag-bar__back"><i data-lucide="chevron-left"></i></span>
+                    <span class="ag-bar__avatar">
+                      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="20" r="18.5" stroke="#0E0E0E" stroke-width="1.6"/>
+                        <circle cx="20" cy="20" r="14" stroke="#008000" stroke-width="1.6"/>
+                        <text x="20" y="20" text-anchor="middle" dominant-baseline="central" font-family="Cormorant Garamond, serif" font-size="20" font-weight="700" fill="#0E0E0E">G</text>
+                      </svg>
+                    </span>
+                    <span class="ag-bar__id">
+                      <span class="ag-bar__name">El Club de la Gente <i class="verify" data-lucide="badge-check"></i></span>
+                      <span class="ag-bar__status"><span class="dot"></span> Cuenta de empresa · en línea</span>
+                    </span>
+                    <span class="ag-bar__icons"><i data-lucide="video"></i><i data-lucide="phone"></i></span>
+                  </div>
+
+                  <div class="ag-chat" id="ag-chat">
+                    <!-- mensajes inyectados por agente.js -->
+                  </div>
+
+                  <div class="ag-input">
+                    <span class="ag-input__box"><i data-lucide="smile"></i> Mensaje</span>
+                    <span class="ag-input__send"><i data-lucide="mic"></i></span>
+                  </div>
+                </div>
+              </div>
+              <p class="ag-phone-note">Vista previa de los mensajes que recibe tu agente. El tono y las recomendaciones se ajustan a tus categorías.</p>
+            </div>
+
+            <!-- CONFIGURACIÓN -->
+            <div class="ag-side">
+
+              <!-- conexión -->
+              <div class="ag-conn">
+                <div class="ag-conn__head">
+                  <span class="ag-conn__ic"><i data-lucide="message-circle"></i></span>
+                  <div>
+                    <div class="ag-conn__title">Tu agente está activo</div>
+                    <div class="ag-conn__phone" id="ag-phone-num">Conectado a +57 300 •••  •• 28</div>
+                  </div>
+                  <span class="ag-conn__badge"><span class="dot"></span> Conectado</span>
+                </div>
+                <p class="ag-conn__desc">Recibes mensajes personalizados desde el número oficial del Club. Puedes escribirle cuando quieras para ver tus beneficios, calcular un descuento o postularte a un programa.</p>
+                <div class="ag-conn__actions">
+                  <button class="ag-btn-wa" id="ag-open-wa"><i data-lucide="message-circle"></i> Abrir chat con mi agente</button>
+                  <button class="ag-btn-ghost" id="ag-test"><i data-lucide="send"></i> Enviar mensaje de prueba</button>
+                </div>
+              </div>
+
+              <!-- qué recibes -->
+              <div class="card">
+                <div class="card__head">
+                  <span class="card__title">Qué recibes de tu agente</span>
+                </div>
+                <ul class="ag-toggles" id="ag-toggles"></ul>
+              </div>
+
+              <!-- preferencias -->
+              <div class="card">
+                <div class="card__head">
+                  <span class="card__title">Preferencias de comunicación</span>
+                </div>
+                <div class="ag-field">
+                  <div class="ag-field__label">Frecuencia <span>¿cada cuánto te escribe?</span></div>
+                  <div class="ag-seg-row" data-seg="frecuencia">
+                    <button class="ag-seg-btn" data-val="importante">Solo lo importante</button>
+                    <button class="ag-seg-btn" data-val="semanal">Resumen semanal</button>
+                    <button class="ag-seg-btn" data-val="diario">Diario</button>
+                  </div>
+                </div>
+                <div class="ag-field">
+                  <div class="ag-field__label">Canal</div>
+                  <div class="ag-seg-row" data-seg="canal">
+                    <button class="ag-seg-btn" data-val="wa">Solo WhatsApp</button>
+                    <button class="ag-seg-btn" data-val="wa-correo">WhatsApp + correo</button>
+                  </div>
+                </div>
+                <div class="ag-note">
+                  <i data-lucide="sparkles"></i>
+                  <p>Estas recomendaciones salen de tus <a id="ag-edit-cats">categorías de interés</a>. Cámbialas cuando quieras y tu agente se ajusta al instante.</p>
+                </div>
+              </div>
+
+              <!-- cómo funciona -->
+              <div class="card">
+                <div class="card__head">
+                  <span class="card__title">Cómo evoluciona tu agente</span>
+                </div>
+                <div class="ag-phases">
+                  <div class="ag-phase is-live">
+                    <span class="ag-phase__live">Activo</span>
+                    <div class="ag-phase__n">Fase 1</div>
+                    <div class="ag-phase__name">Mensajes y enlaces directos</div>
+                    <div class="ag-phase__tool">Resúmenes y accesos por WhatsApp</div>
+                  </div>
+                  <div class="ag-phase">
+                    <div class="ag-phase__n">Fase 2</div>
+                    <div class="ag-phase__name">Conversación en vivo</div>
+                    <div class="ag-phase__tool">WhatsApp Business API</div>
+                  </div>
+                  <div class="ag-phase">
+                    <div class="ag-phase__n">Fase 3</div>
+                    <div class="ag-phase__name">Agente automático 24/7</div>
+                    <div class="ag-phase__tool">Automatización + tus datos</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             PANEL: MI NEGOCIO (solo aliados)
+             ============================================================ -->
+        <section class="panel-view" data-panel="negocio" data-screen-label="Mi negocio">
+          <div class="dash-greet">
+            <h1>Mi negocio</h1>
+            <p>El desempeño de <b id="negocio-nombre">tu negocio</b> dentro de El Club de la Gente.</p>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <div class="stat__top"><span class="stat__ic"><i data-lucide="banknote"></i></span><span class="stat__trend"><i data-lucide="trending-up"></i> +22%</span></div>
+              <div class="stat__num">$4.82M</div>
+              <div class="stat__lbl">Ventas del mes con el Club</div>
+            </div>
+            <div class="stat">
+              <div class="stat__top"><span class="stat__ic"><i data-lucide="users"></i></span><span class="stat__trend"><i data-lucide="trending-up"></i> +14%</span></div>
+              <div class="stat__num">186</div>
+              <div class="stat__lbl">Clientes del Club atendidos</div>
+            </div>
+            <div class="stat">
+              <div class="stat__top"><span class="stat__ic"><i data-lucide="ticket-percent"></i></span></div>
+              <div class="stat__num">214</div>
+              <div class="stat__lbl">Descuentos otorgados este mes</div>
+            </div>
+            <div class="stat">
+              <div class="stat__top"><span class="stat__ic"><i data-lucide="sparkles"></i></span></div>
+              <div class="stat__num">$1.36M</div>
+              <div class="stat__lbl">Ahorro generado a tus clientes</div>
+            </div>
+          </div>
+
+          <div class="dash-grid">
+            <div class="card">
+              <div class="card__head">
+                <span class="card__title">Ventas por mes</span>
+                <span class="card__link" style="cursor:default">2026</span>
+              </div>
+              <div class="neg-chart">
+                <div class="neg-col"><span class="neg-bar" style="height:42%"></span><span class="neg-lbl">Ene</span></div>
+                <div class="neg-col"><span class="neg-bar" style="height:55%"></span><span class="neg-lbl">Feb</span></div>
+                <div class="neg-col"><span class="neg-bar" style="height:61%"></span><span class="neg-lbl">Mar</span></div>
+                <div class="neg-col"><span class="neg-bar" style="height:70%"></span><span class="neg-lbl">Abr</span></div>
+                <div class="neg-col"><span class="neg-bar" style="height:84%"></span><span class="neg-lbl">May</span></div>
+                <div class="neg-col"><span class="neg-bar neg-bar--now" style="height:100%"></span><span class="neg-lbl">Jun</span></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card__head"><span class="card__title">Tu beneficio activo</span></div>
+              <div class="neg-benef">
+                <div class="neg-benef__pct">20%</div>
+                <div>
+                  <div class="neg-benef__name">Descuento para miembros</div>
+                  <div class="neg-benef__estado"><span class="dot"></span> Activo y publicado en el directorio</div>
+                </div>
+              </div>
+              <ul class="neg-info">
+                <li><span class="k">Estado del aliado</span><span class="v" style="color:var(--verde)">Aprobado</span></li>
+                <li><span class="k">Categoría</span><span class="v" id="negocio-cat">Comercio</span></li>
+                <li><span class="k">Posición en usos</span><span class="v">#3 del mes</span></li>
+                <li><span class="k">Visitas a tu ficha</span><span class="v">1.240</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:20px">
+            <div class="card__head">
+              <span class="card__title">Últimas ventas con ClubCard</span>
+            </div>
+            <table class="tabla">
+              <thead><tr><th>Cliente</th><th>Fecha</th><th>Descuento</th><th>Compra</th><th>Ahorro al cliente</th></tr></thead>
+              <tbody>
+                <tr><td><span class="tabla__name">Laura Restrepo</span></td><td>Hoy · 11:20 a.m.</td><td><span class="tag-pct">20%</span></td><td>$48.000</td><td class="tabla__ahorro">−$9.600</td></tr>
+                <tr><td><span class="tabla__name">Andrés Gómez</span></td><td>Ayer · 5:40 p.m.</td><td><span class="tag-pct">20%</span></td><td>$32.000</td><td class="tabla__ahorro">−$6.400</td></tr>
+                <tr><td><span class="tabla__name">Mónica Salazar</span></td><td>3 jun · 1:10 p.m.</td><td><span class="tag-pct">20%</span></td><td>$75.000</td><td class="tabla__ahorro">−$15.000</td></tr>
+                <tr><td><span class="tabla__name">Julián Ortiz</span></td><td>2 jun · 9:05 a.m.</td><td><span class="tag-pct">20%</span></td><td>$54.000</td><td class="tabla__ahorro">−$10.800</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             PANEL: CONFIGURACIÓN
+             ============================================================ -->
+        <section class="panel-view" data-panel="config" data-screen-label="Configuración">
+          <div class="dash-greet">
+            <h1>Configuración</h1>
+            <p>Administra tu foto de perfil, tu usuario y la seguridad de tu cuenta.</p>
+          </div>
+
+          <div class="config-grid">
+            <div class="card">
+              <div class="card__head"><span class="card__title">Foto de perfil</span></div>
+              <div class="cfg-foto">
+                <div class="cfg-foto__avatar" id="cfg-avatar" data-ini>CP</div>
+                <div class="cfg-foto__body">
+                  <button class="btn btn--secundario" id="cfg-foto-btn"><i data-lucide="image" style="width:16px;height:16px"></i> Cambiar foto</button>
+                  <button class="btn btn--ghost-verde" id="cfg-foto-quitar" hidden>Quitar</button>
+                  <input type="file" id="cfg-foto-input" accept="image/*" hidden>
+                  <p class="cfg-hint">JPG o PNG, máximo 5 MB. Se mostrará en tu perfil y tu ClubCard.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <form id="form-usuario">
+                <div class="card__head"><span class="card__title">Cambiar usuario</span></div>
+                <div class="campo"><label for="cfg-usuario">Nombre de usuario</label><input type="text" id="cfg-usuario" value="carlosperez" autocomplete="username"></div>
+                <button class="btn btn--primario" type="submit" style="margin-top:16px">Guardar usuario</button>
+              </form>
+            </div>
+
+            <div class="card config-grid__wide">
+              <form id="form-pass">
+                <div class="card__head"><span class="card__title">Cambiar contraseña</span></div>
+                <div class="cfg-pass-grid">
+                  <div class="campo"><label for="cfg-pass-cur">Contraseña actual</label><input type="password" id="cfg-pass-cur" placeholder="••••••••" autocomplete="current-password"></div>
+                  <div class="campo"><label for="cfg-pass-new">Nueva contraseña</label><input type="password" id="cfg-pass-new" placeholder="Mínimo 8 caracteres" autocomplete="new-password"></div>
+                  <div class="campo"><label for="cfg-pass-conf">Confirmar contraseña</label><input type="password" id="cfg-pass-conf" placeholder="Repite la nueva" autocomplete="new-password"></div>
+                </div>
+                <button class="btn btn--primario" type="submit" style="margin-top:16px">Actualizar contraseña</button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       OVERLAY DE SEGMENTACIÓN (aparece tras el pago)
+       ============================================================ -->
+  <div class="seg-overlay" data-screen-label="Segmentación">
+    <div class="seg-grain" aria-hidden="true"></div>
+    <div class="seg-wrap">
+      <div class="seg-progress"><div class="seg-progress__bar" id="seg-bar"></div></div>
+
+      <div class="seg-head">
+        <span class="eyebrow">Ya eres parte del Club de la Gente</span>
+        <h1>Cuéntanos un poco sobre ti</h1>
+        <p>Para darte la mejor experiencia posible. Solo toma 2 minutos.</p>
+      </div>
+
+      <!-- BLOQUE 1 -->
+      <div class="seg-block is-active">
+        <div class="seg-block__title">01 — ¿Quién eres?</div>
+        <div class="seg-q">
+          <div class="seg-q__label">¿Cuál es tu género?</div>
+          <div class="seg-opts"><button class="seg-opt">Hombre</button><button class="seg-opt">Mujer</button><button class="seg-opt">Prefiero no decirlo</button></div>
+        </div>
+        <div class="seg-q">
+          <div class="seg-q__label">¿En qué rango de edad estás?</div>
+          <div class="seg-opts"><button class="seg-opt">18–24</button><button class="seg-opt">25–34</button><button class="seg-opt">35–44</button><button class="seg-opt">45–54</button><button class="seg-opt">55 o más</button></div>
+        </div>
+        <div class="seg-q">
+          <div class="seg-q__label">¿Cuál es tu ocupación principal?</div>
+          <div class="seg-opts"><button class="seg-opt">Empleado/a</button><button class="seg-opt">Independiente</button><button class="seg-opt">Emprendedor/a</button><button class="seg-opt">Estudiante</button><button class="seg-opt">Ama/o de casa</button><button class="seg-opt">Pensionado/a</button><button class="seg-opt">Otro</button></div>
+        </div>
+        <div class="seg-q">
+          <div class="seg-q__label">¿En qué barrio o zona de Fusagasugá vives? <span class="seg-q__hint">nos ayuda a mostrarte los aliados más cercanos</span></div>
+          <input type="text" class="seg-input" placeholder="Ej: Centro, Emilio Sierra, Pekín…">
+        </div>
+      </div>
+
+      <!-- BLOQUE 2 -->
+      <div class="seg-block">
+        <div class="seg-block__title">02 — ¿Qué te interesa del Club?</div>
+        <div class="seg-q" data-multi="1">
+          <div class="seg-q__label">¿Por qué decidiste unirte? <span class="seg-q__hint">elige las que quieras</span></div>
+          <div class="seg-opts"><button class="seg-opt">Ahorrar en el día a día</button><button class="seg-opt">Educación financiera</button><button class="seg-opt">Apoyar programas sociales</button><button class="seg-opt">Me llamaron la atención los aliados</button><button class="seg-opt">Me lo recomendaron</button></div>
+        </div>
+        <div class="seg-q" data-multi="1">
+          <div class="seg-q__label">¿Qué categorías usarías más seguido?</div>
+          <div class="seg-opts"><button class="seg-opt">Bienestar y salud</button><button class="seg-opt">Odontología</button><button class="seg-opt">Cuidado personal</button><button class="seg-opt">Turismo</button><button class="seg-opt">Veterinaria</button><button class="seg-opt">Canasta familiar</button><button class="seg-opt">Comida rápida</button><button class="seg-opt">Ropa y moda</button><button class="seg-opt">Regalos</button><button class="seg-opt">Heladería</button></div>
+        </div>
+        <div class="seg-q">
+          <div class="seg-q__label">¿Con qué frecuencia usarías los descuentos?</div>
+          <div class="seg-opts"><button class="seg-opt">Todos los días</button><button class="seg-opt">Varias veces por semana</button><button class="seg-opt">Una vez por semana</button><button class="seg-opt">Algunas veces al mes</button></div>
+        </div>
+      </div>
+
+      <!-- BLOQUE 3 -->
+      <div class="seg-block">
+        <div class="seg-block__title">03 — Tu estilo de vida</div>
+        <div class="seg-q">
+          <div class="seg-q__label">¿Tienes mascotas?</div>
+          <div class="seg-opts"><button class="seg-opt">Sí, perro</button><button class="seg-opt">Sí, gato</button><button class="seg-opt">Sí, otra</button><button class="seg-opt">No tengo</button></div>
+        </div>
+        <div class="seg-q">
+          <div class="seg-q__label">¿Tienes hijos o personas a cargo?</div>
+          <div class="seg-opts"><button class="seg-opt">Sí</button><button class="seg-opt">No</button></div>
+        </div>
+        <div class="seg-q">
+          <div class="seg-q__label">¿Qué tan importante es para ti apoyar causas sociales?</div>
+          <div class="seg-opts"><button class="seg-opt">Es fundamental</button><button class="seg-opt">Me importa bastante</button><button class="seg-opt">Está bien, no es prioridad</button><button class="seg-opt">No lo considero mucho</button></div>
+        </div>
+      </div>
+
+      <!-- BLOQUE 4 -->
+      <div class="seg-block">
+        <div class="seg-block__title">04 — Comunicación</div>
+        <div class="seg-q">
+          <div class="seg-q__label">¿Cómo prefieres que te contactemos?</div>
+          <div class="seg-opts"><button class="seg-opt">Solo WhatsApp</button><button class="seg-opt">WhatsApp + correo</button><button class="seg-opt">Solo lo importante</button></div>
+        </div>
+        <div class="seg-q" data-multi="1">
+          <div class="seg-q__label">¿Qué contenido te gustaría recibir?</div>
+          <div class="seg-opts"><button class="seg-opt">Descuentos y promos</button><button class="seg-opt">Tips de ahorro</button><button class="seg-opt">Programas sociales</button><button class="seg-opt">Nuevos aliados</button><button class="seg-opt">Eventos del Club</button></div>
+        </div>
+      </div>
+
+      <div class="seg-actions">
+        <button class="seg-skip" id="seg-prev"><i data-lucide="arrow-left" style="width:14px;height:14px;vertical-align:-2px"></i> Atrás</button>
+        <div style="display:flex;align-items:center;gap:18px;">
+          <button class="seg-skip" id="seg-skip">Omitir por ahora</button>
+          <button class="btn btn--primario" id="seg-next">Continuar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="dashboard.js"></script>
+  <script src="agente.js"></script>
+
+  <template id="__bundler_thumbnail">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" fill="#F1EDE3"/>
+      <rect x="14" y="20" width="26" height="60" rx="4" fill="#0E0E0E"/>
+      <rect x="48" y="30" width="38" height="22" rx="4" fill="#1A1A1A"/>
+      <circle cx="67" cy="64" r="6" fill="none" stroke="#008000" stroke-width="2"/>
+    </svg>
+  </template>
+
+</body>
+</html>

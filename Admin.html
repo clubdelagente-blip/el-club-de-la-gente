@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Club de la Gente — Backoffice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="admin.css">
+  <style> body { background: #0A0A0A; } </style>
+</head>
+<body>
+
+  <div class="admin" id="admin">
+    <div class="ad-backdrop" id="ad-backdrop"></div>
+
+    <!-- ============================================================
+         SIDEBAR
+         ============================================================ -->
+    <aside class="ad-side">
+      <div class="ad-side__brand">
+        <span class="logo__mark">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="18.5" stroke="#F2F0EA" stroke-width="1.4"/>
+            <circle cx="20" cy="20" r="14" stroke="#6fdc8c" stroke-width="1.4"/>
+            <text x="20" y="20" text-anchor="middle" dominant-baseline="central" font-family="Cormorant Garamond, serif" font-size="20" font-weight="700" fill="#F2F0EA">G</text>
+          </svg>
+        </span>
+        <span class="logo__type"><span class="l1">El</span><span>Club de la</span><span>Gente</span></span>
+        <span class="ad-badge">Admin</span>
+      </div>
+
+      <nav class="ad-nav">
+        <button class="ad-link" data-panel="dashboard"><i data-lucide="layout-dashboard"></i> Dashboard</button>
+        <div class="ad-nav__lbl">Gestión</div>
+        <button class="ad-link" data-panel="miembros"><i data-lucide="users"></i> Miembros</button>
+        <button class="ad-link" data-panel="aliados"><i data-lucide="store"></i> Aliados</button>
+        <button class="ad-link" data-panel="profesionales"><i data-lucide="briefcase"></i> Profesionales</button>
+        <button class="ad-link" data-panel="contenido"><i data-lucide="image"></i> Contenido</button>
+        <button class="ad-link" data-panel="programas"><i data-lucide="heart-handshake"></i> Programas sociales</button>
+        <div class="ad-nav__lbl">Finanzas</div>
+        <button class="ad-link" data-panel="ventas"><i data-lucide="banknote"></i> Ventas</button>
+        <button class="ad-link" data-panel="suscripciones"><i data-lucide="repeat"></i> Suscripciones</button>
+        <div class="ad-nav__lbl">Comunicación</div>
+        <button class="ad-link" data-panel="agente"><i data-lucide="message-circle"></i> Agente WhatsApp <span class="ad-link__count" id="ag-nav-count"></span></button>
+        <div class="ad-nav__lbl">Sistema</div>
+        <button class="ad-link" data-panel="config"><i data-lucide="settings"></i> Configuración</button>
+      </nav>
+
+      <div class="ad-side__foot">
+        <div class="ad-side__admin">
+          <span class="av">AG</span>
+          <div><div class="n">Admin · El Club</div><div class="r">Fusagasugá</div></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============================================================
+         MAIN
+         ============================================================ -->
+    <div class="ad-main">
+      <header class="ad-top">
+        <div style="display:flex;align-items:center;gap:14px">
+          <button class="ad-burger" id="ad-burger"><i data-lucide="menu"></i></button>
+          <div class="ad-top__left">
+            <h1 id="ad-h1">Dashboard</h1>
+            <p id="ad-sub">Vista general en tiempo real</p>
+          </div>
+        </div>
+        <div class="ad-top__right">
+          <span class="ad-date"><i data-lucide="calendar-days"></i><span id="ad-date">—</span></span>
+          <button class="ad-iconbtn"><i data-lucide="search"></i></button>
+          <button class="ad-iconbtn"><i data-lucide="bell"></i><span class="dot"></span></button>
+        </div>
+      </header>
+
+      <div class="ad-content">
+        <section class="ad-panel" id="p-dashboard" data-screen-label="Admin · Dashboard"></section>
+        <section class="ad-panel" id="p-miembros" data-screen-label="Admin · Miembros"></section>
+        <section class="ad-panel" id="p-aliados" data-screen-label="Admin · Aliados"></section>
+        <section class="ad-panel" id="p-profesionales" data-screen-label="Admin · Profesionales"></section>
+        <section class="ad-panel" id="p-contenido" data-screen-label="Admin · Contenido"></section>
+        <section class="ad-panel" id="p-programas" data-screen-label="Admin · Programas"></section>
+        <section class="ad-panel" id="p-ventas" data-screen-label="Admin · Ventas"></section>
+        <section class="ad-panel" id="p-suscripciones" data-screen-label="Admin · Suscripciones"></section>
+        <section class="ad-panel" id="p-agente" data-screen-label="Admin · Agente WhatsApp"></section>
+        <section class="ad-panel" id="p-config" data-screen-label="Admin · Configuración"></section>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MODAL
+       ============================================================ -->
+  <div class="ad-modal-ov" id="ad-modal-ov">
+    <div class="ad-modal">
+      <div class="ad-modal__head">
+        <div><h1 id="modal-title" style="font-family:var(--display);font-size:24px;font-weight:600;line-height:1.05">—</h1><p id="modal-sub" style="font-size:12px;color:rgba(242,240,234,.4);margin-top:4px">—</p></div>
+        <button class="ad-modal__close" id="modal-close"><i data-lucide="x"></i></button>
+      </div>
+      <div class="ad-modal__body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <div class="ad-toast" id="ad-toast"></div>
+
+  <!-- ============================================================
+       SCRIPTS
+       ============================================================ -->
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="admin-data.js"></script>
+  <script src="admin.js"></script>
+
+  <template id="__bundler_thumbnail">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" fill="#0A0A0A"/>
+      <rect x="18" y="30" width="14" height="40" rx="2" fill="#2a2a28"/>
+      <rect x="37" y="42" width="14" height="28" rx="2" fill="#2a2a28"/>
+      <rect x="56" y="22" width="14" height="48" rx="2" fill="#6fdc8c"/>
+      <rect x="75" y="36" width="7" height="34" rx="2" fill="#2a2a28"/>
+    </svg>
+  </template>
+
+</body>
+</html>

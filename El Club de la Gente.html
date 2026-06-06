@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Club de la Gente — Beneficios exclusivos de Colombia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="grain" aria-hidden="true"></div>
+
+  <!-- ============================================================
+       SECCIÓN A — NAVEGACIÓN
+       ============================================================ -->
+  <nav class="nav" id="nav" data-screen-label="Nav">
+    <div class="wrap">
+      <a class="logo" href="#top" aria-label="El Club de la Gente">
+        <span class="logo__mark">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="18.5" stroke="#0E0E0E" stroke-width="1.4"/>
+            <circle cx="20" cy="20" r="14" stroke="#008000" stroke-width="1.4"/>
+            <line x1="0" y1="20" x2="4.5" y2="20" stroke="#0E0E0E" stroke-width="1.4"/>
+            <line x1="35.5" y1="20" x2="40" y2="20" stroke="#0E0E0E" stroke-width="1.4"/>
+            <text x="20" y="20" text-anchor="middle" dominant-baseline="central"
+                  font-family="Cormorant Garamond, serif" font-size="20" font-weight="700" fill="#0E0E0E">G</text>
+          </svg>
+        </span>
+        <span class="logo__type">
+          <span class="l1">El</span>
+          <span>Club de la</span>
+          <span>Gente</span>
+        </span>
+      </a>
+
+      <div class="nav__links">
+        <a href="#aliados">Aliados</a>
+        <a href="#profesionales">Profesionales</a>
+        <a href="#programas">Programas sociales</a>
+        <a href="#membresias">Membresías</a>
+        <a href="Registro.html?tab=login" class="nav__login"><i data-lucide="user-round"></i> Iniciar sesión</a>
+      </div>
+
+      <button class="nav__burger" id="burger" aria-label="Abrir menú">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+
+    <div class="nav__mobile">
+      <a href="#aliados">Aliados</a>
+      <a href="#profesionales">Profesionales</a>
+      <a href="#programas">Programas</a>
+      <a href="#membresias">Membresías</a>
+      <a href="Registro.html?tab=login" class="nav__mobile-login">Iniciar sesión</a>
+    </div>
+  </nav>
+
+  <span id="top"></span>
+
+  <!-- ============================================================
+       SECCIÓN B — HERO
+       ============================================================ -->
+  <header class="hero" id="hero" data-screen-label="Hero">
+    <div class="wrap">
+      <div class="masthead fade-up d1">
+        <span>01 — Inicio</span>
+        <span>Fusagasugá · Colombia</span>
+        <span>Est. 2026</span>
+      </div>
+
+      <div class="hero__grid">
+        <div class="hero__copy">
+          <span class="tag fade-up d2">PRIMERA PLATAFORMA DE BENEFICIOS DE COLOMBIA <span class="tag__flag" aria-label="Colombia">🇨🇴</span></span>
+          <h1 class="display hero__title fade-up d3">El club que te da <span class="italic-verde">más de lo</span> que esperas.</h1>
+          <p class="hero__desc fade-up d4">Somos la primera plataforma de beneficios exclusivos de Colombia donde las personas ahorran más, aprenden cosas nuevas y con su compra apoyan causas sociales.</p>
+          <div class="hero__cta fade-up d4">
+            <a href="Registro.html" class="btn btn--primario">Quiero ser miembro <span class="ar">&rarr;</span></a>
+            <a href="#aliados" class="btn btn--secundario">Ver beneficios</a>
+          </div>
+        </div>
+
+        <ol class="valores fade-up d5">
+          <li class="valor">
+            <span class="valor__n">01</span>
+            <span class="valor__ic"><i data-lucide="piggy-bank"></i></span>
+            <span>
+              <h3>Ahorra de verdad</h3>
+              <p>Disfruta beneficios y descuentos exclusivos mientras apoyas el comercio local de Fusagasugá, todos los días.</p>
+            </span>
+          </li>
+          <li class="valor">
+            <span class="valor__n">02</span>
+            <span class="valor__ic"><i data-lucide="graduation-cap"></i></span>
+            <span>
+              <h3>Aprende cosas nuevas</h3>
+              <p>Aprende nuevas habilidades, desarrolla tu potencial y abre nuevas oportunidades para tu futuro.</p>
+            </span>
+          </li>
+          <li class="valor">
+            <span class="valor__n">03</span>
+            <span class="valor__ic"><i data-lucide="heart-handshake"></i></span>
+            <span>
+              <h3>Apoya lo que importa</h3>
+              <p>Con tu membresía contribuyes a proyectos sociales que generan un impacto real en la vida de muchos seres sintientes. </p>
+            </span>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       SECCIÓN C — TICKER
+       ============================================================ -->
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker__track">
+      <span class="ticker__item">Bienestar y salud</span>
+      <span class="ticker__item">Odontología</span>
+      <span class="ticker__item">Turismo</span>
+      <span class="ticker__item">Veterinaria</span>
+      <span class="ticker__item">Canasta familiar</span>
+      <span class="ticker__item">Ropa personalizada</span>
+      <span class="ticker__item">Publicidad</span>
+      <span class="ticker__item">Heladería</span>
+      <span class="ticker__item">Comida rápida</span>
+      <span class="ticker__item">Barbería</span>
+      <span class="ticker__item">Regalos</span>
+      <span class="ticker__item">Bienestar y salud</span>
+      <span class="ticker__item">Odontología</span>
+      <span class="ticker__item">Turismo</span>
+      <span class="ticker__item">Veterinaria</span>
+      <span class="ticker__item">Canasta familiar</span>
+      <span class="ticker__item">Ropa personalizada</span>
+      <span class="ticker__item">Publicidad</span>
+      <span class="ticker__item">Heladería</span>
+      <span class="ticker__item">Comida rápida</span>
+      <span class="ticker__item">Barbería</span>
+      <span class="ticker__item">Regalos</span>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SECCIÓN D — ALIADOS COMERCIALES
+       ============================================================ -->
+  <section class="seccion" id="aliados" data-screen-label="Aliados">
+    <div class="wrap">
+      <div class="shead fade-up d1">
+        <div class="shead__num">02</div>
+        <div class="shead__body">
+          <span class="eyebrow">Aliados comerciales</span>
+          <h2 class="display seccion__title">Donde tu membresía <span class="italic-verde">tiene valor real.</span></h2>
+          <p class="seccion__sub">Toca cualquier aliado para ver sus descuentos y aplicarlos al instante.</p>
+          <div class="shead__cta">
+            <button class="btn btn--primario" data-aliado-form>¿Tienes un negocio? Quiero ser aliado <span class="ar">&rarr;</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="aliados-layout fade-up d2">
+        <div id="aliado-feat"></div>
+        <div class="aliados-grid" id="aliados-grid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECCIÓN D2 — PROFESIONALES
+       ============================================================ -->
+  <section class="seccion" id="profesionales" data-screen-label="Profesionales">
+    <div class="wrap">
+      <div class="shead fade-up d1">
+        <div class="shead__num">03</div>
+        <div class="shead__body">
+          <span class="eyebrow">Profesionales del Club</span>
+          <h2 class="display seccion__title">Asesoría experta, <span class="italic-verde">a tu alcance.</span></h2>
+          <p class="seccion__sub">Tu membresía también te conecta con profesionales de confianza en Fusagasúgá. Toca cada área para conocer al asesor y solicitar tu cita.</p>
+        </div>
+      </div>
+
+      <div class="profes-grid fade-up d2" id="profesionales-grid"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECCIÓN E — PROGRAMAS SOCIALES (negro)
+       ============================================================ -->
+  <section class="seccion seccion--negro" id="programas" data-screen-label="Programas">
+    <div class="wrap">
+      <div class="shead fade-up d1">
+        <div class="shead__num">04</div>
+        <div class="shead__body">
+          <span class="eyebrow">Programas sociales</span>
+          <h2 class="display seccion__title">Tu membresía <span class="italic-verde">también ayuda.</span></h2>
+          <p class="seccion__sub">Cada peso que ahorras también construye comunidad. Conoce los programas y postúlate como voluntario si es tu deseo.</p>
+        </div>
+      </div>
+      <div class="grid-2 fade-up d2" id="programas-grid"></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECCIÓN F — MEMBRESÍAS
+       ============================================================ -->
+  <section class="seccion" id="membresias" data-screen-label="Membresías">
+    <div class="wrap">
+      <div class="shead fade-up d1">
+        <div class="shead__num">05</div>
+        <div class="shead__body">
+          <span class="eyebrow">Membresías</span>
+          <h2 class="display seccion__title">Elige cómo quieres <span class="italic-verde">pertenecer.</span></h2>
+          <p class="seccion__sub">Cancela cuando quieras. Sin cláusulas. Sin letra pequeña.</p>
+        </div>
+      </div>
+
+      <div class="planes">
+        <article class="plan plan--basica fade-up d2">
+          <span class="plan__tag">PLAN BÁSICO</span>
+          <div class="plan__precio-row">
+            <span class="plan__antes">Antes $30.000</span>
+            <span class="plan__ahorra">Ahorra 33%</span>
+          </div>
+          <div class="plan__precio">$10k<small> /mes</small></div>
+          <div class="plan__ciclo">Sin cláusulas · cancela cuando quieras</div>
+          <ul class="plan__beneficios">
+            <li><span class="dot"></span>Acceso limitado a todos los aliados con descuento</li>
+            <li><span class="dot"></span>ClubCard digital en tu perfil</li>
+            <li><span class="dot"></span>Calculadora de ahorro y comprobantes</li>
+            <li><span class="dot"></span>Resumen mensual de ahorros por WhatsApp</li>
+          </ul>
+          <button class="btn btn--secundario btn--bloque" data-plan="basica">Elegir básica</button>
+        </article>
+
+        <article class="plan plan--premium fade-up d3">
+          <span class="plan__badge-rec" id="badge-rec">Recomendado</span>
+          <span class="plan__tag">Plan premium</span>
+          <div class="plan__precio-row">
+            <span class="plan__antes">Antes $50.000</span>
+            <span class="plan__ahorra">Ahorra 40%</span>
+          </div>
+          <div class="plan__precio"><span id="precio-premium">$20k</span><small> /mes</small></div>
+          <div class="plan__ciclo">Sin cláusulas · cancela cuando quieras</div>
+          <ul class="plan__beneficios">
+            <li><span class="dot"></span><span id="bene-premium-top">Acceso ilimitado a todos los aliados con descuento</span></li>
+            <li><span class="dot"></span>ClubCard física enviada a tu casa gratis</li>
+            <li><span class="dot"></span>Descuentos premium y beneficios ampliados</li>
+            <li><span class="dot"></span>Acceso prioritario a eventos del Club</li>
+          </ul>
+          <button class="btn btn--primario btn--bloque" data-plan="premium">Elegir premium <span class="ar">&rarr;</span></button>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECCIÓN G — FOOTER
+       ============================================================ -->
+  <footer class="footer" data-screen-label="Footer">
+    <div class="wrap">
+      <div class="footer__brand">
+        <span class="logo__type" style="color:var(--crema-en-negro)">
+          <span class="l1">El</span>
+          <span>Club de la</span>
+          <span>Gente</span>
+        </span>
+        <p class="footer__legal">© 2026 El Club de la Gente S.A.S. BIC<br>Fusagasugá, Colombia</p>
+      </div>
+      <div class="footer__links">
+        <a href="#">WhatsApp</a>
+        <a href="#">Instagram</a>
+        <a href="#">TikTok</a>
+        <a href="Registro.html?tab=login">Iniciar sesión</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================================
+       SHEET + TOAST
+       ============================================================ -->
+  <div class="sheet-overlay" id="sheet-overlay"></div>
+  <aside class="sheet" id="sheet" role="dialog" aria-modal="true">
+    <div class="sheet__grip"></div>
+    <button class="sheet__close" id="sheet-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+    <div class="sheet__scroll" id="sheet-scroll">
+      <div class="sheet__inner" id="sheet-inner"></div>
+    </div>
+  </aside>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- ============================================================
+       SCRIPTS
+       ============================================================ -->
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="app.js"></script>
+
+  <!-- ============================================================
+       TWEAKS PANEL
+       ============================================================ -->
+  <div id="tweaks-root"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel">
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "accent": "#008000",
+      "premiumBenefit": "Acceso ilimitado a todos los aliados con descuento",
+      "premiumPrice": "$20k",
+      "showRecomendado": true
+    }/*EDITMODE-END*/;
+
+    function ClubTweaks() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+      React.useEffect(() => {
+        const r = document.documentElement.style;
+        r.setProperty("--verde", t.accent);
+        r.setProperty("--verde-hover", `color-mix(in srgb, ${t.accent}, #000 18%)`);
+        r.setProperty("--verde-soft", `color-mix(in srgb, ${t.accent} 10%, transparent)`);
+        r.setProperty("--verde-claro", `color-mix(in srgb, ${t.accent}, #fff 35%)`);
+      }, [t.accent]);
+
+      React.useEffect(() => {
+        const el = document.getElementById("bene-premium-top");
+        if (el) el.textContent = t.premiumBenefit;
+      }, [t.premiumBenefit]);
+
+      React.useEffect(() => {
+        const el = document.getElementById("precio-premium");
+        if (el) el.textContent = t.premiumPrice;
+      }, [t.premiumPrice]);
+
+      React.useEffect(() => {
+        const el = document.getElementById("badge-rec");
+        if (el) el.style.display = t.showRecomendado ? "" : "none";
+      }, [t.showRecomendado]);
+
+      return (
+        <TweaksPanel>
+          <TweakSection label="Marca" />
+          <TweakColor label="Color de acento" value={t.accent}
+            options={["#008000", "#0E7C4B", "#1C7C8C", "#3B5BDB"]}
+            onChange={(v) => setTweak("accent", v)} />
+          <TweakSection label="Plan premium · $20k" />
+          <TweakText label="Beneficio destacado" value={t.premiumBenefit}
+            onChange={(v) => setTweak("premiumBenefit", v)} />
+          <TweakText label="Precio" value={t.premiumPrice}
+            onChange={(v) => setTweak("premiumPrice", v)} />
+          <TweakToggle label="Mostrar “Recomendado”" value={t.showRecomendado}
+            onChange={(v) => setTweak("showRecomendado", v)} />
+        </TweaksPanel>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("tweaks-root")).render(<ClubTweaks />);
+  </script>
+
+  <template id="__bundler_thumbnail">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" fill="#F8F6F1"/>
+      <circle cx="50" cy="50" r="30" fill="none" stroke="#0E0E0E" stroke-width="2.4"/>
+      <circle cx="50" cy="50" r="22" fill="none" stroke="#008000" stroke-width="2.4"/>
+      <text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-family="Georgia, serif" font-size="30" font-weight="700" fill="#0E0E0E">G</text>
+    </svg>
+  </template>
+
+</body>
+</html>
