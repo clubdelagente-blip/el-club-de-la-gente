@@ -81,6 +81,38 @@ function mostrarError(msg) {
 document.addEventListener("DOMContentLoaded", async () => {
   if (window.lucide) lucide.createIcons();
 
+  // Detectar sesión activa (callback de Google OAuth)
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    const user = session.user;
+    const nombre = user.user_metadata?.full_name || user.email || "Miembro";
+    const primerNombre = nombre.split(" ")[0];
+    const perfilGuardado = localStorage.getItem("ecdlg_perfil");
+
+    // Si ya tenía perfil guardado es login, si no es registro nuevo
+    const esLogin = !!perfilGuardado;
+
+    localStorage.setItem("ecdlg_perfil", JSON.stringify({
+      nombre, primerNombre, rol: "miembro",
+      email: user.email,
+    }));
+
+    if (esLogin) {
+      location.href = "Perfil.html";
+    } else {
+      // Guardar en tabla perfiles si es nuevo
+      await supabase.from("perfiles").upsert({
+        id: user.id,
+        nombre,
+        whatsapp: "",
+        rol: "miembro",
+        plan: localStorage.getItem("ecdlg_plan") || "basica",
+      });
+      location.href = "Planes.html";
+    }
+    return;
+  }
+
   const params = new URLSearchParams(location.search);
   const planElegido = params.get("plan");
   if (planElegido) localStorage.setItem("ecdlg_plan", planElegido);
