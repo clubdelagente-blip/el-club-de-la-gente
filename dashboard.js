@@ -1,6 +1,11 @@
 /* ============================================================
    EL CLUB DE LA GENTE — Módulo 4 · Lógica de perfil/dashboard
    ============================================================ */
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const supabase = createClient(
+  "https://egwaedadpqfwnbfosiao.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4"
+);
 
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
@@ -257,9 +262,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }));
   });
 
-  $("#seg-next").addEventListener("click", () => {
-    if (segBlock === SEG_TOTAL - 1) cerrarSeg();
-    else segMostrar(segBlock + 1);
+  $("#seg-next").addEventListener("click", async () => {
+    if (segBlock === SEG_TOTAL - 1) {
+      // Guardar fecha y WhatsApp en Supabase al finalizar
+      const fecha = $("#seg-fecha")?.value;
+      const whatsapp = $("#seg-whatsapp")?.value.trim();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && (fecha || whatsapp)) {
+        await supabase.from("perfiles").update({
+          ...(fecha && { fecha_nacimiento: fecha }),
+          ...(whatsapp && { whatsapp }),
+        }).eq("id", session.user.id);
+        // Actualizar localStorage también
+        const perfil = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
+        if (fecha) perfil.fechaISO = fecha;
+        if (whatsapp) perfil.whatsapp = whatsapp;
+        localStorage.setItem("ecdlg_perfil", JSON.stringify(perfil));
+      }
+      cerrarSeg();
+    } else {
+      segMostrar(segBlock + 1);
+    }
   });
   $("#seg-prev").addEventListener("click", () => segMostrar(segBlock - 1));
   $("#seg-skip").addEventListener("click", cerrarSeg);
