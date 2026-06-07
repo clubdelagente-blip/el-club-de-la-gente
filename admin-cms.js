@@ -283,6 +283,94 @@ function bindFormProg() {
 }
 
 /* ============================================================
+   PROFESIONALES
+   ============================================================ */
+let _profesionales = [];
+
+async function cargarProfesionales() {
+  const { data } = await supabase.from('profesionales').select('*').order('created_at', { ascending: false });
+  _profesionales = data || [];
+  const panel = $("#p-profesionales");
+  if (!panel) return;
+
+  const lista = _profesionales.length
+    ? _profesionales.map(p => `
+        <div style="display:flex;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
+          ${p.imagen_url ? `<img src="${p.imagen_url}" style="width:52px;height:52px;object-fit:cover;border-radius:50%;flex-shrink:0">` : `<span class="ad-av">${(p.nombre||'P')[0]}</span>`}
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;margin-bottom:2px">${p.nombre}</div>
+            <div style="font-size:12px;color:rgba(242,240,234,.4);margin-bottom:4px">${p.area||''}</div>
+            <div style="font-size:13px;color:rgba(242,240,234,.5)">${p.descripcion||''}</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+            <span class="ad-pill ${p.activo?'activo':'inactivo'}" data-tog-prof="${p.id}" data-activo="${p.activo}" style="cursor:pointer">
+              <span class="d"></span>${p.activo?'Activo':'Inactivo'}</span>
+            <button class="ad-btn" data-ed-prof="${p.id}">${ic("pencil")}</button>
+            <button class="ad-btn" data-rm-prof="${p.id}">${ic("trash-2")}</button>
+          </div>
+        </div>`).join('')
+    : `<p style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">No hay profesionales aún.</p>`;
+
+  panel.innerHTML = `
+    <div class="ad-toolbar"><div class="ad-spacer"></div>
+      <button class="ad-btn ad-btn--verde" id="btn-prof-add">${ic("plus")} Agregar profesional</button>
+    </div>${lista}`;
+  if (window.lucide) lucide.createIcons();
+}
+
+function htmlFormProf(p = {}) {
+  return `
+    <div class="ad-field"><label>Nombre completo *</label>
+      <input id="pf-nom" type="text" value="${(p.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Dr. Carlos Pérez"></div>
+    <div class="ad-field-2">
+      <div class="ad-field"><label>Área / Especialidad</label>
+        <input id="pf-area" type="text" value="${(p.area||'').replace(/"/g,'&quot;')}" placeholder="Ej: Medicina general"></div>
+      <div class="ad-field"><label>WhatsApp</label>
+        <input id="pf-wa" type="tel" value="${(p.whatsapp||'').replace(/"/g,'&quot;')}" placeholder="300 000 0000"></div>
+    </div>
+    <div class="ad-field"><label>Descripción / Servicios</label>
+      <textarea id="pf-desc" rows="3" placeholder="Describe los servicios y beneficios para los miembros">${p.descripcion||''}</textarea></div>
+    <div class="ad-field"><label>Foto de perfil (opcional)</label>
+      ${p.imagen_url ? `<img src="${p.imagen_url}" style="width:72px;height:72px;object-fit:cover;border-radius:50%;margin-bottom:10px">` : ''}
+      <input id="pf-img" type="file" accept="image/*" style="font-size:13px;color:var(--txt-60)">
+      <input type="hidden" id="pf-img-url" value="${p.imagen_url||''}"></div>
+    <div class="ad-toolbar" style="margin:6px 0 0"><div class="ad-spacer"></div>
+      <button class="ad-btn" id="pf-cancel">Cancelar</button>
+      <button class="ad-btn ad-btn--verde" id="pf-save" data-id="${p.id||''}">${ic("check")} ${p.id?'Guardar cambios':'Agregar profesional'}</button>
+    </div>`;
+}
+
+function bindFormProf() {
+  setTimeout(() => {
+    $("#pf-cancel")?.addEventListener('click', () => window.cerrarModal?.());
+    const btn = $("#pf-save");
+    btn?.addEventListener('click', async () => {
+      const nombre = $("#pf-nom")?.value.trim();
+      if (!nombre) { toast('El nombre es obligatorio'); return; }
+      btn.disabled = true;
+      let imagen_url = $("#pf-img-url")?.value || null;
+      const file = $("#pf-img")?.files?.[0];
+      if (file) try { imagen_url = await subirImagen(file); } catch(_) {}
+      const payload = {
+        nombre,
+        area:        $("#pf-area")?.value.trim() || null,
+        whatsapp:    $("#pf-wa")?.value.trim()   || null,
+        descripcion: $("#pf-desc")?.value.trim() || null,
+        imagen_url,
+        activo: true,
+      };
+      const id = btn.dataset.id;
+      id ? await supabase.from('profesionales').update(payload).eq('id', id)
+         : await supabase.from('profesionales').insert(payload);
+      window.cerrarModal?.();
+      cargarProfesionales();
+      toast(id ? 'Profesional actualizado ✓' : 'Profesional agregado ✓');
+    });
+    if (window.lucide) lucide.createIcons();
+  }, 80);
+}
+
+/* ============================================================
    SOBREESCRIBIR FUNCIONES DE admin.js
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
@@ -322,6 +410,18 @@ document.addEventListener('DOMContentLoaded', () => {
   window.renderProgramas = function() {
     $("#p-programas").innerHTML = `<div style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Cargando…</div>`;
     cargarProgramas();
+  };
+
+  // Sobreescribir renderProfesionales para conectar con Supabase
+  window.renderProfesionales = function() {
+    $("#p-profesionales").innerHTML = `<div style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Cargando…</div>`;
+    cargarProfesionales();
+  };
+
+  // Sobreescribir abrirAgregarProfesional
+  window.abrirAgregarProfesional = function() {
+    abrirModal('Agregar profesional', 'Se publicará en el directorio', htmlFormProf());
+    bindFormProf();
   };
 
   // Delegación de clicks para CMS (toggling, edit, delete, new)
@@ -370,6 +470,32 @@ document.addEventListener('DOMContentLoaded', () => {
     if (rmProg && confirm('¿Eliminar este programa?')) {
       await supabase.from('programas').delete().eq('id', rmProg.dataset.rmProg);
       cargarProgramas(); toast('Programa eliminado'); return;
+    }
+
+    // Nuevo profesional
+    if (e.target.closest('#btn-prof-add')) {
+      abrirModal('Agregar profesional', 'Se publicará en el directorio', htmlFormProf());
+      bindFormProf(); return;
+    }
+    // Editar profesional
+    const edProf = e.target.closest('[data-ed-prof]');
+    if (edProf) {
+      const p = _profesionales.find(x => x.id === edProf.dataset.edProf);
+      if (p) { abrirModal('Editar profesional', p.nombre, htmlFormProf(p)); bindFormProf(); }
+      return;
+    }
+    // Toggle profesional activo
+    const togProf = e.target.closest('[data-tog-prof]');
+    if (togProf) {
+      const activo = togProf.dataset.activo === 'true';
+      await supabase.from('profesionales').update({ activo: !activo }).eq('id', togProf.dataset.togProf);
+      cargarProfesionales(); return;
+    }
+    // Eliminar profesional
+    const rmProf = e.target.closest('[data-rm-prof]');
+    if (rmProf && confirm('¿Eliminar este profesional?')) {
+      await supabase.from('profesionales').delete().eq('id', rmProf.dataset.rmProf);
+      cargarProfesionales(); toast('Profesional eliminado'); return;
     }
 
     // Editar aliado
