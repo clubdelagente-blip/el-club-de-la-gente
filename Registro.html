@@ -267,6 +267,42 @@
 
         </section>
 
+        <!-- VISTA OLVIDÉ MI CONTRASEÑA -->
+        <section class="auth-view" id="view-forgot" data-screen-label="Recuperar acceso">
+          <button class="auth-role-back" id="forgot-back"><i data-lucide="arrow-left"></i> Volver</button>
+          <span class="auth-eyebrow">Recuperar acceso</span>
+          <h1 class="auth-title">¿Olvidaste tu contraseña?</h1>
+          <p class="auth-desc">Ingresa tu correo y te enviamos un enlace para crear una nueva contraseña.</p>
+          <form class="auth-form" id="form-forgot">
+            <div class="campo">
+              <label for="forgot-email">Correo electrónico</label>
+              <input type="email" id="forgot-email" placeholder="tu@email.com" autocomplete="email" required>
+            </div>
+            <button type="submit" class="btn btn--primario btn--bloque">Enviar enlace <span class="ar">&rarr;</span></button>
+          </form>
+          <p id="forgot-ok" style="display:none;text-align:center;color:#1f9d3c;font-size:14px;margin-top:16px;font-weight:600">
+            ✓ Revisa tu correo — el enlace vence en 1 hora.
+          </p>
+        </section>
+
+        <!-- VISTA NUEVA CONTRASEÑA (llega desde el link del email) -->
+        <section class="auth-view" id="view-recovery" data-screen-label="Nueva contraseña">
+          <span class="auth-eyebrow">Crea una nueva contraseña</span>
+          <h1 class="auth-title">Casi listo.</h1>
+          <p class="auth-desc">Elige una contraseña nueva para tu cuenta. Mínimo 8 caracteres.</p>
+          <form class="auth-form" id="form-recovery">
+            <div class="campo">
+              <label for="recovery-pass">Nueva contraseña</label>
+              <input type="password" id="recovery-pass" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required>
+            </div>
+            <div class="campo">
+              <label for="recovery-pass2">Confirmar contraseña</label>
+              <input type="password" id="recovery-pass2" placeholder="Repite la contraseña" autocomplete="new-password" required>
+            </div>
+            <button type="submit" class="btn btn--primario btn--bloque">Guardar contraseña <span class="ar">&rarr;</span></button>
+          </form>
+        </section>
+
         <!-- VISTA ÉXITO -->
         <section class="auth-view success" id="view-exito" data-screen-label="Éxito">
           <div class="success__check">

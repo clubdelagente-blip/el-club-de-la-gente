@@ -93,8 +93,14 @@ function mostrarError(msg) {
 document.addEventListener("DOMContentLoaded", async () => {
   if (window.lucide) lucide.createIcons();
 
-  // Detectar callback de Google OAuth (token viene en el hash del URL)
   supabase.auth.onAuthStateChange(async (event, session) => {
+    // Recuperación de contraseña — llega desde el link del email
+    if (event === "PASSWORD_RECOVERY") {
+      mostrarVista("view-recovery");
+      $(".stepper").style.visibility = "hidden";
+      return;
+    }
+
     if (event === "SIGNED_IN" && session) {
       const user = session.user;
       const proveedor = user.app_metadata?.provider;
@@ -305,6 +311,44 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     setLoading(btn, false, "Crear mi cuenta →");
     location.href = "Planes.html";
+  });
+
+  // ---------- OLVIDÉ MI CONTRASEÑA ----------
+  $(".auth-forgot")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    mostrarVista("view-forgot");
+    $(".stepper").style.visibility = "hidden";
+  });
+  $("#forgot-back")?.addEventListener("click", () => setTab("login"));
+
+  $("#form-forgot")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    const email = $("#forgot-email").value.trim();
+    if (!email) return;
+    setLoading(btn, true, "Enviar enlace →");
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "https://clubdelagente-blip.github.io/el-club-de-la-gente/Registro.html",
+    });
+    setLoading(btn, false, "Enviar enlace →");
+    // Mostramos éxito siempre (Supabase no revela si el email existe o no)
+    btn.style.display = "none";
+    $("#forgot-ok").style.display = "block";
+  });
+
+  // ---------- NUEVA CONTRASEÑA (desde el link del email) ----------
+  $("#form-recovery")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    const pass  = $("#recovery-pass").value;
+    const pass2 = $("#recovery-pass2").value;
+    if (pass.length < 8) { mostrarError("La contraseña debe tener al menos 8 caracteres."); return; }
+    if (pass !== pass2)  { mostrarError("Las contraseñas no coinciden."); return; }
+    setLoading(btn, true, "Guardar contraseña →");
+    const { error } = await supabase.auth.updateUser({ password: pass });
+    setLoading(btn, false, "Guardar contraseña →");
+    if (error) { mostrarError("Error al guardar: " + error.message); return; }
+    location.href = "Perfil.html";
   });
 
   // ---------- REGISTRO PROFESIONAL ----------
