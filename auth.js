@@ -175,31 +175,45 @@ document.addEventListener("DOMContentLoaded", async () => {
   }));
 
   // ---------- LOGIN ----------
+  // Ocultar campo contraseña cuando el usuario escribe solo su número
+  $("#login-user")?.addEventListener("input", (e) => {
+    const val = e.target.value.trim();
+    const esTelefono = !val.includes("@") && /^\d[\d\s-]*$/.test(val);
+    const campoPass = $("#login-pass")?.closest(".campo");
+    if (campoPass) campoPass.style.display = esTelefono ? "none" : "";
+    const forgot = $(".auth-forgot");
+    if (forgot) forgot.style.display = esTelefono ? "none" : "";
+  });
+
   $("#form-login")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector("button[type=submit]");
     const raw = $("#login-user").value.trim();
-    // Miembros se registraron con WhatsApp → email ficticio; profesionales usan email real
-    const email = raw.includes("@") ? raw : raw.replace(/\D/g, "") + "@clubdelagente.app";
-    const pass = $("#login-pass").value;
-    setLoading(btn, true, "Iniciar sesión →");
+    const digits = raw.replace(/\D/g, "");
+    const esMiembro = !raw.includes("@") && digits.length >= 7;
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    // Miembros: email ficticio + contraseña auto-generada en el registro
+    // Profesionales/aliados: email real + contraseña que eligieron
+    const email    = esMiembro ? digits + "@clubdelagente.app" : raw;
+    const password = esMiembro ? "Club" + digits + "!" : $("#login-pass").value;
+
+    setLoading(btn, true, "Iniciar sesión →");
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(btn, false, "Iniciar sesión →");
 
     if (error) {
-      mostrarError("Número, correo o contraseña incorrectos.");
+      mostrarError(esMiembro
+        ? "No encontramos una cuenta con ese número. ¿Ya te registraste?"
+        : "Correo o contraseña incorrectos.");
       return;
     }
 
     const perfil = data.user?.user_metadata || {};
-    const rol = perfil.rol || "miembro";
     localStorage.setItem("ecdlg_perfil", JSON.stringify({
       nombre: perfil.nombre || raw,
       primerNombre: (perfil.nombre || raw).split(" ")[0],
-      rol,
+      rol: perfil.rol || "miembro",
     }));
-    // Redirigir directo al perfil según rol
     location.href = "Perfil.html";
   });
 
