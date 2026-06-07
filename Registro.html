@@ -176,8 +176,23 @@
                 <input type="text" id="al-negocio" placeholder="Ej: Café del Parque">
               </div>
               <div class="campo">
-                <label for="al-cat">Categoría o tipo de negocio</label>
-                <input type="text" id="al-cat" placeholder="Ej: Restaurante, salud, ropa…">
+                <label>Categoría o tipo de negocio</label>
+                <div class="cat-grid" id="cat-grid">
+                  <button type="button" class="cat-opt" data-cat="Restaurante / Cafetería">Restaurante / Cafetería</button>
+                  <button type="button" class="cat-opt" data-cat="Salud y bienestar">Salud y bienestar</button>
+                  <button type="button" class="cat-opt" data-cat="Belleza y estética">Belleza y estética</button>
+                  <button type="button" class="cat-opt" data-cat="Barbería">Barbería</button>
+                  <button type="button" class="cat-opt" data-cat="Odontología">Odontología</button>
+                  <button type="button" class="cat-opt" data-cat="Veterinaria">Veterinaria</button>
+                  <button type="button" class="cat-opt" data-cat="Ropa y accesorios">Ropa y accesorios</button>
+                  <button type="button" class="cat-opt" data-cat="Supermercado / Tienda">Supermercado / Tienda</button>
+                  <button type="button" class="cat-opt" data-cat="Educación">Educación</button>
+                  <button type="button" class="cat-opt" data-cat="Deporte y gym">Deporte y gym</button>
+                  <button type="button" class="cat-opt" data-cat="Tecnología">Tecnología</button>
+                  <button type="button" class="cat-opt" data-cat="Otra" id="cat-otra-btn">Otra</button>
+                </div>
+                <input type="text" id="al-cat-otra" placeholder="Describe la categoría de tu negocio" style="display:none;margin-top:10px">
+                <input type="hidden" id="al-cat">
               </div>
               <div class="campo">
                 <label for="al-nombre">Nombre del responsable</label>

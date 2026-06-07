@@ -122,6 +122,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   $$("[data-role]").forEach(b => b.addEventListener("click", () => elegirRol(b.dataset.role)));
   $("#reg-back")?.addEventListener("click", resetRoles);
 
+  // Categorías aliado — selección múltiple
+  $$(".cat-opt").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const esOtra = btn.id === "cat-otra-btn";
+      btn.classList.toggle("is-on");
+      const otraInput = $("#al-cat-otra");
+      const alguienEsOtra = $("#cat-otra-btn")?.classList.contains("is-on");
+      if (otraInput) otraInput.style.display = alguienEsOtra ? "block" : "none";
+      const seleccionadas = $$(".cat-opt.is-on:not(#cat-otra-btn)").map(b => b.dataset.cat);
+      if (alguienEsOtra && otraInput?.value.trim()) seleccionadas.push(otraInput.value.trim());
+      const hidden = $("#al-cat");
+      if (hidden) hidden.value = seleccionadas.join(", ");
+    });
+  });
+  $("#al-cat-otra")?.addEventListener("input", (e) => {
+    const seleccionadas = $$(".cat-opt.is-on:not(#cat-otra-btn)").map(b => b.dataset.cat);
+    if (e.target.value.trim()) seleccionadas.push(e.target.value.trim());
+    const hidden = $("#al-cat");
+    if (hidden) hidden.value = seleccionadas.join(", ");
+  });
+
   // Google auth
   $$(".btn-google").forEach(b => b.addEventListener("click", async () => {
     const emailHint = $("#login-user")?.value.trim();

@@ -96,6 +96,11 @@
 .auth-check a { color: var(--tinta-80); text-decoration: underline; text-underline-offset: 2px; }
 .auth-check a:hover { color: var(--verde); }
 
+.cat-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.cat-opt { background: none; border: 1.5px solid var(--linea); border-radius: 20px; padding: 6px 14px; font-family: var(--cuerpo); font-size: 13px; color: var(--tinta-60); cursor: pointer; transition: all .18s; }
+.cat-opt:hover { border-color: var(--verde); color: var(--verde); }
+.cat-opt.is-on { background: var(--verde); border-color: var(--verde); color: #fff; font-weight: 600; }
+
 .auth-switch { text-align: center; font-size: 13.5px; color: var(--tinta-60); margin-top: 26px; }
 .auth-switch button { background: none; border: none; font-family: var(--cuerpo); font-size: 13.5px; font-weight: 600; color: var(--verde); text-decoration: underline; text-underline-offset: 3px; }
 .auth-switch button:hover { color: var(--verde-hover); }
