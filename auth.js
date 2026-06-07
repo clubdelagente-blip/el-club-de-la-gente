@@ -215,9 +215,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     setLoading(btn, false, "Iniciar sesión →");
 
     if (error) {
-      mostrarError(esMiembro
-        ? "No encontramos una cuenta con ese número. ¿Ya te registraste?"
-        : "Correo o contraseña incorrectos.");
+      const msg = error.message || "";
+      let texto;
+      if (msg.includes("Email not confirmed"))
+        texto = "Tu cuenta aún no está confirmada. Contacta al administrador.";
+      else if (msg.includes("Invalid login credentials"))
+        texto = esMiembro
+          ? "Número no encontrado o contraseña incorrecta."
+          : "Correo o contraseña incorrectos.";
+      else
+        texto = "Error al iniciar sesión: " + msg;
+      mostrarError(texto);
       return;
     }
 
