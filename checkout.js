@@ -138,19 +138,33 @@ document.addEventListener("DOMContentLoaded", () => {
     $$(".metodo").forEach(x => x.classList.toggle("is-on", x === m));
   }));
 
-  // Confirmar y pagar
+  // Confirmar y pagar — Wompi
   $("#form-pago").addEventListener("submit", (e) => {
     e.preventDefault();
-    const btn = $("#btn-pagar");
-    btn.disabled = true;
-    btn.innerHTML = `Procesando con Wompi…`;
-    setTimeout(() => {
-      pintarClubcard();
-      mostrar("view-exito", 4);
-      if (window.lucide) lucide.createIcons();
-      btn.disabled = false;
-      btn.innerHTML = `Confirmar y pagar <span class="ar">&rarr;</span>`;
-    }, 1100);
+    const p = PLANES[estado.plan];
+    const amountInCents = p.precio * 100;
+    const reference = `ECDLG-${Date.now()}-${Math.random().toString(36).substr(2,6).toUpperCase()}`;
+
+    const checkout = new WidgetCheckout({
+      currency: "COP",
+      amountInCents,
+      reference,
+      publicKey: "pub_test_yuvhTaT4Bg2JmPbJuxpeuodluZUX7HyE",
+      redirectUrl: "https://clubdelagente-blip.github.io/el-club-de-la-gente/Perfil.html?nuevo=1",
+    });
+
+    checkout.open((result) => {
+      const tx = result.transaction;
+      if (tx && tx.status === "APPROVED") {
+        localStorage.setItem("ecdlg_plan", estado.plan);
+        pintarClubcard();
+        mostrar("view-exito", 4);
+        if (window.lucide) lucide.createIcons();
+      } else {
+        const btn = $("#btn-pagar");
+        btn.innerHTML = `Confirmar y pagar <span class="ar">&rarr;</span>`;
+      }
+    });
   });
 
   // Personalización de la ClubCard (vista previa en vivo)
