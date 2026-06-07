@@ -47,7 +47,7 @@ function leerPerfil() {
   const m = JSON.parse(localStorage.getItem("ecdlg_miembro") || "{}");
   const plan = localStorage.getItem("ecdlg_plan") || "premium";
   const params = new URLSearchParams(location.search);
-  const rol = params.get("rol") || localStorage.getItem("ecdlg_rol") || "miembro";
+  const rol = params.get("rol") || p.rol || localStorage.getItem("ecdlg_rol") || "miembro";
   // Defaults de demostración si entran directo sin registrarse
   return {
     nombre: p.nombre || "Carlos Andrés Pérez",
@@ -204,7 +204,7 @@ function cerrarSeg() {
 document.addEventListener("DOMContentLoaded", () => {
   render();
   const u = leerPerfil();
-  irPanel(u.rol === "aliado" ? "negocio" : "inicio");
+  irPanel("inicio");
   if (window.lucide) lucide.createIcons();
 
   // Sidebar nav
