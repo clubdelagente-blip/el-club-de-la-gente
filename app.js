@@ -565,31 +565,26 @@ document.addEventListener("DOMContentLoaded", () => {
     // Quiero ser aliado
     if (e.target.closest("[data-aliado-form]")) {
       openSheet(sheetAliadoForm());
-      setTimeout(() => {
-        const sheet = document.querySelector(".sheet__body") || document.querySelector(".sheet");
-        if (!sheet) return;
-        sheet.querySelectorAll(".cat-opt").forEach(btn => {
-          btn.addEventListener("click", () => {
-            btn.classList.toggle("is-on");
-            const form = btn.closest("form");
-            const otraInput = form.querySelector(".cat-otra-input");
-            const esOtra = btn.dataset.cat === "Otra";
-            const otraOn = form.querySelector(".cat-opt--otra")?.classList.contains("is-on");
-            if (otraInput) otraInput.style.display = otraOn ? "block" : "none";
-            const sel = [...form.querySelectorAll(".cat-opt.is-on:not(.cat-opt--otra)")].map(b => b.dataset.cat);
-            if (otraOn && otraInput?.value.trim()) sel.push(otraInput.value.trim());
-            const hidden = form.querySelector(".cat-hidden");
-            if (hidden) hidden.value = sel.join(", ");
-          });
-        });
-        sheet.querySelector(".cat-otra-input")?.addEventListener("input", (ev) => {
-          const form = ev.target.closest("form");
+      sheetInner.querySelectorAll(".cat-opt").forEach(btn => {
+        btn.addEventListener("click", () => {
+          btn.classList.toggle("is-on");
+          const form = btn.closest("form");
+          const otraInput = form.querySelector(".cat-otra-input");
+          const otraOn = form.querySelector(".cat-opt--otra")?.classList.contains("is-on");
+          if (otraInput) otraInput.style.display = otraOn ? "block" : "none";
           const sel = [...form.querySelectorAll(".cat-opt.is-on:not(.cat-opt--otra)")].map(b => b.dataset.cat);
-          if (ev.target.value.trim()) sel.push(ev.target.value.trim());
+          if (otraOn && otraInput?.value.trim()) sel.push(otraInput.value.trim());
           const hidden = form.querySelector(".cat-hidden");
           if (hidden) hidden.value = sel.join(", ");
         });
-      }, 100);
+      });
+      sheetInner.querySelector(".cat-otra-input")?.addEventListener("input", (ev) => {
+        const form = ev.target.closest("form");
+        const sel = [...form.querySelectorAll(".cat-opt.is-on:not(.cat-opt--otra)")].map(b => b.dataset.cat);
+        if (ev.target.value.trim()) sel.push(ev.target.value.trim());
+        const hidden = form.querySelector(".cat-hidden");
+        if (hidden) hidden.value = sel.join(", ");
+      });
       return;
     }
 
