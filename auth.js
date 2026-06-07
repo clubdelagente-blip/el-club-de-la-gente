@@ -197,9 +197,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Guardar perfil en tabla perfiles
+    const mision = calcularMision(fechaISO);
+    const arquetipo = ARQUETIPOS[mision] || ARQUETIPOS[1];
+
     if (data.user) {
-      const mision = calcularMision(fechaISO);
-      const arquetipo = ARQUETIPOS[mision] || ARQUETIPOS[1];
       await supabase.from("perfiles").upsert({
         id: data.user.id,
         nombre,
@@ -207,14 +208,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         fecha_nacimiento: fechaISO || null,
         rol: "miembro",
         plan: localStorage.getItem("ecdlg_plan") || "basica",
+        mision: mision || null,
       });
-      localStorage.setItem("ecdlg_perfil", JSON.stringify({
-        nombre, primerNombre: nombre.split(" ")[0], fechaISO, whatsapp, mision, arquetipo
-      }));
     }
 
+    localStorage.setItem("ecdlg_perfil", JSON.stringify({
+      nombre, primerNombre: nombre.split(" ")[0], fechaISO, whatsapp, mision, arquetipo
+    }));
+
     setLoading(btn, false, "Crear mi cuenta →");
-    irAExito({ nombre, fechaISO, whatsapp, login: false });
+    // Redirigir directo a Planes
+    location.href = "Planes.html";
   });
 
   // ---------- REGISTRO ALIADO ----------
