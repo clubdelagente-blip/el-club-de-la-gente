@@ -11,6 +11,14 @@
   <link rel="stylesheet" href="admin.css?v=2">
   <style>
     body { background: #0A0A0A; }
+    /* Chips de categoría en modal */
+    .fa-chip {
+      background: none; border: 1.5px solid rgba(26,26,24,.18); border-radius: 20px;
+      padding: 6px 14px; font-family: var(--cuerpo); font-size: 13px;
+      color: rgba(26,26,24,.6); cursor: pointer; transition: all .15s;
+    }
+    .fa-chip:hover { border-color: #1f9d3c; color: #1f9d3c; }
+    .fa-chip.is-on { background: #1f9d3c; border-color: #1f9d3c; color: #fff; font-weight: 600; }
     /* Modal fondo blanco */
     .ad-modal {
       background: #fff !important;

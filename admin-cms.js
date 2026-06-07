@@ -72,16 +72,30 @@ async function cargarAliados() {
   if (window.lucide) lucide.createIcons();
 }
 
+const CATS = [
+  'Restaurante / Cafetería','Salud y bienestar','Belleza y estética',
+  'Barbería','Odontología','Veterinaria','Ropa y accesorios',
+  'Supermercado / Tienda','Educación','Deporte y gym','Tecnología',
+];
+
 function htmlFormAliado(a = {}) {
+  const seleccionadas = (a.categoria || '').split(',').map(s => s.trim()).filter(Boolean);
+  const chips = CATS.map(c => `
+    <button type="button" class="fa-chip${seleccionadas.includes(c) ? ' is-on' : ''}" data-cat="${c}">${c}</button>
+  `).join('') + `
+    <button type="button" class="fa-chip${seleccionadas.some(s => !CATS.includes(s)) ? ' is-on' : ''}" data-cat="__otra__" id="fa-chip-otra">Otra</button>`;
+
+  const otraVal = seleccionadas.find(s => !CATS.includes(s)) || '';
+
   return `
     <div class="ad-field"><label>Nombre del negocio *</label>
       <input id="fa-nombre" type="text" value="${(a.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Café del Parque"></div>
-    <div class="ad-field-2">
-      <div class="ad-field"><label>Categoría</label>
-        <input id="fa-cat" type="text" value="${(a.categoria||'').replace(/"/g,'&quot;')}" placeholder="Ej: Restaurante"></div>
-      <div class="ad-field"><label>Descuento</label>
-        <input id="fa-dsc" type="text" value="${(a.descuento||'').replace(/"/g,'&quot;')}" placeholder="Ej: 20%"></div>
-    </div>
+    <div class="ad-field"><label>Categoría</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:2px" id="fa-chips">${chips}</div>
+      <input type="text" id="fa-cat-otra" placeholder="Describe la categoría" style="margin-top:10px;display:${otraVal?'block':'none'};width:100%;font-family:var(--cuerpo);font-size:13.5px;color:#1a1a18;padding:10px 14px;border:1.5px solid rgba(26,26,24,.13);border-radius:8px;background:#f5f4f0" value="${otraVal}">
+      <input type="hidden" id="fa-cat" value="${(a.categoria||'').replace(/"/g,'&quot;')}"></div>
+    <div class="ad-field"><label>Descuento</label>
+      <input id="fa-dsc" type="text" value="${(a.descuento||'').replace(/"/g,'&quot;')}" placeholder="Ej: 20%"></div>
     <div class="ad-field"><label>Descripción</label>
       <textarea id="fa-desc" rows="3" placeholder="Describe el negocio y sus beneficios para los miembros">${a.descripcion||''}</textarea></div>
     <div class="ad-field-2">
@@ -100,8 +114,29 @@ function htmlFormAliado(a = {}) {
     </div>`;
 }
 
+function actualizarCatHidden() {
+  const sel = [...document.querySelectorAll('#fa-chips .fa-chip.is-on')].map(b => b.dataset.cat);
+  const cats = sel.filter(c => c !== '__otra__');
+  const otraInput = $("#fa-cat-otra");
+  if (sel.includes('__otra__') && otraInput?.value.trim()) cats.push(otraInput.value.trim());
+  const hidden = $("#fa-cat");
+  if (hidden) hidden.value = cats.join(', ');
+}
+
 function bindFormAliado() {
   setTimeout(() => {
+    // Chips de categoría
+    document.querySelectorAll('#fa-chips .fa-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        chip.classList.toggle('is-on');
+        const otraInput = $("#fa-cat-otra");
+        const otraOn = $("#fa-chip-otra")?.classList.contains('is-on');
+        if (otraInput) otraInput.style.display = otraOn ? 'block' : 'none';
+        actualizarCatHidden();
+      });
+    });
+    $("#fa-cat-otra")?.addEventListener('input', actualizarCatHidden);
+
     $("#fa-cancel")?.addEventListener('click', () => window.cerrarModal?.());
     const btn = $("#fa-save");
     btn?.addEventListener('click', async () => {
