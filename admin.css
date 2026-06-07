@@ -266,17 +266,51 @@
    ============================================================ */
 .ad-modal-ov { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity .3s; display: grid; place-items: center; padding: 24px; }
 .ad-modal-ov.is-open { opacity: 1; pointer-events: auto; }
-.ad-modal { background: var(--surface); border: 1px solid var(--line-2); border-radius: 16px; max-width: 540px; width: 100%; max-height: 88vh; overflow-y: auto; transform: translateY(16px) scale(.98); transition: transform .3s; }
+.ad-modal {
+  background: #fff;
+  --modal-txt: #1a1a18;
+  --modal-txt-60: rgba(26,26,24,.55);
+  --modal-line: rgba(26,26,24,.13);
+  --modal-bg-field: #f5f4f0;
+  color: var(--modal-txt);
+  border: none;
+  border-radius: 16px;
+  max-width: 540px; width: 100%; max-height: 88vh; overflow-y: auto;
+  transform: translateY(16px) scale(.98); transition: transform .3s;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
 .ad-modal-ov.is-open .ad-modal { transform: none; }
-.ad-modal__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 24px 26px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); }
-.ad-modal__close { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--line); background: none; color: var(--txt-60); display: grid; place-items: center; cursor: pointer; flex: none; }
-.ad-modal__close:hover { color: var(--txt); background: var(--surface-2); }
+.ad-modal__head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  padding: 24px 26px; border-bottom: 1px solid var(--modal-line);
+  position: sticky; top: 0; background: #fff;
+}
+.ad-modal__head h1 { color: var(--modal-txt) !important; }
+.ad-modal__head p  { color: var(--modal-txt-60) !important; }
+.ad-modal__close {
+  width: 36px; height: 36px; border-radius: 8px;
+  border: 1px solid var(--modal-line); background: none;
+  color: var(--modal-txt-60); display: grid; place-items: center; cursor: pointer; flex: none;
+}
+.ad-modal__close:hover { color: var(--modal-txt); background: #f0eeea; }
 .ad-modal__body { padding: 24px 26px 28px; }
 .ad-field { margin-bottom: 16px; }
-.ad-field label { display: block; font-size: 12px; font-weight: 600; color: var(--txt-60); margin-bottom: 7px; }
-.ad-field input, .ad-field select, .ad-field textarea { width: 100%; font-family: var(--cuerpo); font-size: 13.5px; color: var(--txt); padding: 12px 14px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--bg); transition: border-color .2s; }
-.ad-field input:focus, .ad-field select:focus, .ad-field textarea:focus { outline: none; border-color: var(--verde-claro); }
+.ad-field label { display: block; font-size: 12px; font-weight: 600; color: var(--modal-txt-60); margin-bottom: 7px; }
+.ad-field input, .ad-field select, .ad-field textarea {
+  width: 100%; font-family: var(--cuerpo); font-size: 13.5px;
+  color: var(--modal-txt); padding: 12px 14px;
+  border: 1.5px solid var(--modal-line); border-radius: 8px;
+  background: var(--modal-bg-field); transition: border-color .2s;
+}
+.ad-field input::placeholder, .ad-field textarea::placeholder { color: rgba(26,26,24,.3); }
+.ad-field input:focus, .ad-field select:focus, .ad-field textarea:focus { outline: none; border-color: var(--verde); }
+.ad-field input[type=file] { background: none; border: 1.5px dashed var(--modal-line); color: var(--modal-txt-60); cursor: pointer; }
 .ad-field-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ad-modal .ad-btn { background: #f0eeea; border-color: var(--modal-line); color: var(--modal-txt); }
+.ad-modal .ad-btn:hover { background: #e8e5df; }
+.ad-modal .ad-btn--verde { background: var(--verde); border-color: var(--verde); color: #fff; }
+.ad-modal .ad-btn--verde:hover { background: #178a32; border-color: #178a32; }
+.ad-modal .ad-toolbar { border-top: 1px solid var(--modal-line); padding-top: 16px; margin-top: 4px; }
 .ad-modal__mision { display: flex; align-items: center; gap: 18px; padding: 18px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 20px; }
 .ad-modal__mision-num { font-family: var(--display); font-size: 52px; font-weight: 600; color: var(--verde-claro); line-height: .8; }
 .ad-modal__mision-name { font-family: var(--display); font-size: 22px; font-weight: 600; }
