@@ -198,6 +198,33 @@ async function cargarAliados(){
     </div></td></tr>`).join('');
   if(window.lucide)lucide.createIcons();
 }
+async function cargarPostulaciones(){
+  const{data}=await supabase.from('aliados_postulaciones').select('*').eq('estado','pendiente').order('created_at',{ascending:false});
+  const post=data||[];const panel=$("#p-aliados");if(!panel||!post.length)return;
+  const tableWrap=panel.querySelector('.ad-table-wrap');if(!tableWrap)return;
+  const html=`<div id="postulaciones-wrap" style="margin-bottom:20px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(242,240,234,.35);margin-bottom:10px">Postulaciones pendientes (${post.length})</div>
+    ${post.map(p=>{
+      const wa=(p.whatsapp||'').replace(/\D/g,'');
+      const msg=encodeURIComponent(`Hola ${p.nombre_responsable||''},\n\nLa postulación de *${p.nombre_negocio||'tu negocio'}* en El Club de la Gente fue aprobada ✅\n\nPara activar tu perfil de aliado y aparecer en el directorio, realiza el pago de membresía mensual ($20.000 COP) aquí:\n\n[Agrega el link de pago aquí]\n\n¡Bienvenido al Club!\nEl equipo de El Club de la Gente`);
+      const waUrl=wa?`https://wa.me/57${wa}?text=${msg}`:'';
+      return `<div style="display:flex;gap:12px;padding:14px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:10px;margin-bottom:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;margin-bottom:2px">${p.nombre_negocio||'(sin nombre)'}</div>
+          <div style="font-size:12px;color:rgba(242,240,234,.4)">${p.categoria||''} · ${p.nombre_responsable||''} · ${p.whatsapp||''}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+          <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">Pendiente</span>
+          ${waUrl?`<button class="ad-btn ad-btn--verde" data-aprobar-post="${p.id}" data-wa-post="${waUrl}" data-nom-post="${(p.nombre_negocio||'').replace(/"/g,'&quot;')}" data-cat-post="${(p.categoria||'').replace(/"/g,'&quot;')}" data-tel-post="${(p.whatsapp||'').replace(/"/g,'&quot;')}" style="font-size:12px">${ic('message-circle')} Aprobar&nbsp;+ WA</button>`:`<span style="font-size:11px;color:rgba(242,240,234,.3)">Sin WhatsApp</span>`}
+          <button class="ad-btn" data-rechazar-post="${p.id}" style="font-size:12px" title="Rechazar">${ic('x')}</button>
+        </div>
+      </div>`;
+    }).join('')}
+    <hr style="border:none;border-top:1px solid rgba(242,240,234,.08);margin:16px 0 0">
+  </div>`;
+  tableWrap.insertAdjacentHTML('beforebegin',html);
+  if(window.lucide)lucide.createIcons();
+}
 function htmlFormAliado(a={}){
   const sel=(a.categoria||'').split(',').map(s=>s.trim()).filter(Boolean);
   const chips=CATS.map(c=>`<button type="button" class="fa-chip${sel.includes(c)?' is-on':''}" data-cat="${c}">${c}</button>`).join('')+`<button type="button" class="fa-chip${sel.some(s=>!CATS.includes(s))?' is-on':''}" data-cat="__otra__" id="fa-chip-otra">Otra</button>`;
@@ -325,13 +352,27 @@ function bindFormProg(){setTimeout(()=>{
 async function cargarProfesionales(){
   const{data}=await supabase.from('profesionales').select('*').order('created_at',{ascending:false});
   _profesionales=data||[];const panel=$("#p-profesionales");if(!panel)return;
-  const lista=_profesionales.length?_profesionales.map(p=>`<div style="display:flex;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
+  const EC={pendiente:'#f59e0b',aprobado:'#3b82f6',activo:'#1f9d3c'};
+  const EL={pendiente:'Pendiente',aprobado:'Aprobado — pendiente de pago',activo:'Activo'};
+  const lista=_profesionales.length?_profesionales.map(p=>{
+    const est=p.estado||(p.activo?'activo':'pendiente');
+    const col=EC[est]||EC.pendiente;const lbl=EL[est]||'Pendiente';
+    const wa=(p.whatsapp||'').replace(/\D/g,'');
+    const msg=encodeURIComponent(`Hola ${p.nombre}, tu perfil de profesional en El Club de la Gente fue aprobado ✅\n\nPara activar tu perfil y aparecer en el directorio, realiza el pago de tu membresía mensual ($20.000 COP) aquí:\n\n[Agrega el link de pago aquí]\n\n¡Bienvenido al Club!\nEl equipo de El Club de la Gente`);
+    const waUrl=wa?`https://wa.me/57${wa}?text=${msg}`:'';
+    return `<div style="display:flex;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
     ${p.imagen_url?`<img src="${p.imagen_url}" style="width:52px;height:52px;object-fit:cover;border-radius:50%;flex-shrink:0">`:`<span class="ad-av">${(p.nombre||'P')[0]}</span>`}
-    <div style="flex:1;min-width:0"><div style="font-weight:600;margin-bottom:2px">${p.nombre}</div><div style="font-size:12px;color:rgba(242,240,234,.4);margin-bottom:4px">${p.area||''}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${p.descripcion||''}</div></div>
-    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-      <span class="ad-pill ${p.activo?'activo':'inactivo'}" data-tog-prof="${p.id}" data-activo="${p.activo}" style="cursor:pointer"><span class="d"></span>${p.activo?'Activo':'Inactivo'}</span>
-      <button class="ad-btn" data-ed-prof="${p.id}">${ic("pencil")}</button><button class="ad-btn" data-rm-prof="${p.id}">${ic("trash-2")}</button>
-    </div></div>`).join(''):`<p style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">No hay profesionales aún.</p>`;
+    <div style="flex:1;min-width:0"><div style="font-weight:600;margin-bottom:2px">${p.nombre}</div><div style="font-size:12px;color:rgba(242,240,234,.4);margin-bottom:4px">${p.area||''} ${p.whatsapp?`· ${p.whatsapp}`:''}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${p.descripcion||''}</div></div>
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0">
+      <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${col}22;color:${col};border:1px solid ${col}55">${lbl}</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+        ${est==='pendiente'&&waUrl?`<button class="ad-btn ad-btn--verde" data-aprobar-prof="${p.id}" data-wa-prof="${waUrl}" style="font-size:12px">${ic('message-circle')} Aprobar&nbsp;+ WA</button>`:''}
+        ${est==='aprobado'?`<button class="ad-btn ad-btn--verde" data-activar-prof="${p.id}" style="font-size:12px">${ic('check')} Activar</button>`:''}
+        ${est==='activo'?`<button class="ad-btn" data-desactivar-prof="${p.id}" style="font-size:12px">${ic('eye-off')} Desactivar</button>`:''}
+        <button class="ad-btn" data-ed-prof="${p.id}">${ic("pencil")}</button><button class="ad-btn" data-rm-prof="${p.id}">${ic("trash-2")}</button>
+      </div>
+    </div></div>`;
+  }).join(''):`<p style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">No hay profesionales aún.</p>`;
   panel.innerHTML=`<div class="ad-toolbar"><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="btn-prof-add">${ic("plus")} Agregar profesional</button></div>${lista}`;
   if(window.lucide)lucide.createIcons();
 }
@@ -362,7 +403,7 @@ function bindFormProf(){setTimeout(()=>{
 document.addEventListener('DOMContentLoaded',()=>{
   window.renderAliados=function(){
     $("#p-aliados").innerHTML=`<div class="ad-toolbar"><div class="ad-search-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="a-search" placeholder="Buscar aliado…" autocomplete="off"></div><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="a-add"><i data-lucide="plus"></i> Agregar aliado</button></div><div class="ad-table-wrap"><table class="ad-table"><thead><tr><th>Establecimiento</th><th>Categoría</th><th>Descuento</th><th>WhatsApp</th><th style="text-align:right">Estado</th></tr></thead><tbody id="a-body"><tr><td colspan="5" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody></table></div>`;
-    cargarAliados();
+    cargarAliados();cargarPostulaciones();
   };
   window.abrirAgregarAliado=function(){abrirModal('Agregar aliado','Se publicará en el directorio',htmlFormAliado());bindFormAliado();};
   window.renderContenido=function(){$("#p-contenido").innerHTML=`<div style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Cargando…</div>`;cargarAnuncios();};
@@ -379,6 +420,11 @@ document.addEventListener('DOMContentLoaded',()=>{
     const togProg=e.target.closest('[data-tog-prog]');if(togProg){const activo=togProg.dataset.activo==='true';await supabase.from('programas').update({activo:!activo}).eq('id',togProg.dataset.togProg);cargarProgramas();return;}
     const rmProg=e.target.closest('[data-rm-prog]');if(rmProg&&confirm('¿Eliminar este programa?')){await supabase.from('programas').delete().eq('id',rmProg.dataset.rmProg);cargarProgramas();toast('Programa eliminado');return;}
     if(e.target.closest('#btn-prof-add')){abrirModal('Agregar profesional','Se publicará en el directorio',htmlFormProf());bindFormProf();return;}
+    const aprobarProf=e.target.closest('[data-aprobar-prof]');if(aprobarProf){const id=aprobarProf.dataset.aprobarProf;const waUrl=aprobarProf.dataset.waProf;await supabase.from('profesionales').update({estado:'aprobado'}).eq('id',id);if(waUrl)window.open(waUrl,'_blank');cargarProfesionales();toast('Profesional aprobado — notificando por WhatsApp…');return;}
+    const activarProf=e.target.closest('[data-activar-prof]');if(activarProf){await supabase.from('profesionales').update({estado:'activo',activo:true}).eq('id',activarProf.dataset.activarProf);cargarProfesionales();toast('Profesional activado ✓');return;}
+    const desactivarProf=e.target.closest('[data-desactivar-prof]');if(desactivarProf){await supabase.from('profesionales').update({estado:'pendiente',activo:false}).eq('id',desactivarProf.dataset.desactivarProf);cargarProfesionales();toast('Profesional desactivado');return;}
+    const aprobarPost=e.target.closest('[data-aprobar-post]');if(aprobarPost){const id=aprobarPost.dataset.aprobarPost;const waUrl=aprobarPost.dataset.waPost;const nombre=aprobarPost.dataset.nomPost;const categoria=aprobarPost.dataset.catPost;const whatsapp=aprobarPost.dataset.telPost;await supabase.from('aliados').insert({nombre,categoria,whatsapp,activo:false});await supabase.from('aliados_postulaciones').update({estado:'aprobado'}).eq('id',id);if(waUrl)window.open(waUrl,'_blank');window.renderAliados?.();toast('Aliado aprobado — notificando por WhatsApp…');return;}
+    const rechazarPost=e.target.closest('[data-rechazar-post]');if(rechazarPost&&confirm('¿Rechazar esta postulación?')){await supabase.from('aliados_postulaciones').update({estado:'rechazado'}).eq('id',rechazarPost.dataset.rechazarPost);window.renderAliados?.();toast('Postulación rechazada');return;}
     const edProf=e.target.closest('[data-ed-prof]');if(edProf){const p=_profesionales.find(x=>x.id===edProf.dataset.edProf);if(p){abrirModal('Editar profesional',p.nombre,htmlFormProf(p));bindFormProf();}return;}
     const togProf=e.target.closest('[data-tog-prof]');if(togProf){const activo=togProf.dataset.activo==='true';await supabase.from('profesionales').update({activo:!activo}).eq('id',togProf.dataset.togProf);cargarProfesionales();return;}
     const rmProf=e.target.closest('[data-rm-prof]');if(rmProf&&confirm('¿Eliminar este profesional?')){await supabase.from('profesionales').delete().eq('id',rmProf.dataset.rmProf);cargarProfesionales();toast('Profesional eliminado');return;}
