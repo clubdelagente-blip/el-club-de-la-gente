@@ -211,20 +211,30 @@ document.addEventListener("DOMContentLoaded", async () => {
     const password = esMiembro ? "Club" + digits + "!" : $("#login-pass").value;
 
     setLoading(btn, true, "Iniciar sesión →");
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    let data, error;
+
+    ({ data, error } = await supabase.auth.signInWithPassword({ email, password }));
+
+    // Fallback: cuentas antiguas con espacios en el email
+    if (error && esMiembro) {
+      const emailRaw = raw + "@clubdelagente.app";
+      const r2 = await supabase.auth.signInWithPassword({ email: emailRaw, password });
+      if (!r2.error) { data = r2.data; error = null; }
+    }
+
     setLoading(btn, false, "Iniciar sesión →");
 
     if (error) {
       const msg = error.message || "";
       let texto;
       if (msg.includes("Email not confirmed"))
-        texto = "Tu cuenta aún no está confirmada. Contacta al administrador.";
+        texto = "Cuenta sin confirmar. Escríbenos al WhatsApp del Club para activarla.";
       else if (msg.includes("Invalid login credentials"))
         texto = esMiembro
-          ? "Número no encontrado o contraseña incorrecta."
+          ? "Número no encontrado. ¿Te registraste con este número?"
           : "Correo o contraseña incorrectos.";
       else
-        texto = "Error al iniciar sesión: " + msg;
+        texto = "Error: " + msg;
       mostrarError(texto);
       return;
     }
@@ -245,14 +255,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const nombre = $("#campo-nombre").value.trim();
     const fechaISO = $("#campo-fecha").value;
     const whatsapp = $("#campo-wa").value.trim();
-    const email = whatsapp + "@clubdelagente.app";
+    const waDigits = whatsapp.replace(/\D/g, "");
+    const email = waDigits + "@clubdelagente.app";   // siempre solo dígitos
 
     if (!nombre || !whatsapp) { mostrarError("Completa todos los campos."); return; }
 
     setLoading(btn, true, "Crear mi cuenta →");
 
-    // Generamos password temporal con el número de WhatsApp
-    const password = "Club" + whatsapp.replace(/\D/g, "") + "!";
+    const password = "Club" + waDigits + "!";
 
     const { data, error } = await supabase.auth.signUp({
       email,
