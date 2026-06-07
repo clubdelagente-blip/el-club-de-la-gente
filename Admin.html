@@ -9,7 +9,49 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="admin.css?v=2">
-  <style> body { background: #0A0A0A; } </style>
+  <style>
+    body { background: #0A0A0A; }
+    /* Modal fondo blanco */
+    .ad-modal {
+      background: #fff !important;
+      color: #1a1a18 !important;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35) !important;
+      border: none !important;
+    }
+    .ad-modal__head {
+      background: #fff !important;
+      border-bottom: 1px solid rgba(26,26,24,.12) !important;
+    }
+    .ad-modal__head h1 { color: #1a1a18 !important; }
+    .ad-modal__head p  { color: rgba(26,26,24,.5) !important; }
+    .ad-modal__close {
+      border-color: rgba(26,26,24,.15) !important;
+      color: rgba(26,26,24,.5) !important;
+    }
+    .ad-modal__close:hover { background: #f0eeea !important; color: #1a1a18 !important; }
+    .ad-modal .ad-field label { color: rgba(26,26,24,.55) !important; }
+    .ad-modal .ad-field input,
+    .ad-modal .ad-field select,
+    .ad-modal .ad-field textarea {
+      background: #f5f4f0 !important;
+      color: #1a1a18 !important;
+      border: 1.5px solid rgba(26,26,24,.13) !important;
+    }
+    .ad-modal .ad-field input::placeholder,
+    .ad-modal .ad-field textarea::placeholder { color: rgba(26,26,24,.3) !important; }
+    .ad-modal .ad-field input:focus,
+    .ad-modal .ad-field textarea:focus { border-color: #1f9d3c !important; }
+    .ad-modal .ad-field input[type=file] {
+      background: none !important;
+      border: 1.5px dashed rgba(26,26,24,.2) !important;
+      color: rgba(26,26,24,.5) !important;
+    }
+    .ad-modal .ad-btn { background: #f0eeea !important; border-color: rgba(26,26,24,.12) !important; color: #1a1a18 !important; }
+    .ad-modal .ad-btn:hover { background: #e5e2dc !important; }
+    .ad-modal .ad-btn--verde { background: #1f9d3c !important; border-color: #1f9d3c !important; color: #fff !important; }
+    .ad-modal .ad-btn--verde:hover { background: #178a32 !important; }
+    .ad-modal .ad-toolbar { border-top: 1px solid rgba(26,26,24,.1) !important; padding-top: 16px !important; margin-top: 4px !important; }
+  </style>
 </head>
 <body>
 
