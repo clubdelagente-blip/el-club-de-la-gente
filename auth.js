@@ -52,11 +52,23 @@ function elegirRol(rol) {
   localStorage.setItem("ecdlg_rol", rol);
   $("#reg-roles").hidden = true;
   $("#reg-form-wrap").hidden = false;
-  const esAliado = rol === "aliado";
-  $("#reg-eyebrow").textContent = esAliado ? "Crea tu cuenta · Aliado" : "Crea tu cuenta · Miembro";
-  $("#reg-title").textContent = esAliado ? "Suma tu negocio." : "Únete al club.";
-  $("#form-registro").hidden = esAliado;
-  $("#form-aliado").hidden = !esAliado;
+
+  const eyebrow = { miembro: "Crea tu cuenta · Miembro", aliado: "Crea tu cuenta · Aliado", profesional: "Crea tu cuenta · Profesional" };
+  const title   = { miembro: "Únete al club.", aliado: "Suma tu negocio.", profesional: "Conecta con tus clientes." };
+  $("#reg-eyebrow").textContent = eyebrow[rol] || eyebrow.miembro;
+  $("#reg-title").textContent   = title[rol]   || title.miembro;
+
+  $("#form-registro").hidden    = rol !== "miembro";
+  $("#form-aliado").hidden      = rol !== "aliado";
+  $("#form-profesional").hidden = rol !== "profesional";
+
+  // Google no aplica para aliado / profesional
+  const gBtn = $(".btn-google[data-ctx='registro']");
+  const dividerEl = gBtn?.nextElementSibling;
+  const showGoogle = rol === "miembro";
+  if (gBtn) gBtn.style.display = showGoogle ? "" : "none";
+  if (dividerEl?.classList.contains("auth-divider")) dividerEl.style.display = showGoogle ? "" : "none";
+
   if (window.lucide) lucide.createIcons();
 }
 
@@ -141,6 +153,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (e.target.value.trim()) seleccionadas.push(e.target.value.trim());
     const hidden = $("#al-cat");
     if (hidden) hidden.value = seleccionadas.join(", ");
+  });
+
+  // Área profesional — mostrar campo libre si elige "Otra"
+  $("#prof-area")?.addEventListener("change", (e) => {
+    const otraInput = $("#prof-area-otra");
+    if (otraInput) otraInput.style.display = e.target.value === "Otra" ? "block" : "none";
   });
 
   // Google auth
@@ -240,6 +258,63 @@ document.addEventListener("DOMContentLoaded", async () => {
     location.href = "Planes.html";
   });
 
+  // ---------- REGISTRO PROFESIONAL ----------
+  $("#form-profesional")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    const nombre   = $("#prof-nombre").value.trim();
+    const areaBase = $("#prof-area").value;
+    const area     = areaBase === "Otra" ? $("#prof-area-otra").value.trim() : areaBase;
+    const desc     = $("#prof-desc").value.trim();
+    const wa       = $("#prof-wa").value.trim();
+    const email    = $("#prof-email").value.trim();
+    const pass     = $("#prof-pass").value;
+
+    if (!nombre || !area || !wa || !email || !pass) {
+      mostrarError("Completa todos los campos obligatorios."); return;
+    }
+    if (pass.length < 8) { mostrarError("La contraseña debe tener al menos 8 caracteres."); return; }
+
+    setLoading(btn, true, "Registrarme como profesional →");
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: pass,
+      options: { data: { nombre, rol: "profesional" } }
+    });
+
+    if (error) {
+      setLoading(btn, false, "Registrarme como profesional →");
+      mostrarError(error.message === "User already registered"
+        ? "Este correo ya tiene cuenta. Inicia sesión."
+        : "Error al crear la cuenta. Intenta de nuevo.");
+      return;
+    }
+
+    try {
+      if (data.user) {
+        await supabase.from("profesionales").insert({
+          user_id: data.user.id,
+          nombre,
+          area,
+          descripcion: desc,
+          whatsapp: wa,
+          activo: false,
+        });
+        await supabase.from("perfiles").upsert({
+          id: data.user.id,
+          nombre,
+          whatsapp: wa,
+          rol: "profesional",
+        });
+      }
+    } catch (_) {}
+
+    setLoading(btn, false, "Registrarme como profesional →");
+    localStorage.setItem("ecdlg_perfil", JSON.stringify({ nombre, primerNombre: nombre.split(" ")[0], rol: "profesional" }));
+    irAExitoProfesional(nombre);
+  });
+
   // ---------- REGISTRO ALIADO ----------
   $("#form-aliado")?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -305,6 +380,22 @@ function irAExitoAliado(negocio, nombre) {
   const cta = $("#exito-cta");
   cta.setAttribute("href", "Perfil.html?rol=aliado");
   cta.innerHTML = `Ver mi panel de aliado <span class="ar">&rarr;</span>`;
+  $(".stepper").style.visibility = "hidden";
+  mostrarVista("view-exito");
+  if (window.lucide) lucide.createIcons();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function irAExitoProfesional(nombre) {
+  const primerNombre = (nombre || "").split(" ")[0] || "Profesional";
+  $("#exito-eyebrow").textContent = "Registro recibido";
+  $("#exito-nombre").textContent = `¡Gracias, ${primerNombre}!`;
+  $("#exito-msg").innerHTML = `Tu cuenta ha sido creada. En cuanto nuestro equipo revise y apruebe tu perfil, aparecerás en el directorio de profesionales del Club.`;
+  $("#exito-wa-title").textContent = "Mientras tanto, prepara tu perfil";
+  $("#exito-wa-msg").textContent = "Puedes acceder ya a tu panel de profesional e ingresar tu foto, descripción y datos de contacto antes de que sea publicado.";
+  const cta = $("#exito-cta");
+  cta.setAttribute("href", "Perfil.html");
+  cta.innerHTML = `Ir a mi consultorio <span class="ar">&rarr;</span>`;
   $(".stepper").style.visibility = "hidden";
   mostrarVista("view-exito");
   if (window.lucide) lucide.createIcons();

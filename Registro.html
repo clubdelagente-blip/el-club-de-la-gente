@@ -130,6 +130,14 @@
                 </span>
                 <i class="role-card__ar" data-lucide="arrow-right"></i>
               </button>
+              <button class="role-card" data-role="profesional">
+                <span class="role-card__ic"><i data-lucide="briefcase-medical"></i></span>
+                <span class="role-card__txt">
+                  <span class="role-card__name">Unirme como profesional</span>
+                  <span class="role-card__desc">Ofrece tus servicios a los miembros con tarifas especiales.</span>
+                </span>
+                <i class="role-card__ar" data-lucide="arrow-right"></i>
+              </button>
             </div>
             <div class="auth-switch">¿Ya eres miembro? <button data-goto="login">Inicia sesión</button></div>
           </div>
@@ -204,6 +212,56 @@
               </div>
               <button type="submit" class="btn btn--primario btn--bloque">Enviar postulación <span class="ar">&rarr;</span></button>
               <p class="auth-legal">Revisaremos tu caso en particular y te contactaremos por WhatsApp.</p>
+            </form>
+
+            <!-- Formulario PROFESIONAL -->
+            <form class="auth-form" id="form-profesional" hidden>
+              <div class="campo">
+                <label for="prof-nombre">Nombre completo</label>
+                <input type="text" id="prof-nombre" placeholder="Como aparece en tu tarjeta profesional" autocomplete="name">
+              </div>
+              <div class="campo">
+                <label for="prof-area">Área o especialidad</label>
+                <select id="prof-area" style="width:100%;padding:12px 14px;border:1.5px solid rgba(26,26,24,.18);border-radius:10px;font-size:14px;background:#fff;color:inherit;appearance:auto">
+                  <option value="">Selecciona tu área</option>
+                  <option>Medicina general</option>
+                  <option>Odontología</option>
+                  <option>Psicología</option>
+                  <option>Nutrición y dietética</option>
+                  <option>Fisioterapia</option>
+                  <option>Dermatología</option>
+                  <option>Optometría</option>
+                  <option>Derecho</option>
+                  <option>Contabilidad y finanzas</option>
+                  <option>Arquitectura y diseño</option>
+                  <option>Entrenamiento personal</option>
+                  <option>Educación y tutorías</option>
+                  <option value="Otra">Otra especialidad</option>
+                </select>
+                <input type="text" id="prof-area-otra" placeholder="Describe tu especialidad" style="display:none;margin-top:8px;width:100%;padding:12px 14px;border:1.5px solid rgba(26,26,24,.18);border-radius:10px;font-size:14px">
+              </div>
+              <div class="campo">
+                <label for="prof-desc">¿Qué ofreces a los miembros?</label>
+                <textarea id="prof-desc" rows="3" placeholder="Cuéntales brevemente en qué puedes ayudarlos y qué beneficio recibirán" style="width:100%;padding:12px 14px;border:1.5px solid rgba(26,26,24,.18);border-radius:10px;font-size:14px;resize:vertical;min-height:80px;font-family:inherit"></textarea>
+              </div>
+              <div class="campo">
+                <label for="prof-wa">WhatsApp de contacto</label>
+                <input type="tel" id="prof-wa" placeholder="300 000 0000" autocomplete="tel">
+              </div>
+              <div class="campo">
+                <label for="prof-email">Correo electrónico</label>
+                <input type="email" id="prof-email" placeholder="tu@email.com" autocomplete="email">
+              </div>
+              <div class="campo">
+                <label for="prof-pass">Contraseña</label>
+                <input type="password" id="prof-pass" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+              </div>
+              <label class="auth-check">
+                <input type="checkbox" id="prof-terminos" required>
+                <span>Acepto los <a href="Terminos.html" target="_blank">Términos y Condiciones</a> y la <a href="Terminos.html#c9" target="_blank">Política de tratamiento de datos</a> de El Club de la Gente.</span>
+              </label>
+              <button type="submit" class="btn btn--primario btn--bloque">Registrarme como profesional <span class="ar">&rarr;</span></button>
+              <p class="auth-legal">Tu perfil quedará en revisión hasta ser aprobado por el equipo del Club.</p>
             </form>
           </div>
 
