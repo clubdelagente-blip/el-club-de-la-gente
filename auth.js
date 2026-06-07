@@ -108,14 +108,27 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Solo manejar el redirect si viene de Google OAuth
       if (proveedor === "google") {
         try {
-          await supabase.from("perfiles").upsert({
-            id: user.id,
-            nombre,
-            whatsapp: "",
-            rol: "miembro",
-          });
-        } catch (_) {}
-        location.href = "Planes.html";
+          // Ver si ya tenía perfil antes (usuario existente)
+          const { data: perfilExistente } = await supabase
+            .from("perfiles").select("id, plan").eq("id", user.id).single();
+
+          if (perfilExistente) {
+            // Ya es miembro → ir al perfil
+            const rol = perfilExistente.rol || "miembro";
+            localStorage.setItem("ecdlg_perfil", JSON.stringify({
+              nombre, primerNombre, rol, email: user.email,
+            }));
+            location.href = "Perfil.html";
+          } else {
+            // Usuario nuevo → crear perfil y elegir plan
+            await supabase.from("perfiles").insert({
+              id: user.id, nombre, whatsapp: "", rol: "miembro",
+            });
+            location.href = "Planes.html";
+          }
+        } catch (_) {
+          location.href = "Perfil.html";
+        }
       }
     }
   });
