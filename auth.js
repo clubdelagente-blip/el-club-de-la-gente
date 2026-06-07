@@ -196,28 +196,30 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // Guardar perfil en tabla perfiles
     const mision = calcularMision(fechaISO);
     const arquetipo = ARQUETIPOS[mision] || ARQUETIPOS[1];
 
-    if (data.user) {
-      await supabase.from("perfiles").upsert({
-        id: data.user.id,
-        nombre,
-        whatsapp,
-        fecha_nacimiento: fechaISO || null,
-        rol: "miembro",
-        plan: localStorage.getItem("ecdlg_plan") || "basica",
-        mision: mision || null,
-      });
-    }
-
+    // Guardar en localStorage siempre
     localStorage.setItem("ecdlg_perfil", JSON.stringify({
       nombre, primerNombre: nombre.split(" ")[0], fechaISO, whatsapp, mision, arquetipo
     }));
 
+    // Intentar guardar en Supabase (no bloquea el flujo si falla)
+    try {
+      if (data.user) {
+        await supabase.from("perfiles").upsert({
+          id: data.user.id,
+          nombre,
+          whatsapp,
+          fecha_nacimiento: fechaISO || null,
+          rol: "miembro",
+          plan: localStorage.getItem("ecdlg_plan") || "basica",
+          mision: mision || null,
+        });
+      }
+    } catch (_) {}
+
     setLoading(btn, false, "Crear mi cuenta →");
-    // Redirigir directo a Planes
     location.href = "Planes.html";
   });
 
