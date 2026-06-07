@@ -178,7 +178,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("#form-login")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector("button[type=submit]");
-    const email = $("#login-user").value.trim();
+    const raw = $("#login-user").value.trim();
+    // Miembros se registraron con WhatsApp → email ficticio; profesionales usan email real
+    const email = raw.includes("@") ? raw : raw.replace(/\D/g, "") + "@clubdelagente.app";
     const pass = $("#login-pass").value;
     setLoading(btn, true, "Iniciar sesión →");
 
@@ -186,17 +188,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     setLoading(btn, false, "Iniciar sesión →");
 
     if (error) {
-      mostrarError("Usuario o contraseña incorrectos.");
+      mostrarError("Número, correo o contraseña incorrectos.");
       return;
     }
 
     const perfil = data.user?.user_metadata || {};
+    const rol = perfil.rol || "miembro";
     localStorage.setItem("ecdlg_perfil", JSON.stringify({
-      nombre: perfil.nombre || email,
-      primerNombre: (perfil.nombre || email).split(" ")[0],
-      rol: perfil.rol || "miembro",
+      nombre: perfil.nombre || raw,
+      primerNombre: (perfil.nombre || raw).split(" ")[0],
+      rol,
     }));
-    irAExito({ nombre: perfil.nombre || email, login: true });
+    // Redirigir directo al perfil según rol
+    location.href = "Perfil.html";
   });
 
   // ---------- REGISTRO MIEMBRO ----------
