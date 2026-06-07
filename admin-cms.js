@@ -122,6 +122,7 @@ function bindFormAliado() {
         whatsapp:    $("#fa-wa")?.value.trim()   || null,
         direccion:   $("#fa-dir")?.value.trim()  || null,
         imagen_url,
+        activo: true,
       };
 
       const id = btn.dataset.id;

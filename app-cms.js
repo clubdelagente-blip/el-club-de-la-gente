@@ -17,9 +17,7 @@ async function cargarAliadosPub() {
   const { data, error } = await supabase
     .from('aliados')
     .select('*')
-    .eq('activo', true)
-    .order('orden')
-    .order('created_at');
+    .order('created_at', { ascending: true });
 
   if (error || !data?.length) return;
 
@@ -64,7 +62,6 @@ async function cargarAnunciosPub() {
   const { data, error } = await supabase
     .from('anuncios')
     .select('*')
-    .eq('activo', true)
     .order('created_at', { ascending: false })
     .limit(3);
 
