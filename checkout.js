@@ -139,17 +139,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }));
 
   // Confirmar y pagar — Wompi
-  $("#form-pago").addEventListener("submit", (e) => {
+  $("#form-pago").addEventListener("submit", async (e) => {
     e.preventDefault();
+    const btn = $("#btn-pagar");
+    btn.disabled = true;
+    btn.innerHTML = `Un momento…`;
+
     const p = PLANES[estado.plan];
     const amountInCents = p.precio * 100;
     const reference = `ECDLG-${Date.now()}-${Math.random().toString(36).substr(2,6).toUpperCase()}`;
+    const currency = "COP";
+
+    const cadena = `${reference}${amountInCents}${currency}test_integrity_aTSPYcCp7kbu6kNCp8q9Q7TEmXPXceoh`;
+    const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(cadena));
+    const integrity = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,"0")).join("");
+
+    btn.disabled = false;
+    btn.innerHTML = `Confirmar y pagar <span class="ar">&rarr;</span>`;
 
     const checkout = new WidgetCheckout({
-      currency: "COP",
+      currency,
       amountInCents,
       reference,
       publicKey: "pub_test_yuvhTaT4Bg2JmPbJuxpeuodluZUX7HyE",
+      signature: { integrity },
       redirectUrl: "https://clubdelagente-blip.github.io/el-club-de-la-gente/Perfil.html?nuevo=1",
     });
 
@@ -160,9 +173,6 @@ document.addEventListener("DOMContentLoaded", () => {
         pintarClubcard();
         mostrar("view-exito", 4);
         if (window.lucide) lucide.createIcons();
-      } else {
-        const btn = $("#btn-pagar");
-        btn.innerHTML = `Confirmar y pagar <span class="ar">&rarr;</span>`;
       }
     });
   });
