@@ -90,23 +90,23 @@ async function cargarAliados() {
 function formAliado(a = {}) {
   return `
     <div style="display:flex;flex-direction:column;gap:14px">
-      <div class="campo"><label>Nombre del negocio *</label>
+      <div class="ad-field"><label>Nombre del negocio *</label>
         <input id="cms-nombre" type="text" value="${a.nombre||''}" placeholder="Ej: Café del Parque"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="campo"><label>Categoría</label>
+        <div class="ad-field"><label>Categoría</label>
           <input id="cms-cat" type="text" value="${a.categoria||''}" placeholder="Ej: Restaurante"></div>
-        <div class="campo"><label>Descuento</label>
+        <div class="ad-field"><label>Descuento</label>
           <input id="cms-dsc" type="text" value="${a.descuento||''}" placeholder="Ej: 20%"></div>
       </div>
-      <div class="campo"><label>Descripción</label>
+      <div class="ad-field"><label>Descripción</label>
         <textarea id="cms-desc" rows="3" placeholder="Describe el negocio y sus beneficios">${a.descripcion||''}</textarea></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="campo"><label>WhatsApp</label>
+        <div class="ad-field"><label>WhatsApp</label>
           <input id="cms-wa" type="tel" value="${a.whatsapp||''}" placeholder="300 000 0000"></div>
-        <div class="campo"><label>Dirección</label>
+        <div class="ad-field"><label>Dirección</label>
           <input id="cms-dir" type="text" value="${a.direccion||''}" placeholder="Calle, barrio"></div>
       </div>
-      <div class="campo"><label>Imagen</label>
+      <div class="ad-field"><label>Imagen</label>
         ${a.imagen_url ? `<img src="${a.imagen_url}" style="width:100%;max-height:130px;object-fit:cover;border-radius:8px;margin-bottom:8px">` : ''}
         <input id="cms-img" type="file" accept="image/*" style="font-size:13px">
         <input type="hidden" id="cms-img-url" value="${a.imagen_url||''}"></div>
@@ -191,11 +191,11 @@ async function cargarAnuncios() {
 function formAnuncio(a = {}) {
   return `
     <div style="display:flex;flex-direction:column;gap:14px">
-      <div class="campo"><label>Título *</label>
+      <div class="ad-field"><label>Título *</label>
         <input id="an-titulo" type="text" value="${a.titulo||''}" placeholder="Ej: Nuevo aliado esta semana"></div>
-      <div class="campo"><label>Contenido</label>
+      <div class="ad-field"><label>Contenido</label>
         <textarea id="an-cont" rows="4" placeholder="Describe la novedad">${a.contenido||''}</textarea></div>
-      <div class="campo"><label>Imagen (opcional)</label>
+      <div class="ad-field"><label>Imagen (opcional)</label>
         ${a.imagen_url ? `<img src="${a.imagen_url}" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px">` : ''}
         <input id="an-img" type="file" accept="image/*" style="font-size:13px">
         <input type="hidden" id="an-img-url" value="${a.imagen_url||''}"></div>
@@ -275,11 +275,11 @@ async function cargarProgramas() {
 function formProg(p = {}) {
   return `
     <div style="display:flex;flex-direction:column;gap:14px">
-      <div class="campo"><label>Nombre del programa *</label>
+      <div class="ad-field"><label>Nombre del programa *</label>
         <input id="prog-nombre" type="text" value="${p.nombre||''}" placeholder="Ej: Rescate Animal Fusagasugá"></div>
-      <div class="campo"><label>Descripción</label>
+      <div class="ad-field"><label>Descripción</label>
         <textarea id="prog-desc" rows="4" placeholder="Describe el programa social">${p.descripcion||''}</textarea></div>
-      <div class="campo"><label>Imagen (opcional)</label>
+      <div class="ad-field"><label>Imagen (opcional)</label>
         ${p.imagen_url ? `<img src="${p.imagen_url}" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px">` : ''}
         <input id="prog-img" type="file" accept="image/*" style="font-size:13px">
         <input type="hidden" id="prog-img-url" value="${p.imagen_url||''}"></div>
