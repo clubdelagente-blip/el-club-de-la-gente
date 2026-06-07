@@ -124,10 +124,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Google auth
   $$(".btn-google").forEach(b => b.addEventListener("click", async () => {
+    const emailHint = $("#login-user")?.value.trim();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: "https://clubdelagente-blip.github.io/el-club-de-la-gente/Registro.html"
+        redirectTo: "https://clubdelagente-blip.github.io/el-club-de-la-gente/Registro.html",
+        queryParams: emailHint ? { login_hint: emailHint } : {},
       }
     });
     if (error) mostrarError("Error al conectar con Google.");
