@@ -142,6 +142,13 @@ function render() {
     const negCat = $("#negocio-cat"); if (negCat && u.negocioCat) negCat.textContent = u.negocioCat;
   }
 
+  // Rol profesional: mostrar "Mi consultorio"
+  if (u.rol === "profesional") {
+    const li = $("#sb-profesional-li");
+    if (li) li.hidden = false;
+    cargarPanelProfesional();
+  }
+
   if (window.lucide) lucide.createIcons();
 }
 
@@ -293,3 +300,72 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#seg-prev").addEventListener("click", () => segMostrar(segBlock - 1));
   $("#seg-skip").addEventListener("click", cerrarSeg);
 });
+
+/* ============================================================
+   PANEL PROFESIONAL
+   ============================================================ */
+async function cargarPanelProfesional() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+
+  const { data: prof } = await supabase
+    .from('profesionales')
+    .select('*')
+    .eq('user_id', session.user.id)
+    .single();
+
+  if (!prof) return;
+
+  // Vista previa
+  const fotoEl = $("#prof-preview-foto");
+  if (fotoEl) {
+    fotoEl.innerHTML = prof.imagen_url
+      ? `<img src="${prof.imagen_url}" style="width:100%;height:100%;object-fit:cover">`
+      : (prof.nombre || 'P')[0];
+  }
+  const el = (id, val) => { const e = $("#" + id); if (e) e.textContent = val || '—'; };
+  el("prof-preview-nombre", prof.nombre);
+  el("prof-preview-area",   prof.area);
+  el("prof-preview-desc",   prof.descripcion);
+
+  // Llenar campos del formulario
+  const setVal = (id, val) => { const e = $("#" + id); if (e) e.value = val || ''; };
+  setVal("prof-edit-area", prof.area);
+  setVal("prof-edit-desc", prof.descripcion);
+  setVal("prof-edit-wa",   prof.whatsapp);
+
+  if (window.lucide) lucide.createIcons();
+
+  // Guardar cambios
+  $("#prof-edit-save")?.addEventListener("click", async () => {
+    const btn = $("#prof-edit-save");
+    btn.disabled = true;
+
+    let imagen_url = prof.imagen_url || null;
+    const file = $("#prof-edit-img")?.files?.[0];
+    if (file) {
+      const ext = file.name.split('.').pop();
+      const path = `prof-${session.user.id}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('contenido').upload(path, file, { upsert: true });
+      if (!upErr) imagen_url = supabase.storage.from('contenido').getPublicUrl(path).data.publicUrl;
+    }
+
+    const payload = {
+      area:        $("#prof-edit-area")?.value.trim() || null,
+      descripcion: $("#prof-edit-desc")?.value.trim() || null,
+      whatsapp:    $("#prof-edit-wa")?.value.trim()   || null,
+      imagen_url,
+    };
+
+    await supabase.from('profesionales').update(payload).eq('id', prof.id);
+
+    // Actualizar vista previa
+    el("prof-preview-area",  payload.area);
+    el("prof-preview-desc",  payload.descripcion);
+    if (fotoEl && imagen_url) fotoEl.innerHTML = `<img src="${imagen_url}" style="width:100%;height:100%;object-fit:cover">`;
+
+    btn.disabled = false;
+    const msg = $("#prof-edit-msg");
+    if (msg) { msg.style.display = "inline"; setTimeout(() => msg.style.display = "none", 3000); }
+  });
+}

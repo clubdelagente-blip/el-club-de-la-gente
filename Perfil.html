@@ -45,6 +45,7 @@
         <ul class="sb-nav">
           <li><button class="sb-link" data-panel="inicio"><i data-lucide="layout-dashboard"></i> Inicio</button></li>
           <li id="sb-negocio-li" hidden><button class="sb-link" data-panel="negocio"><i data-lucide="store"></i> Mi negocio <span class="sb-link__badge">Aliado</span></button></li>
+          <li id="sb-profesional-li" hidden><button class="sb-link" data-panel="profesional"><i data-lucide="briefcase-medical"></i> Mi consultorio <span class="sb-link__badge">Profesional</span></button></li>
           <li><button class="sb-link" data-panel="perfil"><i data-lucide="user"></i> Mi perfil</button></li>
           <li><button class="sb-link" data-panel="clubcard"><i data-lucide="credit-card"></i> Mi ClubCard</button></li>
           <li><button class="sb-link" data-panel="descuentos"><i data-lucide="receipt"></i> Mis descuentos</button></li>
@@ -510,6 +511,74 @@
                 <tr><td><span class="tabla__name">Julián Ortiz</span></td><td>2 jun · 9:05 a.m.</td><td><span class="tag-pct">20%</span></td><td>$54.000</td><td class="tabla__ahorro">−$10.800</td></tr>
               </tbody>
             </table>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             PANEL: MI CONSULTORIO (solo profesionales)
+             ============================================================ -->
+        <section class="panel-view" data-panel="profesional" data-screen-label="Mi consultorio">
+          <div class="dash-greet">
+            <h1>Mi consultorio</h1>
+            <p>Así apareces en el directorio de El Club de la Gente.</p>
+          </div>
+
+          <!-- Vista previa pública -->
+          <div class="card" style="margin-bottom:20px">
+            <div class="card__head">
+              <span class="card__title">Vista previa</span>
+              <span class="card__sub" style="font-size:12px;color:var(--tinta-40)">Así te ven los miembros</span>
+            </div>
+            <div style="display:flex;gap:20px;align-items:flex-start;padding:8px 0">
+              <div id="prof-preview-foto" style="width:72px;height:72px;border-radius:50%;background:var(--verde-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:24px;font-weight:700;color:var(--verde);overflow:hidden"></div>
+              <div style="flex:1">
+                <div style="font-weight:600;font-size:16px;margin-bottom:4px" id="prof-preview-nombre">—</div>
+                <div style="font-size:13px;color:var(--tinta-60);margin-bottom:8px" id="prof-preview-area">—</div>
+                <p style="font-size:13px;color:var(--tinta-60);line-height:1.6;margin-bottom:14px" id="prof-preview-desc">—</p>
+                <span style="display:inline-flex;align-items:center;gap:8px;background:var(--verde-soft);color:var(--verde);font-size:12px;font-weight:600;padding:8px 16px;border-radius:8px">
+                  <i data-lucide="message-circle" style="width:14px;height:14px"></i> Solicitar cita por WhatsApp
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Editar info -->
+          <div class="card" style="margin-bottom:20px">
+            <div class="card__head"><span class="card__title">Editar mi perfil profesional</span></div>
+            <div style="padding:4px 0 8px">
+              <div class="cfg-campo">
+                <label class="cfg-label">Área / Especialidad</label>
+                <input class="cfg-input" id="prof-edit-area" type="text" placeholder="Ej: Medicina general">
+              </div>
+              <div class="cfg-campo">
+                <label class="cfg-label">Descripción y servicios</label>
+                <textarea class="cfg-input" id="prof-edit-desc" rows="4" placeholder="Describe lo que ofreces y el beneficio para miembros del Club" style="resize:vertical"></textarea>
+              </div>
+              <div class="cfg-campo">
+                <label class="cfg-label">WhatsApp de citas</label>
+                <input class="cfg-input" id="prof-edit-wa" type="tel" placeholder="300 000 0000">
+              </div>
+              <div class="cfg-campo">
+                <label class="cfg-label">Foto de perfil</label>
+                <input type="file" id="prof-edit-img" accept="image/*" style="font-size:13px;color:var(--tinta-60)">
+              </div>
+              <button class="btn btn--primario" id="prof-edit-save" style="margin-top:16px">Guardar cambios <i data-lucide="check" style="width:15px;height:15px"></i></button>
+              <span id="prof-edit-msg" style="font-size:13px;color:var(--verde);margin-left:14px;display:none">¡Guardado!</span>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="stats">
+            <div class="stat">
+              <div class="stat__top"><span class="stat__ic"><i data-lucide="mouse-pointer-click"></i></span></div>
+              <div class="stat__num" id="prof-stat-citas">—</div>
+              <div class="stat__lbl">Solicitudes de cita este mes</div>
+            </div>
+            <div class="stat">
+              <div class="stat__top"><span class="stat__ic"><i data-lucide="eye"></i></span></div>
+              <div class="stat__num">—</div>
+              <div class="stat__lbl">Vistas a tu perfil</div>
+            </div>
           </div>
         </section>
 
