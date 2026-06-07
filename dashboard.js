@@ -264,17 +264,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   $("#seg-next").addEventListener("click", async () => {
     if (segBlock === SEG_TOTAL - 1) {
-      // Guardar fecha y WhatsApp en Supabase al finalizar
+      const nombre = $("#seg-nombre")?.value.trim();
+      const apellido = $("#seg-apellido")?.value.trim();
       const fecha = $("#seg-fecha")?.value;
       const whatsapp = $("#seg-whatsapp")?.value.trim();
+      const nombreCompleto = [nombre, apellido].filter(Boolean).join(" ");
+
       const { data: { session } } = await supabase.auth.getSession();
-      if (session && (fecha || whatsapp)) {
-        await supabase.from("perfiles").update({
-          ...(fecha && { fecha_nacimiento: fecha }),
-          ...(whatsapp && { whatsapp }),
-        }).eq("id", session.user.id);
-        // Actualizar localStorage también
+      if (session) {
+        const updates = {};
+        if (nombreCompleto) updates.nombre = nombreCompleto;
+        if (fecha) updates.fecha_nacimiento = fecha;
+        if (whatsapp) updates.whatsapp = whatsapp;
+        if (Object.keys(updates).length) {
+          await supabase.from("perfiles").update(updates).eq("id", session.user.id);
+        }
         const perfil = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
+        if (nombreCompleto) { perfil.nombre = nombreCompleto; perfil.primerNombre = nombre; }
         if (fecha) perfil.fechaISO = fecha;
         if (whatsapp) perfil.whatsapp = whatsapp;
         localStorage.setItem("ecdlg_perfil", JSON.stringify(perfil));
