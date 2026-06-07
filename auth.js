@@ -83,33 +83,39 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Detectar callback de Google OAuth (token viene en el hash del URL)
   supabase.auth.onAuthStateChange(async (event, session) => {
-    if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
+    if (event === "SIGNED_IN" && session) {
       const user = session.user;
+      const proveedor = user.app_metadata?.provider;
       const nombre = user.user_metadata?.full_name || user.email || "Miembro";
       const primerNombre = nombre.split(" ")[0];
-
-      // Verificar si ya existía en la base de datos
-      const { data: perfilExistente } = await supabase
-        .from("perfiles")
-        .select("id")
-        .eq("id", user.id)
-        .single();
 
       localStorage.setItem("ecdlg_perfil", JSON.stringify({
         nombre, primerNombre, rol: "miembro", email: user.email,
       }));
 
-      if (perfilExistente) {
-        location.href = "Perfil.html";
-      } else {
-        await supabase.from("perfiles").upsert({
-          id: user.id,
-          nombre,
-          whatsapp: "",
-          rol: "miembro",
-          plan: localStorage.getItem("ecdlg_plan") || "basica",
-        });
-        location.href = "Planes.html";
+      // Solo manejar el redirect si viene de Google OAuth
+      if (proveedor === "google") {
+        const { data: perfilExistente } = await supabase
+          .from("perfiles")
+          .select("id, plan")
+          .eq("id", user.id)
+          .single();
+
+        if (perfilExistente?.plan) {
+          // Ya eligió plan antes → va al perfil
+          location.href = "Perfil.html";
+        } else {
+          // Usuario nuevo o sin plan → va a elegir plan
+          try {
+            await supabase.from("perfiles").upsert({
+              id: user.id,
+              nombre,
+              whatsapp: "",
+              rol: "miembro",
+            });
+          } catch (_) {}
+          location.href = "Planes.html";
+        }
       }
     }
   });
