@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Términos y Condiciones — El Club de la Gente</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:       #1A1A1A;
+      --black-deep:  #111111;
+      --cream:       #F2EFE9;
+      --cream-dark:  #E8E4DC;
+      --green:       #4A7C59;
+      --green-light: #6DA07A;
+      --green-pale:  #E8F0EA;
+      --border:      #D5CFC4;
+      --text:        #2A2A2A;
+      --text-light:  #5A5550;
+      --white:       #FAFAF8;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--cream);
+      color: var(--text);
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 16px;
+      line-height: 1.8;
+    }
+
+    /* ── STICKY HEADER ── */
+    .site-header {
+      background: var(--black-deep);
+      padding: 22px 48px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 2px solid var(--green);
+    }
+
+    .logo-mark {
+      font-family: 'Playfair Display', serif;
+      font-weight: 900;
+      font-size: 11px;
+      color: #FFFFFF;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      line-height: 1.25;
+    }
+    .logo-mark span {
+      display: block;
+      font-size: 20px;
+      letter-spacing: 0.06em;
+      color: var(--green-light);
+    }
+
+    .header-divider { width: 1px; height: 36px; background: #333; }
+
+    .header-label {
+      font-size: 11px;
+      font-weight: 300;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #888;
+    }
+
+    /* ── HERO — split layout like the reference ── */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 280px;
+    }
+
+    .hero-left {
+      background: var(--black-deep);
+      padding: 56px 48px 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .hero-left h1 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 900;
+      font-size: clamp(26px, 3.5vw, 44px);
+      color: #FFFFFF;
+      line-height: 1.15;
+      margin-bottom: 18px;
+    }
+
+    .hero-left h1 em {
+      font-style: italic;
+      color: var(--green-light);
+    }
+
+    .hero-left p {
+      font-size: 14px;
+      color: #AAA;
+      line-height: 1.7;
+      max-width: 340px;
+    }
+
+    .hero-right {
+      background: var(--cream);
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 14px;
+      border-left: 1px solid var(--border);
+    }
+
+    .doc-badge {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 4px;
+    }
+
+    .hero-right h2 {
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: clamp(22px, 2.5vw, 32px);
+      color: var(--black);
+      line-height: 1.2;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 8px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+    }
+
+    .meta-item {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-light);
+    }
+    .meta-item strong {
+      display: block;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    @media (max-width: 680px) {
+      .hero { grid-template-columns: 1fr; }
+      .hero-left { padding: 40px 24px 32px; }
+      .hero-right { padding: 32px 24px; border-left: none; border-top: 1px solid var(--border); }
+    }
+
+    /* ── TABLE OF CONTENTS ── */
+    .toc-wrapper {
+      background: var(--black-deep);
+      max-width: 100%;
+      padding: 36px 48px;
+      border-bottom: 1px solid #222;
+    }
+
+    .toc-inner { max-width: 860px; margin: 0 auto; }
+
+    .toc-wrapper h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--green-light);
+      margin-bottom: 20px;
+    }
+
+    .toc-list { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px 32px; }
+
+    @media (max-width: 720px) { .toc-list { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px) { .toc-list { grid-template-columns: 1fr; } }
+
+    .toc-list a {
+      font-size: 13px;
+      color: #BBB;
+      text-decoration: none;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid #252525;
+      transition: color 0.2s;
+    }
+    .toc-list a:hover { color: var(--green-light); }
+    .toc-num { font-size: 10px; font-weight: 700; color: var(--green); min-width: 20px; letter-spacing: 0.1em; }
+
+    /* ── CONTENT WRAPPER ── */
+    .content-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 48px 80px;
+    }
+
+    @media (max-width: 600px) {
+      .content-wrap { padding: 0 20px 60px; }
+      .toc-wrapper { padding: 28px 20px; }
+      .site-header { padding: 18px 20px; }
+    }
+
+    /* ── CLAUSE ── */
+    .clause {
+      padding: 52px 0;
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 0 28px;
+      align-items: start;
+    }
+    .clause:last-of-type { border-bottom: none; }
+
+    .clause-num {
+      font-family: 'Playfair Display', serif;
+      font-weight: 900;
+      font-size: 42px;
+      color: var(--green);
+      line-height: 1;
+      padding-top: 6px;
+      opacity: 0.85;
+    }
+
+    .clause-body {}
+
+    .clause-title {
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: 19px;
+      color: var(--black);
+      line-height: 1.3;
+      margin-bottom: 16px;
+    }
+
+    .clause-body p { margin-bottom: 13px; font-size: 15px; color: var(--text); }
+    .clause-body ul, .clause-body ol { margin: 10px 0 14px 0; padding-left: 22px; }
+    .clause-body li { margin-bottom: 7px; font-size: 15px; color: var(--text); }
+
+    @media (max-width: 600px) {
+      .clause { grid-template-columns: 1fr; gap: 8px 0; }
+      .clause-num { font-size: 32px; }
+    }
+
+    /* ── INFO BOX ── */
+    .info-box {
+      background: var(--green-pale);
+      border-left: 3px solid var(--green);
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 14px;
+      font-style: italic;
+      color: var(--text-light);
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* ── TABLE ── */
+    .data-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; border-radius: 6px; overflow: hidden; }
+    .data-table th {
+      background: var(--black-deep);
+      color: #FFF;
+      padding: 11px 16px;
+      text-align: left;
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+    }
+    .data-table td {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--white);
+    }
+    .data-table tr:nth-child(even) td { background: var(--cream-dark); }
+    .data-table tr:last-child td { border-bottom: none; }
+
+    /* ── HIGHLIGHT ── */
+    .hl { font-weight: 600; color: var(--black); }
+    .hl-green { font-weight: 600; color: var(--green); }
+
+    /* ── FOOTER ── */
+    .doc-footer {
+      background: var(--black-deep);
+      padding: 44px 48px;
+      text-align: center;
+      border-top: 2px solid var(--green);
+    }
+    .doc-footer .slogan {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 19px;
+      color: #FFF;
+      margin-bottom: 12px;
+    }
+    .doc-footer .footer-meta { font-size: 12px; color: #777; letter-spacing: 0.1em; line-height: 1.8; }
+    .doc-footer a { color: var(--green-light); text-decoration: none; }
+
+    .anchor-target { scroll-margin-top: 80px; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="logo-mark">El<br><span>Club de la Gente</span></div>
+    <div class="header-divider"></div>
+    <div class="header-label">Términos y Condiciones</div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <h1>Pertenecer <em>vale</em><br>más que pagar.</h1>
+      <p>Conoce los términos bajo los cuales operas como miembro de El Club de la Gente. Tu confianza es nuestra base.</p>
+    </div>
+    <div class="hero-right">
+      <div class="doc-badge">Documento Legal · V 1.0</div>
+      <h2>Términos y Condiciones<br>de Uso y Membresía</h2>
+      <div class="hero-meta">
+        <div class="meta-item"><strong>NIT</strong>902.064.432-5</div>
+        <div class="meta-item"><strong>Vigente desde</strong>Junio 2026</div>
+        <div class="meta-item"><strong>Jurisdicción</strong>Colombia</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TABLE OF CONTENTS -->
+  <nav class="toc-wrapper">
+    <div class="toc-inner">
+      <h2>Contenido del documento</h2>
+      <ol class="toc-list">
+        <li><a href="#c1"><span class="toc-num">01</span> Identificación y aceptación</a></li>
+        <li><a href="#c2"><span class="toc-num">02</span> Objeto de la plataforma</a></li>
+        <li><a href="#c3"><span class="toc-num">03</span> Membresías y precios</a></li>
+        <li><a href="#c4"><span class="toc-num">04</span> Pagos y facturación</a></li>
+        <li><a href="#c5"><span class="toc-num">05</span> Derechos del miembro</a></li>
+        <li><a href="#c6"><span class="toc-num">06</span> Obligaciones del miembro</a></li>
+        <li><a href="#c7"><span class="toc-num">07</span> Suspensión y cancelación</a></li>
+        <li><a href="#c8"><span class="toc-num">08</span> Aliados comerciales</a></li>
+        <li><a href="#c9"><span class="toc-num">09</span> Protección de datos</a></li>
+        <li><a href="#c10"><span class="toc-num">10</span> Propiedad intelectual</a></li>
+        <li><a href="#c11"><span class="toc-num">11</span> Limitación de responsabilidad</a></li>
+        <li><a href="#c12"><span class="toc-num">12</span> Compromiso BIC</a></li>
+        <li><a href="#c13"><span class="toc-num">13</span> Modificaciones</a></li>
+        <li><a href="#c14"><span class="toc-num">14</span> Resolución de conflictos</a></li>
+        <li><a href="#c15"><span class="toc-num">15</span> Disposiciones finales</a></li>
+      </ol>
+    </div>
+  </nav>
+
+  <!-- CONTENT -->
+  <main class="content-wrap">
+
+    <article class="clause anchor-target" id="c1">
+      <div class="clause-num">01</div>
+      <div class="clause-body">
+        <h2 class="clause-title">Identificación del titular y aceptación de los términos</h2>
+        <p>El presente documento regula los <span class="hl">Términos y Condiciones</span> aplicables al acceso y uso de la plataforma, aplicación móvil y servicios digitales de <span class="hl">El Club de la Gente S.A.S. BIC</span>, sociedad legalmente constituida mediante Documento Privado del 8 de mayo de 2026, inscrita en la Cámara de Comercio de Fusagasugá bajo Matrícula Mercantil N.° 04101862, identificada con NIT 902.064.432-5, con domicilio en la Cra 10 Calle 10 19A, Fusagasugá, Cundinamarca, Colombia. Correo: clubdelagente@gmail.com. Teléfono: 3024982733.</p>
+        <p>Al registrarte, activar una membresía o utilizar cualquier servicio del Club, <span class="hl">declaras haber leído, comprendido y aceptado</span> en su totalidad los presentes Términos y Condiciones, así como nuestra Política de Privacidad. Si no estás de acuerdo con alguna de sus disposiciones, no debes usar nuestros servicios.</p>
+        <p>Estos Términos se rigen por las leyes de la República de Colombia, en especial el Código de Comercio (Decreto 410 de 1971), el Estatuto del Consumidor (Ley 1480 de 2011), la Ley de Habeas Data (Ley 1581 de 2012) y la Ley 1901 de 2018 (Sociedades BIC).</p>
+      </div>
+    </article>
+
+    <article class="clause anchor-target" id="c2">
+      <div class="clause-num">02</div>
+      <div class="clause-body">
+        <h2 class="clause-title">Objeto y descripción de la plataforma</h2>
+        <p><span class="hl">El Club de la Gente</span> es la primera plataforma de beneficios de Colombia, con sede en Fusagasugá. Su propósito es facilitar a sus miembros acceso a descuentos exclusivos, programas de educación en habilidades blandas, Inteligencia Artificial, Negocios, finanzas, y participación en programas de impacto social, a través de una red de aliados comerciales locales.</p>
+        <p>Los servicios disponibles en la plataforma incluyen:</p>
+        <ul>
+          <li>Directorio de aliados comerciales con beneficios y descuentos exclusivos para miembros activos.</li>
+          <li>Contenidos educativos en educación financiera, desarrollo personal y bienestar.</li>
+          <li>ClubCard digital para identificación y acceso a beneficios (Membresía Premium).</li>
+          <li>Información sobre programas sociales y de voluntariado comunitario.</li>
+          <li>Sorteos, accesos especiales y actividades exclusivas (Membresía Premium).</li>
+          <li>Canales de comunicación y soporte a través de WhatsApp, correo y la aplicación.</li>
+        </ul>
+        <div class="info-box">El Club de la Gente se reserva el derecho de ampliar, modificar o descontinuar funcionalidades de la plataforma, notificando a los miembros activos con al menos quince (15) días calendario de anticipación, salvo en casos de mantenimiento urgente.</div>
+      </div>
+    </article>
+
+    <article class="clause anchor-target" id="c3">
+      <div class="clause-num">03</div>
+      <div class="clause-body">
+        <h2 class="clause-title">Membresías, planes y beneficios</h2>
+        <p>El Club de la Gente ofrece dos (2) planes de membresía:</p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Característica</th>
+              <th>Membresía Básica</th>
+              <th>Membresía Premium</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Precio mensual</td><td>$10.000 COP/mes</td><td>$20.000 COP/mes</td></tr>
+            <tr><td>Acceso a plataforma y app</td><td>✓</td><td>✓</td></tr>
+            <tr><td>Programas educativos</td><td>✓ Todos</td><td>✓ Todos</td></tr>
+            <tr><td>Descuentos con aliados</td><td>Limitados</td><td>Ilimitados</td></tr>
+            <tr><td>ClubCard personalizada</td><td>—</td><td>✓</td></tr>
+            <tr><td>Sorteos y accesos exclusivos</td><td>—</td><td>✓</td></tr>
+            <tr><td>Voluntariado comunitario</td><td>✓</td><td>✓</td></tr>
+          </tbody>
+        </table>
+        <p>Los beneficios detallados de cada aliado se publican en el directorio oficial de la plataforma y pueden variar según las condiciones acordadas con cada aliado. El Club no garantiza la disponibilidad permanente de un descuento específico, pero sí el mínimo de beneficios correspondiente al plan contratado.</p>
+        <div class="info-box">Las membresías son de carácter personal e intransferible. No podrán ser cedidas, compartidas ni utilizadas por personas distintas al titular registrado.</div>
+      </div>
+    </article>
+
+    <article class="clause anchor-target" id="c4">
+      <div class="clause-num">04</div>
+      <div class="clause-body">
+        <h2 class="clause-title">Pagos, facturación y renovación</h2>
+        <p>Las membresías tienen vigencia mensual y se pagan de manera anticipada. Los medios de pago aceptados son:</p>
+        <ul>
+          <li>Transferencia bancaria a las cuentas registradas de El Club de la Gente.</li>
+          <li>Nequi y Daviplata a los números habilitados por el Club.</li>
+          <li>Otros medios que el Club habilite y comunique oficialmente.</li>
+        </ul>
+        <p>Una vez confirmado el pago, el miembro recibirá la activación de su membresía y, si aplica, su soporte de pago o factura electrónica conforme a la normatividad de la DIAN.</p>
+        <p>La membresía se renueva mensualmente de manera manual. El Club notificará los vencimientos a través de los canales de comunicación registrados.</p>
+        <p><span class="hl">Política de reembolso:</span> No se realizan reembolsos proporcionales por el tiempo no utilizado dentro de un período mensual ya activado. Sin embargo, si el miembro reporta un problema técnico que le impidió acceder a los servicios durante más de siete (7) días hábiles del mes, el Club evaluará el caso y podrá ofrecer un crédito o extensión de membresía, conforme al Estatuto del Consumidor (Ley 1480/2011, Art. 11).</p>
+      </div>
+    </article>
+
+    <article class="clause anchor-target" id="c5">
+      <div class="clause-num">05</div>
+      <div class="clause-body">
+        <h2 class="clause-title">Derechos del miembro</h2>
+        <p>Todo miembro activo de El Club de la Gente tiene derecho a:</p>
+        <ul>
+          <li>Acceder a todos los beneficios, descuentos y contenidos correspondientes a su plan.</li>
+          <li>Recibir atención y soporte oportuno a través de los canales oficiales del Club.</li>
+          <li>Ser tratado con respeto, dignidad y sin discriminación por parte del Club y sus aliados.</li>
+          <li>Conocer con claridad los beneficios, condiciones y restricciones de su membresía.</li>
+          <li>Solicitar la cancelación de su membresía en cualquier momento, sin penalidad.</li>
+          <li>Acceder, actualizar o solicitar la eliminación de sus datos personales conforme a la Ley 1581 de 2012.</li>
+          <li>Presentar peticiones, quejas o reclamos ante el Club y recibir respuesta en un plazo no mayor a diez (10) días hábiles.</li>
+          <li>Participar en los programas sociales y comunitarios del Club.</li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="clause anchor-target" id="c6">
+      <div class="clause-num">06</div>
+      <div class="clause-body">
+        <h2 class="clause-title">Obligaciones del miembro</h2>
+        <p>Al activar su membresía, el usuario se compromete a:</p>
+        <ul>
+          <li>Proporcionar información veraz, completa y actualizada en el momento del registro.</li>
+          <li>Usar la membresía de manera personal, sin cederla ni compartirla con terceros.</li>
+          <li>No hacer uso indebido de los beneficios o descuentos, ni intentar obtener ventajas fraudulentas.</li>
+          <li>Tratar con respeto al personal del Club y de los aliados comerciales.</li>
+          <li>No difundir información falsa o engañosa sobre el Club, sus aliados o sus servicios.</li>
+          <li>Cumplir con los presentes Términos y cualquier instrucción adicional comunicada por el Club.</li>
+          <li>Mantener actualizados sus datos de contacto para recibir comunicaciones del Club.</li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="clause anchor-target" id="c7">
+      <div class="clause-num">07</div>
+      <div class="clause-body">
+        <h2 class="clause-title">Suspensión y cancelación de la membresía</h2>
+        <p><span class="hl">Cancelación voluntaria:</span> El miembro puede cancelar su membresía en cualquier momento, sin penalidad, notificando al Club a través de los canales oficiales (WhatsApp o correo). La cancelación aplica para el siguiente período de facturación; el mes en curso permanece activo hasta su vencimiento.</p>
+        <p><span class="hl">Suspensión por el Club:</span> El Club podrá suspender o cancelar una membresía, previa notificación, en los siguientes casos:</p>
+        <ul>
+          <li>Incumplimiento reiterado de las obligaciones del miembro.</li>
+          <li>Uso fraudulento de la membresía o de los beneficios.</li>
+          <li>Conductas que atenten contra la reputación, los aliados o los demás miembros del Club.</li>
+          <li>Suministro de información falsa en el registro.</li>
+        </ul>
+        <p>En casos de suspensión por incumplimiento, el Club notificará al miembro con al menos cuarenta y ocho (48) horas de antelación, salvo en situaciones de fraude comprobado.</p>
+      </div>
+    </article>
+
+    <article class="clause anchor-target" id="c8">
+      <div class="clause-num">08</div>
+      <div class="clause-body">
+        <h2 class="clause-title">Aliados comerciales y descuentos</h2>
+        <p>Los aliados comerciales son negocios independientes que se vinculan voluntariamente a la red del Club para ofrecer beneficios a sus miembros. El Club actúa como intermediario y facilitador de estos beneficios, mas no como proveedor directo de los bienes o servicios ofrecidos por los aliados.</p>
+        <p>El Club garantiza:</p>
+        <ul>
+          <li>Que cada aliado ha suscrito un Acuerdo Comercial formal con las condiciones pactadas.</li>
+          <li>Que los beneficios publicados en la plataforma son los vigentes al momento de la consulta.</li>
+          <li>Que informará oportunamente sobre cambios en los beneficios de los aliados.</li>
+        </ul>
+        <p>El Club <span class="hl">no se hace responsable</span> por la calidad de los productos o servicios ofrecidos por los aliados, disputas comerciales entre el miembro y el aliado, o cambios en las condiciones del aliado por razones de fuerza mayor o cierre del negocio. En estos casos, el Club buscará reemplazar el beneficio con alternativas equivalentes.</p>
+        <div class="info-box">Para hacer válido cualquier descuento, el miembro debe presentar su membresía activa (ClubCard digital o identificación como miembro) en el establecimiento del aliado antes de realizar la compra o transacción.</div>
+      </div>
+    </article>
+
+    <article class="clause anchor-target" id="c9">
+      <div class="clause-num">09</div>
+      <div class="clause-body">
+        <h2 class="clause-title">Protección de datos personales</h2>
+        <p>El Club de la Gente actúa como responsable del tratamiento de los datos personales de sus miembros, conforme a la <span class="hl">Ley Estatutaria 1581 de 2012</span>, el Decreto Reglamentario 1377 de 2013 y las políticas de la Superintendencia de Industria y Comercio (SIC).</p>
+        <p><span class="hl">Datos recopilados:</span> nombre completo, cédula de ciudadanía, número de celular, correo electrónico, ciudad y plan de membresía.</p>
+        <p><span class="hl">Finalidades del tratamiento:</span></p>
+        <ul>
+          <li>Gestión y activación de la membresía.</li>
+          <li>Comunicación de beneficios, novedades y promociones del Club y sus aliados.</li>
+          <li>Emisión de soportes de pago y facturación.</li>
+          <li>Cumplimiento de obligaciones legales y tributarias.</li>
+          <li>Mejora de los servicios y personalización de la experiencia del miembro.</li>
+        </ul>
+        <p>El Club <span class="hl">no venderá, cederá ni transferirá</span> los datos de sus miembros a terceros sin consentimiento previo y expreso, salvo obligación legal. Los miembros pueden ejercer sus derechos escribiendo a: <strong>clubdelagente@gmail.com</strong>.</p>
+      </div>
+    </article>
+
+    <article class="clause anchor-target" id="c10">
+      <div class="clause-num">10</div>
+      <div class="clause-body">
+        <h2 class="clause-title">Propiedad intelectual</h2>
+        <p>Todos los contenidos de la plataforma y aplicación — incluyendo el nombre comercial, logo, diseño gráfico, textos, materiales educativos y estructura de la plataforma — son propiedad exclusiva de El Club de la Gente S.A.S. BIC o de sus licenciantes, y están protegidos por la <span class="hl">Ley 23 de 1982</span> (Derechos de Autor) y la Decisión 486 de 2000 de la Comunidad Andina de Naciones.</p>
+        <p>Se prohíbe expresamente reproducir, distribuir, modificar, crear obras derivadas o usar los contenidos del Club con fines comerciales sin autorización escrita previa. El uso personal y no comercial está permitido siempre que se cite la fuente.</p>
+      </div>
+    </article>
+
+    <article class="clause anchor-target" id="c11">
+      <div class="clause-num">11</div>
+      <div class="clause-body">
+        <h2 class="clause-title">Limitación de responsabilidad</h2>
+        <p>El Club de la Gente se compromete a prestar sus servicios con diligencia, buena fe y conforme a los estándares pactados. Sin perjuicio de lo anterior, el Club no será responsable por:</p>
+        <ul>
+          <li>Interrupciones del servicio por causas de fuerza mayor, caso fortuito o fallas en terceros proveedores tecnológicos.</li>
+          <li>La calidad, seguridad o idoneidad de los productos y servicios ofrecidos directamente por los aliados comerciales.</li>
+          <li>Pérdidas o perjuicios derivados del mal uso de la membresía por parte del titular.</li>
+          <li>Cambios en los beneficios de aliados por decisiones unilaterales de estos, siempre que el Club haya notificado oportunamente.</li>
+        </ul>
+        <p>En cualquier caso, la responsabilidad máxima del Club frente a un miembro no excederá el valor de las mensualidades pagadas por dicho miembro en los últimos tres (3) meses.</p>
+      </div>
+    </article>
+
+    <article class="clause anchor-target" id="c12">
+      <div class="clause-num">12</div>
+      <div class="clause-body">
+        <h2 class="clause-title">Compromiso BIC e impacto social</h2>
+        <p>El Club de la Gente es una <span class="hl">Sociedad de Beneficio e Interés Colectivo (BIC)</span>, reconocida bajo la Ley 1901 de 2018. Nuestro modelo de negocio está diseñado para generar valor no solo para nuestros miembros y aliados, sino también para la comunidad del Sumapaz y Fusagasugá.</p>
+        <p>Como parte de este compromiso, el Club destina parte de sus ingresos a:</p>
+        <ul>
+          <li>Programas de apoyo a personas en condición de vulnerabilidad.</li>
+          <li>Iniciativas de rescate y protección animal.</li>
+          <li>Apoyo al emprendimiento local.</li>
+          <li>Educación financiera gratuita para la comunidad.</li>
+        </ul>
+        <p>Al adquirir una membresía, el usuario contribuye directamente al sostenimiento de estos programas.</p>
+      </div>
+    </article>
+
+    <article class="clause anchor-target" id="c13">
+      <div class="clause-num">13</div>
+      <div class="clause-body">
+        <h2 class="clause-title">Modificaciones a los términos</h2>
+        <p>El Club de la Gente podrá modificar los presentes Términos y Condiciones en cualquier momento. Los cambios serán notificados a los miembros activos con al menos <span class="hl">quince (15) días calendario</span> de anticipación, mediante los canales oficiales del Club (WhatsApp, correo electrónico o notificación en la plataforma).</p>
+        <p>Si el miembro continúa usando los servicios del Club después de la entrada en vigencia de los nuevos términos, se entenderá que los ha aceptado. Si no está de acuerdo, podrá cancelar su membresía sin penalidad antes de la fecha de entrada en vigencia.</p>
+      </div>
+    </article>
+
+    <article class="clause anchor-target" id="c14">
+      <div class="clause-num">14</div>
+      <div class="clause-body">
+        <h2 class="clause-title">Resolución de conflictos</h2>
+        <p>Cualquier diferencia, reclamación o controversia derivada del uso de los servicios del Club se resolverá en el siguiente orden:</p>
+        <ol>
+          <li><span class="hl">Arreglo directo:</span> El miembro puede presentar su reclamación a través de los canales oficiales del Club (clubdelagente@gmail.com / WhatsApp 3024982733). El Club responderá en un plazo máximo de diez (10) días hábiles.</li>
+          <li><span class="hl">Conciliación:</span> Si no se logra acuerdo, las partes podrán acudir a un Centro de Conciliación autorizado en Fusagasugá, Cundinamarca.</li>
+          <li><span class="hl">Jurisdicción ordinaria:</span> Como última instancia, los juzgados civiles del Circuito de Fusagasugá, conforme al Código General del Proceso (Ley 1564 de 2012).</li>
+        </ol>
+        <div class="info-box">El miembro también tiene derecho a presentar quejas ante la Superintendencia de Industria y Comercio (SIC) en ejercicio de sus derechos como consumidor, conforme a la Ley 1480 de 2011.</div>
+      </div>
+    </article>
+
+    <article class="clause anchor-target" id="c15">
+      <div class="clause-num">15</div>
+      <div class="clause-body">
+        <h2 class="clause-title">Disposiciones finales</h2>
+        <p>Los presentes Términos y Condiciones constituyen el acuerdo completo entre El Club de la Gente y sus miembros respecto al uso de la plataforma y sus servicios, y dejan sin efecto cualquier comunicación verbal o escrita anterior sobre el mismo objeto.</p>
+        <p>Si alguna disposición de estos Términos fuera declarada nula, ineficaz o inaplicable por autoridad competente, las demás cláusulas continuarán vigentes y produciendo plenos efectos jurídicos.</p>
+        <p>Para todos los efectos legales, el domicilio contractual es el municipio de <span class="hl">Fusagasugá, Cundinamarca, Colombia</span>.</p>
+        <p>Fecha de entrada en vigencia: <span class="hl-green">Junio de 2026</span>.</p>
+      </div>
+    </article>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="doc-footer">
+    <p class="slogan">"Juntos ahorramos más, juntos llegamos lejos."</p>
+    <p class="footer-meta">
+      El Club de la Gente S.A.S. BIC · NIT 902.064.432-5 · Fusagasugá, Cundinamarca<br>
+      <a href="mailto:clubdelagente@gmail.com">clubdelagente@gmail.com</a> · 3024982733
+    </p>
+  </footer>
+
+</body>
+</html>
