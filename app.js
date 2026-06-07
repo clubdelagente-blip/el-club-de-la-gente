@@ -466,7 +466,22 @@ function sheetAliadoForm() {
       </div>
       <div class="campo">
         <label>Categoría o tipo de negocio</label>
-        <input type="text" required placeholder="Ej: Restaurante, salud, ropa…">
+        <div class="cat-grid">
+          <button type="button" class="cat-opt" data-cat="Restaurante / Cafetería">Restaurante / Cafetería</button>
+          <button type="button" class="cat-opt" data-cat="Salud y bienestar">Salud y bienestar</button>
+          <button type="button" class="cat-opt" data-cat="Belleza y estética">Belleza y estética</button>
+          <button type="button" class="cat-opt" data-cat="Barbería">Barbería</button>
+          <button type="button" class="cat-opt" data-cat="Odontología">Odontología</button>
+          <button type="button" class="cat-opt" data-cat="Veterinaria">Veterinaria</button>
+          <button type="button" class="cat-opt" data-cat="Ropa y accesorios">Ropa y accesorios</button>
+          <button type="button" class="cat-opt" data-cat="Supermercado / Tienda">Supermercado / Tienda</button>
+          <button type="button" class="cat-opt" data-cat="Educación">Educación</button>
+          <button type="button" class="cat-opt" data-cat="Deporte y gym">Deporte y gym</button>
+          <button type="button" class="cat-opt" data-cat="Tecnología">Tecnología</button>
+          <button type="button" class="cat-opt cat-opt--otra" data-cat="Otra">Otra</button>
+        </div>
+        <input type="text" class="cat-otra-input" placeholder="Describe la categoría de tu negocio" style="display:none;margin-top:10px">
+        <input type="hidden" class="cat-hidden">
       </div>
       <div class="campo">
         <label>Nombre del responsable</label>
@@ -548,7 +563,35 @@ document.addEventListener("DOMContentLoaded", () => {
     if (profe) { openSheet(sheetProfesional(+profe.dataset.profesional)); return; }
 
     // Quiero ser aliado
-    if (e.target.closest("[data-aliado-form]")) { openSheet(sheetAliadoForm()); return; }
+    if (e.target.closest("[data-aliado-form]")) {
+      openSheet(sheetAliadoForm());
+      setTimeout(() => {
+        const sheet = document.querySelector(".sheet__body") || document.querySelector(".sheet");
+        if (!sheet) return;
+        sheet.querySelectorAll(".cat-opt").forEach(btn => {
+          btn.addEventListener("click", () => {
+            btn.classList.toggle("is-on");
+            const form = btn.closest("form");
+            const otraInput = form.querySelector(".cat-otra-input");
+            const esOtra = btn.dataset.cat === "Otra";
+            const otraOn = form.querySelector(".cat-opt--otra")?.classList.contains("is-on");
+            if (otraInput) otraInput.style.display = otraOn ? "block" : "none";
+            const sel = [...form.querySelectorAll(".cat-opt.is-on:not(.cat-opt--otra)")].map(b => b.dataset.cat);
+            if (otraOn && otraInput?.value.trim()) sel.push(otraInput.value.trim());
+            const hidden = form.querySelector(".cat-hidden");
+            if (hidden) hidden.value = sel.join(", ");
+          });
+        });
+        sheet.querySelector(".cat-otra-input")?.addEventListener("input", (ev) => {
+          const form = ev.target.closest("form");
+          const sel = [...form.querySelectorAll(".cat-opt.is-on:not(.cat-opt--otra)")].map(b => b.dataset.cat);
+          if (ev.target.value.trim()) sel.push(ev.target.value.trim());
+          const hidden = form.querySelector(".cat-hidden");
+          if (hidden) hidden.value = sel.join(", ");
+        });
+      }, 100);
+      return;
+    }
 
     // Aplicar descuento
     const apBtn = e.target.closest("[data-aplicar]");
@@ -595,7 +638,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (e.target.matches("[data-aliado-postular]")) {
       e.preventDefault();
-      const btn = e.target.querySelector("button[type=submit]");
+      const form = e.target;
+      const inputs = form.querySelectorAll("input[type=text], input[type=tel], textarea");
+      const categoria = form.querySelector(".cat-hidden")?.value || "";
+      if (!categoria) { toast("Selecciona al menos una categoría", false); return; }
+      const btn = form.querySelector("button[type=submit]");
       btn.classList.add("is-aplicado");
       btn.innerHTML = `${ic("check")} Postulación enviada — revisaremos tu caso`;
       if (window.lucide) lucide.createIcons();
