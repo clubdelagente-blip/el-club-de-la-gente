@@ -334,7 +334,11 @@ a { color: inherit; text-decoration: none; }
 /* ============================================================
    MEMBRESÍAS
    ============================================================ */
-.planes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; align-items: stretch; }
+.planes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; align-items: stretch; }
+.plan--vitalicia { background: transparent; border: 2px solid var(--verde); }
+.plan--vitalicia .plan__tag { color: var(--verde); }
+.plan--vitalicia .plan__precio { color: var(--verde); }
+.plan--vitalicia .plan__badge-vit { position: absolute; top: 30px; right: 30px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; background: var(--verde); color: #fff; padding: 7px 14px; border-radius: 100px; z-index: 2; }
 .plan { border-radius: 8px; padding: 44px; display: flex; flex-direction: column; position: relative; overflow: hidden; }
 .plan--basica { background: transparent; border: 1px solid var(--linea-fuerte); }
 .plan--premium { background: var(--negro); color: var(--crema-en-negro); }
