@@ -70,12 +70,7 @@
     <div class="auth-main__center">
       <div class="auth-card">
 
-        <!-- Tabs — se ocultan cuando viene de modo=login o modo=registro -->
-        <script>if(new URLSearchParams(location.search).get('modo'))document.write('<style>#auth-tabs{display:none!important}</style>')</script>
-        <div class="auth-tabs" id="auth-tabs">
-          <button class="auth-tab" data-tab="login">Iniciar sesión</button>
-          <button class="auth-tab" data-tab="registro">Registrarse</button>
-        </div>
+        <div class="auth-tabs" id="auth-tabs" style="display:none"></div>
 
         <!-- VISTA LOGIN -->
         <section class="auth-view" id="view-login" data-screen-label="Login">
