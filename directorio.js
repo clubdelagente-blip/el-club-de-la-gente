@@ -108,6 +108,7 @@ function pctFrac(p) {
 const SB_URL = "https://egwaedadpqfwnbfosiao.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4";
 const MIEMBRO_ID = new URLSearchParams(location.search).get("miembro");
+const MIEMBRO_WA = new URLSearchParams(location.search).get("wa") || "";
 
 async function registrarDescuento({ aliado_nombre, categoria, descuento_pct, compra, ahorro }) {
   if (!MIEMBRO_ID) return false;
@@ -249,12 +250,15 @@ function sheetAliado(a) {
           <div class="calc__cel-num" id="calc-ahorro">$0</div>
         </div>
       </div>
-      <div class="calc__actions">
-        <button class="btn btn--wa" id="calc-wa-cliente">${ic("message-circle")} Enviar a mi WhatsApp</button>
-        <button class="btn btn--wa-ghost" id="calc-wa-comercio">${ic("store")} Notificar al comercio</button>
+      <button class="btn btn--primario btn--bloque" id="calc-aplicar" style="margin-top:16px">
+        Aplicar descuento &rarr;
+      </button>
+      <div id="calc-exito" style="display:none;text-align:center;padding:24px 0 8px">
+        <div style="font-size:48px;line-height:1">✓</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;margin:10px 0 6px">¡Descuento aplicado!</div>
+        <p style="font-size:13px;color:#666;line-height:1.5">Gracias por tu compra en el Club.<br>Tu ahorro ya quedó registrado.</p>
       </div>
-      ${MIEMBRO_ID ? `<button class="btn btn--primario btn--bloque" id="calc-registrar" style="margin-top:12px">${ic("check-circle")} Registrar descuento en historial</button>` : ""}
-      <p class="calc__nota">Muestra tu ClubCard en el establecimiento. Los mensajes se envían por WhatsApp · El Club de la Gente.</p>
+      <p class="calc__nota" id="calc-nota">Ingresa el valor de la compra y toca el botón para aplicar el descuento y notificar al miembro.</p>
     </div>
   `;
 }
@@ -282,50 +286,40 @@ function wireCalc(a) {
   });
   selDesc.addEventListener("change", recalc);
 
-  $("#calc-wa-cliente").addEventListener("click", () => {
-    if (!monto) { toast("Ingresa el valor de tu compra primero", false); inMonto.focus(); return; }
-    const d = a.descuentos[+selDesc.value];
-    const ahorro = Math.round(monto * pctFrac(d.pct));
-    const msg = `🎉 ¡Usaste tu beneficio en ${a.nombre}! Compra: ${fmtCOP(monto)} · Descuento: ${d.pct} · Pagaste: ${fmtCOP(monto - ahorro)} · ✅ Ahorraste: ${fmtCOP(ahorro)} · El Club de la Gente 💳`;
-    window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
-    toast("Abriendo WhatsApp con tu comprobante");
-  });
-  $("#calc-wa-comercio").addEventListener("click", () => {
-    if (!monto) { toast("Ingresa el valor de tu compra primero", false); inMonto.focus(); return; }
-    const d = a.descuentos[+selDesc.value];
-    const ahorro = Math.round(monto * pctFrac(d.pct));
-    const msg = `📊 Nuevo descuento aplicado en ${a.nombre} · Cliente del Club usó ${d.pct} · Venta: ${fmtCOP(monto)} · Descuento dado: ${fmtCOP(ahorro)} · Total cobrado: ${fmtCOP(monto - ahorro)} · El Club de la Gente`;
-    window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
-    toast("Notificación lista para el comercio");
-  });
+  const btnAplicar = $("#calc-aplicar");
+  const exitoEl = $("#calc-exito");
+  const notaEl = $("#calc-nota");
 
-  const btnRegistrar = $("#calc-registrar");
-  if (btnRegistrar) {
-    btnRegistrar.addEventListener("click", async () => {
-      if (!monto) { toast("Ingresa el valor de la compra primero", false); inMonto.focus(); return; }
-      const d = a.descuentos[+selDesc.value];
-      const ahorro = Math.round(monto * pctFrac(d.pct));
-      btnRegistrar.disabled = true;
-      btnRegistrar.textContent = "Guardando...";
-      const ok = await registrarDescuento({
-        aliado_nombre: a.nombre,
-        categoria: a.categoria,
-        descuento_pct: d.pct,
-        compra: monto,
-        ahorro
+  btnAplicar.addEventListener("click", async () => {
+    if (!monto) { toast("Ingresa el valor de la compra primero", false); inMonto.focus(); return; }
+    const d = a.descuentos[+selDesc.value];
+    const ahorro = Math.round(monto * pctFrac(d.pct));
+
+    btnAplicar.disabled = true;
+    btnAplicar.textContent = "Aplicando...";
+
+    // 1. Guardar en Supabase
+    if (MIEMBRO_ID) {
+      await registrarDescuento({
+        aliado_nombre: a.nombre, categoria: a.categoria,
+        descuento_pct: d.pct, compra: monto, ahorro
       });
-      if (ok) {
-        btnRegistrar.innerHTML = `✓ Descuento registrado`;
-        btnRegistrar.style.background = "#1a7a3c";
-        toast("Descuento guardado en el historial del miembro");
-      } else {
-        btnRegistrar.disabled = false;
-        btnRegistrar.innerHTML = `${ic("check-circle")} Registrar descuento en historial`;
-        toast("Error al guardar. Intenta de nuevo.", false);
-        if (window.lucide) lucide.createIcons();
-      }
-    });
-  }
+    }
+
+    // 2. WhatsApp de agradecimiento al miembro
+    if (MIEMBRO_WA) {
+      const digits = MIEMBRO_WA.replace(/\D/g, "");
+      const numero = digits.startsWith("57") ? digits : "57" + digits;
+      const msg = `¡Hola! 🎉 Tu descuento del ${d.pct} en ${a.nombre} ya quedó registrado.\n\nAhorraste ${fmtCOP(ahorro)} en una compra de ${fmtCOP(monto)}. 💳\n\n¿Cómo fue tu experiencia? Cuéntanos — tu opinión nos ayuda a mejorar el Club.\n\nEl Club de la Gente`;
+      window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`, "_blank");
+    }
+
+    // 3. Mostrar éxito
+    btnAplicar.style.display = "none";
+    if (notaEl) notaEl.style.display = "none";
+    exitoEl.style.display = "block";
+    if (window.lucide) lucide.createIcons();
+  });
 
   recalc();
 }
