@@ -145,8 +145,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const tabInicial = params.get("tab") === "login" ? "login" : "registro";
   setTab(tabInicial);
 
-  // Si viene desde "Quiero ser miembro", ocultar los tabs completamente
-  if (params.get("modo") === "registro") {
+  // Ocultar tabs según el modo de entrada
+  const modo = params.get("modo");
+  if (modo === "registro" || modo === "login") {
     const tabs = $("#auth-tabs");
     if (tabs) tabs.style.display = "none";
   }
