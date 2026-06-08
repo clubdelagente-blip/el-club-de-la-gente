@@ -169,7 +169,7 @@ a { color: inherit; text-decoration: none; }
    HERO
    ============================================================ */
 .hero { padding: calc(var(--nav-h) + 8px) 0 0; }
-.hero__grid { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 64px; align-items: end; padding: 56px 0 90px; }
+.hero__grid { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 64px; align-items: start; padding: 56px 0 90px; }
 
 .tag {
   display: inline-flex; align-items: center; gap: 9px;
@@ -437,7 +437,9 @@ a { color: inherit; text-decoration: none; }
    RESPONSIVE
    ============================================================ */
 @media (max-width: 1000px) {
-  .hero__grid { grid-template-columns: 1fr; gap: 30px; align-items: start; padding-bottom: 70px; }
+  .hero__grid { grid-template-columns: 1fr; gap: 30px; align-items: start; padding-bottom: 70px; grid-template-areas: "valores" "copy"; }
+  .hero__copy { grid-area: copy; }
+  .valores { grid-area: valores; }
   .aliados-layout { grid-template-columns: 1fr; }
   .aliado-feat { grid-row: auto; }
   .aliados-grid { grid-template-columns: 1fr 1fr; }
