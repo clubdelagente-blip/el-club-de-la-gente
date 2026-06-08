@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Club de la Gente — Iniciar sesión</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="auth.css">
+</head>
+<body class="auth-body">
+
+  <aside class="auth-aside" data-screen-label="Auth · panel">
+    <div class="auth-aside__top">
+      <a class="logo" href="El Club de la Gente.html" aria-label="El Club de la Gente">
+        <span class="logo__mark">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="20" cy="20" r="18.5" stroke="#F8F6F1" stroke-width="1.4"/>
+            <circle cx="20" cy="20" r="14" stroke="#6fdc8c" stroke-width="1.4"/>
+            <line x1="0" y1="20" x2="4.5" y2="20" stroke="#F8F6F1" stroke-width="1.4"/>
+            <line x1="35.5" y1="20" x2="40" y2="20" stroke="#F8F6F1" stroke-width="1.4"/>
+            <text x="20" y="20" text-anchor="middle" dominant-baseline="central"
+                  font-family="Cormorant Garamond, serif" font-size="20" font-weight="700" fill="#F8F6F1">G</text>
+          </svg>
+        </span>
+        <span class="logo__type">
+          <span class="l1">El</span>
+          <span>Club de la</span>
+          <span>Gente</span>
+        </span>
+      </a>
+    </div>
+    <div class="auth-aside__mid">
+      <p class="auth-aside__quote">Pertenecer <em>vale</em> más que pagar.</p>
+      <p class="auth-aside__sub">Accede a tus beneficios, descuentos exclusivos y comunidad.</p>
+    </div>
+    <ul class="auth-aside__list">
+      <li><span class="n">01</span><i data-lucide="badge-percent"></i><span>Descuentos reales todos los días</span></li>
+      <li><span class="n">02</span><i data-lucide="message-circle-heart"></i><span>Un agente de WhatsApp solo para ti</span></li>
+      <li><span class="n">03</span><i data-lucide="hand-heart"></i><span>Tu compra apoya programas sociales</span></li>
+    </ul>
+  </aside>
+
+  <main class="auth-main">
+    <div class="auth-grain" aria-hidden="true"></div>
+
+    <div class="auth-main__bar">
+      <a class="auth-back" href="El Club de la Gente.html"><i data-lucide="arrow-left"></i> Volver al inicio</a>
+    </div>
+
+    <div class="auth-main__center">
+      <div class="auth-card">
+
+        <!-- VISTA LOGIN -->
+        <section class="auth-view is-active">
+          <span class="auth-eyebrow">Bienvenido de nuevo</span>
+          <h1 class="auth-title">Tu club te espera.</h1>
+          <p class="auth-desc">Inicia sesión para acceder a tus beneficios, descuentos y comunidad.</p>
+
+          <form class="auth-form" id="form-login">
+            <div class="campo">
+              <label for="login-user">Usuario o WhatsApp</label>
+              <input type="text" id="login-user" required placeholder="Tu número de WhatsApp" autocomplete="username">
+            </div>
+            <div class="campo" id="campo-pass-wrap">
+              <label for="login-pass">Contraseña</label>
+              <input type="password" id="login-pass" placeholder="Tu contraseña" autocomplete="current-password">
+            </div>
+            <a class="auth-forgot" href="#" id="link-forgot">¿Olvidaste tu contraseña?</a>
+            <button type="submit" class="btn btn--primario btn--bloque">Iniciar sesión <span class="ar">&rarr;</span></button>
+          </form>
+
+          <div class="auth-divider">o</div>
+
+          <button class="btn-google" id="btn-google-login">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1Z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38Z"/></svg>
+            Continuar con Google
+          </button>
+
+          <p id="login-error" style="color:#c0392b;font-size:13px;margin-top:8px;text-align:center;display:none"></p>
+        </section>
+
+        <!-- VISTA OLVIDÉ CONTRASEÑA -->
+        <section class="auth-view" id="view-forgot" style="display:none">
+          <button class="auth-role-back" id="forgot-back"><i data-lucide="arrow-left"></i> Volver</button>
+          <span class="auth-eyebrow">Recuperar acceso</span>
+          <h1 class="auth-title">¿Olvidaste tu contraseña?</h1>
+          <p class="auth-desc">Ingresa tu correo y te enviamos un enlace para crear una nueva contraseña.</p>
+          <form class="auth-form" id="form-forgot">
+            <div class="campo">
+              <label for="forgot-email">Correo electrónico</label>
+              <input type="email" id="forgot-email" placeholder="tu@email.com" autocomplete="email" required>
+            </div>
+            <button type="submit" class="btn btn--primario btn--bloque">Enviar enlace <span class="ar">&rarr;</span></button>
+          </form>
+          <p id="forgot-ok" style="display:none;text-align:center;color:#1f9d3c;font-size:14px;margin-top:16px;font-weight:600">
+            ✓ Revisa tu correo — el enlace vence en 1 hora.
+          </p>
+        </section>
+
+        <!-- VISTA NUEVA CONTRASEÑA -->
+        <section class="auth-view" id="view-recovery" style="display:none">
+          <span class="auth-eyebrow">Nueva contraseña</span>
+          <h1 class="auth-title">Casi listo.</h1>
+          <p class="auth-desc">Elige una contraseña nueva. Mínimo 8 caracteres.</p>
+          <form class="auth-form" id="form-recovery">
+            <div class="campo">
+              <label for="recovery-pass">Nueva contraseña</label>
+              <input type="password" id="recovery-pass" placeholder="Mínimo 8 caracteres" autocomplete="new-password" required>
+            </div>
+            <div class="campo">
+              <label for="recovery-pass2">Confirmar contraseña</label>
+              <input type="password" id="recovery-pass2" placeholder="Repite la contraseña" autocomplete="new-password" required>
+            </div>
+            <button type="submit" class="btn btn--primario btn--bloque">Guardar contraseña <span class="ar">&rarr;</span></button>
+          </form>
+        </section>
+
+      </div>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    const supabase = createClient(
+      "https://egwaedadpqfwnbfosiao.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4"
+    );
+
+    if (window.lucide) lucide.createIcons();
+
+    const errEl = document.getElementById("login-error");
+    function showErr(msg) { errEl.textContent = msg; errEl.style.display = "block"; }
+
+    // Ocultar contraseña cuando escribe número
+    document.getElementById("login-user").addEventListener("input", (e) => {
+      const val = e.target.value.trim();
+      const esTel = !val.includes("@") && /^\d[\d\s-]*$/.test(val);
+      document.getElementById("campo-pass-wrap").style.display = esTel ? "none" : "";
+      document.getElementById("link-forgot").style.display = esTel ? "none" : "";
+    });
+
+    // Login
+    document.getElementById("form-login").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector("button[type=submit]");
+      const raw = document.getElementById("login-user").value.trim();
+      const digits = raw.replace(/\D/g, "");
+      const esMiembro = !raw.includes("@") && digits.length >= 7;
+      const email = esMiembro ? digits + "@clubdelagente.app" : raw;
+      const password = esMiembro ? "Club" + digits + "!" : document.getElementById("login-pass").value;
+
+      btn.disabled = true; btn.textContent = "Un momento...";
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      btn.disabled = false; btn.innerHTML = "Iniciar sesión <span class='ar'>→</span>";
+
+      if (error) {
+        showErr(esMiembro ? "Número no encontrado. ¿Ya te registraste?" : "Correo o contraseña incorrectos.");
+        return;
+      }
+      const perfil = data.user?.user_metadata || {};
+      localStorage.setItem("ecdlg_perfil", JSON.stringify({
+        nombre: perfil.nombre || raw,
+        primerNombre: (perfil.nombre || raw).split(" ")[0],
+        rol: perfil.rol || "miembro",
+      }));
+      location.href = "Perfil.html";
+    });
+
+    // Google
+    document.getElementById("btn-google-login").addEventListener("click", async () => {
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: "https://clubdelagente-blip.github.io/el-club-de-la-gente/Login.html" }
+      });
+    });
+
+    // Google callback
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        document.querySelector(".auth-view.is-active")?.classList.remove("is-active");
+        document.getElementById("view-recovery").style.display = "";
+        return;
+      }
+      if (event === "SIGNED_IN" && session?.user?.app_metadata?.provider === "google") {
+        const user = session.user;
+        const nombre = user.user_metadata?.full_name || user.email || "Miembro";
+        const { data: existe } = await supabase.from("perfiles").select("id,rol").eq("id", user.id).single();
+        if (existe) {
+          localStorage.setItem("ecdlg_perfil", JSON.stringify({ nombre, primerNombre: nombre.split(" ")[0], rol: existe.rol || "miembro" }));
+          location.href = "Perfil.html";
+        } else {
+          await supabase.from("perfiles").insert({ id: user.id, nombre, whatsapp: "", rol: "miembro" });
+          location.href = "Planes.html";
+        }
+      }
+    });
+
+    // Olvidé contraseña
+    document.getElementById("link-forgot").addEventListener("click", (e) => {
+      e.preventDefault();
+      document.querySelector(".auth-view.is-active, .auth-view:not([style*='none'])")?.setAttribute("style", "display:none");
+      document.getElementById("view-forgot").style.display = "";
+    });
+    document.getElementById("forgot-back").addEventListener("click", () => {
+      document.getElementById("view-forgot").style.display = "none";
+      document.querySelector(".auth-view:first-of-type").style.display = "";
+    });
+    document.getElementById("form-forgot").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector("button[type=submit]");
+      const email = document.getElementById("forgot-email").value.trim();
+      btn.disabled = true;
+      await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: "https://clubdelagente-blip.github.io/el-club-de-la-gente/Login.html"
+      });
+      btn.style.display = "none";
+      document.getElementById("forgot-ok").style.display = "block";
+    });
+
+    // Nueva contraseña
+    document.getElementById("form-recovery").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const pass = document.getElementById("recovery-pass").value;
+      const pass2 = document.getElementById("recovery-pass2").value;
+      if (pass.length < 8) { showErr("Mínimo 8 caracteres."); return; }
+      if (pass !== pass2) { showErr("Las contraseñas no coinciden."); return; }
+      const { error } = await supabase.auth.updateUser({ password: pass });
+      if (error) { showErr("Error: " + error.message); return; }
+      location.href = "Perfil.html";
+    });
+  </script>
+
+</body>
+</html>
