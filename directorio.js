@@ -314,12 +314,14 @@ function wireCalc(a) {
       });
     }
 
-    // 2. WhatsApp de agradecimiento al miembro
+    // 2. WhatsApp automático al miembro vía Edge Function
     if (MIEMBRO_WA) {
-      const digits = MIEMBRO_WA.replace(/\D/g, "");
-      const numero = digits.startsWith("57") ? digits : "57" + digits;
-      const msg = `¡Hola! 🎉 Tu descuento del ${d.pct} en ${a.nombre} ya quedó registrado.\n\nAhorraste ${fmtCOP(ahorro)} en una compra de ${fmtCOP(monto)}. 💳\n\n¿Cómo fue tu experiencia? Cuéntanos — tu opinión nos ayuda a mejorar el Club.\n\nEl Club de la Gente`;
-      window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`, "_blank");
+      const msg = `¡Hola! 🎉 Tu descuento del ${d.pct} en ${a.nombre} ya quedó registrado.\n\nAhorraste ${fmtCOP(ahorro)} en una compra de ${fmtCOP(monto)}. 💳\n\n¿Cómo fue tu experiencia? Cuéntanos, tu opinión nos ayuda a mejorar el Club.\n\nEl Club de la Gente`;
+      fetch(`${SB_URL}/functions/v1/whatsapp-send`, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ to: MIEMBRO_WA, body: msg })
+      }).catch(() => {});
     }
 
     // 3. Mostrar éxito

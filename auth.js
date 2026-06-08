@@ -321,6 +321,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     } catch (_) {}
 
+    // Mensaje de bienvenida por WhatsApp (fire and forget)
+    if (whatsapp) {
+      const primerNombre = nombre.split(" ")[0];
+      const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nYa eres parte de una comunidad que ahorra, aprende y apoya a Fusagasugá. 🎉\n\nDesde aquí recibirás confirmaciones de tus descuentos y novedades del Club.\n\nEl Club de la Gente`;
+      supabase.functions.invoke("whatsapp-send", {
+        body: { to: whatsapp, body: msgBienvenida }
+      }).catch(() => {});
+    }
+
     setLoading(btn, false, "Crear mi cuenta →");
     location.href = "Planes.html";
   });
