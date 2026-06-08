@@ -107,8 +107,12 @@ function pctFrac(p) {
 /* ---------- SUPABASE (REST directo para no requerir módulo) ---------- */
 const SB_URL = "https://egwaedadpqfwnbfosiao.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4";
-const MIEMBRO_ID = new URLSearchParams(location.search).get("miembro");
-const MIEMBRO_WA = new URLSearchParams(location.search).get("wa") || "";
+const _p = new URLSearchParams(location.search);
+const MIEMBRO_ID  = _p.get("miembro");
+const MIEMBRO_WA  = _p.get("wa") || "";
+const MIEMBRO_PLAN = _p.get("plan") || "basica";
+const MIEMBRO_USOS = parseInt(_p.get("usos") || "0", 10);
+const LIMITE_ALCANZADO = MIEMBRO_ID && MIEMBRO_PLAN === "basica" && MIEMBRO_USOS >= 2;
 
 async function registrarDescuento({ aliado_nombre, categoria, descuento_pct, compra, ahorro }) {
   if (!MIEMBRO_ID) return false;
@@ -250,9 +254,13 @@ function sheetAliado(a) {
           <div class="calc__cel-num" id="calc-ahorro">$0</div>
         </div>
       </div>
-      <button class="btn btn--primario btn--bloque" id="calc-aplicar" style="margin-top:16px">
-        Aplicar descuento &rarr;
-      </button>
+      ${LIMITE_ALCANZADO
+        ? `<div style="margin-top:16px;padding:16px;background:#fef3c7;border-radius:12px;text-align:center">
+            <div style="font-weight:700;color:#b45309;font-size:14px;margin-bottom:4px">⚠ Límite mensual alcanzado</div>
+            <p style="font-size:12px;color:#92400e;line-height:1.4">Este miembro usó sus 2 descuentos del mes. El descuento no aplica hasta el próximo mes.</p>
+           </div>`
+        : `<button class="btn btn--primario btn--bloque" id="calc-aplicar" style="margin-top:16px">Aplicar descuento &rarr;</button>`
+      }
       <div id="calc-exito" style="display:none;text-align:center;padding:24px 0 8px">
         <div style="font-size:48px;line-height:1">✓</div>
         <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;margin:10px 0 6px">¡Descuento aplicado!</div>

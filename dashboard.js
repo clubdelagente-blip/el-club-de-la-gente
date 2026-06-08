@@ -208,6 +208,24 @@ async function cargarDescuentos(userId) {
     .select("aliado_nombre, categoria, descuento_pct, compra, ahorro, created_at")
     .eq("miembro_id", userId)
     .order("created_at", { ascending: false });
+  // Mostrar usos restantes si es plan básica
+  const u = leerPerfil();
+  if (u.plan !== "premium") {
+    const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
+    const usosMes = (data || []).filter(d => new Date(d.created_at) >= inicioMes).length;
+    const restantes = Math.max(0, 2 - usosMes);
+    const banner = document.getElementById("banner-usos");
+    if (banner) {
+      banner.style.display = "flex";
+      banner.innerHTML = restantes > 0
+        ? `<span>${ic("ticket-percent")} Te quedan <b>${restantes} descuento${restantes !== 1 ? "s" : ""}</b> este mes · <a href="Planes.html" style="color:#1a7a3c;font-weight:700">Actualizar a Premium</a></span>`
+        : `<span style="color:#b45309">${ic("alert-triangle")} Llegaste al límite de 2 descuentos este mes · <a href="Planes.html" style="color:#b45309;font-weight:700">Actualizar a Premium</a></span>`;
+      banner.style.background = restantes > 0 ? "#e8f5ee" : "#fef3c7";
+      banner.style.color = restantes > 0 ? "#1a7a3c" : "#b45309";
+      if (window.lucide) lucide.createIcons();
+    }
+  }
+
   if (error || !data?.length) return;
 
   const iconMap = { "Odontología": "smile", "Bienestar y salud": "heart-pulse", "Turismo": "mountain-snow",

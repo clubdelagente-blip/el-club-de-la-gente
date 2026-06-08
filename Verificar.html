@@ -103,6 +103,10 @@
       line-height: 1.5;
     }
 
+    .estado-ic--lim { background: #fef3c7; }
+    .estado-lbl--lim { color: #b45309; }
+    .badge--lim { background: #fef3c7; color: #b45309; }
+
     /* Loading / Error */
     .loading { font-size: 14px; color: var(--tinta-40); text-align: center; }
     .error-msg { color: var(--rojo); font-size: 14px; font-weight: 600; text-align: center; }
@@ -144,34 +148,43 @@
     const card = document.getElementById("card");
     const id = new URLSearchParams(location.search).get("id");
 
-    function renderOk(p) {
+    const btnStyle = (bg, color="#fff") => `display:block;width:100%;padding:14px;background:${bg};color:${color};border-radius:12px;text-align:center;text-decoration:none;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:600;margin-top:8px;letter-spacing:.02em;border:none;cursor:pointer;`;
+
+    function renderOk(p, usos, esPremium) {
       const rolLabel = { miembro: "Miembro", aliado: "Aliado comercial", profesional: "Profesional" }[p.rol] || "Miembro";
+      const planLabel = esPremium ? "Premium · Ilimitado" : `Básica · ${usos}/2 usos este mes`;
+      const dirUrl = `Directorio.html?miembro=${id}&wa=${encodeURIComponent(p.whatsapp||"")}&plan=${p.plan||"basica"}&usos=${usos}`;
       card.innerHTML = `
         <div class="estado-ic estado-ic--ok">✓</div>
         <div class="estado-lbl estado-lbl--ok">Membresía activa</div>
         <div class="miembro-nombre">${p.nombre}</div>
         <div class="miembro-tipo">${rolLabel} · El Club de la Gente</div>
         <hr class="divider">
-        <div class="detalle">
-          <span class="detalle__lbl">Estado</span>
-          <span class="badge badge--ok"><span class="dot"></span> Activo</span>
-        </div>
-        <div class="detalle">
-          <span class="detalle__lbl">Tipo</span>
-          <span class="detalle__val">${rolLabel}</span>
-        </div>
-        <div class="detalle">
-          <span class="detalle__lbl">Verificado</span>
-          <span class="detalle__val">${new Date().toLocaleString("es-CO", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" })}</span>
-        </div>
+        <div class="detalle"><span class="detalle__lbl">Estado</span><span class="badge badge--ok"><span class="dot"></span> Activo</span></div>
+        <div class="detalle"><span class="detalle__lbl">Plan</span><span class="detalle__val">${planLabel}</span></div>
+        <div class="detalle"><span class="detalle__lbl">Verificado</span><span class="detalle__val">${new Date().toLocaleString("es-CO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span></div>
         <hr class="divider">
-        <a href="Directorio.html?miembro=${id}&wa=${encodeURIComponent(data.whatsapp||'')}" style="
-          display:block; width:100%; padding:14px;
-          background:#1a7a3c; color:#fff; border-radius:12px;
-          text-align:center; text-decoration:none;
-          font-family:'Montserrat',sans-serif; font-size:14px; font-weight:600;
-          margin-top:4px; letter-spacing:.02em;
-        ">Ver aliados y descuentos &rarr;</a>
+        <a href="${dirUrl}" style="${btnStyle("#1a7a3c")}">Ver aliados y descuentos &rarr;</a>
+      `;
+    }
+
+    function renderLimite(p) {
+      const wa = (p.whatsapp||"").replace(/\D/g,"");
+      const numero = wa.startsWith("57") ? wa : "57"+wa;
+      const msg = `¡Hola ${p.nombre}! 👋 Llegaste al límite de 2 descuentos del mes con tu membresía Básica.\n\n¿Quieres descuentos ilimitados? Actualiza a Premium por solo $20.000/mes y aprovecha el Club sin restricciones.\n\nEl Club de la Gente`;
+      const waUrl = `https://wa.me/${numero}?text=${encodeURIComponent(msg)}`;
+      card.innerHTML = `
+        <div class="estado-ic estado-ic--lim">⚠</div>
+        <div class="estado-lbl estado-lbl--lim">Límite mensual alcanzado</div>
+        <div class="miembro-nombre">${p.nombre}</div>
+        <div class="miembro-tipo">Membresía Básica · El Club de la Gente</div>
+        <hr class="divider">
+        <div class="detalle"><span class="detalle__lbl">Estado</span><span class="badge badge--lim"><span class="dot"></span> Límite 2/2</span></div>
+        <div class="detalle"><span class="detalle__lbl">Descuentos usados</span><span class="detalle__val">2 de 2 este mes</span></div>
+        <hr class="divider">
+        <p style="font-size:13px;color:#888;margin-bottom:12px;line-height:1.5">Este miembro usó sus 2 descuentos del mes. No aplica más descuentos hasta el próximo mes.</p>
+        <a href="Planes.html" style="${btnStyle("#1a7a3c")}">Actualizar a Premium &rarr;</a>
+        ${wa ? `<a href="${waUrl}" style="${btnStyle("#fef3c7","#b45309")}">Notificar al miembro por WhatsApp</a>` : ""}
       `;
     }
 
@@ -181,10 +194,7 @@
         <div class="estado-lbl estado-lbl--no">Membresía no válida</div>
         <p class="error-msg" style="margin-top:8px">${msg}</p>
         <hr class="divider">
-        <div class="detalle">
-          <span class="detalle__lbl">Estado</span>
-          <span class="badge badge--no"><span class="dot"></span> Inactivo</span>
-        </div>
+        <div class="detalle"><span class="detalle__lbl">Estado</span><span class="badge badge--no"><span class="dot"></span> Inactivo</span></div>
         <p style="margin-top:20px;font-size:13px;color:#888">No se puede aplicar el descuento. El miembro debe renovar su membresía.</p>
       `;
     }
@@ -194,14 +204,32 @@
     } else {
       const { data, error } = await supabase
         .from("perfiles")
-        .select("nombre, rol, whatsapp")
+        .select("nombre, rol, whatsapp, plan")
         .eq("id", id)
         .single();
 
       if (error || !data) {
         renderNo("Miembro no encontrado. Verifica que el QR sea válido.");
+        return;
+      }
+
+      const esPremium = data.plan === "premium";
+      let usos = 0;
+
+      if (!esPremium) {
+        const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
+        const { count } = await supabase
+          .from("descuentos")
+          .select("id", { count: "exact", head: true })
+          .eq("miembro_id", id)
+          .gte("created_at", inicioMes.toISOString());
+        usos = count || 0;
+      }
+
+      if (!esPremium && usos >= 2) {
+        renderLimite(data);
       } else {
-        renderOk(data);
+        renderOk(data, usos, esPremium);
       }
     }
   </script>
