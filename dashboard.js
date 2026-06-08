@@ -85,6 +85,8 @@ function render() {
   // ClubCard (nuevo diseño)
   $$(".cc-card-name").forEach(el => el.textContent = u.nombre.toUpperCase());
   $$(".cc-card-codigo").forEach(el => el.textContent = u.codigo);
+  // Tema premium (dorado) o básico (plata)
+  $$(".ccv2").forEach(el => el.classList.toggle("ccv2--premium", u.plan === "premium"));
 
   // Perfil
   $("#perfil-name").textContent = u.nombre;

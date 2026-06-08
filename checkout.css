@@ -194,7 +194,7 @@
    CLUBCARD V2 — diseño ornamentado (modelo físico)
    ============================================================ */
 .ccv2 { width: 100%; max-width: 440px; margin: 0 auto; perspective: 1600px; }
-.ccv2__flip { position: relative; width: 100%; aspect-ratio: 1.586; transition: transform .7s cubic-bezier(.4,0,.2,1); transform-style: preserve-3d; }
+.ccv2__flip { position: relative; width: 100%; aspect-ratio: 1.586; transition: transform 1s cubic-bezier(0.645,0.045,0.355,1); transform-style: preserve-3d; }
 .ccv2__flip.is-back { transform: rotateY(180deg); }
 
 .ccv2-card {
@@ -239,6 +239,33 @@
 .ccv2-qr img { width: 100%; height: 100%; }
 .ccv2-renueva { font-size: clamp(11px, 2.8vw, 13px); color: rgba(244,241,234,.78); }
 .ccv2-renueva span { font-weight: 600; color: #F4F1EA; }
+
+/* ============================================================
+   CLUBCARD PREMIUM — bordes y letras doradas, fondo negro
+   ============================================================ */
+.ccv2--premium .ccv2-frame {
+  border-color: rgba(201,164,78,.75);
+  box-shadow: 0 0 18px rgba(201,164,78,.08) inset;
+}
+.ccv2--premium .ccv2-frame::before { border-color: rgba(201,164,78,.28); }
+.ccv2--premium .ccv2-corner::before,
+.ccv2--premium .ccv2-corner::after { background: rgba(228,193,112,.9); }
+.ccv2--premium .ccv2-brand { color: rgba(232,200,122,.95); }
+.ccv2--premium .ccv2-logo__el,
+.ccv2--premium .ccv2-logo__club,
+.ccv2--premium .ccv2-logo__gente { color: #e8c87a; }
+.ccv2--premium .ccv2-logo__g { border-color: rgba(232,200,122,.9); color: rgba(232,200,122,.9); }
+.ccv2--premium .ccv2-codigo__lbl { color: rgba(232,200,122,.55); }
+.ccv2--premium .ccv2-codigo__val { color: #e8c87a; }
+.ccv2--premium .ccv2-name { color: #f0d98a; }
+.ccv2--premium .ccv2-orn::before,
+.ccv2--premium .ccv2-orn::after { background: rgba(201,164,78,.5); }
+.ccv2--premium .ccv2-orn { color: rgba(201,164,78,.65); }
+.ccv2--premium .ccv2-renueva { color: rgba(232,200,122,.8); }
+.ccv2--premium .ccv2-renueva span { color: #e8c87a; }
+.ccv2--premium .ccv2-card {
+  box-shadow: 0 32px 64px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(201,164,78,.15), inset 0 0 60px rgba(201,164,78,.03);
+}
 
 /* Personalización en el éxito de checkout */
 .cc-perso { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center; text-align: left; margin-bottom: 32px; }
