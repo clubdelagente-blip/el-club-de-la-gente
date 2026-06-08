@@ -151,6 +151,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     const tabs = $("#auth-tabs");
     if (tabs) tabs.style.display = "none";
   }
+  if (modo === "login") {
+    // Ocultar "¿No tienes cuenta? Regístrate gratis"
+    const switchLink = $("#view-login .auth-switch");
+    if (switchLink) switchLink.style.display = "none";
+  }
 
   // Tabs
   $$(".auth-tab").forEach(t => t.addEventListener("click", () => setTab(t.dataset.tab)));
