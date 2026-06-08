@@ -145,6 +145,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const tabInicial = params.get("tab") === "login" ? "login" : "registro";
   setTab(tabInicial);
 
+  // Si viene desde "Quiero ser miembro", ocultar los tabs completamente
+  if (params.get("modo") === "registro") {
+    const tabs = $("#auth-tabs");
+    if (tabs) tabs.style.display = "none";
+  }
+
   // Tabs
   $$(".auth-tab").forEach(t => t.addEventListener("click", () => setTab(t.dataset.tab)));
   $$("[data-goto]").forEach(b => b.addEventListener("click", () => setTab(b.dataset.goto)));
