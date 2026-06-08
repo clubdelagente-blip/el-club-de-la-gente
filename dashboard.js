@@ -200,11 +200,23 @@ function cerrarSeg() {
   localStorage.setItem("ecdlg_segmentado", "1");
 }
 
+/* ---------- QR de verificación ---------- */
+async function generarQR() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user?.id) return;
+  const userId = session.user.id;
+  const base = "https://clubdelagente-blip.github.io/el-club-de-la-gente/Verificar.html";
+  const url = encodeURIComponent(`${base}?id=${userId}`);
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data=${url}`;
+  document.querySelectorAll(".ccv2-qr img").forEach(img => img.src = qrSrc);
+}
+
 /* ---------- INIT ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   render();
   const u = leerPerfil();
   irPanel("inicio");
+  generarQR();
   if (window.lucide) lucide.createIcons();
 
   // Sidebar nav

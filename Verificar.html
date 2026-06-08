@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Club de la Gente — Verificar membresía</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --verde: #1a7a3c;
+      --verde-claro: #e8f5ee;
+      --rojo: #c0392b;
+      --rojo-claro: #fdecea;
+      --crema: #f8f6f1;
+      --tinta: #0e0e0e;
+      --tinta-40: rgba(14,14,14,.4);
+      --display: 'Cormorant Garamond', Georgia, serif;
+      --sans: 'Montserrat', sans-serif;
+    }
+    body {
+      font-family: var(--sans);
+      background: var(--crema);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    /* Logo */
+    .logo {
+      display: flex; align-items: center; gap: 12px;
+      text-decoration: none; color: var(--tinta);
+      margin-bottom: 40px;
+    }
+    .logo__mark svg { width: 38px; height: 38px; display: block; }
+    .logo__type { display: flex; flex-direction: column; line-height: 1.1; }
+    .logo__type .l1 { font-family: var(--display); font-size: 10px; letter-spacing: .25em; text-transform: uppercase; }
+    .logo__type span:not(.l1) { font-family: var(--display); font-size: 14px; font-weight: 600; }
+
+    /* Card */
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 40px 32px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 2px 32px rgba(0,0,0,.07);
+    }
+
+    /* Estado activo */
+    .estado-ic {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 32px;
+    }
+    .estado-ic--ok { background: var(--verde-claro); }
+    .estado-ic--no { background: var(--rojo-claro); }
+
+    .estado-lbl {
+      font-size: 11px; font-weight: 700; letter-spacing: .15em;
+      text-transform: uppercase; margin-bottom: 8px;
+    }
+    .estado-lbl--ok { color: var(--verde); }
+    .estado-lbl--no { color: var(--rojo); }
+
+    .miembro-nombre {
+      font-family: var(--display);
+      font-size: 32px; font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    .miembro-tipo {
+      font-size: 13px; color: var(--tinta-40);
+      margin-bottom: 28px;
+    }
+
+    .divider { border: none; border-top: 1px solid #ebebeb; margin: 20px 0; }
+
+    .detalle { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+    .detalle__lbl { font-size: 12px; color: var(--tinta-40); }
+    .detalle__val { font-size: 13px; font-weight: 600; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 14px; border-radius: 99px;
+      font-size: 12px; font-weight: 700; letter-spacing: .05em;
+    }
+    .badge--ok { background: var(--verde-claro); color: var(--verde); }
+    .badge--no { background: var(--rojo-claro); color: var(--rojo); }
+    .badge .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+    .footer-note {
+      margin-top: 28px;
+      font-size: 11px; color: var(--tinta-40);
+      line-height: 1.5;
+    }
+
+    /* Loading / Error */
+    .loading { font-size: 14px; color: var(--tinta-40); text-align: center; }
+    .error-msg { color: var(--rojo); font-size: 14px; font-weight: 600; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <a class="logo" href="El Club de la Gente.html">
+    <span class="logo__mark">
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="20" cy="20" r="18.5" stroke="#0E0E0E" stroke-width="1.4"/>
+        <circle cx="20" cy="20" r="14" stroke="#008000" stroke-width="1.4"/>
+        <text x="20" y="20" text-anchor="middle" dominant-baseline="central"
+              font-family="Cormorant Garamond, serif" font-size="20" font-weight="700" fill="#0E0E0E">G</text>
+      </svg>
+    </span>
+    <span class="logo__type">
+      <span class="l1">El</span>
+      <span>Club de la</span>
+      <span>Gente</span>
+    </span>
+  </a>
+
+  <div class="card" id="card">
+    <p class="loading">Verificando membresía...</p>
+  </div>
+
+  <p class="footer-note" style="max-width:360px;text-align:center;margin-top:20px">
+    Esta verificación es en tiempo real. Si el estado es <strong>Activo</strong>, el miembro tiene derecho al descuento correspondiente.
+  </p>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    const supabase = createClient(
+      "https://egwaedadpqfwnbfosiao.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4"
+    );
+
+    const card = document.getElementById("card");
+    const id = new URLSearchParams(location.search).get("id");
+
+    function renderOk(p) {
+      const rolLabel = { miembro: "Miembro", aliado: "Aliado comercial", profesional: "Profesional" }[p.rol] || "Miembro";
+      card.innerHTML = `
+        <div class="estado-ic estado-ic--ok">✓</div>
+        <div class="estado-lbl estado-lbl--ok">Membresía activa</div>
+        <div class="miembro-nombre">${p.nombre}</div>
+        <div class="miembro-tipo">${rolLabel} · El Club de la Gente</div>
+        <hr class="divider">
+        <div class="detalle">
+          <span class="detalle__lbl">Estado</span>
+          <span class="badge badge--ok"><span class="dot"></span> Activo</span>
+        </div>
+        <div class="detalle">
+          <span class="detalle__lbl">Tipo</span>
+          <span class="detalle__val">${rolLabel}</span>
+        </div>
+        <div class="detalle">
+          <span class="detalle__lbl">Verificado</span>
+          <span class="detalle__val">${new Date().toLocaleString("es-CO", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" })}</span>
+        </div>
+      `;
+    }
+
+    function renderNo(msg) {
+      card.innerHTML = `
+        <div class="estado-ic estado-ic--no">✗</div>
+        <div class="estado-lbl estado-lbl--no">Membresía no válida</div>
+        <p class="error-msg" style="margin-top:8px">${msg}</p>
+        <hr class="divider">
+        <div class="detalle">
+          <span class="detalle__lbl">Estado</span>
+          <span class="badge badge--no"><span class="dot"></span> Inactivo</span>
+        </div>
+        <p style="margin-top:20px;font-size:13px;color:#888">No se puede aplicar el descuento. El miembro debe renovar su membresía.</p>
+      `;
+    }
+
+    if (!id) {
+      renderNo("QR inválido — no contiene un ID de miembro.");
+    } else {
+      const { data, error } = await supabase
+        .from("perfiles")
+        .select("nombre, rol, activo")
+        .eq("id", id)
+        .single();
+
+      if (error || !data) {
+        renderNo("Miembro no encontrado.");
+      } else if (data.activo === false) {
+        renderNo("La membresía está inactiva o pendiente de pago.");
+      } else {
+        renderOk(data);
+      }
+    }
+  </script>
+
+</body>
+</html>
