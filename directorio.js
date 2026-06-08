@@ -104,6 +104,26 @@ function pctFrac(p) {
   return (parseFloat(p) || 0) / 100;
 }
 
+/* ---------- SUPABASE (REST directo para no requerir módulo) ---------- */
+const SB_URL = "https://egwaedadpqfwnbfosiao.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4";
+const MIEMBRO_ID = new URLSearchParams(location.search).get("miembro");
+
+async function registrarDescuento({ aliado_nombre, categoria, descuento_pct, compra, ahorro }) {
+  if (!MIEMBRO_ID) return false;
+  const res = await fetch(`${SB_URL}/rest/v1/descuentos`, {
+    method: "POST",
+    headers: {
+      "apikey": SB_KEY,
+      "Authorization": "Bearer " + SB_KEY,
+      "Content-Type": "application/json",
+      "Prefer": "return=minimal"
+    },
+    body: JSON.stringify({ miembro_id: MIEMBRO_ID, aliado_nombre, categoria, descuento_pct, compra, ahorro })
+  });
+  return res.ok;
+}
+
 /* ---------- ESTADO ---------- */
 let filtroActivo = "Todos";
 let query = "";
@@ -233,6 +253,7 @@ function sheetAliado(a) {
         <button class="btn btn--wa" id="calc-wa-cliente">${ic("message-circle")} Enviar a mi WhatsApp</button>
         <button class="btn btn--wa-ghost" id="calc-wa-comercio">${ic("store")} Notificar al comercio</button>
       </div>
+      ${MIEMBRO_ID ? `<button class="btn btn--primario btn--bloque" id="calc-registrar" style="margin-top:12px">${ic("check-circle")} Registrar descuento en historial</button>` : ""}
       <p class="calc__nota">Muestra tu ClubCard en el establecimiento. Los mensajes se envían por WhatsApp · El Club de la Gente.</p>
     </div>
   `;
@@ -277,6 +298,35 @@ function wireCalc(a) {
     window.open("https://wa.me/?text=" + encodeURIComponent(msg), "_blank");
     toast("Notificación lista para el comercio");
   });
+
+  const btnRegistrar = $("#calc-registrar");
+  if (btnRegistrar) {
+    btnRegistrar.addEventListener("click", async () => {
+      if (!monto) { toast("Ingresa el valor de la compra primero", false); inMonto.focus(); return; }
+      const d = a.descuentos[+selDesc.value];
+      const ahorro = Math.round(monto * pctFrac(d.pct));
+      btnRegistrar.disabled = true;
+      btnRegistrar.textContent = "Guardando...";
+      const ok = await registrarDescuento({
+        aliado_nombre: a.nombre,
+        categoria: a.categoria,
+        descuento_pct: d.pct,
+        compra: monto,
+        ahorro
+      });
+      if (ok) {
+        btnRegistrar.innerHTML = `✓ Descuento registrado`;
+        btnRegistrar.style.background = "#1a7a3c";
+        toast("Descuento guardado en el historial del miembro");
+      } else {
+        btnRegistrar.disabled = false;
+        btnRegistrar.innerHTML = `${ic("check-circle")} Registrar descuento en historial`;
+        toast("Error al guardar. Intenta de nuevo.", false);
+        if (window.lucide) lucide.createIcons();
+      }
+    });
+  }
+
   recalc();
 }
 

@@ -200,6 +200,58 @@ function cerrarSeg() {
   localStorage.setItem("ecdlg_segmentado", "1");
 }
 
+/* ---------- Descuentos reales ---------- */
+async function cargarDescuentos(userId) {
+  const { data, error } = await supabase
+    .from("descuentos")
+    .select("aliado_nombre, categoria, descuento_pct, compra, ahorro, created_at")
+    .eq("miembro_id", userId)
+    .order("created_at", { ascending: false });
+  if (error || !data?.length) return;
+
+  const iconMap = { "Odontología": "smile", "Bienestar y salud": "heart-pulse", "Turismo": "mountain-snow",
+    "Veterinaria": "paw-print", "Canasta familiar": "shopping-basket", "Ropa personalizada": "shirt",
+    "Heladería": "ice-cream", "Comida rápida": "sandwich", "Barbería": "scissors" };
+  const getIcon = (cat) => iconMap[cat] || "receipt";
+  const fmtFecha = (iso) => new Date(iso).toLocaleDateString("es-CO", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" });
+
+  // Stats
+  const totalAhorro = data.reduce((s, d) => s + (d.ahorro || 0), 0);
+  const countDescuentos = data.length;
+  const statNums = document.querySelectorAll(".stat__num");
+  if (statNums[0]) statNums[0].textContent = fmtCOP(totalAhorro);
+  if (statNums[1]) statNums[1].textContent = countDescuentos;
+
+  // Actividad reciente (dashboard)
+  const actEl = $("#actividad");
+  if (actEl) actEl.innerHTML = data.slice(0, 4).map(it => `
+    <li class="act-item">
+      <span class="act-item__ic">${ic(getIcon(it.categoria))}</span>
+      <span class="act-item__body">
+        <span class="act-item__name">${it.aliado_nombre}</span>
+        <span class="act-item__meta">${fmtFecha(it.created_at)} · ${it.descuento_pct} de descuento</span>
+      </span>
+      <span class="act-item__nums">
+        <span class="act-item__ahorro">−${fmtCOP(it.ahorro)}</span>
+        <span class="act-item__compra">de ${fmtCOP(it.compra)}</span>
+      </span>
+    </li>`).join("");
+
+  // Tabla completa de descuentos
+  const tablaEl = $("#tabla-body");
+  if (tablaEl) tablaEl.innerHTML = data.map(it => `
+    <tr>
+      <td><span class="tabla__aliado"><span class="tabla__ic">${ic(getIcon(it.categoria))}</span>
+        <span><span class="tabla__name">${it.aliado_nombre}</span><br><span class="tabla__cat">${it.categoria || ""}</span></span></span></td>
+      <td>${fmtFecha(it.created_at)}</td>
+      <td><span class="tag-pct">${it.descuento_pct}</span></td>
+      <td>${fmtCOP(it.compra)}</td>
+      <td class="tabla__ahorro">−${fmtCOP(it.ahorro)}</td>
+    </tr>`).join("");
+
+  if (window.lucide) lucide.createIcons();
+}
+
 /* ---------- QR de verificación ---------- */
 async function generarQR() {
   const { data: { session } } = await supabase.auth.getSession();
@@ -217,6 +269,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const u = leerPerfil();
   irPanel("inicio");
   generarQR();
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user?.id) cargarDescuentos(session.user.id);
+  });
   if (window.lucide) lucide.createIcons();
 
   // Sidebar nav
