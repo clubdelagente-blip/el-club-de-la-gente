@@ -42,7 +42,7 @@
 .wstep.active .wstep__lbl { color: var(--tinta); }
 
 /* ---------- Contenedor ---------- */
-.checkout-wrap { width: 100%; max-width: 940px; margin: 0 auto; padding: 24px 40px 72px; position: relative; z-index: 2; }
+.checkout-wrap { width: 100%; max-width: 1200px; margin: 0 auto; padding: 24px 40px 72px; position: relative; z-index: 2; }
 .checkout-view { display: none; }
 .checkout-view.is-active { display: block; animation: fade-in .45s ease; }
 
