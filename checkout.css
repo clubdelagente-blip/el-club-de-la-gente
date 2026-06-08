@@ -54,7 +54,7 @@
 /* ============================================================
    SELECCIÓN DE PLAN
    ============================================================ */
-.plan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: stretch; }
+.plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; align-items: stretch; }
 .plan-pick {
   position: relative; border-radius: 12px; padding: 34px; cursor: pointer;
   display: flex; flex-direction: column; transition: transform .3s, box-shadow .3s, border-color .3s;

@@ -142,6 +142,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const params = new URLSearchParams(location.search);
   const planElegido = params.get("plan");
   if (planElegido) localStorage.setItem("ecdlg_plan", planElegido);
+  const refId = params.get("ref");
+  if (refId) localStorage.setItem("ecdlg_ref", refId);
   const tabInicial = params.get("tab") === "login" ? "login" : "registro";
   setTab(tabInicial);
 
@@ -309,6 +311,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Intentar guardar en Supabase (no bloquea el flujo si falla)
     try {
       if (data.user) {
+        const refPor = localStorage.getItem("ecdlg_ref") || null;
         await supabase.from("perfiles").upsert({
           id: data.user.id,
           nombre,
@@ -317,7 +320,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           rol: "miembro",
           plan: localStorage.getItem("ecdlg_plan") || "basica",
           mision: mision || null,
+          referido_por: refPor,
         });
+        localStorage.removeItem("ecdlg_ref");
       }
     } catch (_) {}
 

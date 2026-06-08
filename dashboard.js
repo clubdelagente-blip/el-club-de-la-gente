@@ -319,6 +319,50 @@ async function cargarVentasNegocio(nombreNegocio) {
   if (window.lucide) lucide.createIcons();
 }
 
+/* ---------- Referidos ---------- */
+async function cargarReferidos(userId) {
+  const linkEl = document.getElementById("ref-link");
+  const barra = document.getElementById("ref-barra");
+  const contador = document.getElementById("ref-contador");
+  const msg = document.getElementById("ref-msg");
+  const badge = document.getElementById("ref-badge");
+  const copiarBtn = document.getElementById("ref-copiar");
+
+  if (!linkEl) return;
+
+  const base = "https://elclubdelagente.com/Registro.html";
+  const link = `${base}?ref=${userId}`;
+  linkEl.value = link;
+
+  copiarBtn?.addEventListener("click", () => {
+    navigator.clipboard.writeText(link).then(() => {
+      copiarBtn.textContent = "¡Copiado!";
+      setTimeout(() => copiarBtn.textContent = "Copiar", 2000);
+    });
+  });
+
+  const { count } = await supabase
+    .from("perfiles")
+    .select("id", { count: "exact", head: true })
+    .eq("referido_por", userId)
+    .in("plan", ["basica", "premium", "vitalicia"]);
+
+  const total = count || 0;
+  const pct = Math.min(total / 5 * 100, 100);
+
+  if (barra) barra.style.width = pct + "%";
+  if (contador) contador.textContent = `${total} de 5`;
+
+  if (total >= 5) {
+    if (msg) msg.textContent = "🎉 ¡Membresía vitalicia activada! Gracias por crecer el Club.";
+    if (msg) msg.style.color = "#1a7a3c";
+    if (badge) badge.hidden = false;
+  } else {
+    const faltan = 5 - total;
+    if (msg) msg.textContent = `Te falta${faltan === 1 ? "" : "n"} ${faltan} referido${faltan === 1 ? "" : "s"} activo${faltan === 1 ? "" : "s"}.`;
+  }
+}
+
 /* ---------- QR de verificación ---------- */
 async function generarQR() {
   const { data: { session } } = await supabase.auth.getSession();
@@ -337,7 +381,10 @@ document.addEventListener("DOMContentLoaded", () => {
   irPanel("inicio");
   generarQR();
   supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session?.user?.id) cargarDescuentos(session.user.id);
+    if (session?.user?.id) {
+      cargarDescuentos(session.user.id);
+      cargarReferidos(session.user.id);
+    }
   });
   if (window.lucide) lucide.createIcons();
 
@@ -411,12 +458,39 @@ document.addEventListener("DOMContentLoaded", () => {
       const whatsapp = $("#seg-whatsapp")?.value.trim();
       const nombreCompleto = [nombre, apellido].filter(Boolean).join(" ");
 
+      // Leer selecciones del formulario
+      const getSelected = (idx) => {
+        const q = $$(".seg-q")[idx];
+        return q ? [...$$(".seg-opt.is-on", q)].map(b => b.textContent.trim()) : [];
+      };
+      const getSingle = (idx) => getSelected(idx)[0] || null;
+
+      const genero         = getSingle(4);
+      const ocupacion      = getSingle(5);
+      const barrio         = $$(".seg-q")[6]?.querySelector("input")?.value.trim() || null;
+      const categorias     = getSelected(8);
+      const tiene_mascotas = getSingle(10);
+      const tiene_hijos    = getSingle(11) === "Sí";
+      const impacto_social = getSingle(12);
+      const canal_preferido    = getSingle(13);
+      const contenido_preferido = getSelected(14);
+
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         const updates = {};
         if (nombreCompleto) updates.nombre = nombreCompleto;
         if (fecha) updates.fecha_nacimiento = fecha;
         if (whatsapp) updates.whatsapp = whatsapp;
+        if (genero) updates.genero = genero;
+        if (ocupacion) updates.ocupacion = ocupacion;
+        if (barrio) updates.barrio = barrio;
+        if (categorias.length) updates.categorias_interes = categorias;
+        if (tiene_mascotas) updates.tiene_mascotas = tiene_mascotas;
+        updates.tiene_hijos = tiene_hijos;
+        if (impacto_social) updates.impacto_social = impacto_social;
+        if (canal_preferido) updates.canal_preferido = canal_preferido;
+        if (contenido_preferido.length) updates.contenido_preferido = contenido_preferido;
+
         if (Object.keys(updates).length) {
           await supabase.from("perfiles").update(updates).eq("id", session.user.id);
         }
@@ -424,6 +498,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (nombreCompleto) { perfil.nombre = nombreCompleto; perfil.primerNombre = nombre; }
         if (fecha) perfil.fechaISO = fecha;
         if (whatsapp) perfil.whatsapp = whatsapp;
+        if (categorias.length) perfil.categorias = categorias;
         localStorage.setItem("ecdlg_perfil", JSON.stringify(perfil));
       }
       cerrarSeg();

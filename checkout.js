@@ -6,8 +6,9 @@ const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 
 const PLANES = {
-  basica:  { tag: "Plan básica",  nombre: "Básica",  precio: 10000, precioTxt: "$10.000", antes: "$30.000", ahorra: "33%" },
-  premium: { tag: "Plan premium", nombre: "Premium", precio: 20000, precioTxt: "$20.000", antes: "$50.000", ahorra: "40%" },
+  basica:    { tag: "Plan básica",           nombre: "Básica",    precio: 10000, precioTxt: "$10.000", antes: "$30.000", ahorra: "33%" },
+  premium:   { tag: "Plan premium",          nombre: "Premium",   precio: 20000, precioTxt: "$20.000", antes: "$50.000", ahorra: "40%" },
+  vitalicia: { tag: "Membresía vitalicia",   nombre: "Vitalicia", precio: 0,     precioTxt: "$0",      antes: "",        ahorra: "100%" },
 };
 const fmt = new Intl.NumberFormat("es-CO");
 
@@ -125,6 +126,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Continuar al pago
   $("#btn-continuar").addEventListener("click", () => {
     localStorage.setItem("ecdlg_plan", estado.plan);
+    if (estado.plan === "vitalicia") {
+      // Plan vitalicio no requiere pago — ir directo al perfil
+      pintarClubcard();
+      mostrar("view-listo", 4);
+      return;
+    }
     pintarResumen();
     mostrar("view-pago", 3);
   });
