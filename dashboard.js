@@ -140,6 +140,7 @@ function render() {
     if (li) li.hidden = false;
     const negNombre = $("#negocio-nombre"); if (negNombre) negNombre.textContent = u.negocio;
     const negCat = $("#negocio-cat"); if (negCat && u.negocioCat) negCat.textContent = u.negocioCat;
+    if (u.negocio) cargarVentasNegocio(u.negocio);
   }
 
   // Rol profesional: mostrar "Mi consultorio"
@@ -244,6 +245,52 @@ async function cargarDescuentos(userId) {
       <td><span class="tabla__aliado"><span class="tabla__ic">${ic(getIcon(it.categoria))}</span>
         <span><span class="tabla__name">${it.aliado_nombre}</span><br><span class="tabla__cat">${it.categoria || ""}</span></span></span></td>
       <td>${fmtFecha(it.created_at)}</td>
+      <td><span class="tag-pct">${it.descuento_pct}</span></td>
+      <td>${fmtCOP(it.compra)}</td>
+      <td class="tabla__ahorro">−${fmtCOP(it.ahorro)}</td>
+    </tr>`).join("");
+
+  if (window.lucide) lucide.createIcons();
+}
+
+/* ---------- Ventas del negocio (aliados) ---------- */
+async function cargarVentasNegocio(nombreNegocio) {
+  const { data, error } = await supabase
+    .from("descuentos")
+    .select("miembro_id, descuento_pct, compra, ahorro, created_at")
+    .eq("aliado_nombre", nombreNegocio)
+    .order("created_at", { ascending: false });
+
+  if (error || !data?.length) return;
+
+  const ahora = new Date();
+  const esMes = d => {
+    const f = new Date(d.created_at);
+    return f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear();
+  };
+  const mes = data.filter(esMes);
+  const totalVentas  = mes.reduce((s, d) => s + (d.compra || 0), 0);
+  const totalAhorro  = mes.reduce((s, d) => s + (d.ahorro || 0), 0);
+  const countDesc    = mes.length;
+  const countClients = new Set(mes.map(d => d.miembro_id)).size;
+
+  // Actualizar stats del panel negocio
+  const panel = document.querySelector("[data-panel='negocio']");
+  if (!panel) return;
+  const nums = panel.querySelectorAll(".stat__num");
+  if (nums[0]) nums[0].textContent = fmtCOP(totalVentas);
+  if (nums[1]) nums[1].textContent = countClients;
+  if (nums[2]) nums[2].textContent = countDesc;
+  if (nums[3]) nums[3].textContent = fmtCOP(totalAhorro);
+
+  // Actualizar tabla de ventas
+  const tbody = panel.querySelector(".tabla tbody");
+  if (!tbody) return;
+  const fmtF = iso => new Date(iso).toLocaleDateString("es-CO", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" });
+  tbody.innerHTML = data.slice(0, 15).map(it => `
+    <tr>
+      <td><span class="tabla__name">Miembro del Club</span></td>
+      <td>${fmtF(it.created_at)}</td>
       <td><span class="tag-pct">${it.descuento_pct}</span></td>
       <td>${fmtCOP(it.compra)}</td>
       <td class="tabla__ahorro">−${fmtCOP(it.ahorro)}</td>
