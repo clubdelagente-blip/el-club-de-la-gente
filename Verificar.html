@@ -186,14 +186,12 @@
     } else {
       const { data, error } = await supabase
         .from("perfiles")
-        .select("nombre, rol, activo")
+        .select("nombre, rol")
         .eq("id", id)
         .single();
 
       if (error || !data) {
-        renderNo("Miembro no encontrado.");
-      } else if (data.activo === false) {
-        renderNo("La membresía está inactiva o pendiente de pago.");
+        renderNo("Miembro no encontrado. Verifica que el QR sea válido.");
       } else {
         renderOk(data);
       }
