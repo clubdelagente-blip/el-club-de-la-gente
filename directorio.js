@@ -316,7 +316,7 @@ function wireCalc(a) {
 
     // 2. WhatsApp automático al miembro vía Edge Function
     if (MIEMBRO_WA) {
-      const msg = `¡Hola! 🎉 Tu descuento del ${d.pct} en ${a.nombre} ya quedó registrado.\n\nAhorraste ${fmtCOP(ahorro)} en una compra de ${fmtCOP(monto)}. 💳\n\n¿Cómo fue tu experiencia? Cuéntanos, tu opinión nos ayuda a mejorar el Club.\n\nEl Club de la Gente`;
+      const msg = `¡Hola! 🎉 Tu descuento del ${d.pct} en ${a.nombre} ya quedó registrado.\n\nAhorraste ${fmtCOP(ahorro)} en una compra de ${fmtCOP(monto)}. 💳\n\n🌿 Con esta compra contribuyes al impacto social del Club en Fusagasugá.\n\n¿Cómo fue tu experiencia? Cuéntanos, tu opinión nos ayuda a mejorar el Club.\n\nEl Club de la Gente`;
       fetch(`${SB_URL}/functions/v1/whatsapp-send`, {
         method: "POST",
         headers: { "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
