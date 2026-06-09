@@ -133,6 +133,17 @@
   <div class="card" id="card">
     <p class="loading">Verificando membresía...</p>
   </div>
+  <script>
+    setTimeout(() => {
+      const card = document.getElementById("card");
+      if (card && card.querySelector(".loading")) {
+        card.innerHTML = `
+          <div class="estado-ic estado-ic--no">✗</div>
+          <div class="estado-lbl estado-lbl--no">QR inválido</div>
+          <p class="error-msg" style="margin-top:8px">Este QR no contiene un ID de miembro válido. Pide al miembro que muestre su ClubCard.</p>`;
+      }
+    }, 5000);
+  </script>
 
   <p class="footer-note" style="max-width:360px;text-align:center;margin-top:20px">
     Esta verificación es en tiempo real. Si el estado es <strong>Activo</strong>, el miembro tiene derecho al descuento correspondiente.
