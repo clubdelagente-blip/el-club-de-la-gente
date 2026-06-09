@@ -138,6 +138,16 @@
     Esta verificación es en tiempo real. Si el estado es <strong>Activo</strong>, el miembro tiene derecho al descuento correspondiente.
   </p>
 
+  <script>
+    // Verificar ID antes de cargar Supabase
+    const _id = new URLSearchParams(location.search).get("id");
+    if (!_id) {
+      document.getElementById("card").innerHTML = `
+        <div class="estado-ic estado-ic--no">✗</div>
+        <div class="estado-lbl estado-lbl--no">QR inválido</div>
+        <p class="error-msg" style="margin-top:8px">Este QR no contiene un ID de miembro válido.</p>`;
+    }
+  </script>
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
     const supabase = createClient(
@@ -199,9 +209,9 @@
       `;
     }
 
-    if (!id) {
-      renderNo("QR inválido — no contiene un ID de miembro.");
-    } else {
+    if (!id) return;
+
+    try {
       const { data, error } = await supabase
         .from("perfiles")
         .select("nombre, rol, whatsapp, plan")
@@ -213,7 +223,7 @@
         return;
       }
 
-      const esPremium = data.plan === "premium";
+      const esPremium = data.plan === "premium" || data.plan === "vitalicia";
       let usos = 0;
 
       if (!esPremium) {
@@ -231,6 +241,8 @@
       } else {
         renderOk(data, usos, esPremium);
       }
+    } catch (_) {
+      renderNo("Error al verificar. Revisa tu conexión e intenta de nuevo.");
     }
   </script>
 
