@@ -149,25 +149,18 @@
     Esta verificación es en tiempo real. Si el estado es <strong>Activo</strong>, el miembro tiene derecho al descuento correspondiente.
   </p>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script>
-    // Verificar ID antes de cargar Supabase
-    const _id = new URLSearchParams(location.search).get("id");
-    if (!_id) {
-      document.getElementById("card").innerHTML = `
-        <div class="estado-ic estado-ic--no">✗</div>
-        <div class="estado-lbl estado-lbl--no">QR inválido</div>
-        <p class="error-msg" style="margin-top:8px">Este QR no contiene un ID de miembro válido.</p>`;
-    }
-  </script>
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-    const supabase = createClient(
+    const { createClient } = supabase;
+    const _supabase = createClient(
       "https://egwaedadpqfwnbfosiao.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4"
     );
+    (async () => {
 
     const card = document.getElementById("card");
     const id = new URLSearchParams(location.search).get("id");
+    const supabaseClient = _supabase;
 
     const btnStyle = (bg, color="#fff") => `display:block;width:100%;padding:14px;background:${bg};color:${color};border-radius:12px;text-align:center;text-decoration:none;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:600;margin-top:8px;letter-spacing:.02em;border:none;cursor:pointer;`;
 
@@ -223,7 +216,7 @@
     if (!id) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("perfiles")
         .select("nombre, rol, whatsapp, plan")
         .eq("id", id)
@@ -239,7 +232,7 @@
 
       if (!esPremium) {
         const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
-        const { count } = await supabase
+        const { count } = await supabaseClient
           .from("descuentos")
           .select("id", { count: "exact", head: true })
           .eq("miembro_id", id)
@@ -255,6 +248,7 @@
     } catch (_) {
       renderNo("Error al verificar. Revisa tu conexión e intenta de nuevo.");
     }
+    })();
   </script>
 
 </body>
