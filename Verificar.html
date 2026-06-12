@@ -159,7 +159,9 @@
     (async () => {
 
     const card = document.getElementById("card");
-    const id = new URLSearchParams(location.search).get("id");
+    const params = new URLSearchParams(location.search);
+    const id = params.get("id");
+    const aliadoId = params.get("aliado");
     const supabaseClient = _supabase;
 
     const btnStyle = (bg, color="#fff") => `display:block;width:100%;padding:14px;background:${bg};color:${color};border-radius:12px;text-align:center;text-decoration:none;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:600;margin-top:8px;letter-spacing:.02em;border:none;cursor:pointer;`;
@@ -232,11 +234,14 @@
 
       if (!esPremium) {
         const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
-        const { count } = await supabaseClient
+        let query = supabaseClient
           .from("descuentos")
           .select("id", { count: "exact", head: true })
           .eq("miembro_id", id)
           .gte("created_at", inicioMes.toISOString());
+        // Si el aliado está identificado, contar solo sus usos en este establecimiento
+        if (aliadoId) query = query.eq("aliado_id", aliadoId);
+        const { count } = await query;
         usos = count || 0;
       }
 

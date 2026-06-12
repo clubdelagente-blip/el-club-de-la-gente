@@ -115,6 +115,11 @@ function confirmarClubcard() {
 /* ---------- INIT ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   if (window.lucide) lucide.createIcons();
+
+  // Capturar ID del miembro si viene desde el agente de WhatsApp
+  const urlId = new URLSearchParams(location.search).get("id");
+  if (urlId) localStorage.setItem("ecdlg_miembro_id", urlId);
+
   pintarSeleccion();
   mostrar("view-plan", 2);
 
@@ -154,7 +159,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const p = PLANES[estado.plan];
     const amountInCents = p.precio * 100;
-    const reference = `ECDLG-${Date.now()}-${Math.random().toString(36).substr(2,6).toUpperCase()}`;
+    const miembroId = localStorage.getItem("ecdlg_miembro_id") || localStorage.getItem("ecdlg_uid") || "unknown";
+    const reference = `ECDLG-${miembroId}-${Date.now()}-${Math.random().toString(36).substr(2,6).toUpperCase()}`;
     const currency = "COP";
 
     const cadena = `${reference}${amountInCents}${currency}test_integrity_aTSPYcCp7kbu6kNCp8q9Q7TEmXPXceoh`;
