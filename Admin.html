@@ -193,6 +193,7 @@ async function cargarAliados(){
     <td>${a.whatsapp||'—'}</td>
     <td style="text-align:right"><div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
       <span class="ad-pill ${a.activo?'activo':'inactivo'}" data-tog-aliado="${a.id}" data-activo="${a.activo}" style="cursor:pointer"><span class="d"></span>${a.activo?'Activo':'Inactivo'}</span>
+      <button class="ad-btn" data-promos-aliado="${a.id}" data-nom-aliado="${(a.nombre||'').replace(/"/g,'&quot;')}" title="Promociones">${ic("tag")}</button>
       <button class="ad-btn" data-ed-aliado="${a.id}">${ic("pencil")}</button>
       <button class="ad-btn" data-rm-aliado="${a.id}">${ic("trash-2")}</button>
     </div></td></tr>`).join('');
@@ -244,7 +245,14 @@ function htmlFormAliado(a={}){
   <div class="ad-field"><label>Foto del establecimiento</label>
     ${a.imagen_url?`<img src="${a.imagen_url}" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:10px">`:''}
     <input id="fa-img" type="file" accept="image/*"><input type="hidden" id="fa-img-url" value="${a.imagen_url||''}"></div>
-  <div class="ad-toolbar" style="margin:6px 0 0"><div class="ad-spacer"></div>
+  <hr style="border:none;border-top:1px solid rgba(26,26,24,.12);margin:20px 0 14px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <span style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(26,26,24,.4)">Promociones de descuento</span>
+    ${a.id?`<button type="button" class="ad-btn" id="fa-promo-nueva" style="font-size:12px">${ic("plus")} Agregar</button>`:''}
+  </div>
+  <div id="fa-promos-list">${a.id?'<p style="font-size:12px;color:rgba(26,26,24,.4);text-align:center;padding:8px 0">Cargando…</p>':'<p style="font-size:12px;color:rgba(26,26,24,.4);padding:4px 0">Guarda el aliado primero para agregar promociones.</p>'}</div>
+  <div id="fa-promo-form-wrap" style="display:none;margin-top:12px;padding:16px;background:rgba(26,26,24,.03);border-radius:10px;border:1px solid rgba(26,26,24,.09)"></div>
+  <div class="ad-toolbar" style="margin:16px 0 0"><div class="ad-spacer"></div>
     <button class="ad-btn" id="fa-cancel">Cancelar</button>
     <button class="ad-btn ad-btn--verde" id="fa-save" data-id="${a.id||''}">${ic("check")} ${a.id?'Guardar cambios':'Agregar aliado'}</button>
   </div>`;}
@@ -280,6 +288,101 @@ function bindFormAliado(){
       const{error}=id?await supabase.from('aliados').update(payload).eq('id',id):await supabase.from('aliados').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}
       window.cerrarModal?.();cargarAliados();toast(id?'Aliado actualizado ✓':'Aliado agregado ✓');
+    });
+    const aliadoId=btn?.dataset?.id;
+    if(aliadoId){
+      cargarPromosInModal(aliadoId);
+      $("#fa-promo-nueva")?.addEventListener('click',()=>{
+        const wrap=$("#fa-promo-form-wrap");if(!wrap)return;
+        if(wrap.style.display==='block'){wrap.style.display='none';wrap.innerHTML='';}
+        else{wrap.innerHTML=htmlFormPromocion({},aliadoId);wrap.style.display='block';if(window.lucide)lucide.createIcons();bindFormPromocionInline(aliadoId,'');}
+      });
+    }
+    if(window.lucide)lucide.createIcons();
+  },80);
+}
+async function cargarPromosInModal(aliadoId){
+  const{data}=await supabase.from('promociones').select('*').eq('aliado_id',aliadoId).order('created_at',{ascending:false});
+  _promos=data||[];
+  const list=$("#fa-promos-list");if(!list)return;
+  const TIPO_LBL={porcentaje:'% desc.','2x1':'2×1',monto_fijo:'Monto fijo',precio_especial:'Precio especial',regalo:'Regalo',personalizado:'Personalizado'};
+  list.innerHTML=_promos.length?_promos.map(p=>{
+    const ahorro=p.ahorro_fijo?`$${p.ahorro_fijo.toLocaleString('es-CO')} ahorro`:'Ahorro variable';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1px solid rgba(26,26,24,.1);border-radius:8px;margin-bottom:6px">
+      ${p.foto_url?`<img src="${p.foto_url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0">`:''}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.descripcion}</div>
+        <div style="font-size:11px;color:rgba(26,26,24,.45)">${TIPO_LBL[p.tipo]||p.tipo} · ${ahorro} · <span style="color:${p.activa?'#1a7a3c':'#888'}">${p.activa?'Activa':'Inactiva'}</span></div>
+      </div>
+      <button class="ad-btn" data-ed-promo-in="${p.id}" style="font-size:11px;padding:4px 8px;flex-shrink:0">${ic("pencil")}</button>
+      <button class="ad-btn" data-rm-promo-in="${p.id}" style="font-size:11px;padding:4px 8px;flex-shrink:0">${ic("trash-2")}</button>
+    </div>`;
+  }).join(''):`<p style="font-size:12px;color:rgba(26,26,24,.4);text-align:center;padding:6px 0">No hay promociones aún.</p>`;
+  list.querySelectorAll('[data-ed-promo-in]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const p=_promos.find(x=>x.id===btn.dataset.edPromoIn);if(!p)return;
+      const wrap=$("#fa-promo-form-wrap");if(!wrap)return;
+      wrap.innerHTML=htmlFormPromocion(p,aliadoId);wrap.style.display='block';
+      if(window.lucide)lucide.createIcons();bindFormPromocionInline(aliadoId,p.id);
+      wrap.scrollIntoView({behavior:'smooth',block:'nearest'});
+    });
+  });
+  list.querySelectorAll('[data-rm-promo-in]').forEach(btn=>{
+    btn.addEventListener('click',async()=>{
+      if(!confirm('¿Eliminar esta promoción?'))return;
+      await supabase.from('promociones').delete().eq('id',btn.dataset.rmPromoIn);
+      cargarPromosInModal(aliadoId);toast('Promoción eliminada');
+    });
+  });
+  if(window.lucide)lucide.createIcons();
+}
+function bindFormPromocionInline(aliadoId,editId){
+  setTimeout(()=>{
+    const CALC_KEYS=['porcentaje','monto','precio','regalo','variable'];
+    const showCalc=(tipo)=>{
+      CALC_KEYS.forEach(k=>{const el=$(`#pr-calc-${k}`);if(el)el.style.display='none';});
+      if(tipo==='porcentaje')$("#pr-calc-porcentaje").style.display='block';
+      else if(tipo==='monto_fijo')$("#pr-calc-monto").style.display='block';
+      else if(tipo==='precio_especial')$("#pr-calc-precio").style.display='block';
+      else if(tipo==='regalo')$("#pr-calc-regalo").style.display='block';
+      else if(['2x1','personalizado'].includes(tipo))$("#pr-calc-variable").style.display='block';
+    };
+    $("#pr-tipo")?.addEventListener('change',(e)=>showCalc(e.target.value));
+    $("#pr-aplica")?.addEventListener('change',(e)=>{const w=$("#pr-prod-wrap");if(w)w.style.display=e.target.value==='producto_especifico'?'block':'none';});
+    const updPrecio=()=>{const n=parseInt($("#pr-precio-n")?.value)||0;const d=parseInt($("#pr-precio-d")?.value)||0;const el=$("#pr-ahorro-prev");if(el)el.textContent=n&&d&&n>d?`Ahorro: $${(n-d).toLocaleString('es-CO')} por visita`:'';};
+    $("#pr-precio-n")?.addEventListener('input',updPrecio);$("#pr-precio-d")?.addEventListener('input',updPrecio);updPrecio();
+    const updPct=()=>{const n=parseInt($("#pr-precio-n-pct")?.value)||0;const pct=parseInt($("#pr-pct")?.value)||0;const el=$("#pr-ahorro-pct-prev");if(el)el.textContent=n&&pct?`Ahorro: $${Math.round(n*pct/100).toLocaleString('es-CO')} por visita`:'';};
+    $("#pr-precio-n-pct")?.addEventListener('input',updPct);$("#pr-pct")?.addEventListener('input',updPct);updPct();
+    document.querySelectorAll('#pr-dias-chips .fa-chip').forEach(chip=>chip.addEventListener('click',()=>chip.classList.toggle('is-on')));
+    $("#pr-cancel")?.addEventListener('click',()=>{const w=$("#fa-promo-form-wrap");if(w){w.style.display='none';w.innerHTML='';}});
+    const btn=$("#pr-save");
+    btn?.addEventListener('click',async()=>{
+      const tipo=$("#pr-tipo")?.value;const descripcion=$("#pr-desc")?.value.trim();
+      if(!tipo){toast('Selecciona el tipo de promoción');return;}
+      if(!descripcion){toast('La descripción es obligatoria');return;}
+      btn.disabled=true;btn.innerHTML=`${ic("loader")} Guardando…`;if(window.lucide)lucide.createIcons();
+      let precio_normal=null,precio_descuento=null,ahorro_fijo=null;
+      if(tipo==='precio_especial'){precio_normal=parseInt($("#pr-precio-n")?.value)||null;precio_descuento=parseInt($("#pr-precio-d")?.value)||null;if(precio_normal&&precio_descuento)ahorro_fijo=precio_normal-precio_descuento;}
+      else if(tipo==='porcentaje'){precio_normal=parseInt($("#pr-precio-n-pct")?.value)||null;const pct=parseInt($("#pr-pct")?.value)||0;if(precio_normal&&pct){precio_descuento=Math.round(precio_normal*(1-pct/100));ahorro_fijo=precio_normal-precio_descuento;}}
+      else if(tipo==='monto_fijo'){ahorro_fijo=parseInt($("#pr-ahorro-fijo")?.value)||null;}
+      else if(tipo==='regalo'){ahorro_fijo=parseInt($("#pr-regalo-val")?.value)||null;}
+      const diasActivos=[...document.querySelectorAll('#pr-dias-chips .fa-chip.is-on')].map(b=>b.dataset.dia);
+      let foto_url=$("#pr-foto-url")?.value||null;
+      const file=$("#pr-foto")?.files?.[0];
+      if(file)try{foto_url=await subirImagen(file);}catch(_){toast('Error al subir la foto');}
+      const payload={aliado_id:aliadoId,tipo,descripcion,
+        aplica_a:$("#pr-aplica")?.value||'toda_la_tienda',
+        producto_especifico:$("#pr-aplica")?.value==='producto_especifico'?($("#pr-prod")?.value.trim()||null):null,
+        precio_normal,precio_descuento,ahorro_fijo,
+        dias_aplica:diasActivos.length?diasActivos:['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
+        hora_inicio:$("#pr-hora-ini")?.value||null,hora_fin:$("#pr-hora-fin")?.value||null,
+        fecha_inicio:$("#pr-fecha-ini")?.value||null,fecha_fin:$("#pr-fecha-fin")?.value||null,
+        monto_minimo:parseInt($("#pr-min")?.value)||0,foto_url,activa:$("#pr-activa")?.checked!==false};
+      const id=btn.dataset.id||editId;
+      const{error}=id?await supabase.from('promociones').update(payload).eq('id',id):await supabase.from('promociones').insert(payload);
+      if(error){toast('Error: '+error.message);btn.disabled=false;btn.innerHTML=`${ic("check")} ${id?'Guardar cambios':'Guardar promoción'}`;if(window.lucide)lucide.createIcons();return;}
+      const w=$("#fa-promo-form-wrap");if(w){w.style.display='none';w.innerHTML='';}
+      cargarPromosInModal(aliadoId);toast(id?'Promoción actualizada ✓':'Promoción guardada ✓');
     });
     if(window.lucide)lucide.createIcons();
   },80);
@@ -399,6 +502,198 @@ function bindFormProf(){setTimeout(()=>{
   });if(window.lucide)lucide.createIcons();
 },80);}
 
+/* ---- PROMOCIONES ---- */
+let _promos=[];
+async function cargarYMostrarPromociones(aliadoId,aliadoNombre){
+  const{data}=await supabase.from('promociones').select('*').eq('aliado_id',aliadoId).order('created_at',{ascending:false});
+  _promos=data||[];
+  abrirModal(`Promociones — ${aliadoNombre}`,`${_promos.length} promoción${_promos.length!==1?'es':''} registrada${_promos.length!==1?'s':''}`,htmlListaPromociones(_promos,aliadoId,aliadoNombre));
+  if(window.lucide)lucide.createIcons();
+  bindListaPromociones(aliadoId,aliadoNombre);
+}
+function htmlListaPromociones(promos,aliadoId,aliadoNombre){
+  const TIPO_LBL={porcentaje:'Porcentaje','2x1':'2×1',monto_fijo:'Monto fijo',precio_especial:'Precio especial',regalo:'Regalo',personalizado:'Personalizado'};
+  const lista=promos.length?promos.map(p=>{
+    const ahorro=p.ahorro_fijo?`$${p.ahorro_fijo.toLocaleString('es-CO')} de ahorro`:'Ahorro variable';
+    return `<div style="display:flex;gap:12px;padding:14px;background:rgba(26,26,24,.04);border:1px solid rgba(26,26,24,.1);border-radius:10px;margin-bottom:8px">
+      ${p.foto_url?`<img src="${p.foto_url}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0">`:''}
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:2px">
+          <span style="font-weight:600;font-size:14px">${p.descripcion}</span>
+          <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${p.activa?'rgba(31,157,60,.12)':'rgba(26,26,24,.08)'};color:${p.activa?'#1a7a3c':'#888'};font-weight:600">${p.activa?'Activa':'Inactiva'}</span>
+        </div>
+        <div style="font-size:12px;color:rgba(26,26,24,.5)">${TIPO_LBL[p.tipo]||p.tipo} · ${ahorro}</div>
+        ${p.aplica_a&&p.aplica_a!=='toda_la_tienda'?`<div style="font-size:11px;color:rgba(26,26,24,.4);margin-top:2px">${p.producto_especifico||p.aplica_a}</div>`:''}
+      </div>
+      <div style="display:flex;gap:6px;align-items:flex-start;flex-shrink:0">
+        <button class="ad-btn" data-ed-promo="${p.id}" style="font-size:12px">${ic("pencil")}</button>
+        <button class="ad-btn" data-rm-promo="${p.id}" style="font-size:12px">${ic("trash-2")}</button>
+      </div>
+    </div>`;
+  }).join(''):`<p style="text-align:center;padding:30px;color:rgba(26,26,24,.3)">No hay promociones aún.</p>`;
+  return `${lista}<div class="ad-toolbar" style="margin-top:12px"><div class="ad-spacer"></div>
+    <button class="ad-btn" id="promo-cerrar">Cerrar</button>
+    <button class="ad-btn ad-btn--verde" id="promo-add" data-aliado-id="${aliadoId}">${ic("plus")} Nueva promoción</button></div>`;
+}
+function bindListaPromociones(aliadoId,aliadoNombre){
+  setTimeout(()=>{
+    $("#promo-cerrar")?.addEventListener('click',()=>window.cerrarModal?.());
+    $("#promo-add")?.addEventListener('click',()=>{abrirModal('Nueva promoción',aliadoNombre,htmlFormPromocion({},aliadoId));bindFormPromocion(aliadoId,aliadoNombre,'');});
+    document.querySelectorAll('[data-ed-promo]').forEach(btn=>{
+      btn.addEventListener('click',()=>{const p=_promos.find(x=>x.id===btn.dataset.edPromo);if(p){abrirModal('Editar promoción',p.descripcion,htmlFormPromocion(p,aliadoId));bindFormPromocion(aliadoId,aliadoNombre,p.id);}});
+    });
+    document.querySelectorAll('[data-rm-promo]').forEach(btn=>{
+      btn.addEventListener('click',async()=>{if(!confirm('¿Eliminar esta promoción?'))return;await supabase.from('promociones').delete().eq('id',btn.dataset.rmPromo);cargarYMostrarPromociones(aliadoId,aliadoNombre);toast('Promoción eliminada');});
+    });
+    if(window.lucide)lucide.createIcons();
+  },80);
+}
+function htmlFormPromocion(p={},aliadoId){
+  const DIAS=['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
+  const DIAS_LBL=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  const diasActivos=Array.isArray(p.dias_aplica)?p.dias_aplica:DIAS;
+  const diasChips=DIAS.map((d,i)=>`<button type="button" class="fa-chip${diasActivos.includes(d)?' is-on':''}" data-dia="${d}">${DIAS_LBL[i]}</button>`).join('');
+  const fldStyle='width:100%;font-family:var(--cuerpo);font-size:13.5px;color:#1a1a18;padding:10px 14px;border:1.5px solid rgba(26,26,24,.13);border-radius:8px;background:#f5f4f0';
+  const pctVal=p.tipo==='porcentaje'&&p.precio_normal&&p.precio_descuento?Math.round((1-p.precio_descuento/p.precio_normal)*100):'';
+  return `
+  <div class="ad-field"><label>Tipo de promoción *</label>
+    <select id="pr-tipo" style="${fldStyle}">
+      <option value="">Selecciona…</option>
+      <option value="porcentaje"${p.tipo==='porcentaje'?' selected':''}>Porcentaje (%)</option>
+      <option value="monto_fijo"${p.tipo==='monto_fijo'?' selected':''}>Monto fijo ($)</option>
+      <option value="precio_especial"${p.tipo==='precio_especial'?' selected':''}>Precio especial</option>
+      <option value="2x1"${p.tipo==='2x1'?' selected':''}>2×1</option>
+      <option value="regalo"${p.tipo==='regalo'?' selected':''}>Regalo / Cortesía</option>
+      <option value="personalizado"${p.tipo==='personalizado'?' selected':''}>Personalizado</option>
+    </select></div>
+  <div class="ad-field"><label>Descripción *</label><textarea id="pr-desc" rows="2" placeholder="Ej: 20% de descuento en corte de cabello">${p.descripcion||''}</textarea></div>
+  <div class="ad-field"><label>Aplica a</label>
+    <select id="pr-aplica" style="${fldStyle}">
+      <option value="toda_la_tienda"${!p.aplica_a||p.aplica_a==='toda_la_tienda'?' selected':''}>Toda la tienda</option>
+      <option value="producto_especifico"${p.aplica_a==='producto_especifico'?' selected':''}>Producto / servicio específico</option>
+    </select></div>
+  <div class="ad-field" id="pr-prod-wrap" style="display:${p.aplica_a==='producto_especifico'?'block':'none'}">
+    <label>Producto o servicio específico</label>
+    <input id="pr-prod" type="text" value="${(p.producto_especifico||'').replace(/"/g,'&quot;')}" placeholder="Ej: Corte de cabello para hombre"></div>
+
+  <div id="pr-calc-porcentaje" style="display:${p.tipo==='porcentaje'?'block':'none'}">
+    <div class="ad-field-2">
+      <div class="ad-field"><label>Precio normal ($) <span style="font-weight:400;color:rgba(26,26,24,.4)">(referencia)</span></label><input id="pr-precio-n-pct" type="number" min="0" value="${p.tipo==='porcentaje'?p.precio_normal||'':''}" placeholder="Ej: 50000"></div>
+      <div class="ad-field"><label>Descuento (%)</label><input id="pr-pct" type="number" min="0" max="100" value="${pctVal}" placeholder="Ej: 20"></div>
+    </div>
+    <div id="pr-ahorro-pct-prev" style="font-size:13px;color:#1a7a3c;font-weight:600;margin:-4px 0 8px;min-height:18px"></div>
+  </div>
+  <div id="pr-calc-monto" style="display:${p.tipo==='monto_fijo'?'block':'none'}">
+    <div class="ad-field"><label>Monto de descuento ($)</label><input id="pr-ahorro-fijo" type="number" min="0" value="${p.tipo==='monto_fijo'?p.ahorro_fijo||'':''}" placeholder="Ej: 5000"></div>
+  </div>
+  <div id="pr-calc-precio" style="display:${p.tipo==='precio_especial'?'block':'none'}">
+    <div class="ad-field-2">
+      <div class="ad-field"><label>Precio normal ($)</label><input id="pr-precio-n" type="number" min="0" value="${p.tipo==='precio_especial'?p.precio_normal||'':''}" placeholder="Ej: 80000"></div>
+      <div class="ad-field"><label>Precio con descuento ($)</label><input id="pr-precio-d" type="number" min="0" value="${p.tipo==='precio_especial'?p.precio_descuento||'':''}" placeholder="Ej: 60000"></div>
+    </div>
+    <div id="pr-ahorro-prev" style="font-size:13px;color:#1a7a3c;font-weight:600;margin:-4px 0 8px;min-height:18px"></div>
+  </div>
+  <div id="pr-calc-regalo" style="display:${p.tipo==='regalo'?'block':'none'}">
+    <div class="ad-field"><label>Valor del regalo ($) <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-regalo-val" type="number" min="0" value="${p.tipo==='regalo'?p.ahorro_fijo||'':''}" placeholder="Ej: 10000"></div>
+  </div>
+  <div id="pr-calc-variable" style="display:${['2x1','personalizado'].includes(p.tipo)?'block':'none'}">
+    <p style="font-size:12px;color:rgba(26,26,24,.5);padding:10px 14px;background:#f5f4f0;border-radius:8px;margin-bottom:4px">El ahorro se registra al momento del uso del descuento.</p>
+  </div>
+
+  <hr style="border:none;border-top:1px solid rgba(26,26,24,.1);margin:14px 0 10px">
+  <div class="ad-field"><label>Días en que aplica</label>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px" id="pr-dias-chips">${diasChips}</div></div>
+  <div class="ad-field-2">
+    <div class="ad-field"><label>Hora inicio <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-hora-ini" type="time" value="${p.hora_inicio||''}"></div>
+    <div class="ad-field"><label>Hora fin <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-hora-fin" type="time" value="${p.hora_fin||''}"></div>
+  </div>
+  <div class="ad-field-2">
+    <div class="ad-field"><label>Vigencia desde <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-fecha-ini" type="date" value="${p.fecha_inicio||''}"></div>
+    <div class="ad-field"><label>Vigencia hasta <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-fecha-fin" type="date" value="${p.fecha_fin||''}"></div>
+  </div>
+  <div class="ad-field-2">
+    <div class="ad-field"><label>Compra mínima ($) <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-min" type="number" min="0" value="${p.monto_minimo||''}" placeholder="0"></div>
+    <div class="ad-field"><label>Foto <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label>
+      ${p.foto_url?`<img src="${p.foto_url}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;margin-bottom:6px;display:block">`:''}<input id="pr-foto" type="file" accept="image/*"><input type="hidden" id="pr-foto-url" value="${p.foto_url||''}"></div>
+  </div>
+  <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:rgba(26,26,24,.6);margin-bottom:4px">
+    <input id="pr-activa" type="checkbox" style="width:16px;height:16px;accent-color:#1f9d3c" ${p.activa===false?'':'checked'}>
+    Promoción activa
+  </label>
+  <div class="ad-toolbar" style="margin:12px 0 0"><div class="ad-spacer"></div>
+    <button class="ad-btn" id="pr-cancel">Cancelar</button>
+    <button class="ad-btn ad-btn--verde" id="pr-save" data-aliado-id="${aliadoId}" data-id="${p.id||''}">${ic("check")} ${p.id?'Guardar cambios':'Guardar promoción'}</button>
+  </div>`;
+}
+function bindFormPromocion(aliadoId,aliadoNombre,editId){
+  setTimeout(()=>{
+    const CALC_KEYS=['porcentaje','monto','precio','regalo','variable'];
+    const showCalc=(tipo)=>{
+      CALC_KEYS.forEach(k=>{const el=$(`#pr-calc-${k}`);if(el)el.style.display='none';});
+      if(tipo==='porcentaje')$("#pr-calc-porcentaje").style.display='block';
+      else if(tipo==='monto_fijo')$("#pr-calc-monto").style.display='block';
+      else if(tipo==='precio_especial')$("#pr-calc-precio").style.display='block';
+      else if(tipo==='regalo')$("#pr-calc-regalo").style.display='block';
+      else if(['2x1','personalizado'].includes(tipo))$("#pr-calc-variable").style.display='block';
+    };
+    $("#pr-tipo")?.addEventListener('change',(e)=>showCalc(e.target.value));
+    $("#pr-aplica")?.addEventListener('change',(e)=>{const w=$("#pr-prod-wrap");if(w)w.style.display=e.target.value==='producto_especifico'?'block':'none';});
+    const updPrecio=()=>{const n=parseInt($("#pr-precio-n")?.value)||0;const d=parseInt($("#pr-precio-d")?.value)||0;const el=$("#pr-ahorro-prev");if(el)el.textContent=n&&d&&n>d?`Ahorro: $${(n-d).toLocaleString('es-CO')} por visita`:'';};
+    $("#pr-precio-n")?.addEventListener('input',updPrecio);
+    $("#pr-precio-d")?.addEventListener('input',updPrecio);
+    updPrecio();
+    const updPct=()=>{const n=parseInt($("#pr-precio-n-pct")?.value)||0;const pct=parseInt($("#pr-pct")?.value)||0;const el=$("#pr-ahorro-pct-prev");if(el)el.textContent=n&&pct?`Ahorro: $${Math.round(n*pct/100).toLocaleString('es-CO')} por visita`:'';};
+    $("#pr-precio-n-pct")?.addEventListener('input',updPct);
+    $("#pr-pct")?.addEventListener('input',updPct);
+    updPct();
+    document.querySelectorAll('#pr-dias-chips .fa-chip').forEach(chip=>chip.addEventListener('click',()=>chip.classList.toggle('is-on')));
+    $("#pr-cancel")?.addEventListener('click',()=>{cargarYMostrarPromociones(aliadoId,aliadoNombre);});
+    const btn=$("#pr-save");
+    btn?.addEventListener('click',async()=>{
+      const tipo=$("#pr-tipo")?.value;
+      const descripcion=$("#pr-desc")?.value.trim();
+      if(!tipo){toast('Selecciona el tipo de promoción');return;}
+      if(!descripcion){toast('La descripción es obligatoria');return;}
+      btn.disabled=true;btn.innerHTML=`${ic("loader")} Guardando…`;if(window.lucide)lucide.createIcons();
+      let precio_normal=null,precio_descuento=null,ahorro_fijo=null;
+      if(tipo==='precio_especial'){
+        precio_normal=parseInt($("#pr-precio-n")?.value)||null;
+        precio_descuento=parseInt($("#pr-precio-d")?.value)||null;
+        if(precio_normal&&precio_descuento)ahorro_fijo=precio_normal-precio_descuento;
+      }else if(tipo==='porcentaje'){
+        precio_normal=parseInt($("#pr-precio-n-pct")?.value)||null;
+        const pct=parseInt($("#pr-pct")?.value)||0;
+        if(precio_normal&&pct){precio_descuento=Math.round(precio_normal*(1-pct/100));ahorro_fijo=precio_normal-precio_descuento;}
+      }else if(tipo==='monto_fijo'){
+        ahorro_fijo=parseInt($("#pr-ahorro-fijo")?.value)||null;
+      }else if(tipo==='regalo'){
+        ahorro_fijo=parseInt($("#pr-regalo-val")?.value)||null;
+      }
+      const diasActivos=[...document.querySelectorAll('#pr-dias-chips .fa-chip.is-on')].map(b=>b.dataset.dia);
+      let foto_url=$("#pr-foto-url")?.value||null;
+      const file=$("#pr-foto")?.files?.[0];
+      if(file)try{foto_url=await subirImagen(file);}catch(_){toast('Error al subir la foto');}
+      const payload={aliado_id:aliadoId,tipo,descripcion,
+        aplica_a:$("#pr-aplica")?.value||'toda_la_tienda',
+        producto_especifico:$("#pr-aplica")?.value==='producto_especifico'?($("#pr-prod")?.value.trim()||null):null,
+        precio_normal,precio_descuento,ahorro_fijo,
+        dias_aplica:diasActivos.length?diasActivos:['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
+        hora_inicio:$("#pr-hora-ini")?.value||null,
+        hora_fin:$("#pr-hora-fin")?.value||null,
+        fecha_inicio:$("#pr-fecha-ini")?.value||null,
+        fecha_fin:$("#pr-fecha-fin")?.value||null,
+        monto_minimo:parseInt($("#pr-min")?.value)||0,
+        foto_url,activa:$("#pr-activa")?.checked!==false};
+      const id=btn.dataset.id||editId;
+      const{error}=id?await supabase.from('promociones').update(payload).eq('id',id):await supabase.from('promociones').insert(payload);
+      if(error){toast('Error: '+error.message);btn.disabled=false;btn.innerHTML=`${ic("check")} ${id?'Guardar cambios':'Guardar promoción'}`;if(window.lucide)lucide.createIcons();return;}
+      cargarYMostrarPromociones(aliadoId,aliadoNombre);
+      toast(id?'Promoción actualizada ✓':'Promoción creada ✓');
+    });
+    if(window.lucide)lucide.createIcons();
+  },80);
+}
+
 /* ---- OVERRIDES & DELEGACIÓN ---- */
 document.addEventListener('DOMContentLoaded',()=>{
   window.renderAliados=function(){
@@ -428,6 +723,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     const edProf=e.target.closest('[data-ed-prof]');if(edProf){const p=_profesionales.find(x=>x.id===edProf.dataset.edProf);if(p){abrirModal('Editar profesional',p.nombre,htmlFormProf(p));bindFormProf();}return;}
     const togProf=e.target.closest('[data-tog-prof]');if(togProf){const activo=togProf.dataset.activo==='true';await supabase.from('profesionales').update({activo:!activo}).eq('id',togProf.dataset.togProf);cargarProfesionales();return;}
     const rmProf=e.target.closest('[data-rm-prof]');if(rmProf&&confirm('¿Eliminar este profesional?')){await supabase.from('profesionales').delete().eq('id',rmProf.dataset.rmProf);cargarProfesionales();toast('Profesional eliminado');return;}
+    const promosAl=e.target.closest('[data-promos-aliado]');if(promosAl){cargarYMostrarPromociones(promosAl.dataset.promosAliado,promosAl.dataset.nomAliado);return;}
     const edAl=e.target.closest('[data-ed-aliado]');if(edAl){const a=_aliados.find(x=>x.id===edAl.dataset.edAliado);if(a){abrirModal('Editar aliado',a.nombre,htmlFormAliado(a));bindFormAliado();}return;}
     const togAl=e.target.closest('[data-tog-aliado]');if(togAl){const activo=togAl.dataset.activo==='true';await supabase.from('aliados').update({activo:!activo}).eq('id',togAl.dataset.togAliado);cargarAliados();return;}
     const rmAl=e.target.closest('[data-rm-aliado]');if(rmAl&&confirm('¿Eliminar este aliado?')){await supabase.from('aliados').delete().eq('id',rmAl.dataset.rmAliado);cargarAliados();toast('Aliado eliminado');return;}
