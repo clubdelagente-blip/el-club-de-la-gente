@@ -59,11 +59,46 @@
     .ad-modal .ad-btn--verde { background: #1f9d3c !important; border-color: #1f9d3c !important; color: #fff !important; }
     .ad-modal .ad-btn--verde:hover { background: #178a32 !important; }
     .ad-modal .ad-toolbar { border-top: 1px solid rgba(26,26,24,.1) !important; padding-top: 16px !important; margin-top: 4px !important; }
+    #login-screen input:focus { border-color: #1f9d3c !important; }
+    #login-btn:hover { background: #178a32 !important; }
   </style>
 </head>
 <body>
 
-  <div class="admin" id="admin">
+  <!-- ============================================================
+       PANTALLA DE LOGIN
+       ============================================================ -->
+  <div id="login-screen" style="position:fixed;inset:0;background:#0A0A0A;display:flex;align-items:center;justify-content:center;z-index:1000;padding:24px">
+    <div style="width:100%;max-width:380px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:40px;justify-content:center">
+        <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:38px;height:38px;flex-shrink:0">
+          <circle cx="20" cy="20" r="18.5" stroke="#F2F0EA" stroke-width="1.4"/>
+          <circle cx="20" cy="20" r="14" stroke="#6fdc8c" stroke-width="1.4"/>
+          <text x="20" y="20" text-anchor="middle" dominant-baseline="central" font-family="Cormorant Garamond, serif" font-size="20" font-weight="700" fill="#F2F0EA">G</text>
+        </svg>
+        <div style="font-family:'Cormorant Garamond',serif;color:#F2F0EA;line-height:1.1">
+          <div style="font-size:9px;letter-spacing:.25em;text-transform:uppercase;opacity:.5">El</div>
+          <div style="font-size:15px;font-weight:600">Club de la Gente</div>
+        </div>
+      </div>
+      <div style="background:#131313;border:1px solid rgba(248,246,241,.09);border-radius:16px;padding:32px">
+        <h2 style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#F2F0EA;margin-bottom:6px">Acceso Admin</h2>
+        <p style="font-size:12px;color:rgba(242,240,234,.4);margin-bottom:28px">Ingresa tus credenciales para continuar</p>
+        <div style="margin-bottom:16px">
+          <label style="display:block;font-size:11px;font-weight:600;color:rgba(242,240,234,.4);margin-bottom:7px;letter-spacing:.06em">CORREO</label>
+          <input id="login-email" type="email" placeholder="tu@correo.com" autocomplete="email" style="width:100%;font-family:'Montserrat',sans-serif;font-size:13.5px;color:#F2F0EA;padding:12px 14px;border:1.5px solid rgba(248,246,241,.1);border-radius:8px;background:#0A0A0A;outline:none;transition:border-color .2s;box-sizing:border-box">
+        </div>
+        <div style="margin-bottom:24px">
+          <label style="display:block;font-size:11px;font-weight:600;color:rgba(242,240,234,.4);margin-bottom:7px;letter-spacing:.06em">CONTRASEÑA</label>
+          <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password" style="width:100%;font-family:'Montserrat',sans-serif;font-size:13.5px;color:#F2F0EA;padding:12px 14px;border:1.5px solid rgba(248,246,241,.1);border-radius:8px;background:#0A0A0A;outline:none;transition:border-color .2s;box-sizing:border-box">
+        </div>
+        <div id="login-error" style="display:none;font-size:12px;color:#e2685f;margin-bottom:16px;padding:10px 14px;background:rgba(226,104,95,.1);border-radius:8px;border:1px solid rgba(226,104,95,.2)"></div>
+        <button id="login-btn" style="width:100%;font-family:'Montserrat',sans-serif;font-size:13.5px;font-weight:600;color:#fff;background:#1f9d3c;border:none;border-radius:8px;padding:14px;cursor:pointer;transition:background .18s">Ingresar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin" id="admin" style="display:none">
     <div class="ad-backdrop" id="ad-backdrop"></div>
 
     <!-- ============================================================
@@ -101,8 +136,9 @@
 
       <div class="ad-side__foot">
         <div class="ad-side__admin">
-          <span class="av">AG</span>
-          <div><div class="n">Admin · El Club</div><div class="r">Fusagasugá</div></div>
+          <span class="av" id="side-av">AG</span>
+          <div style="flex:1;min-width:0"><div class="n" id="side-name">Admin · El Club</div><div class="r">Fusagasugá</div></div>
+          <button id="btn-logout" title="Cerrar sesión" style="width:32px;height:32px;border-radius:7px;border:1px solid rgba(248,246,241,.1);background:none;color:rgba(242,240,234,.4);display:grid;place-items:center;cursor:pointer;flex-shrink:0;transition:color .18s,border-color .18s" onmouseover="this.style.color='#e2685f';this.style.borderColor='rgba(226,104,95,.3)'" onmouseout="this.style.color='rgba(242,240,234,.4)';this.style.borderColor='rgba(248,246,241,.1)'"><i data-lucide="log-out"></i></button>
         </div>
       </div>
     </aside>
@@ -695,7 +731,43 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
 }
 
 /* ---- OVERRIDES & DELEGACIÓN ---- */
-document.addEventListener('DOMContentLoaded',()=>{
+document.addEventListener('DOMContentLoaded',async()=>{
+
+  /* ---- AUTENTICACIÓN ---- */
+  const loginScreen=document.getElementById('login-screen');
+  const adminEl=document.getElementById('admin');
+  function showAdmin(user){
+    if(loginScreen)loginScreen.style.display='none';
+    if(adminEl)adminEl.style.removeProperty('display');
+    if(user?.email){
+      const av=document.getElementById('side-av');const nm=document.getElementById('side-name');
+      if(av)av.textContent=user.email[0].toUpperCase();
+      if(nm)nm.textContent=user.email;
+    }
+    if(window.lucide)lucide.createIcons();
+  }
+  function showLoginScreen(){
+    if(loginScreen)loginScreen.style.display='flex';
+    if(adminEl)adminEl.style.display='none';
+  }
+  const{data:{session:initSession}}=await supabase.auth.getSession();
+  if(initSession)showAdmin(initSession.user);
+  supabase.auth.onAuthStateChange((_e,s)=>{s?showAdmin(s.user):showLoginScreen();});
+  document.getElementById('login-btn')?.addEventListener('click',async()=>{
+    const email=document.getElementById('login-email')?.value.trim();
+    const pass=document.getElementById('login-pass')?.value;
+    const errEl=document.getElementById('login-error');
+    const btn=document.getElementById('login-btn');
+    if(!email||!pass){if(errEl){errEl.textContent='Ingresa tu correo y contraseña.';errEl.style.display='block';}return;}
+    btn.textContent='Ingresando…';btn.disabled=true;
+    const{error}=await supabase.auth.signInWithPassword({email,password:pass});
+    if(error){if(errEl){errEl.textContent='Correo o contraseña incorrectos.';errEl.style.display='block';}btn.textContent='Ingresar';btn.disabled=false;return;}
+    if(errEl)errEl.style.display='none';
+  });
+  document.getElementById('login-pass')?.addEventListener('keydown',(e)=>{if(e.key==='Enter')document.getElementById('login-btn')?.click();});
+  document.getElementById('btn-logout')?.addEventListener('click',async()=>{await supabase.auth.signOut();toast('Sesión cerrada');});
+  /* ---- FIN AUTENTICACIÓN ---- */
+
   window.renderAliados=function(){
     $("#p-aliados").innerHTML=`<div class="ad-toolbar"><div class="ad-search-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="a-search" placeholder="Buscar aliado…" autocomplete="off"></div><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="a-add"><i data-lucide="plus"></i> Agregar aliado</button></div><div class="ad-table-wrap"><table class="ad-table"><thead><tr><th>Establecimiento</th><th>Categoría</th><th>Descuento</th><th>WhatsApp</th><th style="text-align:right">Estado</th></tr></thead><tbody id="a-body"><tr><td colspan="5" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody></table></div>`;
     cargarAliados();cargarPostulaciones();
