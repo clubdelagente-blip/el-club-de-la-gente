@@ -7,6 +7,35 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN")!;
+const TWILIO_WEBHOOK_URL = Deno.env.get("TWILIO_WEBHOOK_URL")!;
+
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MIN = 5;
+const MAX_MESSAGE_LENGTH = 500;
+
+const INJECTION_PATTERNS = [
+  /ignora\s+(las\s+)?instrucciones/i,
+  /olvida\s+(todo|las\s+instrucciones)/i,
+  /nuevo\s+rol/i,
+  /ahora\s+eres/i,
+  /actúa\s+como\s+(si\s+)?fueras/i,
+  /actua\s+como\s+(si\s+)?fueras/i,
+  /system\s*:/i,
+  /\[system\]/i,
+  /ignore\s+(all\s+)?(previous\s+)?instructions/i,
+  /forget\s+(everything|all)/i,
+  /you\s+are\s+now/i,
+  /pretend\s+(you\s+are|to\s+be)/i,
+  /jailbreak/i,
+  /override\s+(your\s+)?instructions/i,
+];
+
+function sanitizar(mensaje: string): { texto: string; esAtaque: boolean } {
+  const texto = mensaje.slice(0, MAX_MESSAGE_LENGTH);
+  const esAtaque = INJECTION_PATTERNS.some((p) => p.test(texto));
+  return { texto, esAtaque };
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,6 +43,32 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, x-twilio-signature",
   "Access-Control-Max-Age": "86400",
 };
+
+// ─── Validación firma Twilio ─────────────────────────────────────────────────
+
+async function validateTwilioSignature(url: string, params: Record<string, string>, signature: string): Promise<boolean> {
+  const sortedKeys = Object.keys(params).sort();
+  let str = url;
+  for (const key of sortedKeys) str += key + (params[key] ?? "");
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey("raw", encoder.encode(TWILIO_AUTH_TOKEN), { name: "HMAC", hash: "SHA-1" }, false, ["sign"]);
+  const signatureBytes = await crypto.subtle.sign("HMAC", key, encoder.encode(str));
+  const computed = btoa(String.fromCharCode(...new Uint8Array(signatureBytes)));
+  return computed === signature;
+}
+
+// ─── Rate limiting ───────────────────────────────────────────────────────────
+
+async function excedeLimite(supabase: ReturnType<typeof createClient>, whatsapp: string): Promise<boolean> {
+  const desde = new Date(Date.now() - RATE_LIMIT_WINDOW_MIN * 60 * 1000).toISOString();
+  const { count } = await supabase
+    .from("conversaciones")
+    .select("id", { count: "exact", head: true })
+    .eq("whatsapp", whatsapp)
+    .eq("rol", "user")
+    .gte("created_at", desde);
+  return (count ?? 0) >= RATE_LIMIT_MAX;
+}
 
 // ─── Numerología ────────────────────────────────────────────────────────────
 
@@ -143,11 +198,29 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body = await req.text();
-    const params = new URLSearchParams(body);
-    const from = params.get("From") || "";
-    const messageBody = (params.get("Body") || "").trim();
+    const urlParams = new URLSearchParams(body);
 
-    if (!from || !messageBody) return twimlEmpty;
+    // Verificar firma de Twilio (logging para debug de URL)
+    const twilioSig = req.headers.get("x-twilio-signature") || "";
+    const paramObj: Record<string, string> = {};
+    for (const [k, v] of urlParams) paramObj[k] = v;
+    const isValid = await validateTwilioSignature(TWILIO_WEBHOOK_URL, paramObj, twilioSig);
+    if (!isValid) {
+      console.warn("Firma Twilio inválida — request rechazado");
+      return new Response("Unauthorized", { status: 403, headers: corsHeaders });
+    }
+
+    const from = urlParams.get("From") || "";
+    const rawBody = (urlParams.get("Body") || "").trim();
+
+    if (!from || !rawBody) return twimlEmpty;
+
+    const { texto: messageBody, esAtaque } = sanitizar(rawBody);
+    if (esAtaque) {
+      console.warn("Prompt injection detectado desde:", from);
+      const twimlBlock = `<Response><Message>Solo puedo ayudarte con temas del Club de la Gente.</Message></Response>`;
+      return new Response(twimlBlock, { headers: { "Content-Type": "text/xml", ...corsHeaders } });
+    }
 
     // Normalizar número de WhatsApp
     const whatsappFull = from.replace("whatsapp:", "").replace(/\D/g, "");
@@ -158,6 +231,13 @@ Deno.serve(async (req: Request) => {
     console.log("WHATSAPP_LOCAL:", whatsappLocal);
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+    // Rate limiting
+    if (await excedeLimite(supabase, whatsappLocal)) {
+      console.warn("Rate limit excedido:", whatsappLocal);
+      const twimlLimit = `<Response><Message>Estás enviando muchos mensajes seguidos. Espera unos minutos e intenta de nuevo.</Message></Response>`;
+      return new Response(twimlLimit, { headers: { "Content-Type": "text/xml", ...corsHeaders } });
+    }
 
     const { data: perfilData, error: perfilError } = await supabase
       .from("perfiles")
