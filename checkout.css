@@ -205,27 +205,14 @@
 }
 .ccv2-card--back { transform: rotateY(180deg); }
 
-/* doble marco con esquinas */
-.ccv2-frame { position: absolute; inset: 13px; border: 1px solid rgba(244,241,234,.55); border-radius: 6px; pointer-events: none; }
-.ccv2-frame::before { content: ""; position: absolute; inset: 4px; border: 1px solid rgba(244,241,234,.18); border-radius: 4px; }
-.ccv2-corner { position: absolute; width: 13px; height: 13px; z-index: 3; opacity: .8; }
-.ccv2-corner::before, .ccv2-corner::after { content: ""; position: absolute; background: rgba(244,241,234,.7); }
-.ccv2-corner::before { width: 100%; height: 1px; top: 0; }
-.ccv2-corner::after { width: 1px; height: 100%; left: 0; }
-.ccv2-corner.tl { top: 19px; left: 19px; }
-.ccv2-corner.tr { top: 19px; right: 19px; transform: scaleX(-1); }
-.ccv2-corner.bl { bottom: 19px; left: 19px; transform: scaleY(-1); }
-.ccv2-corner.br { bottom: 19px; right: 19px; transform: scale(-1); }
+/* Marco ornamental en imagen */
+.ccv2-frame-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; filter: invert(1) brightness(12) contrast(10); mix-blend-mode: screen; z-index: 1; pointer-events: none; }
 
 /* FRENTE */
 .ccv2-front__in { position: absolute; inset: 0; padding: 9% 11% 8%; display: flex; flex-direction: column; z-index: 2; }
 .ccv2-brand { text-align: center; font-size: clamp(10px, 2.6vw, 13px); font-weight: 700; letter-spacing: .42em; color: rgba(244,241,234,.92); text-indent: .42em; }
 .ccv2-mid { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6%; }
-.ccv2-logo { display: flex; flex-direction: column; align-items: center; line-height: .92; }
-.ccv2-logo__el { font-size: clamp(8px, 2.1vw, 10px); font-weight: 800; letter-spacing: .3em; text-indent: .3em; }
-.ccv2-logo__club { font-size: clamp(13px, 3.6vw, 18px); font-weight: 800; letter-spacing: .04em; margin-top: 2px; }
-.ccv2-logo__gente { font-size: clamp(22px, 6.4vw, 32px); font-weight: 800; letter-spacing: .02em; }
-.ccv2-logo__g { margin-top: 5px; width: clamp(16px, 4.2vw, 20px); height: clamp(16px, 4.2vw, 20px); border: 1.4px solid rgba(244,241,234,.85); border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-size: clamp(10px, 2.8vw, 13px); font-weight: 700; }
+.ccv2-logo-img { width: 44%; max-width: 155px; filter: invert(1); object-fit: contain; flex-shrink: 0; }
 .ccv2-codigo { align-self: center; }
 .ccv2-codigo__lbl { display: block; font-size: clamp(9px, 2.3vw, 11px); color: rgba(244,241,234,.6); }
 .ccv2-codigo__val { display: block; font-size: clamp(11px, 2.8vw, 13.5px); font-weight: 600; letter-spacing: .04em; }
@@ -233,8 +220,7 @@
 
 /* REVERSO */
 .ccv2-back__in { position: absolute; inset: 0; padding: 10% 11%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5%; z-index: 2; }
-.ccv2-orn { display: flex; align-items: center; gap: 10px; color: rgba(244,241,234,.5); font-size: 9px; letter-spacing: .3em; }
-.ccv2-orn::before, .ccv2-orn::after { content: ""; width: 64px; height: 1px; background: rgba(244,241,234,.4); }
+.ccv2-orn-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; filter: invert(1) brightness(12) contrast(10); mix-blend-mode: screen; z-index: 1; pointer-events: none; }
 .ccv2-qr { width: clamp(96px, 26vw, 128px); aspect-ratio: 1; background: #fff; border-radius: 8px; padding: 7px; display: grid; place-items: center; }
 .ccv2-qr img { width: 100%; height: 100%; }
 .ccv2-renueva { font-size: clamp(11px, 2.8vw, 13px); color: rgba(244,241,234,.78); }
@@ -243,24 +229,13 @@
 /* ============================================================
    CLUBCARD PREMIUM — bordes y letras doradas, fondo negro
    ============================================================ */
-.ccv2--premium .ccv2-frame {
-  border-color: rgba(201,164,78,.75);
-  box-shadow: 0 0 18px rgba(201,164,78,.08) inset;
-}
-.ccv2--premium .ccv2-frame::before { border-color: rgba(201,164,78,.28); }
-.ccv2--premium .ccv2-corner::before,
-.ccv2--premium .ccv2-corner::after { background: rgba(228,193,112,.9); }
+.ccv2--premium .ccv2-frame-img,
+.ccv2--premium .ccv2-orn-img { filter: invert(1) brightness(12) contrast(10) sepia(0.8) saturate(2.5) hue-rotate(-5deg); }
+.ccv2--premium .ccv2-logo-img { filter: invert(1) sepia(0.7) saturate(2.5) hue-rotate(-5deg) brightness(1.1); }
 .ccv2--premium .ccv2-brand { color: rgba(232,200,122,.95); }
-.ccv2--premium .ccv2-logo__el,
-.ccv2--premium .ccv2-logo__club,
-.ccv2--premium .ccv2-logo__gente { color: #e8c87a; }
-.ccv2--premium .ccv2-logo__g { border-color: rgba(232,200,122,.9); color: rgba(232,200,122,.9); }
 .ccv2--premium .ccv2-codigo__lbl { color: rgba(232,200,122,.55); }
 .ccv2--premium .ccv2-codigo__val { color: #e8c87a; }
 .ccv2--premium .ccv2-name { color: #f0d98a; }
-.ccv2--premium .ccv2-orn::before,
-.ccv2--premium .ccv2-orn::after { background: rgba(201,164,78,.5); }
-.ccv2--premium .ccv2-orn { color: rgba(201,164,78,.65); }
 .ccv2--premium .ccv2-renueva { color: rgba(232,200,122,.8); }
 .ccv2--premium .ccv2-renueva span { color: #e8c87a; }
 .ccv2--premium .ccv2-card {
