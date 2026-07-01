@@ -198,7 +198,7 @@
 .ccv2__flip.is-back { transform: rotateY(180deg); }
 
 .ccv2-card {
-  position: absolute; inset: 0; border-radius: 14px; overflow: hidden;
+  position: absolute; inset: 0; border-radius: 14px; overflow: hidden; isolation: isolate;
   background: radial-gradient(120% 140% at 50% 0%, #161616 0%, #0a0a0a 60%, #050505 100%);
   color: #F4F1EA; box-shadow: 0 32px 64px -30px rgba(0,0,0,.75), inset 0 0 0 1px rgba(248,246,241,.04);
   -webkit-backface-visibility: hidden; backface-visibility: hidden;
@@ -212,7 +212,7 @@
 .ccv2-front__in { position: absolute; inset: 0; padding: 9% 11% 8%; display: flex; flex-direction: column; z-index: 2; }
 .ccv2-brand { text-align: center; font-size: clamp(10px, 2.6vw, 13px); font-weight: 700; letter-spacing: .42em; color: rgba(244,241,234,.92); text-indent: .42em; }
 .ccv2-mid { flex: 1; display: flex; align-items: center; justify-content: center; }
-.ccv2-logo-img { width: 52%; max-width: 175px; filter: invert(1); object-fit: contain; }
+.ccv2-logo-img { width: 42%; max-width: 148px; max-height: clamp(70px, 18vw, 88px); filter: invert(1); object-fit: contain; mix-blend-mode: screen; }
 .ccv2-footer { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; }
 .ccv2-codigo { text-align: right; flex-shrink: 0; }
 .ccv2-codigo__lbl { display: block; font-size: clamp(8px, 2vw, 10px); color: rgba(244,241,234,.6); }
