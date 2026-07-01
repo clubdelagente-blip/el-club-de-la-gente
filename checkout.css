@@ -209,7 +209,7 @@
 .ccv2-frame-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; filter: invert(1) brightness(12) contrast(10); mix-blend-mode: screen; z-index: 1; pointer-events: none; }
 
 /* FRENTE */
-.ccv2-front__in { position: absolute; inset: 0; padding: 9% 11% 8%; display: flex; flex-direction: column; z-index: 2; mix-blend-mode: screen; }
+.ccv2-front__in { position: absolute; inset: 0; padding: 9% 11% 13%; display: flex; flex-direction: column; z-index: 2; mix-blend-mode: screen; }
 .ccv2-brand { text-align: center; font-size: clamp(10px, 2.6vw, 13px); font-weight: 700; letter-spacing: .42em; color: rgba(244,241,234,.92); text-indent: .42em; }
 .ccv2-mid { flex: 1; display: flex; align-items: center; justify-content: center; }
 .ccv2-logo-img { width: 42%; max-width: 148px; max-height: clamp(70px, 18vw, 88px); filter: invert(1); object-fit: contain; }
@@ -222,7 +222,7 @@
 /* REVERSO */
 .ccv2-back__in { position: absolute; inset: 0; padding: 10% 11%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5%; z-index: 2; }
 .ccv2-orn-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; filter: invert(1) brightness(12) contrast(10); mix-blend-mode: screen; z-index: 1; pointer-events: none; }
-.ccv2-qr { width: clamp(96px, 26vw, 128px); aspect-ratio: 1; background: #fff; border-radius: 8px; padding: 7px; display: grid; place-items: center; }
+.ccv2-qr { width: clamp(72px, 20vw, 96px); aspect-ratio: 1; background: #fff; border-radius: 6px; padding: 5px; display: grid; place-items: center; }
 .ccv2-qr img { width: 100%; height: 100%; }
 .ccv2-renueva { font-size: clamp(11px, 2.8vw, 13px); color: rgba(244,241,234,.78); }
 .ccv2-renueva span { font-weight: 600; color: #F4F1EA; }
