@@ -117,12 +117,9 @@ a { color: inherit; text-decoration: none; }
 .nav.is-scrolled { border-bottom-color: var(--linea); background: rgba(248,246,241,0.9); }
 .nav .wrap { display: flex; align-items: center; justify-content: space-between; }
 
-.logo { display: flex; align-items: center; gap: 13px; }
-.logo__mark { width: 38px; height: 38px; flex: none; display: grid; place-items: center; }
-.logo__mark svg { width: 100%; height: 100%; }
-.logo__type { font-family: var(--display); font-weight: 700; font-size: 14.5px; line-height: 1.12; letter-spacing: 0.05em; text-transform: uppercase; }
-.logo__type span { display: block; white-space: nowrap; }
-.logo__type .l1 { font-size: 10px; letter-spacing: 0.24em; font-weight: 600; line-height: 1.1; display: block; transform: translateY(3px); }
+.logo { display: flex; align-items: center; }
+.logo img { height: 36px; width: auto; }
+.logo-img--inv { filter: invert(1); }
 
 .nav__links { display: flex; align-items: center; gap: 36px; }
 .nav__links a { font-size: 13px; font-weight: 500; letter-spacing: 0.02em; position: relative; padding: 6px 0; }
