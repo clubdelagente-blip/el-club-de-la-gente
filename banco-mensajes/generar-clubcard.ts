@@ -21,7 +21,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: perfil, error } = await supabase
     .from("perfiles")
-    .select("nombre, codigo, fecha_vencimiento")
+    .select("nombre, whatsapp, fecha_vencimiento")
     .eq("id", miembro_id)
     .single();
 
@@ -31,7 +31,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const nombre = (perfil.nombre ?? "MIEMBRO").toUpperCase();
-  const codigo = perfil.codigo ?? "—";
+  const codigo = perfil.whatsapp ?? "—";
   const fechaRenovacion = perfil.fecha_vencimiento
     ? new Date(perfil.fecha_vencimiento).toLocaleDateString("es-CO", {
         day: "2-digit", month: "2-digit", year: "numeric",
