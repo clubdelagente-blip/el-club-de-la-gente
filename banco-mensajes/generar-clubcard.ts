@@ -127,6 +127,7 @@ Deno.serve(async (req: Request) => {
       html: buildCardHtml(nombre, codigo, fechaRenovacion, qrUrl),
       selector: "#card-render",
       viewport_width: 568,
+      viewport_height: 820,
       device_scale_factor: 2,
       ms_delay: 800,
     }),
