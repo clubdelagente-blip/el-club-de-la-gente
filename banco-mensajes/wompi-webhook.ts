@@ -91,5 +91,19 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // Validar si el referidor alcanzó 5 referidos activos → vitalicia
+  try {
+    await fetch(`${SUPABASE_URL}/functions/v1/validar-referidos`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ miembro_id: miembroId }),
+    });
+  } catch (e) {
+    console.error("Error llamando validar-referidos:", e);
+  }
+
   return new Response("OK", { status: 200, headers: corsHeaders });
 });
