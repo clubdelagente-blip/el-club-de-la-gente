@@ -206,22 +206,22 @@
 .ccv2-card--back { transform: rotateY(180deg); }
 
 /* Marco ornamental en imagen */
-.ccv2-frame-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; filter: invert(1) brightness(12) contrast(10); mix-blend-mode: screen; z-index: 1; pointer-events: none; }
+.ccv2-frame-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; filter: invert(1) saturate(0) brightness(12) contrast(10); mix-blend-mode: screen; z-index: 1; pointer-events: none; }
 
 /* FRENTE */
 .ccv2-front__in { position: absolute; inset: 0; padding: 9% 11% 13%; display: flex; flex-direction: column; z-index: 2; mix-blend-mode: screen; }
-.ccv2-brand { text-align: center; font-size: clamp(10px, 2.6vw, 13px); font-weight: 700; letter-spacing: .42em; color: rgba(244,241,234,.92); text-indent: .42em; margin-top: 5%; }
+.ccv2-brand { text-align: center; font-size: clamp(10px, 2.6vw, 13px); font-weight: 700; letter-spacing: .42em; color: #D4AF37; text-indent: .42em; margin-top: 5%; }
 .ccv2-mid { flex: 1; display: flex; align-items: center; justify-content: center; }
 .ccv2-logo-img { width: 42%; max-width: 148px; max-height: clamp(70px, 18vw, 88px); filter: invert(1); object-fit: contain; display: block; margin: 0 auto; }
 .ccv2-footer { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; }
 .ccv2-codigo { text-align: right; flex-shrink: 0; }
-.ccv2-codigo__lbl { display: block; font-size: clamp(8px, 2vw, 10px); color: rgba(244,241,234,.6); }
-.ccv2-codigo__val { display: block; font-size: clamp(10px, 2.6vw, 13px); font-weight: 600; letter-spacing: .04em; }
-.ccv2-name { font-size: clamp(9px, 2.4vw, 12px); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; flex: 1; min-width: 0; }
+.ccv2-codigo__lbl { display: block; font-size: clamp(8px, 2vw, 10px); color: rgba(212,175,55,.65); }
+.ccv2-codigo__val { display: block; font-size: clamp(10px, 2.6vw, 13px); font-weight: 600; letter-spacing: .04em; color: #D4AF37; }
+.ccv2-name { font-size: clamp(9px, 2.4vw, 12px); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; flex: 1; min-width: 0; color: #D4AF37; }
 
 /* REVERSO */
 .ccv2-back__in { position: absolute; inset: 0; padding: 10% 11%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5%; z-index: 2; }
-.ccv2-orn-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; filter: invert(1) brightness(12) contrast(10); mix-blend-mode: screen; z-index: 1; pointer-events: none; }
+.ccv2-orn-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; filter: invert(1) saturate(0) brightness(12) contrast(10); mix-blend-mode: screen; z-index: 1; pointer-events: none; }
 .ccv2-qr { width: clamp(72px, 20vw, 96px); aspect-ratio: 1; background: #fff; border-radius: 6px; padding: 5px; display: grid; place-items: center; }
 .ccv2-qr img { width: 100%; height: 100%; }
 .ccv2-renueva { font-size: clamp(11px, 2.8vw, 13px); color: rgba(244,241,234,.78); }
@@ -231,14 +231,14 @@
    CLUBCARD PREMIUM — bordes y letras doradas, fondo negro
    ============================================================ */
 .ccv2--premium .ccv2-frame-img,
-.ccv2--premium .ccv2-orn-img { filter: invert(1) brightness(12) contrast(10) sepia(0.8) saturate(2.5) hue-rotate(-5deg); }
-.ccv2--premium .ccv2-logo-img { filter: invert(1) sepia(0.7) saturate(2.5) hue-rotate(-5deg) brightness(1.1); }
-.ccv2--premium .ccv2-brand { color: rgba(232,200,122,.95); }
-.ccv2--premium .ccv2-codigo__lbl { color: rgba(232,200,122,.55); }
-.ccv2--premium .ccv2-codigo__val { color: #e8c87a; }
-.ccv2--premium .ccv2-name { color: #f0d98a; }
-.ccv2--premium .ccv2-renueva { color: rgba(232,200,122,.8); }
-.ccv2--premium .ccv2-renueva span { color: #e8c87a; }
+.ccv2--premium .ccv2-orn-img { filter: invert(1) saturate(0) brightness(12) contrast(10); }
+.ccv2--premium .ccv2-logo-img { filter: invert(1); }
+.ccv2--premium .ccv2-brand { color: #D4AF37; }
+.ccv2--premium .ccv2-codigo__lbl { color: rgba(212,175,55,.65); }
+.ccv2--premium .ccv2-codigo__val { color: #D4AF37; }
+.ccv2--premium .ccv2-name { color: #D4AF37; }
+.ccv2--premium .ccv2-renueva { color: rgba(212,175,55,.8); }
+.ccv2--premium .ccv2-renueva span { color: #D4AF37; }
 .ccv2--premium .ccv2-card {
   box-shadow: 0 32px 64px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(201,164,78,.15), inset 0 0 60px rgba(201,164,78,.03);
 }
