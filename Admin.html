@@ -278,6 +278,7 @@ function htmlFormAliado(a={}){
     <div class="ad-field"><label>WhatsApp</label><input id="fa-wa" type="tel" value="${(a.whatsapp||'').replace(/"/g,'&quot;')}" placeholder="300 000 0000"></div>
     <div class="ad-field"><label>Dirección</label><input id="fa-dir" type="text" value="${(a.direccion||'').replace(/"/g,'&quot;')}" placeholder="Calle, barrio"></div>
   </div>
+  <div class="ad-field"><label>Link de Google Maps</label><input id="fa-maps" type="url" value="${(a.maps_url||'').replace(/"/g,'&quot;')}" placeholder="https://maps.app.goo.gl/..."></div>
   <div class="ad-field"><label>Foto del establecimiento</label>
     ${a.imagen_url?`<img src="${a.imagen_url}" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:10px">`:''}
     <input id="fa-img" type="file" accept="image/*"><input type="hidden" id="fa-img-url" value="${a.imagen_url||''}"></div>
@@ -319,7 +320,7 @@ function bindFormAliado(){
       let imagen_url=$("#fa-img-url")?.value||null;
       const file=$("#fa-img")?.files?.[0];
       if(file)try{imagen_url=await subirImagen(file);}catch(_){toast('Error al subir imagen');}
-      const payload={nombre,categoria:$("#fa-cat")?.value.trim()||null,descuento:$("#fa-dsc")?.value.trim()||null,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:$("#fa-wa")?.value.trim()||null,direccion:$("#fa-dir")?.value.trim()||null,imagen_url,activo:true};
+      const payload={nombre,categoria:$("#fa-cat")?.value.trim()||null,descuento:$("#fa-dsc")?.value.trim()||null,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:$("#fa-wa")?.value.trim()||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,imagen_url,activo:true};
       const id=btn.dataset.id;
       const{error}=id?await supabase.from('aliados').update(payload).eq('id',id):await supabase.from('aliados').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}

@@ -214,6 +214,12 @@ function sheetAliado(a) {
     </div>
     <p class="sheet__desc">${a.desc}</p>
 
+    ${(a.direccion || a.maps_url) ? `
+    <div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px;flex-wrap:wrap;">
+      ${a.direccion ? `<span style="font-size:13px;color:#666;display:flex;align-items:center;gap:5px;"><i data-lucide="map-pin" style="width:14px;height:14px;flex-shrink:0;"></i>${a.direccion}</span>` : ''}
+      ${a.maps_url ? `<a href="${a.maps_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#e8f5ee;color:#1a7a3c;border-radius:99px;font-size:12px;font-weight:600;text-decoration:none;"><i data-lucide="navigation" style="width:13px;height:13px;"></i>Ver en mapa</a>` : ''}
+    </div>` : ''}
+
     <div class="sheet__sub">Descuentos disponibles</div>
     ${a.descuentos.map((d, di) => `
       <div class="descuento">
