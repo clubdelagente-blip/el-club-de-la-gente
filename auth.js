@@ -207,65 +207,137 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (error) mostrarError("Error al conectar con Google.");
   }));
 
-  // ---------- LOGIN ----------
-  // Ocultar campo contraseña cuando el usuario escribe solo su número
+  // ---------- LOGIN (2 pasos: teléfono → OTP) ----------
+  let _loginPhone = "";
+
+  function mostrarErrorLogin(msg) {
+    const el = $("#login-error");
+    if (!el) return;
+    el.textContent = msg;
+    setTimeout(() => { if (el) el.textContent = ""; }, 6000);
+  }
+
+  // Mostrar/ocultar campo de contraseña según si es email o teléfono
   $("#login-user")?.addEventListener("input", (e) => {
     const val = e.target.value.trim();
-    const esTelefono = !val.includes("@") && /^\d[\d\s-]*$/.test(val);
-    const campoPass = $("#login-pass")?.closest(".campo");
-    if (campoPass) campoPass.style.display = esTelefono ? "none" : "";
-    const forgot = $(".auth-forgot");
-    if (forgot) forgot.style.display = esTelefono ? "none" : "";
+    const esEmail = val.includes("@");
+    const passField = $("#login-pass-campo");
+    const forgotLink = $("#login-forgot-link");
+    if (passField) passField.style.display = esEmail ? "" : "none";
+    if (forgotLink) forgotLink.style.display = esEmail ? "" : "none";
   });
 
+  // Paso 1: identificación
   $("#form-login")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector("button[type=submit]");
     const raw = $("#login-user").value.trim();
-    const digits = raw.replace(/\D/g, "");
-    const esMiembro = !raw.includes("@") && digits.length >= 7;
+    const esEmail = raw.includes("@");
 
-    // Miembros: email ficticio + contraseña auto-generada en el registro
-    // Profesionales/aliados: email real + contraseña que eligieron
-    const email    = esMiembro ? digits + "@clubdelagente.app" : raw;
-    const password = esMiembro ? "Club" + digits + "!" : $("#login-pass").value;
-
-    setLoading(btn, true, "Iniciar sesión →");
-    let data, error;
-
-    ({ data, error } = await supabase.auth.signInWithPassword({ email, password }));
-
-    // Fallback: cuentas antiguas con espacios en el email
-    if (error && esMiembro) {
-      const emailRaw = raw + "@clubdelagente.app";
-      const r2 = await supabase.auth.signInWithPassword({ email: emailRaw, password });
-      if (!r2.error) { data = r2.data; error = null; }
-    }
-
-    setLoading(btn, false, "Iniciar sesión →");
-
-    if (error) {
-      const msg = error.message || "";
-      let texto;
-      if (msg.includes("Email not confirmed"))
-        texto = "Cuenta sin confirmar. Escríbenos al WhatsApp del Club para activarla.";
-      else if (msg.includes("Invalid login credentials"))
-        texto = esMiembro
-          ? "Número no encontrado. ¿Te registraste con este número?"
-          : "Correo o contraseña incorrectos.";
-      else
-        texto = "Error: " + msg;
-      mostrarError(texto);
+    if (esEmail) {
+      // Profesionales y aliados: email + contraseña
+      const password = $("#login-pass")?.value || "";
+      if (!password) { mostrarErrorLogin("Ingresa tu contraseña."); return; }
+      setLoading(btn, true, "Continuar");
+      const { data, error } = await supabase.auth.signInWithPassword({ email: raw, password });
+      setLoading(btn, false, "Continuar");
+      if (error) { mostrarErrorLogin("Correo o contraseña incorrectos."); return; }
+      const p = data.user?.user_metadata || {};
+      localStorage.setItem("ecdlg_perfil", JSON.stringify({
+        nombre: p.nombre || raw,
+        primerNombre: (p.nombre || raw).split(" ")[0],
+        rol: p.rol || "miembro",
+      }));
+      location.href = "Perfil.html";
       return;
     }
 
-    const perfil = data.user?.user_metadata || {};
+    // Miembros: login por OTP de WhatsApp
+    const digits = raw.replace(/\D/g, "");
+    if (digits.length < 7) { mostrarErrorLogin("Ingresa un número de WhatsApp válido."); return; }
+    _loginPhone = digits;
+
+    setLoading(btn, true, "Continuar");
+    const { data: sendData, error: sendErr } = await supabase.functions.invoke("auth-otp", {
+      body: { action: "send", phone: digits },
+    });
+    setLoading(btn, false, "Continuar");
+
+    if (sendErr || sendData?.error) {
+      mostrarErrorLogin(sendData?.error || "Error al enviar el código. Intenta de nuevo.");
+      return;
+    }
+
+    // Mostrar paso 2
+    const last4  = digits.slice(-4);
+    const masked = "•".repeat(Math.max(0, digits.length - 4)) + last4;
+    $("#login-otp-msg").textContent = `Enviamos un código al ${masked}. Ingrésalo aquí.`;
+    $("#login-step-1").style.display = "none";
+    $("#login-step-2").style.display = "";
+    const gDiv = $("#login-google-divider"), gBtn = $("#login-google-btn");
+    if (gDiv) gDiv.style.display = "none";
+    if (gBtn) gBtn.style.display = "none";
+    setTimeout(() => $("#login-otp")?.focus(), 50);
+  });
+
+  // Paso 2: verificar OTP
+  $("#btn-verify-otp")?.addEventListener("click", async () => {
+    const btn = $("#btn-verify-otp");
+    const code = ($("#login-otp")?.value || "").replace(/\s/g, "");
+    if (!/^\d{6}$/.test(code)) { mostrarErrorLogin("El código debe tener 6 dígitos."); return; }
+
+    setLoading(btn, true, "Ingresar al club →");
+    const { data: verifyData, error: verifyErr } = await supabase.functions.invoke("auth-otp", {
+      body: { action: "verify", phone: _loginPhone, code },
+    });
+    setLoading(btn, false, "Ingresar al club →");
+
+    if (verifyErr || verifyData?.error) {
+      mostrarErrorLogin(verifyData?.error || "Código incorrecto o vencido.");
+      return;
+    }
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash: verifyData.hashed_token,
+      type: "email",
+    });
+
+    if (error || !data?.user) {
+      mostrarErrorLogin("Error al iniciar sesión. Intenta de nuevo.");
+      return;
+    }
+
+    const { data: perfil } = await supabase
+      .from("perfiles").select("nombre, rol").eq("id", data.user.id).maybeSingle();
     localStorage.setItem("ecdlg_perfil", JSON.stringify({
-      nombre: perfil.nombre || raw,
-      primerNombre: (perfil.nombre || raw).split(" ")[0],
-      rol: perfil.rol || "miembro",
+      nombre: perfil?.nombre || "Miembro",
+      primerNombre: (perfil?.nombre || "Miembro").split(" ")[0],
+      rol: perfil?.rol || "miembro",
     }));
     location.href = "Perfil.html";
+  });
+
+  // Volver al paso 1
+  $("#btn-back-login")?.addEventListener("click", () => {
+    _loginPhone = "";
+    $("#login-step-1").style.display = "";
+    $("#login-step-2").style.display = "none";
+    const gDiv = $("#login-google-divider"), gBtn = $("#login-google-btn");
+    if (gDiv) gDiv.style.display = "";
+    if (gBtn) gBtn.style.display = "";
+    if ($("#login-otp")) $("#login-otp").value = "";
+  });
+
+  // Reenviar código
+  $("#btn-resend-otp")?.addEventListener("click", async () => {
+    const btn = $("#btn-resend-otp");
+    btn.disabled = true;
+    btn.textContent = "Enviando…";
+    await supabase.functions.invoke("auth-otp", {
+      body: { action: "send", phone: _loginPhone },
+    });
+    btn.textContent = "Código reenviado ✓";
+    setTimeout(() => { btn.disabled = false; btn.textContent = "Reenviar código"; }, 30000);
   });
 
   // ---------- REGISTRO MIEMBRO ----------
@@ -282,7 +354,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     setLoading(btn, true, "Crear mi cuenta →");
 
-    const password = "Club" + waDigits + "!";
+    const rnd = new Uint8Array(32);
+    crypto.getRandomValues(rnd);
+    const password = Array.from(rnd).map(b => b.toString(16).padStart(2, "0")).join("");
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -340,7 +414,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // ---------- OLVIDÉ MI CONTRASEÑA ----------
-  $(".auth-forgot")?.addEventListener("click", (e) => {
+  // Solo aplica para profesionales/aliados (email+contraseña). Los miembros
+  // ingresan con código OTP enviado a su WhatsApp — no tienen contraseña que olvidar.
+  $("#login-forgot-link")?.addEventListener("click", (e) => {
     e.preventDefault();
     mostrarVista("view-forgot");
     $(".stepper").style.visibility = "hidden";

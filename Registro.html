@@ -62,24 +62,44 @@
         <section class="auth-view" id="view-login" data-screen-label="Login">
           <span class="auth-eyebrow">Bienvenido de nuevo</span>
           <h1 class="auth-title">Tu club te espera.</h1>
-          <p class="auth-desc">Inicia sesión para acceder a tus beneficios, descuentos y comunidad.</p>
+          <p class="auth-desc" id="login-main-desc">Inicia sesión para acceder a tus beneficios, descuentos y comunidad.</p>
+          <p id="login-error" style="color:#c0392b;font-size:13px;margin-top:-4px;text-align:center;min-height:18px"></p>
 
           <form class="auth-form" id="form-login">
-            <div class="campo">
-              <label for="login-user">Usuario o WhatsApp</label>
-              <input type="text" id="login-user" required placeholder="Tu usuario o número" autocomplete="username">
+
+            <!-- Paso 1: número o correo -->
+            <div id="login-step-1">
+              <div class="campo">
+                <label for="login-user">WhatsApp o correo</label>
+                <input type="text" id="login-user" required placeholder="300 000 0000 o tu@email.com" autocomplete="username">
+              </div>
+              <div class="campo" id="login-pass-campo" style="display:none">
+                <label for="login-pass">Contraseña</label>
+                <input type="password" id="login-pass" placeholder="Tu contraseña" autocomplete="current-password">
+              </div>
+              <a class="auth-forgot" href="#" id="login-forgot-link" style="display:none">¿Olvidaste tu contraseña?</a>
+              <button type="submit" class="btn btn--primario btn--bloque">Continuar <span class="ar">&rarr;</span></button>
             </div>
-            <div class="campo">
-              <label for="login-pass">Contraseña</label>
-              <input type="password" id="login-pass" required placeholder="Tu contraseña" autocomplete="current-password">
+
+            <!-- Paso 2: código OTP (solo miembros por WhatsApp) -->
+            <div id="login-step-2" style="display:none">
+              <p class="auth-desc" id="login-otp-msg" style="margin-bottom:16px">Enviamos un código de 6 dígitos a tu WhatsApp.</p>
+              <div class="campo">
+                <label for="login-otp">Código de verificación</label>
+                <input type="text" id="login-otp" placeholder="000000" maxlength="6" pattern="\d{6}" inputmode="numeric" autocomplete="one-time-code" style="letter-spacing:.2em;font-size:22px;text-align:center;font-weight:600">
+              </div>
+              <button type="button" id="btn-verify-otp" class="btn btn--primario btn--bloque">Ingresar al club <span class="ar">&rarr;</span></button>
+              <div style="display:flex;justify-content:center;gap:20px;margin-top:14px">
+                <button type="button" id="btn-back-login" style="background:none;border:none;color:inherit;opacity:.45;font-size:12px;cursor:pointer;text-decoration:underline;padding:0">Cambiar número</button>
+                <button type="button" id="btn-resend-otp" style="background:none;border:none;color:inherit;opacity:.45;font-size:12px;cursor:pointer;text-decoration:underline;padding:0">Reenviar código</button>
+              </div>
             </div>
-            <a class="auth-forgot" href="#">¿Olvidaste tu contraseña?</a>
-            <button type="submit" class="btn btn--primario btn--bloque">Iniciar sesión <span class="ar">&rarr;</span></button>
+
           </form>
 
-          <div class="auth-divider">o</div>
+          <div class="auth-divider" id="login-google-divider">o</div>
 
-          <button class="btn-google" data-ctx="login">
+          <button class="btn-google" data-ctx="login" id="login-google-btn">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1Z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38Z"/></svg>
             Continuar con Google
           </button>
