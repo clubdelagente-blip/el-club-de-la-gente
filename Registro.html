@@ -67,17 +67,12 @@
 
           <form class="auth-form" id="form-login">
 
-            <!-- Paso 1: número o correo -->
+            <!-- Paso 1: número WhatsApp -->
             <div id="login-step-1">
               <div class="campo">
-                <label for="login-user">WhatsApp o correo</label>
-                <input type="text" id="login-user" required placeholder="300 000 0000 o tu@email.com" autocomplete="username">
+                <label for="login-user">Número de WhatsApp</label>
+                <input type="tel" id="login-user" required placeholder="300 000 0000" autocomplete="tel" inputmode="numeric">
               </div>
-              <div class="campo" id="login-pass-campo" style="display:none">
-                <label for="login-pass">Contraseña</label>
-                <input type="password" id="login-pass" placeholder="Tu contraseña" autocomplete="current-password">
-              </div>
-              <a class="auth-forgot" href="#" id="login-forgot-link" style="display:none">¿Olvidaste tu contraseña?</a>
               <button type="submit" class="btn btn--primario btn--bloque">Continuar <span class="ar">&rarr;</span></button>
             </div>
 
@@ -335,7 +330,7 @@
   </main>
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <script type="module" src="auth.js?v=12"></script>
+  <script type="module" src="auth.js?v=13"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

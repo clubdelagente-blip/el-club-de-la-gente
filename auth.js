@@ -217,42 +217,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     setTimeout(() => { if (el) el.textContent = ""; }, 6000);
   }
 
-  // Mostrar/ocultar campo de contraseña según si es email o teléfono
-  $("#login-user")?.addEventListener("input", (e) => {
-    const val = e.target.value.trim();
-    const esEmail = val.includes("@");
-    const passField = $("#login-pass-campo");
-    const forgotLink = $("#login-forgot-link");
-    if (passField) passField.style.display = esEmail ? "" : "none";
-    if (forgotLink) forgotLink.style.display = esEmail ? "" : "none";
-  });
-
-  // Paso 1: identificación
+  // Paso 1: número WhatsApp
   $("#form-login")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector("button[type=submit]");
     const raw = $("#login-user").value.trim();
-    const esEmail = raw.includes("@");
-
-    if (esEmail) {
-      // Profesionales y aliados: email + contraseña
-      const password = $("#login-pass")?.value || "";
-      if (!password) { mostrarErrorLogin("Ingresa tu contraseña."); return; }
-      setLoading(btn, true, "Continuar");
-      const { data, error } = await supabase.auth.signInWithPassword({ email: raw, password });
-      setLoading(btn, false, "Continuar");
-      if (error) { mostrarErrorLogin("Correo o contraseña incorrectos."); return; }
-      const p = data.user?.user_metadata || {};
-      localStorage.setItem("ecdlg_perfil", JSON.stringify({
-        nombre: p.nombre || raw,
-        primerNombre: (p.nombre || raw).split(" ")[0],
-        rol: p.rol || "miembro",
-      }));
-      location.href = "Perfil.html";
-      return;
-    }
-
-    // Miembros: login por OTP de WhatsApp
     const digits = raw.replace(/\D/g, "");
     if (digits.length < 7) { mostrarErrorLogin("Ingresa un número de WhatsApp válido."); return; }
     _loginPhone = digits;
