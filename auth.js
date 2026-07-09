@@ -258,13 +258,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     _loginPhone = digits;
 
     setLoading(btn, true, "Continuar");
-    const { data: sendData, error: sendErr } = await supabase.functions.invoke("auth-otp", {
-      body: { action: "send", phone: digits },
-    });
+    let sendData;
+    try {
+      const res = await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/auth-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send", phone: digits }),
+      });
+      sendData = await res.json();
+    } catch (_) {
+      setLoading(btn, false, "Continuar");
+      mostrarErrorLogin("Error de conexión. Intenta de nuevo.");
+      return;
+    }
     setLoading(btn, false, "Continuar");
 
-    if (sendErr || sendData?.error) {
-      mostrarErrorLogin(sendData?.error || "Error al enviar el código. Intenta de nuevo.");
+    if (sendData?.error) {
+      mostrarErrorLogin(sendData.error);
       return;
     }
 
@@ -287,13 +297,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!/^\d{6}$/.test(code)) { mostrarErrorLogin("El código debe tener 6 dígitos."); return; }
 
     setLoading(btn, true, "Ingresar al club →");
-    const { data: verifyData, error: verifyErr } = await supabase.functions.invoke("auth-otp", {
-      body: { action: "verify", phone: _loginPhone, code },
-    });
+    let verifyData;
+    try {
+      const res = await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/auth-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify", phone: _loginPhone, code }),
+      });
+      verifyData = await res.json();
+    } catch (_) {
+      setLoading(btn, false, "Ingresar al club →");
+      mostrarErrorLogin("Error de conexión. Intenta de nuevo.");
+      return;
+    }
     setLoading(btn, false, "Ingresar al club →");
 
-    if (verifyErr || verifyData?.error) {
-      mostrarErrorLogin(verifyData?.error || "Código incorrecto o vencido.");
+    if (verifyData?.error) {
+      mostrarErrorLogin(verifyData.error);
       return;
     }
 
@@ -333,8 +353,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const btn = $("#btn-resend-otp");
     btn.disabled = true;
     btn.textContent = "Enviando…";
-    await supabase.functions.invoke("auth-otp", {
-      body: { action: "send", phone: _loginPhone },
+    await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/auth-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "send", phone: _loginPhone }),
     });
     btn.textContent = "Código reenviado ✓";
     setTimeout(() => { btn.disabled = false; btn.textContent = "Reenviar código"; }, 30000);
