@@ -37,6 +37,7 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "POST")    return new Response("Method not allowed", { status: 405, headers: cors });
 
+  try {
   const { action, phone, code } = await req.json();
   const digits = (phone ?? "").replace(/\D/g, "");
 
@@ -49,7 +50,7 @@ Deno.serve(async (req: Request) => {
   // ── ENVIAR OTP ────────────────────────────────────────────────────────────
   if (action === "send") {
     // Rate limit: máximo un código por minuto por número
-    const { data: reciente } = await supabase
+    const { data: reciente, error: rateErr } = await supabase
       .from("otp_tokens")
       .select("created_at")
       .eq("phone", digits)
@@ -58,6 +59,8 @@ Deno.serve(async (req: Request) => {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    if (rateErr) console.error("[send] rate-limit query error:", rateErr);
 
     if (reciente) {
       const segs = (Date.now() - new Date(reciente.created_at).getTime()) / 1000;
@@ -77,10 +80,9 @@ Deno.serve(async (req: Request) => {
       .insert({ phone: digits, code_hash: codeHash, expires_at: expiresAt });
 
     if (insertErr) {
-      console.error("Error guardando OTP:", insertErr);
+      console.error("[send] Error guardando OTP:", insertErr);
       return json({ error: "Error interno. Intenta de nuevo." }, 500);
     }
-
     // Enviar por WhatsApp via Twilio
     const to   = digits.startsWith("57") ? `+${digits}` : `+57${digits}`;
     const body = `Tu código de acceso al *Club de la Gente* es:\n\n*${otpCode}*\n\nVálido por 10 minutos. No lo compartas con nadie.`;
@@ -105,7 +107,7 @@ Deno.serve(async (req: Request) => {
 
     if (!twilioRes.ok) {
       const txt = await twilioRes.text();
-      console.error("Twilio error:", txt);
+      console.error("[send] Twilio error:", txt);
       return json({ error: "No se pudo enviar el código. Verifica tu número." }, 500);
     }
 
@@ -154,4 +156,9 @@ Deno.serve(async (req: Request) => {
   }
 
   return json({ error: "Acción no reconocida" }, 400);
+
+  } catch (err) {
+    console.error("[auth-otp] crash:", err);
+    return json({ error: "Error interno. Revisa los logs." }, 500);
+  }
 });
