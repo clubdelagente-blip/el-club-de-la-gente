@@ -351,10 +351,8 @@ async function cargarReferidos(userId) {
 }
 
 /* ---------- QR de verificación ---------- */
-async function generarQR() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user?.id) return;
-  const userId = session.user.id;
+function generarQR(userId) {
+  if (!userId) return;
   const base = "https://elclubdelagente.com/Verificar.html";
   const url = encodeURIComponent(`${base}?id=${userId}`);
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data=${url}`;
@@ -423,10 +421,10 @@ document.addEventListener("DOMContentLoaded", () => {
   render();
   const u = leerPerfil();
   irPanel("inicio");
-  generarQR();
   supabase.auth.getSession().then(async ({ data: { session } }) => {
     if (!session?.user?.id) return;
     const userId = session.user.id;
+    generarQR(userId);
 
     const { data: perfData } = await supabase.from("perfiles").select("plan, nombre").eq("id", userId).single();
     const plan = perfData?.plan || null;
