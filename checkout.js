@@ -133,9 +133,8 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#btn-continuar").addEventListener("click", () => {
     localStorage.setItem("ecdlg_plan", estado.plan);
     if (estado.plan === "vitalicia") {
-      // Plan vitalicio no requiere pago — ir directo al perfil
-      pintarClubcard();
-      mostrar("view-listo", 4);
+      // Plan vitalicio no requiere pago — ir al dashboard a compartir el link de referidos
+      location.href = "Perfil.html";
       return;
     }
     pintarResumen();
