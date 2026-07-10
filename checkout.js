@@ -37,6 +37,7 @@ function mostrar(id, step) {
 /* ---------- Selección de plan ---------- */
 function pintarSeleccion() {
   $$(".plan-pick").forEach(card => {
+    if (!card.dataset.plan) return; // tarjeta sin plan seleccionable (ej. Vitalicia)
     const on = card.dataset.plan === estado.plan;
     card.classList.toggle("is-selected", on);
     card.querySelector(".plan-pick__state").textContent = on ? "Seleccionado ✓" : "Elegir " + PLANES[card.dataset.plan].nombre;
