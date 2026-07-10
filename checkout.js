@@ -130,10 +130,14 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Continuar al pago
-  $("#btn-continuar").addEventListener("click", () => {
+  $("#btn-continuar").addEventListener("click", async () => {
     localStorage.setItem("ecdlg_plan", estado.plan);
     if (estado.plan === "vitalicia") {
-      // Plan vitalicio no requiere pago — ir al dashboard a compartir el link de referidos
+      const sb = window._sbClient;
+      if (sb) {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session?.user?.id) await sb.from("perfiles").update({ plan: "vitalicia" }).eq("id", session.user.id);
+      }
       location.href = "Perfil.html";
       return;
     }
@@ -179,10 +183,15 @@ document.addEventListener("DOMContentLoaded", () => {
       redirectUrl: "https://clubdelagente-blip.github.io/el-club-de-la-gente/Perfil.html?nuevo=1",
     });
 
-    checkout.open((result) => {
+    checkout.open(async (result) => {
       const tx = result.transaction;
       if (tx && tx.status === "APPROVED") {
         localStorage.setItem("ecdlg_plan", estado.plan);
+        const sb = window._sbClient;
+        if (sb) {
+          const { data: { session } } = await sb.auth.getSession();
+          if (session?.user?.id) await sb.from("perfiles").update({ plan: estado.plan }).eq("id", session.user.id);
+        }
         pintarClubcard();
         mostrar("view-exito", 4);
         if (window.lucide) lucide.createIcons();
