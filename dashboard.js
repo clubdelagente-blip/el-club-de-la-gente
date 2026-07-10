@@ -429,7 +429,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const { data: perfData } = await supabase.from("perfiles").select("plan, nombre").eq("id", userId).single();
     const plan = perfData?.plan || null;
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
-    if (plan) localStorage.setItem("ecdlg_plan", plan);
+    if (plan) { localStorage.setItem("ecdlg_plan", plan); const sbPlanEl = document.getElementById("sb-plan-name"); if (sbPlanEl) sbPlanEl.textContent = PLAN_LABEL[plan] || plan; }
 
     // Fuente de verdad: nombre siempre desde Supabase, no localStorage
     if (nombre) {
