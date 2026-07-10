@@ -428,9 +428,24 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!session?.user?.id) return;
     const userId = session.user.id;
 
-    const { data: perfData } = await supabase.from("perfiles").select("plan").eq("id", userId).single();
+    const { data: perfData } = await supabase.from("perfiles").select("plan, nombre").eq("id", userId).single();
     const plan = perfData?.plan || null;
+    const nombre = perfData?.nombre || null;
     if (plan) localStorage.setItem("ecdlg_plan", plan);
+
+    // Fuente de verdad: nombre siempre desde Supabase, no localStorage
+    if (nombre) {
+      document.querySelectorAll(".cc-card-name").forEach(el => el.textContent = nombre.toUpperCase());
+      document.querySelectorAll("[data-ini]").forEach(el => {
+        if (!el.querySelector("img")) el.textContent = nombre.split(" ").filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
+      });
+      document.getElementById("sb-name").textContent = nombre;
+      document.getElementById("greet-name").textContent = "Hola, " + nombre.split(" ")[0] + ".";
+      const p = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
+      p.nombre = nombre;
+      p.primerNombre = nombre.split(" ")[0];
+      localStorage.setItem("ecdlg_perfil", JSON.stringify(p));
+    }
 
     const bloqueado = !plan || plan === "sin_plan";
     if (bloqueado) {
