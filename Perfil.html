@@ -98,6 +98,15 @@
             <p>Este mes ya estás aprovechando tu membresía. Esto es lo que llevas.</p>
           </div>
 
+          <!-- Banner referidos para usuarios con plan activo (se muestra por JS) -->
+          <div id="banner-referidos-activo" style="display:none;align-items:center;gap:16px;background:linear-gradient(135deg,#0e4a23 0%,#1a7a3c 100%);color:#fff;padding:16px 20px;border-radius:14px;margin-bottom:20px">
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:700;margin-bottom:3px">¿Sabías que puedes usarlo gratis de por vida?</div>
+              <div style="font-size:12px;opacity:.85">Invita 5 amigos al Club y obtén tu membresía vitalicia sin pagar nada.</div>
+            </div>
+            <button id="bra-copiar" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:none;color:#fff;padding:9px 14px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0"><i data-lucide="link" style="width:14px;height:14px"></i> Copiar mi link</button>
+          </div>
+
           <div class="stats">
             <div class="stat">
               <div class="stat__top"><span class="stat__ic"><i data-lucide="piggy-bank"></i></span><span class="stat__trend"><i data-lucide="trending-up"></i> +18%</span></div>
@@ -128,7 +137,7 @@
                 <span class="card__title">Mi ClubCard</span>
                 <button class="card__link" data-goto-panel="clubcard">Ver y escanear <i data-lucide="arrow-right"></i></button>
               </div>
-              <div class="ccv2">
+              <div class="ccv2" style="position:relative">
                 <div class="ccv2__flip">
                   <div class="ccv2-card ccv2-card--front">
                     <img src="marco-card.png" class="ccv2-frame-img" alt="">
@@ -146,6 +155,10 @@
                       </div>
                     </div>
                   </div>
+                </div>
+                <div id="cc-lock-inicio" class="cc-bloqueo" style="display:none">
+                  <i data-lucide="lock" style="width:28px;height:28px"></i>
+                  <p>Activa tu membresía<br>para usar tu ClubCard</p>
                 </div>
               </div>
             </div>
@@ -259,7 +272,7 @@
           </div>
 
           <div class="clubcard-panel">
-            <div class="ccv2" style="margin-bottom:22px">
+            <div class="ccv2" style="margin-bottom:22px;position:relative">
               <div class="ccv2__flip" id="cc-flip">
                 <div class="ccv2-card ccv2-card--front">
                   <img src="marco-card.png" class="ccv2-frame-img" alt="">
@@ -284,6 +297,10 @@
                     <div class="ccv2-renueva">Renovación: <span class="cc-card-renueva">27/06/2027</span></div>
                   </div>
                 </div>
+              </div>
+              <div id="cc-lock-panel" class="cc-bloqueo" style="display:none">
+                <i data-lucide="lock" style="width:28px;height:28px"></i>
+                <p>Activa tu membresía<br>para usar tu ClubCard</p>
               </div>
             </div>
             <button class="btn btn--secundario cc-benefits-btn" id="cc-flip-toggle"><i data-lucide="qr-code" style="width:17px;height:17px"></i> Quiero acceder a mis beneficios</button>
@@ -741,6 +758,128 @@
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <!-- ============================================================
+       MODAL: DESBLOQUEAR CLUBCARD
+       ============================================================ -->
+  <div class="activar-overlay" id="modal-activar" style="display:none" role="dialog" aria-modal="true">
+    <div class="activar-modal">
+      <button class="activar-modal__close" id="modal-activar-close" aria-label="Cerrar">&times;</button>
+      <div class="activar-modal__icon"><i data-lucide="lock"></i></div>
+      <h2 class="activar-modal__title">Tu ClubCard está bloqueada</h2>
+      <p class="activar-modal__sub">Activa tu membresía o invita 5 amigos para desbloquear todos tus beneficios.</p>
+      <div class="activar-fomo">⏰ Últimos 50 cupos de lanzamiento · Aprovecha antes que se acaben</div>
+      <div class="activar-opts">
+        <a class="activar-opt activar-opt--pay" href="Planes.html">
+          <i data-lucide="credit-card"></i>
+          <div>
+            <strong>Activar membresía</strong>
+            <span>Desde $10.000/mes · Cancela cuando quieras</span>
+          </div>
+          <i data-lucide="chevron-right"></i>
+        </a>
+        <button class="activar-opt activar-opt--ref" id="modal-ir-referidos">
+          <i data-lucide="users"></i>
+          <div>
+            <strong>Invitar 5 amigos y usarla gratis de por vida</strong>
+            <span>Membresía vitalicia sin pagar nada</span>
+          </div>
+          <i data-lucide="chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* ClubCard lock overlay */
+    .cc-bloqueo {
+      position: absolute;
+      inset: 0;
+      background: rgba(10,10,10,.58);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      border-radius: 18px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+      z-index: 5;
+    }
+    .cc-bloqueo p { font-size: 13px; font-weight: 600; margin: 0; line-height: 1.4; }
+
+    /* Modal overlay */
+    .activar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.6);
+      z-index: 900;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    @media (min-width: 600px) { .activar-overlay { align-items: center; } }
+
+    /* Modal box */
+    .activar-modal {
+      background: #fff;
+      border-radius: 24px 24px 0 0;
+      padding: 32px 24px 40px;
+      width: 100%;
+      max-width: 480px;
+      position: relative;
+      text-align: center;
+    }
+    @media (min-width: 600px) { .activar-modal { border-radius: 24px; padding: 40px 32px; } }
+    .activar-modal__close {
+      position: absolute; top: 14px; right: 16px;
+      background: none; border: none; font-size: 24px; color: #999; cursor: pointer; line-height: 1;
+    }
+    .activar-modal__icon {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: #f3f4f6; display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px; color: #555;
+    }
+    .activar-modal__icon svg { width: 28px; height: 28px; }
+    .activar-modal__title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px; font-weight: 700; color: #0e0e0e; margin: 0 0 8px;
+    }
+    .activar-modal__sub { font-size: 14px; color: #666; line-height: 1.5; margin: 0 0 16px; }
+    .activar-fomo {
+      font-size: 12px; font-weight: 700; color: #b45309;
+      background: #fef3c7; border-radius: 8px; padding: 8px 12px;
+      margin-bottom: 20px;
+    }
+    .activar-opts { display: flex; flex-direction: column; gap: 12px; }
+    .activar-opt {
+      display: flex; align-items: center; gap: 14px; padding: 16px;
+      border-radius: 14px; text-align: left; text-decoration: none;
+      border: 2px solid #ebebeb; background: #fafafa;
+      cursor: pointer; color: #0e0e0e; width: 100%; font-family: inherit;
+    }
+    .activar-opt--pay { border-color: #1a7a3c; background: #f0faf4; }
+    .activar-opt > svg:first-of-type { flex-shrink: 0; width: 22px; height: 22px; }
+    .activar-opt > svg:last-of-type { flex-shrink: 0; width: 18px; height: 18px; color: #aaa; margin-left: auto; }
+    .activar-opt div { flex: 1; }
+    .activar-opt strong { display: block; font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+    .activar-opt span { display: block; font-size: 12px; color: #777; }
+    .activar-opt--pay strong { color: #1a7a3c; }
+
+    @media (prefers-color-scheme: dark) {
+      .activar-modal { background: #1c1c1e; }
+      .activar-modal__title { color: #f9fafb; }
+      .activar-modal__sub { color: #9ca3af; }
+      .activar-modal__icon { background: #2c2c2e; color: #ccc; }
+      .activar-modal__close { color: #6b7280; }
+      .activar-opt { background: #2c2c2e; border-color: #3a3a3c; color: #f9fafb; }
+      .activar-opt--pay { background: #0d3a1f; border-color: #1a7a3c; }
+      .activar-opt span { color: #9ca3af; }
+    }
+  </style>
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script type="module" src="dashboard.js"></script>

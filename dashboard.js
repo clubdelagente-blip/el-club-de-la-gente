@@ -65,7 +65,7 @@ function iniciales(nombre) {
   return nombre.split(" ").filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
 }
 
-const PLAN_LABEL = { basica: "Básica", premium: "Premium" };
+const PLAN_LABEL = { sin_plan: "Sin activar", basica: "Básica", premium: "Premium", vitalicia: "Vitalicia" };
 
 /* ---------- RENDER ---------- */
 function render() {
@@ -361,17 +361,85 @@ async function generarQR() {
   document.querySelectorAll(".ccv2-qr img").forEach(img => img.src = qrSrc);
 }
 
+/* ---------- MODAL ACTIVAR ---------- */
+function abrirModalActivar() {
+  const m = document.getElementById("modal-activar");
+  if (m) { m.style.display = "flex"; document.body.style.overflow = "hidden"; if (window.lucide) lucide.createIcons(); }
+}
+function cerrarModalActivar() {
+  const m = document.getElementById("modal-activar");
+  if (m) { m.style.display = "none"; document.body.style.overflow = ""; }
+}
+
+/* ---------- BLOQUEO (sin_plan) ---------- */
+function inicializarBloqueo() {
+  // Locks en ClubCard
+  ["cc-lock-inicio", "cc-lock-panel"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = "flex"; el.addEventListener("click", abrirModalActivar); }
+  });
+
+  // Interceptar aliados strip
+  const strip = document.getElementById("aliados-strip");
+  if (strip) {
+    strip.addEventListener("click", (e) => { e.preventDefault(); abrirModalActivar(); });
+  }
+
+  // Ocultar banner de usos (no aplica a usuarios sin plan)
+  const bu = document.getElementById("banner-usos");
+  if (bu) bu.style.display = "none";
+
+  // Actualizar sidebar
+  const sbPlan = document.getElementById("sb-plan-name");
+  if (sbPlan) sbPlan.textContent = "Sin activar";
+  const sbEstado = document.querySelector(".sb-plan__estado");
+  if (sbEstado) sbEstado.innerHTML = '<span class="dot" style="background:#e5890a"></span> Pendiente';
+
+  // Actualizar saludo
+  const greetP = document.querySelector(".dash-greet p");
+  if (greetP) greetP.textContent = "Activa tu membresía o invita 5 amigos para comenzar a disfrutar tus beneficios.";
+}
+
+/* ---------- BANNER REFERIDOS (plan activo) ---------- */
+function inicializarBannerReferidos(userId) {
+  const banner = document.getElementById("banner-referidos-activo");
+  if (!banner) return;
+  banner.style.display = "flex";
+  const link = `https://elclubdelagente.com/Registro.html?ref=${userId}`;
+  const btn = document.getElementById("bra-copiar");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      navigator.clipboard.writeText(link).then(() => {
+        btn.textContent = "¡Copiado!";
+        setTimeout(() => { btn.innerHTML = `<i data-lucide="link" style="width:14px;height:14px"></i> Copiar mi link`; if (window.lucide) lucide.createIcons(); }, 2000);
+      });
+    });
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
 /* ---------- INIT ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   render();
   const u = leerPerfil();
   irPanel("inicio");
   generarQR();
-  supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session?.user?.id) {
-      cargarDescuentos(session.user.id);
-      cargarReferidos(session.user.id);
+  supabase.auth.getSession().then(async ({ data: { session } }) => {
+    if (!session?.user?.id) return;
+    const userId = session.user.id;
+
+    const { data: perfData } = await supabase.from("perfiles").select("plan").eq("id", userId).single();
+    const plan = perfData?.plan || null;
+    if (plan) localStorage.setItem("ecdlg_plan", plan);
+
+    const bloqueado = !plan || plan === "sin_plan";
+    if (bloqueado) {
+      inicializarBloqueo();
+    } else {
+      cargarDescuentos(userId);
+      inicializarBannerReferidos(userId);
     }
+    cargarReferidos(userId);
   });
   if (window.lucide) lucide.createIcons();
 
@@ -495,6 +563,20 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   $("#seg-prev").addEventListener("click", () => segMostrar(segBlock - 1));
   $("#seg-skip").addEventListener("click", cerrarSeg);
+
+  // Modal de activación
+  $("#modal-activar-close")?.addEventListener("click", cerrarModalActivar);
+  $("#modal-activar")?.addEventListener("click", (e) => { if (e.target === e.currentTarget) cerrarModalActivar(); });
+  $("#modal-ir-referidos")?.addEventListener("click", () => {
+    cerrarModalActivar();
+    const refCard = document.getElementById("card-referidos");
+    if (refCard) {
+      refCard.scrollIntoView({ behavior: "smooth", block: "center" });
+      refCard.style.outline = "3px solid #1a7a3c";
+      refCard.style.outlineOffset = "3px";
+      setTimeout(() => { refCard.style.outline = ""; refCard.style.outlineOffset = ""; }, 2000);
+    }
+  });
 });
 
 /* ============================================================

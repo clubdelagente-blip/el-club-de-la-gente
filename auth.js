@@ -126,11 +126,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             }));
             location.href = "Perfil.html";
           } else {
-            // Usuario nuevo → crear perfil y elegir plan
+            // Usuario nuevo → crear perfil y mostrar dashboard bloqueado
             await supabase.from("perfiles").insert({
-              id: user.id, nombre, whatsapp: "", rol: "miembro",
+              id: user.id, nombre, whatsapp: "", rol: "miembro", plan: "sin_plan",
             });
-            location.href = "Planes.html";
+            location.href = "Perfil.html";
           }
         } catch (_) {
           location.href = "Perfil.html";
@@ -383,7 +383,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           whatsapp,
           fecha_nacimiento: fechaISO || null,
           rol: "miembro",
-          plan: localStorage.getItem("ecdlg_plan") || "basica",
+          plan: "sin_plan",
           mision: mision || null,
           referido_por: refPor,
         });
@@ -401,7 +401,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     setLoading(btn, false, "Crear mi cuenta →");
-    location.href = "Planes.html";
+    location.href = "Perfil.html";
   });
 
   // ---------- OLVIDÉ MI CONTRASEÑA ----------
