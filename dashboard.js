@@ -48,16 +48,15 @@ function leerPerfil() {
   const plan = localStorage.getItem("ecdlg_plan") || "premium";
   const params = new URLSearchParams(location.search);
   const rol = params.get("rol") || p.rol || localStorage.getItem("ecdlg_rol") || "miembro";
-  // Defaults de demostración si entran directo sin registrarse
   return {
-    nombre: p.nombre || "Carlos Andrés Pérez",
-    primerNombre: p.primerNombre || "Carlos",
-    fechaISO: p.fechaISO || "2001-06-28",
-    mision: p.mision || 1,
-    num: m.num || "2048",
-    codigo: m.codigo || p.codigo || p.whatsapp || "300 412 8890",
+    nombre: p.nombre || "",
+    primerNombre: p.primerNombre || "Miembro",
+    fechaISO: p.fechaISO || "",
+    mision: p.mision || null,
+    num: m.num || "",
+    codigo: m.codigo || p.codigo || p.whatsapp || "",
     foto: localStorage.getItem("ecdlg_foto") || "",
-    desde: m.desde || "junio 2026",
+    desde: m.desde || "",
     negocio: p.negocio || "Tu negocio",
     rol, plan,
   };
@@ -107,34 +106,12 @@ function render() {
       <span class="aliado-mini__pct">${al.pct}</span>
     </a>`).join("");
 
-  // Actividad reciente (dashboard: 4)
-  $("#actividad").innerHTML = ACTIVIDAD.slice(0, 4).map(it => `
-    <li class="act-item">
-      <span class="act-item__ic">${ic(it.icon)}</span>
-      <span class="act-item__body">
-        <span class="act-item__name">${it.nombre}</span>
-        <span class="act-item__meta">${it.fecha} · ${it.pct} de descuento</span>
-      </span>
-      <span class="act-item__nums">
-        <span class="act-item__ahorro">−${fmtCOP(it.ahorro)}</span>
-        <span class="act-item__compra">de ${fmtCOP(it.compra)}</span>
-      </span>
-    </li>`).join("");
+  // Actividad reciente: se carga desde Supabase en cargarDescuentos()
+  const actEl = $("#actividad");
+  if (actEl) actEl.innerHTML = `<li class="act-item" style="color:#888;font-size:13px;padding:12px 0">Aún no tienes descuentos registrados.</li>`;
 
-  // Tabla completa de descuentos
-  $("#tabla-body").innerHTML = ACTIVIDAD.map(it => `
-    <tr>
-      <td>
-        <span class="tabla__aliado">
-          <span class="tabla__ic">${ic(it.icon)}</span>
-          <span><span class="tabla__name">${it.nombre}</span><br><span class="tabla__cat">${it.cat}</span></span>
-        </span>
-      </td>
-      <td>${it.fecha}</td>
-      <td><span class="tag-pct">${it.pct}</span></td>
-      <td>${fmtCOP(it.compra)}</td>
-      <td class="tabla__ahorro">−${fmtCOP(it.ahorro)}</td>
-    </tr>`).join("");
+  const tablaEl = $("#tabla-body");
+  if (tablaEl) tablaEl.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#888;padding:16px">Sin actividad aún</td></tr>`;
 
   // Rol aliado: mostrar "Mi negocio"
   if (u.rol === "aliado") {
@@ -237,11 +214,21 @@ async function cargarDescuentos(userId) {
   const fmtFecha = (iso) => new Date(iso).toLocaleDateString("es-CO", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" });
 
   // Stats
-  const totalAhorro = data.reduce((s, d) => s + (d.ahorro || 0), 0);
-  const countDescuentos = data.length;
-  const statNums = document.querySelectorAll(".stat__num");
-  if (statNums[0]) statNums[0].textContent = fmtCOP(totalAhorro);
-  if (statNums[1]) statNums[1].textContent = countDescuentos;
+  const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
+  const dataMes = data.filter(d => new Date(d.created_at) >= inicioMes);
+  const ahorroMes = dataMes.reduce((s, d) => s + (d.ahorro || 0), 0);
+  const countMes = dataMes.length;
+  const aliadosMes = new Set(dataMes.map(d => d.aliado_nombre)).size;
+  const ahorroTotal = data.reduce((s, d) => s + (d.ahorro || 0), 0);
+
+  const elAhorroMes = document.getElementById("stat-ahorro-mes");
+  const elDescMes = document.getElementById("stat-descuentos-mes");
+  const elAliadosMes = document.getElementById("stat-aliados-mes");
+  const elAhorroTotal = document.getElementById("stat-ahorro-total");
+  if (elAhorroMes) elAhorroMes.textContent = fmtCOP(ahorroMes);
+  if (elDescMes) elDescMes.textContent = countMes;
+  if (elAliadosMes) elAliadosMes.textContent = aliadosMes;
+  if (elAhorroTotal) elAhorroTotal.textContent = fmtCOP(ahorroTotal);
 
   // Actividad reciente (dashboard)
   const actEl = $("#actividad");
