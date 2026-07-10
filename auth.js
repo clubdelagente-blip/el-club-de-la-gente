@@ -299,8 +299,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { data: perfil } = await supabase
       .from("perfiles").select("nombre, rol").eq("id", data.user.id).maybeSingle();
     localStorage.setItem("ecdlg_perfil", JSON.stringify({
-      nombre: perfil?.nombre || "Miembro",
-      primerNombre: (perfil?.nombre || "Miembro").split(" ")[0],
+      nombre: perfil?.nombre || data.user.user_metadata?.nombre || "Miembro",
+      primerNombre: (perfil?.nombre || data.user.user_metadata?.nombre || "Miembro").split(" ")[0],
       rol: perfil?.rol || "miembro",
     }));
     location.href = "Perfil.html";

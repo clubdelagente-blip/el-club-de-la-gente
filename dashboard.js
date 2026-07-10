@@ -428,7 +428,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const { data: perfData } = await supabase.from("perfiles").select("plan, nombre").eq("id", userId).single();
     const plan = perfData?.plan || null;
-    const nombre = perfData?.nombre || null;
+    const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
     if (plan) localStorage.setItem("ecdlg_plan", plan);
 
     // Fuente de verdad: nombre siempre desde Supabase, no localStorage
