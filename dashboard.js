@@ -434,7 +434,8 @@ document.addEventListener("DOMContentLoaded", () => {
       history.replaceState({}, "", location.pathname);
     }
 
-    const { data: perfData } = await supabase.from("perfiles").select("plan, nombre").eq("id", userId).single();
+    const { data: perfData, error: perfErr } = await supabase.from("perfiles").select("plan, nombre").eq("id", userId).maybeSingle();
+    const dbgEl = document.createElement("div"); dbgEl.style.cssText = "position:fixed;bottom:10px;right:10px;background:#111;color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;z-index:9999;max-width:280px;word-break:break-all;"; dbgEl.innerHTML = "ID: " + userId.slice(0,8) + "<br>Plan DB: " + (perfData?.plan || "NULL") + "<br>Error: " + (perfErr?.message || "ninguno"); document.body.appendChild(dbgEl); setTimeout(() => dbgEl.remove(), 15000);
     const plan = perfData?.plan || null;
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
     if (plan) { localStorage.setItem("ecdlg_plan", plan); const sbPlanEl = document.getElementById("sb-plan-name"); if (sbPlanEl) sbPlanEl.textContent = PLAN_LABEL[plan] || plan; }
