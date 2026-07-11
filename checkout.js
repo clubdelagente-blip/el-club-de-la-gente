@@ -6,13 +6,6 @@ import { supabase } from './supabase.js';
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 
-async function actualizarPlanSupabase(plan) {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) return;
-    await supabase.from("perfiles").update({ plan }).eq("id", session.user.id);
-  } catch (_) {}
-}
 
 const PLANES = {
   basica:    { tag: "Plan básica",           nombre: "Básica",    precio: 10000, precioTxt: "$10.000", antes: "$30.000", ahorra: "33%" },
@@ -139,11 +132,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Continuar al pago
-  $("#btn-continuar").addEventListener("click", async () => {
+  $("#btn-continuar").addEventListener("click", () => {
     localStorage.setItem("ecdlg_plan", estado.plan);
     if (estado.plan === "vitalicia") {
-      await actualizarPlanSupabase("vitalicia");
-      location.href = "Perfil.html";
+      location.href = "Perfil.html?activar=vitalicia";
       return;
     }
     pintarResumen();
@@ -188,14 +180,11 @@ document.addEventListener("DOMContentLoaded", () => {
       redirectUrl: "https://clubdelagente-blip.github.io/el-club-de-la-gente/Perfil.html?nuevo=1",
     });
 
-    checkout.open(async (result) => {
+    checkout.open((result) => {
       const tx = result.transaction;
       if (tx && tx.status === "APPROVED") {
         localStorage.setItem("ecdlg_plan", estado.plan);
-        await actualizarPlanSupabase(estado.plan);
-        pintarClubcard();
-        mostrar("view-exito", 4);
-        if (window.lucide) lucide.createIcons();
+        location.href = "Perfil.html?activar=" + estado.plan;
       }
     });
   });

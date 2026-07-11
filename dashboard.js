@@ -426,6 +426,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const userId = session.user.id;
     generarQR(userId);
 
+    // Si viene de un pago aprobado, activar el plan en Supabase
+    const planActivar = new URLSearchParams(location.search).get("activar");
+    if (planActivar && ["basica", "premium", "vitalicia"].includes(planActivar)) {
+      await supabase.from("perfiles").update({ plan: planActivar }).eq("id", userId);
+      history.replaceState({}, "", location.pathname);
+    }
+
     const { data: perfData } = await supabase.from("perfiles").select("plan, nombre").eq("id", userId).single();
     const plan = perfData?.plan || null;
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
