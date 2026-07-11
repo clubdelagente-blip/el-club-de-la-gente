@@ -1,29 +1,16 @@
 /* ============================================================
    EL CLUB DE LA GENTE — Módulo 3 · Lógica de checkout
    ============================================================ */
+import { supabase } from './supabase.js';
 
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 
-const SB_URL = "https://egwaedadpqfwnbfosiao.supabase.co";
-const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4";
-
 async function actualizarPlanSupabase(plan) {
   try {
-    const raw = localStorage.getItem("sb-egwaedadpqfwnbfosiao-auth-token");
-    if (!raw) return;
-    const { access_token, user } = JSON.parse(raw);
-    if (!access_token || !user?.id) return;
-    await fetch(`${SB_URL}/rest/v1/perfiles?id=eq.${user.id}`, {
-      method: "PATCH",
-      headers: {
-        "apikey": SB_KEY,
-        "Authorization": `Bearer ${access_token}`,
-        "Content-Type": "application/json",
-        "Prefer": "return=minimal",
-      },
-      body: JSON.stringify({ plan }),
-    });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return;
+    await supabase.from("perfiles").update({ plan }).eq("id", session.user.id);
   } catch (_) {}
 }
 
@@ -192,7 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.disabled = false;
     btn.innerHTML = `Confirmar y pagar <span class="ar">&rarr;</span>`;
 
-    const checkout = new WidgetCheckout({
+    const checkout = new window.WidgetCheckout({
       currency,
       amountInCents,
       reference,
