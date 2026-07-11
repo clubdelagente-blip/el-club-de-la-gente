@@ -5,6 +5,28 @@
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 
+const SB_URL = "https://egwaedadpqfwnbfosiao.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4";
+
+async function actualizarPlanSupabase(plan) {
+  try {
+    const raw = localStorage.getItem("sb-egwaedadpqfwnbfosiao-auth-token");
+    if (!raw) return;
+    const { access_token, user } = JSON.parse(raw);
+    if (!access_token || !user?.id) return;
+    await fetch(`${SB_URL}/rest/v1/perfiles?id=eq.${user.id}`, {
+      method: "PATCH",
+      headers: {
+        "apikey": SB_KEY,
+        "Authorization": `Bearer ${access_token}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal",
+      },
+      body: JSON.stringify({ plan }),
+    });
+  } catch (_) {}
+}
+
 const PLANES = {
   basica:    { tag: "Plan básica",           nombre: "Básica",    precio: 10000, precioTxt: "$10.000", antes: "$30.000", ahorra: "33%" },
   premium:   { tag: "Plan premium",          nombre: "Premium",   precio: 20000, precioTxt: "$20.000", antes: "$50.000", ahorra: "40%" },
@@ -133,11 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#btn-continuar").addEventListener("click", async () => {
     localStorage.setItem("ecdlg_plan", estado.plan);
     if (estado.plan === "vitalicia") {
-      const sb = window._sbClient;
-      if (sb) {
-        const { data: { session } } = await sb.auth.getSession();
-        if (session?.user?.id) await sb.from("perfiles").update({ plan: "vitalicia" }).eq("id", session.user.id);
-      }
+      await actualizarPlanSupabase("vitalicia");
       location.href = "Perfil.html";
       return;
     }
@@ -187,11 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const tx = result.transaction;
       if (tx && tx.status === "APPROVED") {
         localStorage.setItem("ecdlg_plan", estado.plan);
-        const sb = window._sbClient;
-        if (sb) {
-          const { data: { session } } = await sb.auth.getSession();
-          if (session?.user?.id) await sb.from("perfiles").update({ plan: estado.plan }).eq("id", session.user.id);
-        }
+        await actualizarPlanSupabase(estado.plan);
         pintarClubcard();
         mostrar("view-exito", 4);
         if (window.lucide) lucide.createIcons();
