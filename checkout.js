@@ -177,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
       reference,
       publicKey: "pub_test_yuvhTaT4Bg2JmPbJuxpeuodluZUX7HyE",
       signature: { integrity },
-      redirectUrl: "https://clubdelagente-blip.github.io/el-club-de-la-gente/Perfil.html?nuevo=1",
+      redirectUrl: `https://clubdelagente-blip.github.io/el-club-de-la-gente/Perfil.html?activar=${estado.plan}`,
     });
 
     checkout.open((result) => {
