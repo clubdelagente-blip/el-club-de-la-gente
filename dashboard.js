@@ -429,7 +429,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Si viene de un pago aprobado, activar el plan en Supabase
     const planActivar = new URLSearchParams(location.search).get("activar");
     if (planActivar && ["basica", "premium", "vitalicia"].includes(planActivar)) {
-      await supabase.from("perfiles").update({ plan: planActivar }).eq("id", userId);
+      const { error: rpcErr } = await supabase.rpc("activar_plan", { nuevo_plan: planActivar });
+      if (rpcErr) console.error("activar_plan error:", rpcErr);
       history.replaceState({}, "", location.pathname);
     }
 
