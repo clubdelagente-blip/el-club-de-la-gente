@@ -217,10 +217,10 @@ a { color: inherit; text-decoration: none; }
 /* ============================================================
    CARRUSEL DE MARCAS AMAZON
    ============================================================ */
-.marcas-carrusel { background: var(--negro); overflow: hidden; padding: 20px 0; position: relative; }
+.marcas-carrusel { background: var(--crema-2); overflow: hidden; padding: 20px 0; position: relative; }
 .marcas-carrusel::before, .marcas-carrusel::after { content: ""; position: absolute; top: 0; bottom: 0; width: 80px; z-index: 3; pointer-events: none; }
-.marcas-carrusel::before { left: 0; background: linear-gradient(to right, var(--negro), transparent); }
-.marcas-carrusel::after  { right: 0; background: linear-gradient(to left, var(--negro), transparent); }
+.marcas-carrusel::before { left: 0; background: linear-gradient(to right, var(--crema-2), transparent); }
+.marcas-carrusel::after  { right: 0; background: linear-gradient(to left, var(--crema-2), transparent); }
 .marcas-carrusel__track  { display: flex; width: max-content; animation: scroll-x 20s linear infinite; align-items: center; gap: 0; }
 .marcas-carrusel__track:hover { animation-play-state: paused; }
 .marcas-carrusel__item { display: flex; align-items: center; justify-content: center; padding: 0 20px; flex-shrink: 0; }
