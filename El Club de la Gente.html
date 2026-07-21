@@ -107,34 +107,27 @@
   </header>
 
   <!-- ============================================================
-       SECCIÓN C — TICKER
+       SECCIÓN C — CARRUSEL DE MARCAS AMAZON
        ============================================================ -->
-  <div class="ticker" aria-hidden="true">
-    <div class="ticker__track">
-      <span class="ticker__item">Bienestar y salud</span>
-      <span class="ticker__item">Odontología</span>
-      <span class="ticker__item">Turismo</span>
-      <span class="ticker__item">Veterinaria</span>
-      <span class="ticker__item">Canasta familiar</span>
-      <span class="ticker__item">Ropa personalizada</span>
-      <span class="ticker__item">Publicidad</span>
-      <span class="ticker__item">Heladería</span>
-      <span class="ticker__item">Comida rápida</span>
-      <span class="ticker__item">Barbería</span>
-      <span class="ticker__item">Regalos</span>
-      <span class="ticker__item">Bienestar y salud</span>
-      <span class="ticker__item">Odontología</span>
-      <span class="ticker__item">Turismo</span>
-      <span class="ticker__item">Veterinaria</span>
-      <span class="ticker__item">Canasta familiar</span>
-      <span class="ticker__item">Ropa personalizada</span>
-      <span class="ticker__item">Publicidad</span>
-      <span class="ticker__item">Heladería</span>
-      <span class="ticker__item">Comida rápida</span>
-      <span class="ticker__item">Barbería</span>
-      <span class="ticker__item">Regalos</span>
-    </div>
+  <div class="marcas-carrusel" id="marcas-carrusel-landing" aria-label="Marcas Amazon aliadas">
+    <div class="marcas-carrusel__track" id="marcas-track-landing"></div>
   </div>
+  <script type="module">
+    import { supabase } from './supabase.js';
+    const track = document.getElementById('marcas-track-landing');
+    const wrap  = document.getElementById('marcas-carrusel-landing');
+    const { data } = await supabase.from('marcas_aliadas').select('nombre,logo_url,link_afiliado').eq('activa', true).order('orden', { ascending: true });
+    if (!data || !data.length) { wrap.classList.add('marcas-carrusel--vacio'); }
+    else {
+      const items = [...data, ...data];
+      track.innerHTML = items.map(m => `<div class="marcas-carrusel__item">
+        <a href="${m.link_afiliado || '#'}" target="_blank" rel="noopener" title="${m.nombre}">
+          <img src="${m.logo_url}" alt="${m.nombre}">
+        </a>
+        <span class="marcas-carrusel__sep">✷</span>
+      </div>`).join('');
+    }
+  </script>
 
   <!-- ============================================================
        SECCIÓN D — ALIADOS COMERCIALES

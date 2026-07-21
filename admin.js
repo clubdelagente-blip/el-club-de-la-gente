@@ -18,6 +18,7 @@ const PANELES = {
   miembros:     { t: "Miembros", s: "Gestión de la base de miembros" },
   aliados:      { t: "Aliados", s: "Establecimientos, fotos y descuentos" },
   profesionales:{ t: "Profesionales", s: "Asesores jurídicos, psicológicos y contables" },
+  marcas:       { t: "Marcas Amazon", s: "Logos y links de afiliado que aparecen en el carrusel" },
   contenido:    { t: "Contenido", s: "Imágenes, videos y publicaciones de la web" },
   programas:    { t: "Programas sociales", s: "Programas, fundaciones, eventos y voluntarios" },
   ventas:       { t: "Ventas", s: "Historial de transacciones y proyecciones" },
@@ -213,6 +214,26 @@ function fillProfesionales(q) {
     </tr>`).join("");
   if (window.lucide) lucide.createIcons();
 }
+
+/* ============================================================
+   RENDER: MARCAS AMAZON
+   ============================================================ */
+function renderMarcas() {
+  $("#p-marcas").innerHTML = `
+    <div class="ad-toolbar">
+      <div class="ad-spacer"></div>
+      <button class="ad-btn ad-btn--verde" id="marca-add">${ic("plus")} Agregar marca</button>
+    </div>
+    <div class="ad-table-wrap">
+      <table class="ad-table">
+        <thead><tr><th>Marca</th><th>Link de afiliado</th><th>Orden</th><th style="text-align:right">Estado</th></tr></thead>
+        <tbody id="marcas-body"><tr><td colspan="4" style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+      </table>
+    </div>`;
+  if (window.lucide) lucide.createIcons();
+  window.cargarMarcasAdmin?.();
+}
+window.renderMarcas = renderMarcas;
 
 /* ============================================================
    RENDER: CONTENIDO
@@ -632,7 +653,7 @@ function irPanel(panel) {
   $("#ad-sub").textContent = PANELES[panel].s;
   $("#admin").classList.remove("menu-open");
   if (!RENDERED[panel]) {
-    ({ dashboard: renderDashboard, miembros: renderMiembros, aliados: renderAliados, profesionales: renderProfesionales, contenido: renderContenido, programas: renderProgramas, ventas: renderVentas, suscripciones: renderSuscripciones, config: renderConfig, agente: renderAgente })[panel]?.();
+    ({ dashboard: renderDashboard, miembros: renderMiembros, aliados: renderAliados, profesionales: renderProfesionales, marcas: renderMarcas, contenido: renderContenido, programas: renderProgramas, ventas: renderVentas, suscripciones: renderSuscripciones, config: renderConfig, agente: renderAgente })[panel]?.();
     RENDERED[panel] = true;
   }
   if (window.lucide) lucide.createIcons();

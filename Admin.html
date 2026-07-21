@@ -123,6 +123,7 @@
         <button class="ad-link" data-panel="miembros"><i data-lucide="users"></i> Miembros</button>
         <button class="ad-link" data-panel="aliados"><i data-lucide="store"></i> Aliados</button>
         <button class="ad-link" data-panel="profesionales"><i data-lucide="briefcase"></i> Profesionales</button>
+        <button class="ad-link" data-panel="marcas"><i data-lucide="shopping-bag"></i> Marcas Amazon</button>
         <button class="ad-link" data-panel="contenido"><i data-lucide="image"></i> Contenido</button>
         <button class="ad-link" data-panel="programas"><i data-lucide="heart-handshake"></i> Programas sociales</button>
         <div class="ad-nav__lbl">Finanzas</div>
@@ -167,6 +168,7 @@
         <section class="ad-panel" id="p-miembros" data-screen-label="Admin · Miembros"></section>
         <section class="ad-panel" id="p-aliados" data-screen-label="Admin · Aliados"></section>
         <section class="ad-panel" id="p-profesionales" data-screen-label="Admin · Profesionales"></section>
+        <section class="ad-panel" id="p-marcas" data-screen-label="Admin · Marcas Amazon"></section>
         <section class="ad-panel" id="p-contenido" data-screen-label="Admin · Contenido"></section>
         <section class="ad-panel" id="p-programas" data-screen-label="Admin · Programas"></section>
         <section class="ad-panel" id="p-ventas" data-screen-label="Admin · Ventas"></section>
@@ -779,7 +781,86 @@ document.addEventListener('DOMContentLoaded',async()=>{
   window.renderProfesionales=function(){$("#p-profesionales").innerHTML=`<div style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Cargando…</div>`;cargarProfesionales();};
   window.abrirAgregarProfesional=function(){abrirModal('Agregar profesional','Se publicará en el directorio',htmlFormProf());bindFormProf();};
 
+  /* ---- MARCAS AMAZON ---- */
+  let _marcas = [];
+  async function subirLogo(file) {
+    const ext = file.name.split('.').pop();
+    const path = `${Date.now()}-${Math.random().toString(36).substr(2,5)}.${ext}`;
+    const { error } = await supabase.storage.from('logos-marcas').upload(path, file, { upsert: true });
+    if (error) throw error;
+    return supabase.storage.from('logos-marcas').getPublicUrl(path).data.publicUrl;
+  }
+  async function cargarMarcasAdmin() {
+    const { data } = await supabase.from('marcas_aliadas').select('*').order('orden', { ascending: true });
+    _marcas = data || [];
+    const tbody = $("#marcas-body"); if (!tbody) return;
+    if (!_marcas.length) { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Aún no hay marcas — agrega la primera →</td></tr>`; return; }
+    tbody.innerHTML = _marcas.map(m => `<tr>
+      <td><div class="ad-cell-user">
+        ${m.logo_url ? `<img src="${m.logo_url}" style="width:40px;height:40px;object-fit:contain;border-radius:8px;background:#fff;padding:4px;flex-shrink:0">` : `<span class="ad-av">${(m.nombre||'?')[0]}</span>`}
+        <div class="ad-cell-user__name">${m.nombre}</div>
+      </div></td>
+      <td><a href="${m.link_afiliado||'#'}" target="_blank" style="color:rgba(242,240,234,.5);font-size:12px;word-break:break-all">${m.link_afiliado ? m.link_afiliado.substring(0,40)+'…' : '—'}</a></td>
+      <td><div style="display:flex;align-items:center;gap:6px">
+        <button class="ad-btn" data-marca-up="${m.id}" title="Subir" style="padding:4px 8px">${ic("arrow-up")}</button>
+        <span style="font-size:13px;font-variant-numeric:tabular-nums;min-width:24px;text-align:center">${m.orden}</span>
+        <button class="ad-btn" data-marca-dn="${m.id}" title="Bajar" style="padding:4px 8px">${ic("arrow-down")}</button>
+      </div></td>
+      <td style="text-align:right"><div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
+        <span class="ad-pill ${m.activa?'activo':'inactivo'}" data-tog-marca="${m.id}" data-activa="${m.activa}" style="cursor:pointer"><span class="d"></span>${m.activa?'Activa':'Inactiva'}</span>
+        <button class="ad-btn" data-ed-marca="${m.id}">${ic("pencil")}</button>
+        <button class="ad-btn" data-rm-marca="${m.id}">${ic("trash-2")}</button>
+      </div></td>
+    </tr>`).join('');
+    if (window.lucide) lucide.createIcons();
+  }
+  window.cargarMarcasAdmin = cargarMarcasAdmin;
+
+  function htmlFormMarca(m = {}) {
+    return `
+      <div class="ad-field"><label>Nombre de la marca *</label><input id="fm-nombre" type="text" value="${(m.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Nike, Samsung, Adidas"></div>
+      <div class="ad-field"><label>Link de afiliado Amazon</label><input id="fm-link" type="url" value="${(m.link_afiliado||'').replace(/"/g,'&quot;')}" placeholder="https://amzn.to/..."></div>
+      <div class="ad-field"><label>Logo de la marca</label>
+        ${m.logo_url ? `<img src="${m.logo_url}" style="height:60px;object-fit:contain;border-radius:8px;background:#fff;padding:6px;margin-bottom:10px;display:block">` : ''}
+        <input id="fm-img" type="file" accept="image/*">
+        <input type="hidden" id="fm-img-url" value="${m.logo_url||''}">
+        <div style="font-size:11px;color:rgba(26,26,24,.4);margin-top:4px">PNG o SVG con fondo transparente recomendado</div>
+      </div>
+      <div class="ad-field"><label>Orden en el carrusel</label><input id="fm-orden" type="number" value="${m.orden||0}" min="0" style="width:100px"></div>
+      <div class="ad-toolbar" style="margin:16px 0 0"><div class="ad-spacer"></div>
+        <button class="ad-btn" id="fm-cancel">Cancelar</button>
+        <button class="ad-btn ad-btn--verde" id="fm-save" data-id="${m.id||''}">${ic("check")} ${m.id?'Guardar cambios':'Agregar marca'}</button>
+      </div>`;
+  }
+  function bindFormMarca() {
+    setTimeout(() => {
+      $("#fm-cancel")?.addEventListener('click', () => { $("#ad-modal-ov").classList.remove("is-open"); });
+      $("#fm-save")?.addEventListener('click', async () => {
+        const nombre = $("#fm-nombre")?.value.trim();
+        if (!nombre) { toast("El nombre es obligatorio"); return; }
+        const btn = $("#fm-save"); btn.disabled = true; btn.textContent = "Guardando…";
+        let logo_url = $("#fm-img-url")?.value || null;
+        const file = $("#fm-img")?.files[0];
+        if (file) { try { logo_url = await subirLogo(file); } catch(e) { toast("Error subiendo logo"); btn.disabled=false; return; } }
+        const payload = { nombre, link_afiliado: $("#fm-link")?.value.trim()||null, logo_url, orden: parseInt($("#fm-orden")?.value||0), activa: true };
+        const id = btn.dataset.id;
+        if (id) { await supabase.from('marcas_aliadas').update(payload).eq('id', id); toast("Marca actualizada ✓"); }
+        else { await supabase.from('marcas_aliadas').insert(payload); toast("Marca agregada ✓"); }
+        $("#ad-modal-ov").classList.remove("is-open");
+        delete window.RENDERED?.['marcas'];
+        cargarMarcasAdmin();
+      });
+    }, 50);
+  }
+
   document.addEventListener('click',async(e)=>{
+    if(e.target.closest('#marca-add')){ abrirModal('Agregar marca','Aparecerá en el carrusel de la plataforma',htmlFormMarca()); bindFormMarca(); return; }
+    const edM=e.target.closest('[data-ed-marca]'); if(edM){ const m=_marcas.find(x=>x.id===edM.dataset.edMarca); if(m){ abrirModal('Editar marca',m.nombre,htmlFormMarca(m)); bindFormMarca(); } return; }
+    const togM=e.target.closest('[data-tog-marca]'); if(togM){ await supabase.from('marcas_aliadas').update({activa: togM.dataset.activa!=='true'}).eq('id',togM.dataset.togMarca); cargarMarcasAdmin(); return; }
+    const rmM=e.target.closest('[data-rm-marca]'); if(rmM&&confirm('¿Eliminar esta marca?')){ await supabase.from('marcas_aliadas').delete().eq('id',rmM.dataset.rmMarca); cargarMarcasAdmin(); toast('Marca eliminada'); return; }
+    const upM=e.target.closest('[data-marca-up]'); if(upM){ const m=_marcas.find(x=>x.id===upM.dataset.marcaUp); if(m&&m.orden>0){ await supabase.from('marcas_aliadas').update({orden:m.orden-1}).eq('id',m.id); cargarMarcasAdmin(); } return; }
+    const dnM=e.target.closest('[data-marca-dn]'); if(dnM){ const m=_marcas.find(x=>x.id===dnM.dataset.marcaDn); if(m){ await supabase.from('marcas_aliadas').update({orden:m.orden+1}).eq('id',m.id); cargarMarcasAdmin(); } return; }
+
     if(e.target.closest('#btn-an-add')){abrirModal('Nuevo anuncio','Publica una novedad',htmlFormAnuncio());bindFormAnuncio();return;}
     const edAn=e.target.closest('[data-ed-an]');if(edAn){const a=_anuncios.find(x=>x.id===edAn.dataset.edAn);if(a){abrirModal('Editar anuncio',a.titulo,htmlFormAnuncio(a));bindFormAnuncio();}return;}
     const rmAn=e.target.closest('[data-rm-an]');if(rmAn&&confirm('¿Eliminar este anuncio?')){await supabase.from('anuncios').delete().eq('id',rmAn.dataset.rmAn);cargarAnuncios();toast('Anuncio eliminado');return;}

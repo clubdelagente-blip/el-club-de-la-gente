@@ -416,6 +416,22 @@ function inicializarBannerReferidos(userId) {
   if (window.lucide) lucide.createIcons();
 }
 
+/* ---------- CARRUSEL MARCAS ---------- */
+async function cargarMarcasCarrusel() {
+  const track = document.getElementById("marcas-track-dash");
+  const wrap  = document.getElementById("marcas-carrusel-dash");
+  if (!track) return;
+  const { data } = await supabase.from("marcas_aliadas").select("nombre,logo_url,link_afiliado").eq("activa", true).order("orden", { ascending: true });
+  if (!data || !data.length) { if (wrap) wrap.style.display = "none"; return; }
+  const items = [...data, ...data];
+  track.innerHTML = items.map(m => `<div class="marcas-carrusel__item">
+    <a href="${m.link_afiliado || '#'}" target="_blank" rel="noopener" title="${m.nombre}">
+      <img src="${m.logo_url}" alt="${m.nombre}">
+    </a>
+    <span class="marcas-carrusel__sep">✷</span>
+  </div>`).join("");
+}
+
 /* ---------- INIT ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   render();
@@ -461,6 +477,7 @@ document.addEventListener("DOMContentLoaded", () => {
       inicializarBannerReferidos(userId);
     }
     cargarReferidos(userId);
+    cargarMarcasCarrusel();
   });
   if (window.lucide) lucide.createIcons();
 
