@@ -428,9 +428,6 @@ async function cargarTienda() {
   const catsEl = document.getElementById('tienda-cats');
   if (!grid) return;
 
-  const plan = localStorage.getItem('ecdlg_plan');
-  const esMiembro = plan && plan !== 'sin_plan';
-
   const [{ data: cats }, { data: prods }] = await Promise.all([
     supabase.from('categorias_productos').select('id,nombre').eq('activa', true).order('orden'),
     supabase.from('productos').select('*, categorias_productos(nombre)').eq('activo', true).order('orden')
@@ -455,7 +452,7 @@ async function cargarTienda() {
           ${p.descripcion ? `<div class="tienda-card__desc">${p.descripcion}</div>` : ''}
           <div class="tienda-card__precios">
             ${precioNormal ? `<span class="tienda-card__antes">${precioNormal}</span>` : ''}
-            ${esMiembro && precioDesc ? `<span class="tienda-card__precio">${precioDesc}</span>` : (!esMiembro && precioDesc ? `<span class="tienda-card__precio tienda-card__precio--lock">🔒 Precio miembro</span>` : '')}
+            ${precioDesc ? `<span class="tienda-card__precio">${precioDesc}</span>` : ''}
           </div>
           <a href="${p.link_afiliado||'#'}" target="_blank" rel="noopener" class="tienda-card__btn">Ver oferta →</a>
         </div>
