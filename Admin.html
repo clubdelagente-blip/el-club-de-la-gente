@@ -124,6 +124,7 @@
         <button class="ad-link" data-panel="aliados"><i data-lucide="store"></i> Aliados</button>
         <button class="ad-link" data-panel="profesionales"><i data-lucide="briefcase"></i> Profesionales</button>
         <button class="ad-link" data-panel="marcas"><i data-lucide="shopping-bag"></i> Marcas Amazon</button>
+        <button class="ad-link" data-panel="tienda"><i data-lucide="package"></i> Tienda</button>
         <button class="ad-link" data-panel="contenido"><i data-lucide="image"></i> Contenido</button>
         <button class="ad-link" data-panel="programas"><i data-lucide="heart-handshake"></i> Programas sociales</button>
         <div class="ad-nav__lbl">Finanzas</div>
@@ -169,6 +170,7 @@
         <section class="ad-panel" id="p-aliados" data-screen-label="Admin · Aliados"></section>
         <section class="ad-panel" id="p-profesionales" data-screen-label="Admin · Profesionales"></section>
         <section class="ad-panel" id="p-marcas" data-screen-label="Admin · Marcas Amazon"></section>
+        <section class="ad-panel" id="p-tienda" data-screen-label="Admin · Tienda"></section>
         <section class="ad-panel" id="p-contenido" data-screen-label="Admin · Contenido"></section>
         <section class="ad-panel" id="p-programas" data-screen-label="Admin · Programas"></section>
         <section class="ad-panel" id="p-ventas" data-screen-label="Admin · Ventas"></section>
@@ -781,6 +783,130 @@ document.addEventListener('DOMContentLoaded',async()=>{
   window.renderProfesionales=function(){$("#p-profesionales").innerHTML=`<div style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Cargando…</div>`;cargarProfesionales();};
   window.abrirAgregarProfesional=function(){abrirModal('Agregar profesional','Se publicará en el directorio',htmlFormProf());bindFormProf();};
 
+  /* ---- TIENDA ---- */
+  let _cats = [], _prods = [];
+  const COP = n => n != null ? '$' + Number(n).toLocaleString('es-CO') : '—';
+
+  async function cargarTiendaAdmin() {
+    const [{ data: cats }, { data: prods }] = await Promise.all([
+      supabase.from('categorias_productos').select('*').order('orden'),
+      supabase.from('productos').select('*, categorias_productos(nombre)').order('orden')
+    ]);
+    _cats = cats || []; _prods = prods || [];
+
+    const tbody = $('#cats-body'); if (tbody) {
+      tbody.innerHTML = !_cats.length
+        ? `<tr><td colspan="2" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Sin categorías aún</td></tr>`
+        : _cats.map(c => `<tr>
+            <td>${c.nombre}</td>
+            <td style="text-align:right"><div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
+              <span class="ad-pill ${c.activa?'activo':'inactivo'}" data-tog-cat="${c.id}" data-activa="${c.activa}" style="cursor:pointer"><span class="d"></span>${c.activa?'Activa':'Inactiva'}</span>
+              <button class="ad-btn" data-ed-cat="${c.id}">${ic('pencil')}</button>
+              <button class="ad-btn" data-rm-cat="${c.id}">${ic('trash-2')}</button>
+            </div></td>
+          </tr>`).join('');
+    }
+    const pbody = $('#prods-body'); if (pbody) {
+      pbody.innerHTML = !_prods.length
+        ? `<tr><td colspan="5" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Sin productos aún</td></tr>`
+        : _prods.map(p => `<tr>
+            <td><div class="ad-cell-user">
+              ${p.imagen_url ? `<img src="${p.imagen_url}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<span class="ad-av">${(p.nombre||'?')[0]}</span>`}
+              <div>
+                <div class="ad-cell-user__name">${p.nombre}</div>
+                <div style="font-size:11px;color:rgba(242,240,234,.4);margin-top:2px">${(p.descripcion||'').substring(0,50)}${(p.descripcion||'').length>50?'…':''}</div>
+              </div>
+            </div></td>
+            <td style="font-size:12px">${p.categorias_productos?.nombre || '—'}</td>
+            <td style="font-size:13px;color:rgba(242,240,234,.5);text-decoration:line-through">${COP(p.precio_normal)}</td>
+            <td style="font-size:13px;font-weight:700;color:#6fdc8c">${COP(p.precio_descuento)}</td>
+            <td style="text-align:right"><div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
+              <span class="ad-pill ${p.activo?'activo':'inactivo'}" data-tog-prod="${p.id}" data-activo="${p.activo}" style="cursor:pointer"><span class="d"></span>${p.activo?'Activo':'Inactivo'}</span>
+              <button class="ad-btn" data-ed-prod="${p.id}">${ic('pencil')}</button>
+              <button class="ad-btn" data-rm-prod="${p.id}">${ic('trash-2')}</button>
+            </div></td>
+          </tr>`).join('');
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+  window.cargarTiendaAdmin = cargarTiendaAdmin;
+
+  function htmlFormCat(c = {}) {
+    return `
+      <div class="ad-field"><label>Nombre de la categoría *</label><input id="fc-nombre" type="text" value="${(c.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Ropa, Tecnología, Hogar"></div>
+      <div class="ad-field"><label>Orden</label><input id="fc-orden" type="number" value="${c.orden||0}" min="0" style="width:100px"></div>
+      <div class="ad-toolbar" style="margin:16px 0 0"><div class="ad-spacer"></div>
+        <button class="ad-btn" id="fc-cancel">Cancelar</button>
+        <button class="ad-btn ad-btn--verde" id="fc-save" data-id="${c.id||''}">${ic('check')} ${c.id?'Guardar':'Crear categoría'}</button>
+      </div>`;
+  }
+  function bindFormCat() {
+    setTimeout(() => {
+      $('#fc-cancel')?.addEventListener('click', () => $('#ad-modal-ov').classList.remove('is-open'));
+      $('#fc-save')?.addEventListener('click', async () => {
+        const nombre = $('#fc-nombre')?.value.trim(); if (!nombre) { toast('El nombre es obligatorio'); return; }
+        const btn = $('#fc-save'); btn.disabled = true;
+        const id = btn.dataset.id;
+        const payload = { nombre, orden: parseInt($('#fc-orden')?.value||0), activa: true };
+        id ? await supabase.from('categorias_productos').update(payload).eq('id', id)
+           : await supabase.from('categorias_productos').insert(payload);
+        $('#ad-modal-ov').classList.remove('is-open');
+        delete window.RENDERED?.['tienda'];
+        cargarTiendaAdmin(); toast(id ? 'Categoría actualizada ✓' : 'Categoría creada ✓');
+      });
+    }, 50);
+  }
+
+  function htmlFormProd(p = {}) {
+    const catOpts = _cats.map(c => `<option value="${c.id}" ${p.categoria_id===c.id?'selected':''}>${c.nombre}</option>`).join('');
+    return `
+      <div class="ad-field"><label>Nombre del producto *</label><input id="fp-nombre" type="text" value="${(p.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Zapatillas Nike Air Max"></div>
+      <div class="ad-field"><label>Descripción</label><textarea id="fp-desc" rows="2" placeholder="Breve descripción del producto">${p.descripcion||''}</textarea></div>
+      <div class="ad-field"><label>Categoría</label><select id="fp-cat"><option value="">Sin categoría</option>${catOpts}</select></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="ad-field"><label>Precio normal</label><input id="fp-precio" type="number" value="${p.precio_normal||''}" placeholder="150000" min="0"></div>
+        <div class="ad-field"><label>Precio miembro</label><input id="fp-descuento" type="number" value="${p.precio_descuento||''}" placeholder="120000" min="0"></div>
+      </div>
+      <div class="ad-field"><label>Link afiliado *</label><input id="fp-link" type="url" value="${(p.link_afiliado||'').replace(/"/g,'&quot;')}" placeholder="https://amzn.to/..."></div>
+      <div class="ad-field"><label>Imagen del producto</label>
+        ${p.imagen_url ? `<img src="${p.imagen_url}" style="height:60px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block">` : ''}
+        <input id="fp-img" type="file" accept="image/*">
+        <input type="hidden" id="fp-img-url" value="${p.imagen_url||''}">
+      </div>
+      <div class="ad-field"><label>Orden</label><input id="fp-orden" type="number" value="${p.orden||0}" min="0" style="width:100px"></div>
+      <div class="ad-toolbar" style="margin:16px 0 0"><div class="ad-spacer"></div>
+        <button class="ad-btn" id="fp-cancel">Cancelar</button>
+        <button class="ad-btn ad-btn--verde" id="fp-save" data-id="${p.id||''}">${ic('check')} ${p.id?'Guardar cambios':'Agregar producto'}</button>
+      </div>`;
+  }
+  function bindFormProd() {
+    setTimeout(() => {
+      $('#fp-cancel')?.addEventListener('click', () => $('#ad-modal-ov').classList.remove('is-open'));
+      $('#fp-save')?.addEventListener('click', async () => {
+        const nombre = $('#fp-nombre')?.value.trim(); if (!nombre) { toast('El nombre es obligatorio'); return; }
+        const link = $('#fp-link')?.value.trim(); if (!link) { toast('El link de afiliado es obligatorio'); return; }
+        const btn = $('#fp-save'); btn.disabled = true; btn.textContent = 'Guardando…';
+        let imagen_url = $('#fp-img-url')?.value || null;
+        const file = $('#fp-img')?.files[0];
+        if (file) try { imagen_url = await subirImagen(file); } catch(_) { toast('Error subiendo imagen'); btn.disabled=false; return; }
+        const payload = {
+          nombre, descripcion: $('#fp-desc')?.value.trim()||null,
+          categoria_id: $('#fp-cat')?.value || null,
+          precio_normal: parseFloat($('#fp-precio')?.value)||null,
+          precio_descuento: parseFloat($('#fp-descuento')?.value)||null,
+          link_afiliado: link, imagen_url,
+          orden: parseInt($('#fp-orden')?.value||0), activo: true
+        };
+        const id = btn.dataset.id;
+        id ? await supabase.from('productos').update(payload).eq('id', id)
+           : await supabase.from('productos').insert(payload);
+        $('#ad-modal-ov').classList.remove('is-open');
+        delete window.RENDERED?.['tienda'];
+        cargarTiendaAdmin(); toast(id ? 'Producto actualizado ✓' : 'Producto agregado ✓');
+      });
+    }, 50);
+  }
+
   /* ---- MARCAS AMAZON ---- */
   let _marcas = [];
   async function subirLogo(file) {
@@ -850,6 +976,14 @@ document.addEventListener('DOMContentLoaded',async()=>{
   }
 
   document.addEventListener('click',async(e)=>{
+    if(e.target.closest('#cat-add')){abrirModal('Nueva categoría','Agrupa los productos de la tienda',htmlFormCat());bindFormCat();return;}
+    const edCat=e.target.closest('[data-ed-cat]');if(edCat){const c=_cats.find(x=>x.id===edCat.dataset.edCat);if(c){abrirModal('Editar categoría',c.nombre,htmlFormCat(c));bindFormCat();}return;}
+    const togCat=e.target.closest('[data-tog-cat]');if(togCat){await supabase.from('categorias_productos').update({activa:togCat.dataset.activa!=='true'}).eq('id',togCat.dataset.togCat);cargarTiendaAdmin();return;}
+    const rmCat=e.target.closest('[data-rm-cat]');if(rmCat&&confirm('¿Eliminar esta categoría?')){await supabase.from('categorias_productos').delete().eq('id',rmCat.dataset.rmCat);cargarTiendaAdmin();toast('Categoría eliminada');return;}
+    if(e.target.closest('#prod-add')){abrirModal('Agregar producto','Aparecerá en la tienda del Club',htmlFormProd());bindFormProd();return;}
+    const edProd=e.target.closest('[data-ed-prod]');if(edProd){const p=_prods.find(x=>x.id===edProd.dataset.edProd);if(p){abrirModal('Editar producto',p.nombre,htmlFormProd(p));bindFormProd();}return;}
+    const togProd=e.target.closest('[data-tog-prod]');if(togProd){await supabase.from('productos').update({activo:togProd.dataset.activo!=='true'}).eq('id',togProd.dataset.togProd);cargarTiendaAdmin();return;}
+    const rmProd=e.target.closest('[data-rm-prod]');if(rmProd&&confirm('¿Eliminar este producto?')){await supabase.from('productos').delete().eq('id',rmProd.dataset.rmProd);cargarTiendaAdmin();toast('Producto eliminado');return;}
     if(e.target.closest('#marca-add')){ abrirModal('Agregar marca','Aparecerá en el carrusel de la plataforma',htmlFormMarca()); bindFormMarca(); return; }
     const edM=e.target.closest('[data-ed-marca]'); if(edM){ const m=_marcas.find(x=>x.id===edM.dataset.edMarca); if(m){ abrirModal('Editar marca',m.nombre,htmlFormMarca(m)); bindFormMarca(); } return; }
     const togM=e.target.closest('[data-tog-marca]'); if(togM){ await supabase.from('marcas_aliadas').update({activa: togM.dataset.activa!=='true'}).eq('id',togM.dataset.togMarca); cargarMarcasAdmin(); return; }

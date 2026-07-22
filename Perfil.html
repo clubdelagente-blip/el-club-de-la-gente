@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
   <link rel="stylesheet" href="estilos.css">
   <link rel="stylesheet" href="dashboard.css">
   <link rel="stylesheet" href="agente.css">
@@ -41,6 +41,7 @@
           <li id="sb-profesional-li" hidden><button class="sb-link" data-panel="profesional"><i data-lucide="briefcase-medical"></i> Mi consultorio <span class="sb-link__badge">Profesional</span></button></li>
           <li><button class="sb-link" data-panel="perfil"><i data-lucide="user"></i> Mi perfil</button></li>
           <li><button class="sb-link" data-panel="clubcard"><i data-lucide="credit-card"></i> Mi ClubCard</button></li>
+          <li><button class="sb-link" data-panel="tienda"><i data-lucide="package"></i> Tienda</button></li>
           <li><button class="sb-link" data-panel="descuentos"><i data-lucide="receipt"></i> Mis descuentos</button></li>
           <li><button class="sb-link" data-panel="agente"><i data-lucide="message-circle"></i> Mi Agente <span class="sb-link__badge">WhatsApp</span></button></li>
         </ul>
@@ -309,6 +310,20 @@
               </div>
             </div>
             <button class="btn btn--secundario cc-benefits-btn" id="cc-flip-toggle"><i data-lucide="qr-code" style="width:17px;height:17px"></i> Quiero acceder a mis beneficios</button>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             PANEL: TIENDA
+             ============================================================ -->
+        <section class="panel-view" data-panel="tienda" data-screen-label="Tienda del Club">
+          <div class="dash-greet">
+            <h1>Tienda del Club</h1>
+            <p>Productos seleccionados con descuento exclusivo para miembros.</p>
+          </div>
+          <div id="tienda-cats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px"></div>
+          <div id="tienda-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
+            <div style="text-align:center;padding:60px 20px;color:var(--tinta-suave);grid-column:1/-1">Cargando productos…</div>
           </div>
         </section>
 
@@ -887,7 +902,7 @@
   </style>
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <script type="module" src="dashboard.js?v=10"></script>
+  <script type="module" src="dashboard.js?v=11"></script>
   <script src="agente.js"></script>
 
   <template id="__bundler_thumbnail">

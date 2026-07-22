@@ -145,7 +145,7 @@ function quitarFoto() {
 }
 
 /* ---------- Navegación de paneles ---------- */
-const TITULOS = { inicio: "Inicio", negocio: "Mi negocio", perfil: "Mi perfil", clubcard: "Mi ClubCard", descuentos: "Mis descuentos", agente: "Mi Agente", config: "Configuración" };
+const TITULOS = { inicio: "Inicio", negocio: "Mi negocio", perfil: "Mi perfil", clubcard: "Mi ClubCard", tienda: "Tienda", descuentos: "Mis descuentos", agente: "Mi Agente", config: "Configuración" };
 function irPanel(panel) {
   $$(".panel-view").forEach(v => v.classList.toggle("is-active", v.dataset.panel === panel));
   $$(".sb-link[data-panel]").forEach(l => l.classList.toggle("is-active", l.dataset.panel === panel));
@@ -416,6 +416,66 @@ function inicializarBannerReferidos(userId) {
   if (window.lucide) lucide.createIcons();
 }
 
+/* ---------- TIENDA ---------- */
+const COP = n => n != null ? '$' + Number(n).toLocaleString('es-CO') : '';
+let _tiendaCargada = false;
+
+async function cargarTienda() {
+  if (_tiendaCargada) return;
+  _tiendaCargada = true;
+
+  const grid = document.getElementById('tienda-grid');
+  const catsEl = document.getElementById('tienda-cats');
+  if (!grid) return;
+
+  const plan = localStorage.getItem('ecdlg_plan');
+  const esMiembro = plan && plan !== 'sin_plan';
+
+  const [{ data: cats }, { data: prods }] = await Promise.all([
+    supabase.from('categorias_productos').select('id,nombre').eq('activa', true).order('orden'),
+    supabase.from('productos').select('*, categorias_productos(nombre)').eq('activo', true).order('orden')
+  ]);
+
+  if (!prods || !prods.length) {
+    grid.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--tinta-suave);grid-column:1/-1">Próximamente habrá productos disponibles.</div>`;
+    return;
+  }
+
+  let catActiva = 'todos';
+  function renderGrid() {
+    const filtrados = catActiva === 'todos' ? prods : prods.filter(p => p.categoria_id === catActiva);
+    grid.innerHTML = filtrados.map(p => {
+      const precioNormal = p.precio_normal != null ? COP(p.precio_normal) : '';
+      const precioDesc   = p.precio_descuento != null ? COP(p.precio_descuento) : '';
+      return `<div class="tienda-card">
+        ${p.imagen_url ? `<a href="${p.link_afiliado||'#'}" target="_blank" rel="noopener"><img src="${p.imagen_url}" class="tienda-card__img" alt="${p.nombre}"></a>` : `<div class="tienda-card__img tienda-card__img--ph"></div>`}
+        <div class="tienda-card__body">
+          ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat">${p.categorias_productos.nombre}</span>` : ''}
+          <div class="tienda-card__nombre">${p.nombre}</div>
+          ${p.descripcion ? `<div class="tienda-card__desc">${p.descripcion}</div>` : ''}
+          <div class="tienda-card__precios">
+            ${precioNormal ? `<span class="tienda-card__antes">${precioNormal}</span>` : ''}
+            ${esMiembro && precioDesc ? `<span class="tienda-card__precio">${precioDesc}</span>` : (!esMiembro && precioDesc ? `<span class="tienda-card__precio tienda-card__precio--lock">🔒 Precio miembro</span>` : '')}
+          </div>
+          <a href="${p.link_afiliado||'#'}" target="_blank" rel="noopener" class="tienda-card__btn">Ver oferta →</a>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  if (cats && cats.length && catsEl) {
+    catsEl.innerHTML = `<button class="tienda-filtro is-on" data-cat="todos">Todos</button>` +
+      cats.map(c => `<button class="tienda-filtro" data-cat="${c.id}">${c.nombre}</button>`).join('');
+    catsEl.addEventListener('click', e => {
+      const btn = e.target.closest('[data-cat]'); if (!btn) return;
+      catActiva = btn.dataset.cat;
+      catsEl.querySelectorAll('.tienda-filtro').forEach(b => b.classList.toggle('is-on', b === btn));
+      renderGrid();
+    });
+  }
+  renderGrid();
+}
+
 /* ---------- CARRUSEL MARCAS ---------- */
 async function cargarMarcasCarrusel() {
   const track = document.getElementById("marcas-track-dash");
@@ -482,7 +542,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (window.lucide) lucide.createIcons();
 
   // Sidebar nav
-  $$(".sb-link[data-panel]").forEach(l => l.addEventListener("click", () => irPanel(l.dataset.panel)));
+  $$(".sb-link[data-panel]").forEach(l => l.addEventListener("click", () => {
+    irPanel(l.dataset.panel);
+    if (l.dataset.panel === 'tienda') cargarTienda();
+  }));
 
   // Burger móvil
   $("#topbar-burger")?.addEventListener("click", () => $("#dash").classList.toggle("menu-open"));

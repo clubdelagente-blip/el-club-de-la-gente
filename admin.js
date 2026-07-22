@@ -19,6 +19,7 @@ const PANELES = {
   aliados:      { t: "Aliados", s: "Establecimientos, fotos y descuentos" },
   profesionales:{ t: "Profesionales", s: "Asesores jurídicos, psicológicos y contables" },
   marcas:       { t: "Marcas Amazon", s: "Logos y links de afiliado que aparecen en el carrusel" },
+  tienda:       { t: "Tienda", s: "Catálogo de productos con descuentos para miembros" },
   contenido:    { t: "Contenido", s: "Imágenes, videos y publicaciones de la web" },
   programas:    { t: "Programas sociales", s: "Programas, fundaciones, eventos y voluntarios" },
   ventas:       { t: "Ventas", s: "Historial de transacciones y proyecciones" },
@@ -234,6 +235,38 @@ function renderMarcas() {
   window.cargarMarcasAdmin?.();
 }
 window.renderMarcas = renderMarcas;
+
+/* ============================================================
+   RENDER: TIENDA
+   ============================================================ */
+function renderTienda() {
+  $("#p-tienda").innerHTML = `
+    <div style="display:flex;gap:12px;margin-bottom:20px">
+      <button class="ad-btn ad-btn--verde" id="cat-add">${ic("folder-plus")} Nueva categoría</button>
+      <button class="ad-btn ad-btn--verde" id="prod-add">${ic("plus")} Agregar producto</button>
+    </div>
+    <div class="ad-card" style="margin-bottom:20px">
+      <div class="ad-card__head"><div class="ad-card__title">Categorías</div></div>
+      <div class="ad-table-wrap">
+        <table class="ad-table">
+          <thead><tr><th>Nombre</th><th style="text-align:right">Estado</th></tr></thead>
+          <tbody id="cats-body"><tr><td colspan="2" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="ad-card">
+      <div class="ad-card__head"><div class="ad-card__title">Productos</div></div>
+      <div class="ad-table-wrap">
+        <table class="ad-table">
+          <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Precio miembro</th><th style="text-align:right">Estado</th></tr></thead>
+          <tbody id="prods-body"><tr><td colspan="5" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>`;
+  if (window.lucide) lucide.createIcons();
+  window.cargarTiendaAdmin?.();
+}
+window.renderTienda = renderTienda;
 
 /* ============================================================
    RENDER: CONTENIDO
@@ -653,7 +686,7 @@ function irPanel(panel) {
   $("#ad-sub").textContent = PANELES[panel].s;
   $("#admin").classList.remove("menu-open");
   if (!RENDERED[panel]) {
-    ({ dashboard: renderDashboard, miembros: renderMiembros, aliados: renderAliados, profesionales: renderProfesionales, marcas: renderMarcas, contenido: renderContenido, programas: renderProgramas, ventas: renderVentas, suscripciones: renderSuscripciones, config: renderConfig, agente: renderAgente })[panel]?.();
+    ({ dashboard: renderDashboard, miembros: renderMiembros, aliados: renderAliados, profesionales: renderProfesionales, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: renderProgramas, ventas: renderVentas, suscripciones: renderSuscripciones, config: renderConfig, agente: renderAgente })[panel]?.();
     RENDERED[panel] = true;
   }
   if (window.lucide) lucide.createIcons();
