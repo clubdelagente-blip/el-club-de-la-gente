@@ -351,8 +351,34 @@ function toast(msg, check = true) {
   toastT = setTimeout(() => t.classList.remove("is-show"), 3400);
 }
 
+/* ---------- CARRUSEL DESTACADOS ---------- */
+async function cargarDestacados() {
+  const res = await fetch(`${SB_URL}/rest/v1/aliados?destacado=eq.true&activo=eq.true&select=id,nombre,categoria,descuento,imagen_url&order=nombre`, {
+    headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }
+  });
+  const data = await res.json();
+  if (!data || !data.length) return;
+  const wrap  = document.getElementById("dest-wrap");
+  const track = document.getElementById("dest-track");
+  if (!wrap || !track) return;
+  const items = [...data, ...data];
+  track.innerHTML = items.map(a => `
+    <div class="dest-card" data-aliado-btn="${a.id}">
+      <div class="dest-card__img">
+        ${a.imagen_url ? `<img src="${a.imagen_url}" alt="${a.nombre}">` : `<span class="dest-card__av">${(a.nombre||'?')[0]}</span>`}
+      </div>
+      <div class="dest-card__body">
+        ${a.categoria ? `<span class="dest-card__cat">${a.categoria}</span>` : ''}
+        <div class="dest-card__nombre">${a.nombre}</div>
+        ${a.descuento ? `<div class="dest-card__desc">${a.descuento}</div>` : ''}
+      </div>
+    </div>`).join('');
+  wrap.style.display = 'block';
+}
+
 /* ---------- INIT ---------- */
 document.addEventListener("DOMContentLoaded", () => {
+  cargarDestacados();
   renderFiltros();
   renderGrid();
   if (window.lucide) lucide.createIcons();

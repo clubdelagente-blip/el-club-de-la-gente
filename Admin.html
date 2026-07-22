@@ -232,6 +232,7 @@ async function cargarAliados(){
     <td><span class="ad-num-strong verde">${a.descuento||'—'}</span></td>
     <td>${a.whatsapp||'—'}</td>
     <td style="text-align:right"><div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
+      <button class="ad-btn ${a.destacado?'ad-btn--verde':''}" data-dest-aliado="${a.id}" data-dest="${a.destacado}" title="${a.destacado?'Quitar destacado':'Marcar como destacado'}" style="padding:4px 10px">${ic("star")}</button>
       <span class="ad-pill ${a.activo?'activo':'inactivo'}" data-tog-aliado="${a.id}" data-activo="${a.activo}" style="cursor:pointer"><span class="d"></span>${a.activo?'Activo':'Inactivo'}</span>
       <button class="ad-btn" data-promos-aliado="${a.id}" data-nom-aliado="${(a.nombre||'').replace(/"/g,'&quot;')}" title="Promociones">${ic("tag")}</button>
       <button class="ad-btn" data-ed-aliado="${a.id}">${ic("pencil")}</button>
@@ -1008,6 +1009,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const togProf=e.target.closest('[data-tog-prof]');if(togProf){const activo=togProf.dataset.activo==='true';await supabase.from('profesionales').update({activo:!activo}).eq('id',togProf.dataset.togProf);cargarProfesionales();return;}
     const rmProf=e.target.closest('[data-rm-prof]');if(rmProf&&confirm('¿Eliminar este profesional?')){await supabase.from('profesionales').delete().eq('id',rmProf.dataset.rmProf);cargarProfesionales();toast('Profesional eliminado');return;}
     const promosAl=e.target.closest('[data-promos-aliado]');if(promosAl){cargarYMostrarPromociones(promosAl.dataset.promosAliado,promosAl.dataset.nomAliado);return;}
+    const destAl=e.target.closest('[data-dest-aliado]');if(destAl){await supabase.from('aliados').update({destacado:destAl.dataset.dest!=='true'}).eq('id',destAl.dataset.destAliado);cargarAliados();return;}
     const edAl=e.target.closest('[data-ed-aliado]');if(edAl){const a=_aliados.find(x=>x.id===edAl.dataset.edAliado);if(a){abrirModal('Editar aliado',a.nombre,htmlFormAliado(a));bindFormAliado();}return;}
     const togAl=e.target.closest('[data-tog-aliado]');if(togAl){const activo=togAl.dataset.activo==='true';await supabase.from('aliados').update({activo:!activo}).eq('id',togAl.dataset.togAliado);cargarAliados();return;}
     const rmAl=e.target.closest('[data-rm-aliado]');if(rmAl&&confirm('¿Eliminar este aliado?')){await supabase.from('aliados').delete().eq('id',rmAl.dataset.rmAliado);cargarAliados();toast('Aliado eliminado');return;}

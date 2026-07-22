@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=5">
   <link rel="stylesheet" href="directorio.css">
 </head>
 <body>
@@ -46,6 +46,18 @@
       <p class="dir-hero__sub">Escaneaste el código del Club. Aquí está el directorio completo de aliados de Fusagasugá: explora por categoría, busca tu favorito y <b>calcula exactamente cuánto ahorras</b> en cada compra.</p>
     </div>
   </section>
+
+  <!-- ============================================================
+       CARRUSEL ALIADOS DESTACADOS
+       ============================================================ -->
+  <div id="dest-wrap" style="display:none">
+    <div class="wrap" style="padding-top:28px;padding-bottom:4px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--verde);margin-bottom:14px">⭐ Aliados destacados</div>
+    </div>
+    <div class="dest-carrusel">
+      <div class="dest-carrusel__track" id="dest-track"></div>
+    </div>
+  </div>
 
   <!-- ============================================================
        BUSCADOR + FILTROS
