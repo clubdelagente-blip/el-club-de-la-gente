@@ -125,38 +125,6 @@
 
       <form id="form-pago">
         <div class="pago-layout">
-          <div class="pago-main">
-
-            <!-- Envío ClubCard (solo Premium) -->
-            <div class="panel" id="envio-premium">
-              <div class="panel__title">Envío de ClubCard física</div>
-              <div class="form-grid">
-                <div class="campo">
-                  <label>Departamento</label>
-                  <input type="text" value="Cundinamarca">
-                </div>
-                <div class="campo">
-                  <label>Ciudad</label>
-                  <input type="text" value="Fusagasugá">
-                </div>
-                <div class="campo col-2">
-                  <label>Dirección de envío</label>
-                  <input type="text" placeholder="Calle, carrera, número, barrio">
-                </div>
-                <div class="campo col-2">
-                  <label>Referencias <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label>
-                  <input type="text" placeholder="Apto, piso, indicaciones de entrega">
-                </div>
-                <div class="campo col-2">
-                  <label>Teléfono de contacto</label>
-                  <input type="tel" placeholder="300 000 0000">
-                </div>
-              </div>
-            </div>
-
-
-          </div>
-
           <!-- Resumen -->
           <aside class="resumen">
             <div class="resumen__lbl">Resumen</div>
@@ -188,57 +156,6 @@
         <h1 class="exito__title">¡Ya eres parte del club!</h1>
         <p class="exito__msg">Tu membresía está activa. Bienvenido a la familia de El Club de la Gente — desde hoy empiezas a ahorrar, aprender  y a apoyar tu comunidad.</p>
 
-        <!-- ClubCard física personalizable (Premium) -->
-        <div id="exito-clubcard">
-          <div class="cc-perso" id="cc-perso">
-            <div class="ccv2">
-              <div class="ccv2__flip" id="cc-flip">
-                <div class="ccv2-card ccv2-card--front">
-                  <img src="marco-card.png" class="ccv2-frame-img" alt="">
-                  <div class="ccv2-front__in">
-                    <span class="ccv2-brand">CLUBCARD</span>
-                    <div class="ccv2-mid">
-                      <img src="logo-club.png" class="ccv2-logo-img" alt="El Club de la Gente">
-                    </div>
-                    <div class="ccv2-footer">
-                      <div class="ccv2-name" id="cc-prev-name">TU NOMBRE</div>
-                      <div class="ccv2-codigo">
-                        <span class="ccv2-codigo__lbl">Código:</span>
-                        <span class="ccv2-codigo__val" id="cc-prev-codigo">300 000 0000</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="ccv2-card ccv2-card--back">
-                  <img src="marco-ornamento.png" class="ccv2-orn-img" alt="">
-                  <div class="ccv2-back__in">
-                    <div class="ccv2-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=0&data=file%3A%2F%2F%2FC%3A%2FUsers%2Fjulia%2FDocuments%2Fel-club-de-la-gente%2FDirectorio.html" alt="Código QR del Club" loading="lazy"></div>
-                    <div class="ccv2-renueva">Renovación: <span id="cc-renueva">27/10</span></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <form class="cc-perso__form" id="form-clubcard">
-              <div class="panel__title">Personaliza tu ClubCard</div>
-              <div class="form-grid">
-                <div class="campo"><label>Nombre</label><input id="cc-in-nombre" placeholder="Ej: John"></div>
-                <div class="campo"><label>Apellido</label><input id="cc-in-apellido" placeholder="Ej: Dylan"></div>
-                <div class="campo col-2"><label>Código (tu WhatsApp)</label><input id="cc-in-codigo" type="tel" placeholder="300 000 0000"></div>
-              </div>
-              <button type="submit" class="btn btn--primario btn--bloque">Confirmar mi ClubCard <span class="ar">&rarr;</span></button>
-              <p class="cc-perso__hint"><i data-lucide="info"></i> Tu tarjeta física se imprimirá con estos datos. Revisa que estén correctos.</p>
-            </form>
-          </div>
-
-          <div class="cc-plazo" id="cc-plazo" hidden>
-            <span class="cc-plazo__ic"><i data-lucide="truck"></i></span>
-            <div>
-              <h4>Tu ClubCard está en producción</h4>
-              <p>Plazo estimado de entrega: <b>7 días hábiles</b>. Te avisaremos por WhatsApp cuando vaya en camino.</p>
-            </div>
-          </div>
-        </div>
-
         <div class="wa-card">
           <div class="wa-card__ic"><i data-lucide="message-circle"></i></div>
           <div>
@@ -258,55 +175,104 @@
   <script type="module" src="checkout.js?v=7"></script>
 
   <!-- ============================================================
-       TWEAKS PANEL
+       TWEAKS PANEL — solo para edición de diseño, nunca para visitantes.
+       El contenido vive inerte dentro de <template> (el navegador no lo
+       carga ni ejecuta) y solo se activa con ?tweaks=1 en la URL, quedando
+       recordado en este navegador hasta que se pase ?tweaks=0.
        ============================================================ -->
-  <div id="tweaks-root"></div>
-  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-  <script type="text/babel" src="tweaks-panel.jsx"></script>
-  <script type="text/babel">
-    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-      "accent": "#008000",
-      "badgePos": "Centrado",
-      "showRecomendado": true
-    }/*EDITMODE-END*/;
+  <template id="tweaks-panel-template">
+    <div id="tweaks-root"></div>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+    <script type="text/babel" src="tweaks-panel.jsx"></script>
+    <script type="text/babel">
+      const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+        "accent": "#008000",
+        "badgePos": "Centrado",
+        "showRecomendado": true
+      }/*EDITMODE-END*/;
 
-    function PlanesTweaks() {
-      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      function PlanesTweaks() {
+        const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
 
-      React.useEffect(() => {
-        const r = document.documentElement.style;
-        r.setProperty("--verde", t.accent);
-        r.setProperty("--verde-hover", `color-mix(in srgb, ${t.accent}, #000 18%)`);
-        r.setProperty("--verde-soft", `color-mix(in srgb, ${t.accent} 10%, transparent)`);
-        r.setProperty("--verde-claro", `color-mix(in srgb, ${t.accent}, #fff 35%)`);
-      }, [t.accent]);
+        React.useEffect(() => {
+          const r = document.documentElement.style;
+          r.setProperty("--verde", t.accent);
+          r.setProperty("--verde-hover", `color-mix(in srgb, ${t.accent}, #000 18%)`);
+          r.setProperty("--verde-soft", `color-mix(in srgb, ${t.accent} 10%, transparent)`);
+          r.setProperty("--verde-claro", `color-mix(in srgb, ${t.accent}, #fff 35%)`);
+        }, [t.accent]);
 
-      React.useEffect(() => {
-        const b = document.getElementById("badge-rec");
-        if (!b) return;
-        b.classList.toggle("is-hidden", !t.showRecomendado);
-        b.classList.toggle("pos-corner", t.badgePos === "Esquina");
-      }, [t.badgePos, t.showRecomendado]);
+        React.useEffect(() => {
+          const b = document.getElementById("badge-rec");
+          if (!b) return;
+          b.classList.toggle("is-hidden", !t.showRecomendado);
+          b.classList.toggle("pos-corner", t.badgePos === "Esquina");
+        }, [t.badgePos, t.showRecomendado]);
 
-      return (
-        <TweaksPanel>
-          <TweakSection label="Plan recomendado" />
-          <TweakToggle label="Mostrar “Recomendado”" value={t.showRecomendado}
-            onChange={(v) => setTweak("showRecomendado", v)} />
-          <TweakRadio label="Posición" value={t.badgePos}
-            options={["Centrado", "Esquina"]}
-            onChange={(v) => setTweak("badgePos", v)} />
-          <TweakSection label="Marca" />
-          <TweakColor label="Color de acento" value={t.accent}
-            options={["#008000", "#0E7C4B", "#1C7C8C", "#3B5BDB"]}
-            onChange={(v) => setTweak("accent", v)} />
-        </TweaksPanel>
-      );
-    }
+        return (
+          <TweaksPanel>
+            <TweakSection label="Plan recomendado" />
+            <TweakToggle label="Mostrar “Recomendado”" value={t.showRecomendado}
+              onChange={(v) => setTweak("showRecomendado", v)} />
+            <TweakRadio label="Posición" value={t.badgePos}
+              options={["Centrado", "Esquina"]}
+              onChange={(v) => setTweak("badgePos", v)} />
+            <TweakSection label="Marca" />
+            <TweakColor label="Color de acento" value={t.accent}
+              options={["#008000", "#0E7C4B", "#1C7C8C", "#3B5BDB"]}
+              onChange={(v) => setTweak("accent", v)} />
+          </TweaksPanel>
+        );
+      }
 
-    ReactDOM.createRoot(document.getElementById("tweaks-root")).render(<PlanesTweaks />);
+      ReactDOM.createRoot(document.getElementById("tweaks-root")).render(<PlanesTweaks />);
+    </script>
+  </template>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      if (params.get("tweaks") === "1") localStorage.setItem("ecdlg_tweaks", "1");
+      if (params.get("tweaks") === "0") localStorage.removeItem("ecdlg_tweaks");
+      if (localStorage.getItem("ecdlg_tweaks") !== "1") return;
+
+      const tpl = document.getElementById("tweaks-panel-template");
+      const clone = tpl.content.cloneNode(true);
+      const root = clone.querySelector("#tweaks-root");
+      const libScripts = [...clone.querySelectorAll('script[src]:not([type="text/babel"])')];
+      const babelNodes = [...clone.querySelectorAll('script[type="text/babel"]')];
+
+      document.body.appendChild(root);
+
+      function cargarScript(src, attrs) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = src;
+          for (const [k, v] of Object.entries(attrs || {})) s.setAttribute(k, v);
+          s.onload = resolve;
+          s.onerror = reject;
+          document.body.appendChild(s);
+        });
+      }
+
+      (async function () {
+        // Se cargan en orden estricto (React -> ReactDOM -> Babel): al insertarse
+        // dinámicamente no son "parser scripts", así que el navegador no garantiza
+        // su orden salvo que se esperen uno por uno.
+        for (const orig of libScripts) {
+          const attrs = {};
+          for (const a of orig.attributes) if (a.name !== "src") attrs[a.name] = a.value;
+          await cargarScript(orig.src, attrs);
+        }
+        // Babel-standalone solo auto-detecta <script type="text/babel"> presentes
+        // al momento de su propio "load" — como el panel se activa después de que
+        // la página ya cargó, hay que transformarlos a mano. Además espera una
+        // NodeList real (usa .item()), no un array.
+        document.body.append(...babelNodes);
+        window.Babel.transformScriptTags(document.querySelectorAll('script[type="text/babel"]'));
+      })();
+    })();
   </script>
 
   <template id="__bundler_thumbnail">

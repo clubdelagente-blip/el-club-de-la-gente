@@ -222,7 +222,7 @@ const ADM_CONVERS = [
     num: "2043", nombre: "Julián Ortiz Parra", plan: "premium", wsp: "312 998 4410",
     online: false, unread: 0, time: "1 jun",
     msgs: [
-      { from: "agent", auto: true, txt: "¡Bienvenido al Club, Julián! 🎉 Ya eres parte de la familia. Tu ClubCard física llega en 5 días hábiles.", time: "1 jun · 4:00 p.m." },
+      { from: "agent", auto: true, txt: "¡Bienvenido al Club, Julián! 🎉 Ya eres parte de la familia. Tu ClubCard digital ya está activa en tu perfil.", time: "1 jun · 4:00 p.m." },
       { from: "user", txt: "Excelente! ya quiero usarla 😄", time: "1 jun · 4:45 p.m." },
     ],
   },

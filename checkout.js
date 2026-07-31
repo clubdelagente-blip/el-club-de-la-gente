@@ -55,64 +55,6 @@ function pintarResumen() {
   $("#res-antes").textContent = "Antes " + p.antes;
   $("#res-ahorra").textContent = "Ahorro " + p.ahorra;
   $("#res-total").innerHTML = `${p.precioTxt}<small> /mes</small>`;
-
-  // Form de envío solo para Premium
-  $("#envio-premium").classList.toggle("oculto", estado.plan !== "premium");
-}
-
-/* ---------- ClubCard de éxito (personalizable) ---------- */
-function setCardPreview() {
-  const nombre = ($("#cc-in-nombre").value || "").trim();
-  const apellido = ($("#cc-in-apellido").value || "").trim();
-  const codigo = ($("#cc-in-codigo").value || "").trim();
-  const full = `${nombre} ${apellido}`.trim();
-  $("#cc-prev-name").textContent = full ? full.toUpperCase() : "TU NOMBRE";
-  $("#cc-prev-codigo").textContent = codigo || "300 000 0000";
-}
-function pintarClubcard() {
-  const perfil = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
-  const num = ("0000" + Math.floor(1000 + Math.random() * 8999)).slice(-4);
-  const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
-  const hoy = new Date();
-  const desde = `${meses[hoy.getMonth()]} ${hoy.getFullYear()}`;
-
-  // Prefill desde el registro
-  const partes = (perfil.nombre || "").trim().split(/\s+/).filter(Boolean);
-  if ($("#cc-in-nombre") && partes.length) {
-    $("#cc-in-nombre").value = partes[0] || "";
-    $("#cc-in-apellido").value = partes.slice(1).join(" ") || "";
-  }
-  if ($("#cc-in-codigo") && perfil.whatsapp) $("#cc-in-codigo").value = perfil.whatsapp;
-
-  // Fecha de renovación: hoy + 1 año (dd/mm)
-  const ren = new Date(hoy); ren.setFullYear(ren.getFullYear() + 1);
-  if ($("#cc-renueva")) $("#cc-renueva").textContent = `${String(ren.getDate()).padStart(2,"0")}/${String(ren.getMonth()+1).padStart(2,"0")}`;
-
-  setCardPreview();
-  localStorage.setItem("ecdlg_miembro", JSON.stringify({ num, plan: estado.plan, desde }));
-  localStorage.removeItem("ecdlg_segmentado");
-
-  // Premium muestra la tarjeta física personalizable; básica la oculta
-  $("#exito-clubcard").style.display = estado.plan === "premium" ? "block" : "none";
-}
-function confirmarClubcard() {
-  const nombre = ($("#cc-in-nombre").value || "").trim();
-  const apellido = ($("#cc-in-apellido").value || "").trim();
-  const codigo = ($("#cc-in-codigo").value || "").trim();
-  const full = `${nombre} ${apellido}`.trim() || "Miembro del Club";
-  // Persistir para el perfil
-  const m = JSON.parse(localStorage.getItem("ecdlg_miembro") || "{}");
-  m.nombreTarjeta = full; m.codigo = codigo;
-  localStorage.setItem("ecdlg_miembro", JSON.stringify(m));
-  const perfil = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
-  perfil.nombre = full; perfil.primerNombre = nombre || full.split(" ")[0]; perfil.codigo = codigo;
-  localStorage.setItem("ecdlg_perfil", JSON.stringify(perfil));
-
-  $("#cc-flip").classList.add("is-back");
-  $("#cc-perso").classList.add("cc-perso--done");
-  $("#form-clubcard").hidden = true;
-  $("#cc-plazo").hidden = false;
-  if (window.lucide) lucide.createIcons();
 }
 
 /* ---------- INIT ---------- */
@@ -188,10 +130,4 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
-
-  // Personalización de la ClubCard (vista previa en vivo)
-  ["cc-in-nombre", "cc-in-apellido", "cc-in-codigo"].forEach(id => {
-    $("#" + id)?.addEventListener("input", setCardPreview);
-  });
-  $("#form-clubcard")?.addEventListener("submit", (e) => { e.preventDefault(); confirmarClubcard(); });
 });

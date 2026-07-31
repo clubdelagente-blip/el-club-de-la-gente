@@ -180,6 +180,29 @@ function cerrarSeg() {
   localStorage.setItem("ecdlg_segmentado", "1");
 }
 
+// Oculta y precarga del Bloque 1 solo lo que ya conocemos (registro manual o
+// Google) — así no le repetimos preguntas a quien ya las respondió, pero sí
+// se las hacemos a quien entró por Google (que no trae fecha ni WhatsApp).
+function prepararCamposConocidos(perfil) {
+  const partes = (perfil?.nombre || "").trim().split(/\s+/).filter(Boolean);
+  const tieneNombre = partes.length > 0;
+  const tieneApellido = partes.length > 1;
+  const tieneFecha = !!perfil?.fecha_nacimiento;
+  const tieneWhatsapp = !!perfil?.whatsapp;
+
+  const ajustar = (id, valor, conocido) => {
+    const input = $("#" + id);
+    if (!input) return;
+    if (conocido && valor) input.value = valor;
+    const q = input.closest(".seg-q");
+    if (q) q.hidden = conocido;
+  };
+  ajustar("seg-nombre", partes[0] || "", tieneNombre);
+  ajustar("seg-apellido", partes.slice(1).join(" "), tieneApellido);
+  ajustar("seg-fecha", perfil?.fecha_nacimiento || "", tieneFecha);
+  ajustar("seg-whatsapp", perfil?.whatsapp || "", tieneWhatsapp);
+}
+
 /* ---------- Descuentos reales ---------- */
 async function cargarDescuentos(userId) {
   const { data, error } = await supabase
@@ -507,10 +530,19 @@ document.addEventListener("DOMContentLoaded", () => {
       history.replaceState({}, "", location.pathname);
     }
 
-    const { data: perfData } = await supabase.from("perfiles").select("plan, nombre").eq("id", userId).maybeSingle();
+    const { data: perfData } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp").eq("id", userId).maybeSingle();
     const plan = perfData?.plan || null;
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
     if (plan) { localStorage.setItem("ecdlg_plan", plan); const sbPlanEl = document.getElementById("sb-plan-name"); if (sbPlanEl) sbPlanEl.textContent = PLAN_LABEL[plan] || plan; }
+
+    // Segmentación del miembro nuevo: solo preguntamos lo que no sepamos ya
+    // (registro manual trae nombre/fecha/whatsapp; Google solo trae nombre).
+    const debeSegmentar = new URLSearchParams(location.search).get("nuevo") === "1"
+      && localStorage.getItem("ecdlg_segmentado") !== "1";
+    if (debeSegmentar) {
+      prepararCamposConocidos({ ...perfData, nombre });
+      abrirSeg(0);
+    }
 
     // Fuente de verdad: nombre siempre desde Supabase, no localStorage
     if (nombre) {
@@ -587,9 +619,8 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#sb-logout")?.addEventListener("click", () => { location.href = "El Club de la Gente.html"; });
 
   // ---- Segmentación ----
-  const params = new URLSearchParams(location.search);
-  const debeSegmentar = params.get("nuevo") === "1" && localStorage.getItem("ecdlg_segmentado") !== "1";
-  if (debeSegmentar) abrirSeg(0);
+  // (el disparo real vive arriba, dentro del callback de getSession, para
+  // esperar a saber qué campos ya tenemos antes de mostrar el overlay)
 
   // Actualizar categorías desde el perfil → reabre la segmentación
   $("#editar-cats")?.addEventListener("click", () => abrirSeg(1));

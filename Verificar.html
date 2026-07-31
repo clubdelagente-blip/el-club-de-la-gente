@@ -121,17 +121,6 @@
   <div class="card" id="card">
     <p class="loading">Verificando membresía...</p>
   </div>
-  <script>
-    setTimeout(() => {
-      const card = document.getElementById("card");
-      if (card && card.querySelector(".loading")) {
-        card.innerHTML = `
-          <div class="estado-ic estado-ic--no">✗</div>
-          <div class="estado-lbl estado-lbl--no">QR inválido</div>
-          <p class="error-msg" style="margin-top:8px">Este QR no contiene un ID de miembro válido. Pide al miembro que muestre su ClubCard.</p>`;
-      }
-    }, 5000);
-  </script>
 
   <p class="footer-note" style="max-width:360px;text-align:center;margin-top:20px">
     Esta verificación es en tiempo real. Si el estado es <strong>Activo</strong>, el miembro tiene derecho al descuento correspondiente.
@@ -149,12 +138,50 @@
     const card = document.getElementById("card");
     const params = new URLSearchParams(location.search);
     const id = params.get("id");
-    const aliadoId = params.get("aliado");
     const supabaseClient = _supabase;
+
+    // El aliado se identifica una sola vez por dispositivo (queda guardado en este teléfono/tablet)
+    let aliadoId = params.get("aliado") || localStorage.getItem("ecdlg_aliado_id") || "";
 
     const btnStyle = (bg, color="#fff") => `display:block;width:100%;padding:14px;background:${bg};color:${color};border-radius:12px;text-align:center;text-decoration:none;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:600;margin-top:8px;letter-spacing:.02em;border:none;cursor:pointer;`;
 
-    function renderOk(p, usos, esPremium) {
+    function conTimeout(promesa, ms) {
+      return Promise.race([
+        promesa,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+      ]);
+    }
+
+    function discountRow(aliadoInfo) {
+      if (!aliadoInfo) return "";
+      return `<div class="detalle"><span class="detalle__lbl">Descuento en ${aliadoInfo.nombre}</span><span class="detalle__val" style="color:var(--verde);font-weight:700">${aliadoInfo.descuento || "—"}</span></div>`;
+    }
+
+    function selectorAliadoHtml(lista) {
+      if (!lista || !lista.length) return "";
+      const opciones = lista.map(a => `<option value="${a.id}">${a.nombre}</option>`).join("");
+      return `
+        <hr class="divider">
+        <p style="font-size:12px;color:#888;margin-bottom:10px;text-align:left">¿Cuál es tu negocio? Selecciónalo para ver el % de descuento a aplicar (se guarda en este dispositivo, no hace falta repetirlo).</p>
+        <select id="sel-aliado" style="width:100%;padding:10px 12px;border:1px solid #ebebeb;border-radius:10px;font-size:13px;margin-bottom:8px">
+          <option value="">Selecciona tu negocio…</option>
+          ${opciones}
+        </select>
+        <button id="btn-guardar-aliado" style="${btnStyle('#1a7a3c')}">Guardar</button>
+      `;
+    }
+
+    function bindSelectorAliado(recargar) {
+      document.getElementById("btn-guardar-aliado")?.addEventListener("click", () => {
+        const val = document.getElementById("sel-aliado")?.value;
+        if (!val) return;
+        localStorage.setItem("ecdlg_aliado_id", val);
+        aliadoId = val;
+        recargar();
+      });
+    }
+
+    function renderOk(p, usos, esPremium, aliadoInfo, listaAliados) {
       const rolLabel = { miembro: "Miembro", aliado: "Aliado comercial", profesional: "Profesional" }[p.rol] || "Miembro";
       const planLabel = esPremium ? "Premium · Ilimitado" : `Básica · ${usos}/2 usos este mes`;
       const dirUrl = `Directorio.html?miembro=${id}&wa=${encodeURIComponent(p.whatsapp||"")}&plan=${p.plan||"basica"}&usos=${usos}`;
@@ -166,13 +193,16 @@
         <hr class="divider">
         <div class="detalle"><span class="detalle__lbl">Estado</span><span class="badge badge--ok"><span class="dot"></span> Activo</span></div>
         <div class="detalle"><span class="detalle__lbl">Plan</span><span class="detalle__val">${planLabel}</span></div>
+        ${discountRow(aliadoInfo)}
         <div class="detalle"><span class="detalle__lbl">Verificado</span><span class="detalle__val">${new Date().toLocaleString("es-CO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span></div>
         <hr class="divider">
         <a href="${dirUrl}" style="${btnStyle("#1a7a3c")}">Ver aliados y descuentos &rarr;</a>
+        ${!aliadoInfo ? selectorAliadoHtml(listaAliados) : ""}
       `;
+      bindSelectorAliado(() => cargarYRenderizar());
     }
 
-    function renderLimite(p) {
+    function renderLimite(p, aliadoInfo, listaAliados) {
       const wa = (p.whatsapp||"").replace(/\D/g,"");
       const numero = wa.startsWith("57") ? wa : "57"+wa;
       const msg = `¡Hola ${p.nombre}! 👋 Llegaste al límite de 2 descuentos del mes con tu membresía Básica.\n\n¿Quieres descuentos ilimitados? Actualiza a Premium por solo $20.000/mes y aprovecha el Club sin restricciones.\n\nEl Club de la Gente`;
@@ -185,11 +215,14 @@
         <hr class="divider">
         <div class="detalle"><span class="detalle__lbl">Estado</span><span class="badge badge--lim"><span class="dot"></span> Límite 2/2</span></div>
         <div class="detalle"><span class="detalle__lbl">Descuentos usados</span><span class="detalle__val">2 de 2 este mes</span></div>
+        ${discountRow(aliadoInfo)}
         <hr class="divider">
         <p style="font-size:13px;color:#888;margin-bottom:12px;line-height:1.5">Este miembro usó sus 2 descuentos del mes. No aplica más descuentos hasta el próximo mes.</p>
         <a href="Planes.html" style="${btnStyle("#1a7a3c")}">Actualizar a Premium &rarr;</a>
         ${wa ? `<a href="${waUrl}" style="${btnStyle("#fef3c7","#b45309")}">Notificar al miembro por WhatsApp</a>` : ""}
+        ${!aliadoInfo ? selectorAliadoHtml(listaAliados) : ""}
       `;
+      bindSelectorAliado(() => cargarYRenderizar());
     }
 
     function renderNo(msg) {
@@ -203,44 +236,65 @@
       `;
     }
 
-    if (!id) return;
-
-    try {
-      const { data, error } = await supabaseClient
-        .from("perfiles")
-        .select("nombre, rol, whatsapp, plan")
-        .eq("id", id)
-        .single();
-
-      if (error || !data) {
-        renderNo("Miembro no encontrado. Verifica que el QR sea válido.");
-        return;
-      }
-
-      const esPremium = data.plan === "premium" || data.plan === "vitalicia";
-      let usos = 0;
-
-      if (!esPremium) {
-        const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
-        let query = supabaseClient
-          .from("descuentos")
-          .select("id", { count: "exact", head: true })
-          .eq("miembro_id", id)
-          .gte("created_at", inicioMes.toISOString());
-        // Si el aliado está identificado, contar solo sus usos en este establecimiento
-        if (aliadoId) query = query.eq("aliado_id", aliadoId);
-        const { count } = await query;
-        usos = count || 0;
-      }
-
-      if (!esPremium && usos >= 2) {
-        renderLimite(data);
-      } else {
-        renderOk(data, usos, esPremium);
-      }
-    } catch (_) {
-      renderNo("Error al verificar. Revisa tu conexión e intenta de nuevo.");
+    // QR sin ID: esto siempre se sabe al instante, no hace falta esperar ni un timeout
+    if (!id) {
+      renderNo("Este QR no contiene un ID de miembro válido. Pide al miembro que muestre su ClubCard.");
+      return;
     }
+
+    async function cargarAliadoInfo() {
+      if (!aliadoId) return null;
+      const { data } = await supabaseClient
+        .from("aliados").select("id, nombre, descuento").eq("id", aliadoId).maybeSingle();
+      return data || null;
+    }
+
+    async function cargarListaAliados() {
+      const { data } = await supabaseClient
+        .from("aliados").select("id, nombre").eq("activo", true).order("nombre");
+      return data || [];
+    }
+
+    async function cargarYRenderizar() {
+      try {
+        const [{ data, error }, aliadoInfo, listaAliados] = await conTimeout(Promise.all([
+          supabaseClient.from("perfiles").select("nombre, rol, whatsapp, plan").eq("id", id).single(),
+          cargarAliadoInfo(),
+          aliadoId ? Promise.resolve([]) : cargarListaAliados(),
+        ]), 12000);
+
+        if (error || !data) {
+          renderNo("Miembro no encontrado. Verifica que el QR sea válido.");
+          return;
+        }
+
+        const esPremium = data.plan === "premium" || data.plan === "vitalicia";
+        let usos = 0;
+
+        if (!esPremium) {
+          const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
+          let query = supabaseClient
+            .from("descuentos")
+            .select("id", { count: "exact", head: true })
+            .eq("miembro_id", id)
+            .gte("created_at", inicioMes.toISOString());
+          // Si el aliado está identificado, contar solo sus usos en este establecimiento
+          if (aliadoId) query = query.eq("aliado_id", aliadoId);
+          const { count } = await query;
+          usos = count || 0;
+        }
+
+        if (!esPremium && usos >= 2) {
+          renderLimite(data, aliadoInfo, listaAliados);
+        } else {
+          renderOk(data, usos, esPremium, aliadoInfo, listaAliados);
+        }
+      } catch (_) {
+        renderNo("No se pudo verificar por un problema de conexión. Intenta de nuevo.");
+      }
+    }
+
+    cargarYRenderizar();
     })();
   </script>
 

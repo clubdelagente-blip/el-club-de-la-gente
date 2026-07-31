@@ -75,22 +75,6 @@ Deno.serve(async (req: Request) => {
 
   console.log(`Membresía ${plan} activada para miembro ${miembroId}`);
 
-  // Generar y enviar ClubCard por email (solo plan premium)
-  if (plan === "premium") {
-    try {
-      await fetch(`${SUPABASE_URL}/functions/v1/generar-clubcard`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ miembro_id: miembroId, plan }),
-      });
-    } catch (e) {
-      console.error("Error llamando generar-clubcard:", e);
-    }
-  }
-
   // Validar si el referidor alcanzó 5 referidos activos → vitalicia
   try {
     await fetch(`${SUPABASE_URL}/functions/v1/validar-referidos`, {

@@ -331,6 +331,45 @@ document.addEventListener("DOMContentLoaded", async () => {
     setTimeout(() => { btn.disabled = false; btn.textContent = "Reenviar código"; }, 30000);
   });
 
+  // ---------- LOGIN PROFESIONAL (email + contraseña) ----------
+  $("#btn-toggle-login-prof")?.addEventListener("click", () => {
+    $("#login-member-mode").style.display = "none";
+    $("#form-login-prof").style.display = "";
+    mostrarErrorLogin("");
+  });
+
+  $("#btn-back-login-prof")?.addEventListener("click", () => {
+    $("#form-login-prof").style.display = "none";
+    $("#login-member-mode").style.display = "";
+    mostrarErrorLogin("");
+  });
+
+  $("#form-login-prof")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector("button[type=submit]");
+    const email = $("#login-prof-email").value.trim();
+    const pass  = $("#login-prof-pass").value;
+    if (!email || !pass) { mostrarErrorLogin("Completa correo y contraseña."); return; }
+
+    setLoading(btn, true, "Ingresar");
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    setLoading(btn, false, "Ingresar");
+
+    if (error || !data?.user) {
+      mostrarErrorLogin("Correo o contraseña incorrectos.");
+      return;
+    }
+
+    const { data: perfil } = await supabase
+      .from("perfiles").select("nombre, rol").eq("id", data.user.id).maybeSingle();
+    localStorage.setItem("ecdlg_perfil", JSON.stringify({
+      nombre: perfil?.nombre || data.user.user_metadata?.nombre || "Profesional",
+      primerNombre: (perfil?.nombre || data.user.user_metadata?.nombre || "Profesional").split(" ")[0],
+      rol: perfil?.rol || "profesional",
+    }));
+    location.href = "Perfil.html";
+  });
+
   // ---------- REGISTRO MIEMBRO ----------
   $("#form-registro")?.addEventListener("submit", async (e) => {
     e.preventDefault();

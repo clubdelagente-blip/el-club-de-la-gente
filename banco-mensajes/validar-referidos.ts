@@ -68,19 +68,5 @@ Deno.serve(async (req: Request) => {
 
   console.log(`Membresía vitalicia activada para ${referidorId}`);
 
-  // Disparar ClubCard física
-  try {
-    await fetch(`${SUPABASE_URL}/functions/v1/generar-clubcard`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ miembro_id: referidorId, plan: "vitalicia" }),
-    });
-  } catch (e) {
-    console.error("Error llamando generar-clubcard:", e);
-  }
-
   return new Response("Vitalicia activada", { status: 200 });
 });
