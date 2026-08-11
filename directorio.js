@@ -1,95 +1,8 @@
 /* ============================================================
    EL CLUB DE LA GENTE — Módulo 5
-   Directorio QR · buscador · filtros · calculadora de ahorro
-   (reutiliza tokens, botones, sheet y toast de styles.css)
+   Directorio real (Supabase) · buscador · filtros por plan · calculadora
    ============================================================ */
-
-/* ---------- DATOS: ALIADOS (con grupo de filtro) ---------- */
-const ALIADOS = [
-  {
-    nombre: "Sonrisa Sana", categoria: "Odontología", grupo: "Salud", icon: "smile", pct: "25%",
-    foto: "Fachada / consultorio de Sonrisa Sana",
-    desc: "Odontología integral y estética dental en el centro de Fusagasugá. Limpieza, ortodoncia y blanqueamiento con tarifas preferenciales para miembros del Club.",
-    descuentos: [
-      { pct: "25%", nombre: "Limpieza y profilaxis", desc: "Sobre el valor regular de la consulta" },
-      { pct: "15%", nombre: "Ortodoncia y brackets", desc: "Aplica al plan completo de tratamiento" },
-    ],
-  },
-  {
-    nombre: "Bienestar Integral Spa", categoria: "Bienestar y salud", grupo: "Salud", icon: "heart-pulse", pct: "20%",
-    foto: "Sala de masajes de Bienestar Integral Spa",
-    desc: "Centro de relajación y terapias corporales. Masajes, faciales y rutinas de bienestar pensadas para liberar el estrés de la semana.",
-    descuentos: [
-      { pct: "20%", nombre: "Masaje relajante 60 min", desc: "De lunes a jueves" },
-      { pct: "10%", nombre: "Paquetes de 4 sesiones", desc: "Acumulable con otras promociones" },
-    ],
-  },
-  {
-    nombre: "Fusa Aventura Tours", categoria: "Turismo", grupo: "Turismo", icon: "mountain-snow", pct: "15%",
-    foto: "Plan de aventura al aire libre en Sumapaz",
-    desc: "Experiencias de naturaleza y aventura en la región del Sumapaz: senderismo, cascadas y planes de fin de semana para toda la familia.",
-    descuentos: [
-      { pct: "15%", nombre: "Planes de día completo", desc: "Por persona, mínimo 2 cupos" },
-      { pct: "12%", nombre: "Tours familiares", desc: "Grupos de 4 o más personas" },
-    ],
-  },
-  {
-    nombre: "Patitas Felices", categoria: "Veterinaria", grupo: "Mascotas", icon: "paw-print", pct: "30%",
-    foto: "Consultorio veterinario de Patitas Felices",
-    desc: "Veterinaria y tienda de mascotas. Consulta general, vacunación, baño y guardería para que tu compañero esté siempre sano.",
-    descuentos: [
-      { pct: "30%", nombre: "Consulta + vacunación", desc: "Primera visita del mes" },
-      { pct: "20%", nombre: "Baño y peluquería", desc: "Todos los días" },
-    ],
-  },
-  {
-    nombre: "Mercado del Campo", categoria: "Canasta familiar", grupo: "Alimentos", icon: "shopping-basket", pct: "12%",
-    foto: "Puesto de frutas y verduras de Mercado del Campo",
-    desc: "Fruver y mercado campesino con producto fresco de la región. La canasta familiar de la semana a precio justo.",
-    descuentos: [
-      { pct: "12%", nombre: "Mercado superior a $80.000", desc: "Pago en efectivo o Nequi" },
-      { pct: "8%", nombre: "Frutas y verduras", desc: "Todos los días" },
-    ],
-  },
-  {
-    nombre: "Estilo Propio", categoria: "Ropa personalizada", grupo: "Negocios", icon: "shirt", pct: "20%",
-    foto: "Taller de estampado de Estilo Propio",
-    desc: "Ropa y estampados personalizados. Camisetas, uniformes y detalles para tu marca o tu equipo, hechos en Fusagasugá.",
-    descuentos: [
-      { pct: "20%", nombre: "Estampado personalizado", desc: "Desde 1 prenda" },
-      { pct: "15%", nombre: "Pedidos por mayor", desc: "Más de 10 unidades" },
-    ],
-  },
-  {
-    nombre: "Heladería La Sumapaz", categoria: "Heladería", grupo: "Alimentos", icon: "ice-cream", pct: "2x1",
-    foto: "Vitrina de helados de La Sumapaz",
-    desc: "Heladería artesanal con sabores de la región. El plan perfecto para la tarde, ahora con beneficios para miembros.",
-    descuentos: [
-      { pct: "2x1", nombre: "Conos artesanales", desc: "Martes y miércoles" },
-      { pct: "15%", nombre: "Malteadas y postres", desc: "Todos los días" },
-    ],
-  },
-  {
-    nombre: "El Buen Sabor", categoria: "Comida rápida", grupo: "Alimentos", icon: "sandwich", pct: "25%",
-    foto: "Mostrador de El Buen Sabor",
-    desc: "Hamburguesas, perros y comida rápida casera. Porciones generosas y precios de barrio para todos los miembros.",
-    descuentos: [
-      { pct: "25%", nombre: "Combo del día", desc: "De domingo a jueves" },
-      { pct: "10%", nombre: "Pedidos a domicilio", desc: "Dentro del casco urbano" },
-    ],
-  },
-  {
-    nombre: "Barbería Don Carlos", categoria: "Barbería", grupo: "Cuidado personal", icon: "scissors", pct: "30%",
-    foto: "Silla y espejo de Barbería Don Carlos",
-    desc: "Cortes clásicos y modernos, arreglo de barba y cuidado personal. Tradición de barrio con estilo.",
-    descuentos: [
-      { pct: "30%", nombre: "Corte + barba", desc: "De lunes a miércoles" },
-      { pct: "20%", nombre: "Corte clásico", desc: "Todos los días" },
-    ],
-  },
-];
-
-const GRUPOS = ["Todos", "Salud", "Turismo", "Alimentos", "Cuidado personal", "Mascotas", "Negocios"];
+import { supabase } from './supabase.js';
 
 /* ---------- HELPERS ---------- */
 const $ = (s, c = document) => c.querySelector(s);
@@ -97,41 +10,77 @@ const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 const ic = (n) => `<i data-lucide="${n}"></i>`;
 const nf = new Intl.NumberFormat("es-CO");
 const fmtCOP = (n) => "$" + nf.format(Math.max(0, Math.round(n || 0)));
-const norm = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-/* "25%" → 0.25 · "2x1" → 0.5 (pagas 1 de 2) */
-function pctFrac(p) {
-  if (/x/i.test(p)) { const [a, b] = p.toLowerCase().split("x").map(Number); return a && b ? (a - b) / a : 0.5; }
-  return (parseFloat(p) || 0) / 100;
+function norm(s) {
+  return (s || "").toLowerCase()
+    .replace(/[áàäâã]/g, "a").replace(/[éèëê]/g, "e").replace(/[íìïî]/g, "i")
+    .replace(/[óòöôõ]/g, "o").replace(/[úùüû]/g, "u").replace(/ñ/g, "n");
 }
 
-/* ---------- SUPABASE (REST directo para no requerir módulo) ---------- */
-const SB_URL = "https://egwaedadpqfwnbfosiao.supabase.co";
-const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4";
+/* Ícono por palabra clave de categoría (aproximado, no requiere que el admin lo elija) */
+const ICONOS_CAT = [
+  [/odont/i, "smile"], [/veterinar/i, "paw-print"], [/turis/i, "mountain-snow"],
+  [/mascota/i, "paw-print"], [/canasta|fruver|mercado|supermercado/i, "shopping-basket"],
+  [/ropa|moda|accesorio/i, "shirt"], [/helad/i, "ice-cream"], [/comida|restaurante|cafeter/i, "sandwich"],
+  [/barber/i, "scissors"], [/bienestar|salud|spa/i, "heart-pulse"], [/belleza|estetic/i, "sparkles"],
+  [/educaci|tutor/i, "graduation-cap"], [/deporte|gym/i, "dumbbell"], [/tecnolog/i, "laptop"],
+  [/regalo/i, "gift"],
+];
+function iconoCategoria(categoria) {
+  const c = categoria || "";
+  for (const [rx, icon] of ICONOS_CAT) if (rx.test(c)) return icon;
+  return "store";
+}
+
+/* ---------- CONTEXTO DEL VISITANTE ---------- */
 const _p = new URLSearchParams(location.search);
 const MIEMBRO_ID  = _p.get("miembro");
 const MIEMBRO_WA  = _p.get("wa") || "";
-const MIEMBRO_PLAN = _p.get("plan") || "basica";
 const MIEMBRO_USOS = parseInt(_p.get("usos") || "0", 10);
-const LIMITE_ALCANZADO = MIEMBRO_ID && MIEMBRO_PLAN === "basica" && MIEMBRO_USOS >= 2;
+const PLAN_URL = _p.get("plan"); // viene de Verificar.html cuando un aliado escanea a un miembro
 
-async function registrarDescuento({ aliado_nombre, categoria, descuento_pct, compra, ahorro }) {
+const LIMITE_DESCUENTOS = { gratis: 1, basica: 2, premium: Infinity, vitalicia: Infinity };
+let PLAN_ACTUAL = "gratis";
+let LIMITE_ALCANZADO = false;
+
+/* Resuelve el plan real del visitante:
+   1) ?plan= en la URL (un aliado viendo lo que le corresponde a un miembro escaneado)
+   2) sesión activa de Supabase (un miembro navegando desde su propio dashboard)
+   3) sin sesión ni parámetro: visitante anónimo → solo ve el nivel Gratis */
+async function resolverPlanVisitante() {
+  if (PLAN_URL) return PLAN_URL;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.user?.id) {
+    const { data } = await supabase.from("perfiles").select("plan").eq("id", session.user.id).maybeSingle();
+    if (data?.plan && data.plan !== "sin_plan") return data.plan;
+  }
+  return "gratis";
+}
+
+async function registrarDescuento({ aliado_id, aliado_nombre, categoria, descuento_pct, compra, ahorro }) {
   if (!MIEMBRO_ID) return false;
-  const res = await fetch(`${SB_URL}/rest/v1/descuentos`, {
-    method: "POST",
-    headers: {
-      "apikey": SB_KEY,
-      "Authorization": "Bearer " + SB_KEY,
-      "Content-Type": "application/json",
-      "Prefer": "return=minimal"
-    },
-    body: JSON.stringify({ miembro_id: MIEMBRO_ID, aliado_nombre, categoria, descuento_pct, compra, ahorro })
+  const { error } = await supabase.from("descuentos").insert({
+    miembro_id: MIEMBRO_ID, aliado_id, aliado_nombre, categoria,
+    descuento_pct, compra: compra || null, ahorro: ahorro || 0,
   });
-  return res.ok;
+  return !error;
 }
 
 /* ---------- ESTADO ---------- */
+let ALIADOS = [];
+let GRUPOS = ["Todos"];
 let filtroActivo = "Todos";
 let query = "";
+
+/* ---------- CARGA DE ALIADOS (filtrados por plan) ---------- */
+async function cargarAliados() {
+  const { data } = await supabase.from("aliados").select("*").eq("activo", true).order("nombre");
+  const todos = data || [];
+  ALIADOS = todos.filter(a => (a.planes_visibles && a.planes_visibles.length ? a.planes_visibles : ["basica", "premium"]).includes(PLAN_ACTUAL));
+
+  const cats = new Set();
+  ALIADOS.forEach(a => (a.categoria || "").split(",").map(s => s.trim()).filter(Boolean).forEach(c => cats.add(c)));
+  GRUPOS = ["Todos", ...[...cats].sort()];
+}
 
 /* ---------- RENDER FILTROS ---------- */
 function renderFiltros() {
@@ -143,9 +92,10 @@ function renderFiltros() {
 /* ---------- RENDER GRID ---------- */
 function aliadosFiltrados() {
   const q = norm(query.trim());
-  return ALIADOS.map((a, i) => ({ ...a, _i: i })).filter(a => {
-    const okGrupo = filtroActivo === "Todos" || a.grupo === filtroActivo;
-    const okQ = !q || norm(a.nombre).includes(q) || norm(a.categoria).includes(q) || norm(a.grupo).includes(q);
+  return ALIADOS.filter(a => {
+    const cats = (a.categoria || "").split(",").map(s => s.trim());
+    const okGrupo = filtroActivo === "Todos" || cats.includes(filtroActivo);
+    const okQ = !q || norm(a.nombre).includes(q) || norm(a.categoria).includes(q);
     return okGrupo && okQ;
   });
 }
@@ -161,42 +111,51 @@ function renderGrid() {
   }
 
   cont.innerHTML = list.map(a => `
-    <article class="dir-card" data-aliado="${a._i}" tabindex="0">
+    <article class="dir-card" data-aliado="${a.id}" tabindex="0">
       <div class="dir-card__top">
-        <span class="dir-card__ic">${ic(a.icon)}</span>
+        ${a.imagen_url
+          ? `<img src="${a.imagen_url}" alt="" style="width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0">`
+          : `<span class="dir-card__ic">${ic(iconoCategoria(a.categoria))}</span>`}
         <div>
-          <div class="dir-card__cat">${a.categoria}</div>
+          <div class="dir-card__cat">${a.categoria || "Aliado del Club"}</div>
           <div class="dir-card__nombre">${a.nombre}</div>
         </div>
       </div>
       <div class="dir-card__pct-row">
-        <span class="dir-card__pct">${a.pct}</span>
+        <span class="dir-card__pct">${a.descuento || "Ver más"}</span>
         <span class="dir-card__pct-lbl">de descuento<br>para miembros</span>
       </div>
       <div class="dir-card__ver">
-        <button class="btn btn--ghost-verde" data-aliado-btn="${a._i}">Ver establecimiento &rarr;</button>
+        <button class="btn btn--ghost-verde" data-aliado-btn="${a.id}">Ver establecimiento &rarr;</button>
       </div>
     </article>`).join("");
   if (window.lucide) lucide.createIcons();
 }
 
 /* ============================================================
-   SHEET
+   SHEET (detalle del aliado + sus promociones reales)
    ============================================================ */
 const overlay = $("#sheet-overlay");
 const sheet = $("#sheet");
 const sheetInner = $("#sheet-inner");
 let aliadoActual = null;
 
-function openSheet(i) {
-  aliadoActual = ALIADOS[i];
-  sheetInner.innerHTML = sheetAliado(aliadoActual);
+async function openSheet(aliadoId) {
+  const a = ALIADOS.find(x => x.id === aliadoId);
+  if (!a) return;
+  aliadoActual = a;
+  sheetInner.innerHTML = `<p style="text-align:center;padding:60px 0;color:#999">Cargando promociones…</p>`;
   overlay.classList.add("is-open");
   sheet.classList.add("is-open");
   document.body.style.overflow = "hidden";
-  if (window.lucide) lucide.createIcons();
   $("#sheet-scroll").scrollTop = 0;
-  wireCalc(aliadoActual);
+  if (window.lucide) lucide.createIcons();
+
+  const { data } = await supabase.from("promociones").select("*").eq("aliado_id", a.id).eq("activa", true).order("created_at", { ascending: false });
+  a.promociones = data || [];
+  sheetInner.innerHTML = sheetAliado(a);
+  if (window.lucide) lucide.createIcons();
+  wireCalc(a);
 }
 function closeSheet() {
   overlay.classList.remove("is-open");
@@ -204,39 +163,72 @@ function closeSheet() {
   document.body.style.overflow = "";
 }
 
+/* ---------- Lectura de promociones (tipos heterogéneos) ---------- */
+const DIAS_TXT = { lunes: "lun", martes: "mar", miercoles: "mié", jueves: "jue", viernes: "vie", sabado: "sáb", domingo: "dom" };
+
+function pctDerivada(p) {
+  if (p.tipo !== "porcentaje" || !p.precio_normal || !p.ahorro_fijo) return null;
+  return Math.round((p.ahorro_fijo / p.precio_normal) * 100);
+}
+function badgePromo(p) {
+  const pct = pctDerivada(p);
+  if (p.tipo === "porcentaje") return pct != null ? `${pct}%` : "% dcto.";
+  if (p.tipo === "2x1") return "2×1";
+  if (p.tipo === "monto_fijo") return p.ahorro_fijo ? `-${fmtCOP(p.ahorro_fijo)}` : "Descuento";
+  if (p.tipo === "precio_especial") return p.precio_descuento != null ? fmtCOP(p.precio_descuento) : "Precio especial";
+  if (p.tipo === "regalo") return "🎁";
+  return "Promo";
+}
+function beneficioTexto(p) {
+  if (p.tipo === "porcentaje") { const pct = pctDerivada(p); return pct != null ? `Ahorras ${pct}% (${fmtCOP(p.ahorro_fijo)} sobre ${fmtCOP(p.precio_normal)})` : "Descuento porcentual — consulta el % con el establecimiento."; }
+  if (p.tipo === "2x1") return "Paga 1 y recibe 2.";
+  if (p.tipo === "monto_fijo") return p.ahorro_fijo ? `Ahorras ${fmtCOP(p.ahorro_fijo)} fijo.` : "Descuento de monto fijo.";
+  if (p.tipo === "precio_especial") return (p.precio_normal && p.precio_descuento) ? `Precio especial: ${fmtCOP(p.precio_descuento)} en vez de ${fmtCOP(p.precio_normal)}.` : "Precio especial para miembros.";
+  if (p.tipo === "regalo") return "Regalo o beneficio adicional para miembros.";
+  return "Beneficio especial para miembros del Club.";
+}
+function detallePromo(p) {
+  const partes = [];
+  if (p.dias_aplica && p.dias_aplica.length && p.dias_aplica.length < 7) partes.push(p.dias_aplica.map(d => DIAS_TXT[d] || d).join("/"));
+  if (p.hora_inicio && p.hora_fin) partes.push(`${p.hora_inicio.slice(0, 5)}–${p.hora_fin.slice(0, 5)}`);
+  if (p.monto_minimo) partes.push(`Compra mínima ${fmtCOP(p.monto_minimo)}`);
+  if (p.aplica_a === "producto_especifico" && p.producto_especifico) partes.push(`Solo en ${p.producto_especifico}`);
+  return partes.join(" · ");
+}
+
 function sheetAliado(a) {
+  const promos = a.promociones || [];
   return `
-    <div class="sheet__cat">${a.categoria}</div>
+    <div class="sheet__cat">${a.categoria || "Aliado del Club"}</div>
     <h2 class="sheet__nombre">${a.nombre}</h2>
-    <div class="foto-ph">
-      <span class="foto-ph__ic">${ic(a.icon)}</span>
-      <span class="foto-ph__txt">FOTO · ${a.foto}</span>
-    </div>
-    <p class="sheet__desc">${a.desc}</p>
+    ${a.imagen_url
+      ? `<img src="${a.imagen_url}" alt="${a.nombre}" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin:28px 0">`
+      : `<div class="foto-ph"><span class="foto-ph__ic">${ic(iconoCategoria(a.categoria))}</span><span class="foto-ph__txt">${a.nombre}</span></div>`}
+    <p class="sheet__desc">${a.descripcion || "Aliado de El Club de la Gente."}</p>
 
     ${(a.direccion || a.maps_url) ? `
     <div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px;flex-wrap:wrap;">
-      ${a.direccion ? `<span style="font-size:13px;color:#666;display:flex;align-items:center;gap:5px;"><i data-lucide="map-pin" style="width:14px;height:14px;flex-shrink:0;"></i>${a.direccion}</span>` : ''}
-      ${a.maps_url ? `<a href="${a.maps_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#e8f5ee;color:#1a7a3c;border-radius:99px;font-size:12px;font-weight:600;text-decoration:none;"><i data-lucide="navigation" style="width:13px;height:13px;"></i>Ver en mapa</a>` : ''}
+      ${a.direccion ? `<span style="font-size:13px;color:#666;display:flex;align-items:center;gap:5px;">${ic("map-pin")}${a.direccion}</span>` : ''}
+      ${a.maps_url ? `<a href="${a.maps_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#e8f5ee;color:#1a7a3c;border-radius:99px;font-size:12px;font-weight:600;text-decoration:none;">${ic("navigation")}Ver en mapa</a>` : ''}
     </div>` : ''}
 
-    <div class="sheet__sub">Descuentos disponibles</div>
-    ${a.descuentos.map((d, di) => `
+    <div class="sheet__sub">Promociones disponibles</div>
+    ${promos.length ? promos.map((p) => `
       <div class="descuento">
-        <div class="descuento__pct">${d.pct}</div>
+        <div class="descuento__pct">${badgePromo(p)}</div>
         <div class="descuento__body">
-          <h4>${d.nombre}</h4>
-          <p>${d.desc}</p>
+          <h4>${p.descripcion}</h4>
+          <p>${beneficioTexto(p)}${detallePromo(p) ? " · " + detallePromo(p) : ""}</p>
         </div>
-        <button class="btn btn--ghost-verde" data-aplicar="${di}">Aplicar</button>
-      </div>`).join("")}
+      </div>`).join("") : `<p style="font-size:13px;color:#888;padding:8px 0">Este aliado todavía no tiene promociones cargadas. Consulta directamente en el establecimiento.</p>`}
 
-    <div class="sheet__sub" style="margin-top:34px">Calculadora de ahorro</div>
+    ${promos.length ? `
+    <div class="sheet__sub" style="margin-top:34px">Aplicar promoción</div>
     <div class="calc">
       <span class="calc__lbl">Tu beneficio en vivo</span>
       <div class="calc__title">¿Cuánto ahorras hoy?</div>
       <div class="calc__grid">
-        <div class="calc__field">
+        <div class="calc__field" id="calc-monto-wrap">
           <label>Valor de tu compra</label>
           <div class="calc__input-wrap">
             <span class="peso">$</span>
@@ -244,13 +236,14 @@ function sheetAliado(a) {
           </div>
         </div>
         <div class="calc__field">
-          <label>Descuento a aplicar</label>
+          <label>Promoción a aplicar</label>
           <select id="calc-desc">
-            ${a.descuentos.map((d, di) => `<option value="${di}">${d.pct} · ${d.nombre}</option>`).join("")}
+            ${promos.map((p, pi) => `<option value="${pi}">${badgePromo(p)} · ${p.descripcion}</option>`).join("")}
           </select>
         </div>
       </div>
-      <div class="calc__result">
+      <p id="calc-fijo" style="display:none;font-size:13px;color:#555;background:#f5f4f0;border-radius:8px;padding:12px 14px;margin:4px 0 0"></p>
+      <div class="calc__result" id="calc-result">
         <div class="calc__cel">
           <small>Pagas</small>
           <div class="calc__cel-num" id="calc-pagas">$0</div>
@@ -263,7 +256,7 @@ function sheetAliado(a) {
       ${LIMITE_ALCANZADO
         ? `<div style="margin-top:16px;padding:16px;background:#fef3c7;border-radius:12px;text-align:center">
             <div style="font-weight:700;color:#b45309;font-size:14px;margin-bottom:4px">⚠ Límite mensual alcanzado</div>
-            <p style="font-size:12px;color:#92400e;line-height:1.4">Este miembro usó sus 2 descuentos del mes. El descuento no aplica hasta el próximo mes.</p>
+            <p style="font-size:12px;color:#92400e;line-height:1.4">Este miembro ya usó los descuentos disponibles de su plan este mes.</p>
            </div>`
         : `<button class="btn btn--primario btn--bloque" id="calc-aplicar" style="margin-top:16px">Aplicar descuento &rarr;</button>`
       }
@@ -272,72 +265,90 @@ function sheetAliado(a) {
         <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;margin:10px 0 6px">¡Descuento aplicado!</div>
         <p style="font-size:13px;color:#666;line-height:1.5">Gracias por tu compra en el Club.<br>Tu ahorro ya quedó registrado.</p>
       </div>
-      <p class="calc__nota" id="calc-nota">Ingresa el valor de la compra y toca el botón para aplicar el descuento y notificar al miembro.</p>
-    </div>
+      <p class="calc__nota" id="calc-nota"></p>
+    </div>` : ""}
   `;
 }
 
-/* ---------- CALCULADORA ---------- */
+/* ---------- CALCULADORA (se adapta al tipo de promoción elegida) ---------- */
 function wireCalc(a) {
+  const promos = a.promociones || [];
+  if (!promos.length) return;
+
+  const montoWrap = $("#calc-monto-wrap");
+  const resultWrap = $("#calc-result");
+  const fijoEl = $("#calc-fijo");
   const inMonto = $("#calc-monto");
   const selDesc = $("#calc-desc");
   const elPagas = $("#calc-pagas");
   const elAhorro = $("#calc-ahorro");
+  const notaEl = $("#calc-nota");
   let monto = 0;
 
+  function esPorcentajeUsable(p) { return p.tipo === "porcentaje" && pctDerivada(p) != null; }
+
+  function actualizarModo() {
+    const p = promos[+selDesc.value];
+    const usaPorcentaje = esPorcentajeUsable(p);
+    montoWrap.style.display = usaPorcentaje ? "" : "none";
+    resultWrap.style.display = usaPorcentaje ? "" : "none";
+    fijoEl.style.display = usaPorcentaje ? "none" : "block";
+    if (!usaPorcentaje) fijoEl.textContent = beneficioTexto(p);
+    notaEl.textContent = usaPorcentaje
+      ? "Ingresa el valor de la compra y toca el botón para aplicar el descuento y notificar al miembro."
+      : "Toca el botón para aplicar este beneficio y notificar al miembro.";
+    recalc();
+  }
+
   function recalc() {
-    const d = a.descuentos[+selDesc.value];
-    const frac = pctFrac(d.pct);
-    const ahorro = monto * frac;
+    const p = promos[+selDesc.value];
+    if (!esPorcentajeUsable(p)) return;
+    const pct = pctDerivada(p) / 100;
+    const ahorro = monto * pct;
     elAhorro.textContent = fmtCOP(ahorro);
     elPagas.textContent = fmtCOP(monto - ahorro);
   }
-  inMonto.addEventListener("input", () => {
+  inMonto?.addEventListener("input", () => {
     const raw = inMonto.value.replace(/\D/g, "");
     monto = parseInt(raw, 10) || 0;
     inMonto.value = monto ? nf.format(monto) : "";
     recalc();
   });
-  selDesc.addEventListener("change", recalc);
+  selDesc.addEventListener("change", actualizarModo);
 
   const btnAplicar = $("#calc-aplicar");
   const exitoEl = $("#calc-exito");
-  const notaEl = $("#calc-nota");
 
-  btnAplicar.addEventListener("click", async () => {
-    if (!monto) { toast("Ingresa el valor de la compra primero", false); inMonto.focus(); return; }
-    const d = a.descuentos[+selDesc.value];
-    const ahorro = Math.round(monto * pctFrac(d.pct));
+  btnAplicar?.addEventListener("click", async () => {
+    const p = promos[+selDesc.value];
+    const usaPorcentaje = esPorcentajeUsable(p);
+    if (usaPorcentaje && !monto) { toast("Ingresa el valor de la compra primero", false); inMonto.focus(); return; }
+    const ahorro = usaPorcentaje ? Math.round(monto * (pctDerivada(p) / 100)) : (p.ahorro_fijo || 0);
 
     btnAplicar.disabled = true;
     btnAplicar.textContent = "Aplicando...";
 
-    // 1. Guardar en Supabase
     if (MIEMBRO_ID) {
       await registrarDescuento({
-        aliado_nombre: a.nombre, categoria: a.categoria,
-        descuento_pct: d.pct, compra: monto, ahorro
+        aliado_id: a.id, aliado_nombre: a.nombre, categoria: a.categoria,
+        descuento_pct: badgePromo(p), compra: usaPorcentaje ? monto : null, ahorro,
       });
     }
 
-    // 2. WhatsApp automático al miembro vía Edge Function
     if (MIEMBRO_WA) {
-      const msg = `¡Hola! 🎉 Tu descuento del ${d.pct} en ${a.nombre} ya quedó registrado.\n\nAhorraste ${fmtCOP(ahorro)} en una compra de ${fmtCOP(monto)}. 💳\n\n🌿 Con esta compra contribuyes al impacto social del Club en Fusagasugá.\n\n¿Cómo fue tu experiencia? Cuéntanos, tu opinión nos ayuda a mejorar el Club.\n\nEl Club de la Gente`;
-      fetch(`${SB_URL}/functions/v1/whatsapp-send`, {
-        method: "POST",
-        headers: { "Authorization": "Bearer " + SB_KEY, "Content-Type": "application/json" },
-        body: JSON.stringify({ to: MIEMBRO_WA, body: msg })
-      }).catch(() => {});
+      const msg = usaPorcentaje
+        ? `¡Hola! 🎉 Tu descuento en ${a.nombre} ya quedó registrado.\n\nAhorraste ${fmtCOP(ahorro)} en una compra de ${fmtCOP(monto)}. 💳\n\n🌿 Con esta compra contribuyes al impacto social del Club en Fusagasugá.\n\nEl Club de la Gente`
+        : `¡Hola! 🎉 Tu beneficio en ${a.nombre} ya quedó registrado: ${p.descripcion}.\n\n🌿 Con esta compra contribuyes al impacto social del Club en Fusagasugá.\n\nEl Club de la Gente`;
+      supabase.functions.invoke("whatsapp-send", { body: { to: MIEMBRO_WA, body: msg } }).catch(() => {});
     }
 
-    // 3. Mostrar éxito
     btnAplicar.style.display = "none";
     if (notaEl) notaEl.style.display = "none";
     exitoEl.style.display = "block";
     if (window.lucide) lucide.createIcons();
   });
 
-  recalc();
+  actualizarModo();
 }
 
 /* ---------- TOAST ---------- */
@@ -351,21 +362,19 @@ function toast(msg, check = true) {
   toastT = setTimeout(() => t.classList.remove("is-show"), 3400);
 }
 
-/* ---------- CARRUSEL DESTACADOS ---------- */
+/* ---------- CARRUSEL DESTACADOS (respeta el filtro de plan) ---------- */
 async function cargarDestacados() {
-  const res = await fetch(`${SB_URL}/rest/v1/aliados?destacado=eq.true&activo=eq.true&select=id,nombre,categoria,descuento,imagen_url&order=nombre`, {
-    headers: { "apikey": SB_KEY, "Authorization": "Bearer " + SB_KEY }
-  });
-  const data = await res.json();
-  if (!data || !data.length) return;
-  const wrap  = document.getElementById("dest-wrap");
+  const { data } = await supabase.from("aliados").select("id,nombre,categoria,descuento,imagen_url,planes_visibles").eq("destacado", true).eq("activo", true).order("nombre");
+  const items = (data || []).filter(a => (a.planes_visibles && a.planes_visibles.length ? a.planes_visibles : ["basica", "premium"]).includes(PLAN_ACTUAL));
+  if (!items.length) return;
+  const wrap = document.getElementById("dest-wrap");
   const track = document.getElementById("dest-track");
   if (!wrap || !track) return;
-  const items = [...data, ...data];
-  track.innerHTML = items.map(a => `
+  const dupl = [...items, ...items];
+  track.innerHTML = dupl.map(a => `
     <div class="dest-card" data-aliado-btn="${a.id}">
       <div class="dest-card__img">
-        ${a.imagen_url ? `<img src="${a.imagen_url}" alt="${a.nombre}">` : `<span class="dest-card__av">${(a.nombre||'?')[0]}</span>`}
+        ${a.imagen_url ? `<img src="${a.imagen_url}" alt="${a.nombre}">` : `<span class="dest-card__av">${(a.nombre || '?')[0]}</span>`}
       </div>
       <div class="dest-card__body">
         ${a.categoria ? `<span class="dest-card__cat">${a.categoria}</span>` : ''}
@@ -377,7 +386,12 @@ async function cargarDestacados() {
 }
 
 /* ---------- INIT ---------- */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  PLAN_ACTUAL = await resolverPlanVisitante();
+  const limite = LIMITE_DESCUENTOS[PLAN_ACTUAL] ?? 1;
+  LIMITE_ALCANZADO = !!(MIEMBRO_ID && limite !== Infinity && MIEMBRO_USOS >= limite);
+
+  await cargarAliados();
   cargarDestacados();
   renderFiltros();
   renderGrid();
@@ -395,20 +409,10 @@ document.addEventListener("DOMContentLoaded", () => {
     renderGrid();
   });
 
-  // Clicks globales (abrir sheet, aplicar, cerrar)
+  // Clicks globales (abrir sheet, cerrar)
   document.addEventListener("click", (e) => {
     const card = e.target.closest("[data-aliado-btn], [data-aliado]");
-    if (card) { openSheet(+(card.dataset.aliadoBtn ?? card.dataset.aliado)); return; }
-
-    const ap = e.target.closest("[data-aplicar]");
-    if (ap && !ap.classList.contains("is-aplicado")) {
-      ap.classList.add("is-aplicado");
-      ap.innerHTML = `${ic("check")} Aplicado`;
-      if (window.lucide) lucide.createIcons();
-      toast("Descuento aplicado · muéstralo en el establecimiento");
-      return;
-    }
-
+    if (card) { openSheet(card.dataset.aliadoBtn ?? card.dataset.aliado); return; }
     if (e.target.closest("#sheet-close") || e.target === overlay) closeSheet();
   });
 
@@ -416,7 +420,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Escape") closeSheet();
     if (e.key === "Enter") {
       const card = e.target.closest(".dir-card[data-aliado]");
-      if (card) openSheet(+card.dataset.aliado);
+      if (card) openSheet(card.dataset.aliado);
     }
   });
 });

@@ -8,10 +8,12 @@ const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 
 
 const PLANES = {
+  gratis:    { tag: "Plan gratis",           nombre: "Gratis",    precio: 0,     precioTxt: "$0",      antes: "",        ahorra: "" },
   basica:    { tag: "Plan básica",           nombre: "Básica",    precio: 10000, precioTxt: "$10.000", antes: "$30.000", ahorra: "33%" },
   premium:   { tag: "Plan premium",          nombre: "Premium",   precio: 20000, precioTxt: "$20.000", antes: "$50.000", ahorra: "40%" },
   vitalicia: { tag: "Membresía vitalicia",   nombre: "Vitalicia", precio: 0,     precioTxt: "$0",      antes: "",        ahorra: "100%" },
 };
+const PLANES_SIN_PAGO = ["gratis", "vitalicia"]; // se activan solos, no pasan por Wompi
 const fmt = new Intl.NumberFormat("es-CO");
 
 let estado = {
@@ -93,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
   pintarSeleccion();
   mostrar("view-plan", 2);
 
-  // Elegir plan: básica/premium van directo a Wompi, vitalicia se activa sola
+  // Elegir plan: básica/premium van directo a Wompi, gratis/vitalicia se activan solos
   $$(".plan-pick").forEach(card => {
     if (!card.dataset.plan) return;
     card.addEventListener("click", () => {
@@ -102,8 +104,8 @@ document.addEventListener("DOMContentLoaded", () => {
       pintarSeleccion();
       localStorage.setItem("ecdlg_plan", plan);
 
-      if (plan === "vitalicia") {
-        location.href = "Perfil.html?activar=vitalicia";
+      if (PLANES_SIN_PAGO.includes(plan)) {
+        location.href = "Perfil.html?activar=" + plan;
         return;
       }
       abrirWompi(plan, card);

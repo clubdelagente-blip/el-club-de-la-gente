@@ -181,9 +181,13 @@
       });
     }
 
-    function renderOk(p, usos, esPremium, aliadoInfo, listaAliados) {
+    const PLAN_NOMBRE = { gratis: "Gratis", basica: "Básica", premium: "Premium", vitalicia: "Vitalicia" };
+    const LIMITE_DESCUENTOS = { gratis: 1, basica: 2, premium: Infinity, vitalicia: Infinity };
+
+    function renderOk(p, usos, limite, aliadoInfo, listaAliados) {
       const rolLabel = { miembro: "Miembro", aliado: "Aliado comercial", profesional: "Profesional" }[p.rol] || "Miembro";
-      const planLabel = esPremium ? "Premium · Ilimitado" : `Básica · ${usos}/2 usos este mes`;
+      const planNombre = PLAN_NOMBRE[p.plan] || "Básica";
+      const planLabel = limite === Infinity ? `${planNombre} · Ilimitado` : `${planNombre} · ${usos}/${limite} usos este mes`;
       const dirUrl = `Directorio.html?miembro=${id}&wa=${encodeURIComponent(p.whatsapp||"")}&plan=${p.plan||"basica"}&usos=${usos}`;
       card.innerHTML = `
         <div class="estado-ic estado-ic--ok">✓</div>
@@ -202,22 +206,23 @@
       bindSelectorAliado(() => cargarYRenderizar());
     }
 
-    function renderLimite(p, aliadoInfo, listaAliados) {
+    function renderLimite(p, limite, aliadoInfo, listaAliados) {
+      const planNombre = PLAN_NOMBRE[p.plan] || "Básica";
       const wa = (p.whatsapp||"").replace(/\D/g,"");
       const numero = wa.startsWith("57") ? wa : "57"+wa;
-      const msg = `¡Hola ${p.nombre}! 👋 Llegaste al límite de 2 descuentos del mes con tu membresía Básica.\n\n¿Quieres descuentos ilimitados? Actualiza a Premium por solo $20.000/mes y aprovecha el Club sin restricciones.\n\nEl Club de la Gente`;
+      const msg = `¡Hola ${p.nombre}! 👋 Llegaste al límite de ${limite} descuento${limite!==1?"s":""} del mes con tu membresía ${planNombre}.\n\n¿Quieres descuentos ilimitados? Actualiza a Premium por solo $20.000/mes y aprovecha el Club sin restricciones.\n\nEl Club de la Gente`;
       const waUrl = `https://wa.me/${numero}?text=${encodeURIComponent(msg)}`;
       card.innerHTML = `
         <div class="estado-ic estado-ic--lim">⚠</div>
         <div class="estado-lbl estado-lbl--lim">Límite mensual alcanzado</div>
         <div class="miembro-nombre">${p.nombre}</div>
-        <div class="miembro-tipo">Membresía Básica · El Club de la Gente</div>
+        <div class="miembro-tipo">Membresía ${planNombre} · El Club de la Gente</div>
         <hr class="divider">
-        <div class="detalle"><span class="detalle__lbl">Estado</span><span class="badge badge--lim"><span class="dot"></span> Límite 2/2</span></div>
-        <div class="detalle"><span class="detalle__lbl">Descuentos usados</span><span class="detalle__val">2 de 2 este mes</span></div>
+        <div class="detalle"><span class="detalle__lbl">Estado</span><span class="badge badge--lim"><span class="dot"></span> Límite ${limite}/${limite}</span></div>
+        <div class="detalle"><span class="detalle__lbl">Descuentos usados</span><span class="detalle__val">${limite} de ${limite} este mes</span></div>
         ${discountRow(aliadoInfo)}
         <hr class="divider">
-        <p style="font-size:13px;color:#888;margin-bottom:12px;line-height:1.5">Este miembro usó sus 2 descuentos del mes. No aplica más descuentos hasta el próximo mes.</p>
+        <p style="font-size:13px;color:#888;margin-bottom:12px;line-height:1.5">Este miembro usó su${limite!==1?"s":""} ${limite} descuento${limite!==1?"s":""} del mes. No aplica más descuentos hasta el próximo mes.</p>
         <a href="Planes.html" style="${btnStyle("#1a7a3c")}">Actualizar a Premium &rarr;</a>
         ${wa ? `<a href="${waUrl}" style="${btnStyle("#fef3c7","#b45309")}">Notificar al miembro por WhatsApp</a>` : ""}
         ${!aliadoInfo ? selectorAliadoHtml(listaAliados) : ""}
@@ -268,10 +273,10 @@
           return;
         }
 
-        const esPremium = data.plan === "premium" || data.plan === "vitalicia";
+        const limite = LIMITE_DESCUENTOS[data.plan] ?? 2;
         let usos = 0;
 
-        if (!esPremium) {
+        if (limite !== Infinity) {
           const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
           let query = supabaseClient
             .from("descuentos")
@@ -284,10 +289,10 @@
           usos = count || 0;
         }
 
-        if (!esPremium && usos >= 2) {
-          renderLimite(data, aliadoInfo, listaAliados);
+        if (limite !== Infinity && usos >= limite) {
+          renderLimite(data, limite, aliadoInfo, listaAliados);
         } else {
-          renderOk(data, usos, esPremium, aliadoInfo, listaAliados);
+          renderOk(data, usos, limite, aliadoInfo, listaAliados);
         }
       } catch (_) {
         renderNo("No se pudo verificar por un problema de conexión. Intenta de nuevo.");

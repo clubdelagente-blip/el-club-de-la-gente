@@ -65,7 +65,8 @@ function iniciales(nombre) {
   return nombre.split(" ").filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
 }
 
-const PLAN_LABEL = { sin_plan: "Sin activar", basica: "Básica", premium: "Premium", vitalicia: "Vitalicia" };
+const PLAN_LABEL = { sin_plan: "Sin activar", gratis: "Gratis", basica: "Básica", premium: "Premium", vitalicia: "Vitalicia" };
+const LIMITE_DESCUENTOS = { gratis: 1, basica: 2, premium: Infinity, vitalicia: Infinity };
 
 /* ---------- RENDER ---------- */
 function render() {
@@ -210,18 +211,19 @@ async function cargarDescuentos(userId) {
     .select("aliado_nombre, categoria, descuento_pct, compra, ahorro, created_at")
     .eq("miembro_id", userId)
     .order("created_at", { ascending: false });
-  // Mostrar usos restantes si es plan básica
+  // Mostrar usos restantes según el límite de cada plan (premium/vitalicia = ilimitado)
   const u = leerPerfil();
-  if (u.plan !== "premium") {
+  const limite = LIMITE_DESCUENTOS[u.plan] ?? 2;
+  if (limite !== Infinity) {
     const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
     const usosMes = (data || []).filter(d => new Date(d.created_at) >= inicioMes).length;
-    const restantes = Math.max(0, 2 - usosMes);
+    const restantes = Math.max(0, limite - usosMes);
     const banner = document.getElementById("banner-usos");
     if (banner) {
       banner.style.display = "flex";
       banner.innerHTML = restantes > 0
         ? `<span>${ic("ticket-percent")} Te quedan <b>${restantes} descuento${restantes !== 1 ? "s" : ""}</b> este mes · <a href="Planes.html" style="color:#1a7a3c;font-weight:700">Actualizar a Premium</a></span>`
-        : `<span style="color:#b45309">${ic("alert-triangle")} Llegaste al límite de 2 descuentos este mes · <a href="Planes.html" style="color:#b45309;font-weight:700">Actualizar a Premium</a></span>`;
+        : `<span style="color:#b45309">${ic("alert-triangle")} Llegaste al límite de ${limite} descuento${limite !== 1 ? "s" : ""} este mes · <a href="Planes.html" style="color:#b45309;font-weight:700">Actualizar a Premium</a></span>`;
       banner.style.background = restantes > 0 ? "#e8f5ee" : "#fef3c7";
       banner.style.color = restantes > 0 ? "#1a7a3c" : "#b45309";
       if (window.lucide) lucide.createIcons();
@@ -524,7 +526,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Si viene de un pago aprobado, activar el plan en Supabase
     const planActivar = new URLSearchParams(location.search).get("activar");
-    if (planActivar && ["basica", "premium", "vitalicia"].includes(planActivar)) {
+    if (planActivar && ["gratis", "basica", "premium", "vitalicia"].includes(planActivar)) {
       const { error: rpcErr } = await supabase.rpc("activar_plan", { nuevo_plan: planActivar });
       if (rpcErr) console.error("activar_plan error:", rpcErr);
       history.replaceState({}, "", location.pathname);
@@ -568,6 +570,15 @@ document.addEventListener("DOMContentLoaded", () => {
     cargarReferidos(userId);
     cargarMarcasCarrusel();
   });
+
+  // Respaldo del QR: getSession() puede correr en carrera con la sesión
+  // todavía restaurándose (típico justo después de entrar por el link
+  // mágico del OTP). onAuthStateChange se dispara de forma confiable en
+  // cuanto la sesión real está lista, así que regeneramos el QR ahí también.
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session?.user?.id) generarQR(session.user.id);
+  });
+
   if (window.lucide) lucide.createIcons();
 
   // Sidebar nav
