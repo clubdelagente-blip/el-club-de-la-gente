@@ -122,6 +122,7 @@
         <div class="ad-nav__lbl">Gestión</div>
         <button class="ad-link" data-panel="miembros"><i data-lucide="users"></i> Miembros</button>
         <button class="ad-link" data-panel="aliados"><i data-lucide="store"></i> Aliados</button>
+        <button class="ad-link" data-panel="planes"><i data-lucide="dollar-sign"></i> Planes</button>
         <button class="ad-link" data-panel="profesionales"><i data-lucide="briefcase"></i> Profesionales</button>
         <button class="ad-link" data-panel="marcas"><i data-lucide="shopping-bag"></i> Marcas Amazon</button>
         <button class="ad-link" data-panel="tienda"><i data-lucide="package"></i> Tienda</button>
@@ -168,6 +169,7 @@
         <section class="ad-panel" id="p-dashboard" data-screen-label="Admin · Dashboard"></section>
         <section class="ad-panel" id="p-miembros" data-screen-label="Admin · Miembros"></section>
         <section class="ad-panel" id="p-aliados" data-screen-label="Admin · Aliados"></section>
+        <section class="ad-panel" id="p-planes" data-screen-label="Admin · Planes"></section>
         <section class="ad-panel" id="p-profesionales" data-screen-label="Admin · Profesionales"></section>
         <section class="ad-panel" id="p-marcas" data-screen-label="Admin · Marcas Amazon"></section>
         <section class="ad-panel" id="p-tienda" data-screen-label="Admin · Tienda"></section>
@@ -439,6 +441,87 @@ function bindFormPromocionInline(aliadoId,editId){
       if(error){toast('Error: '+error.message);btn.disabled=false;btn.innerHTML=`${ic("check")} ${id?'Guardar cambios':'Guardar promoción'}`;if(window.lucide)lucide.createIcons();return;}
       const w=$("#fa-promo-form-wrap");if(w){w.style.display='none';w.innerHTML='';}
       cargarPromosInModal(aliadoId);toast(id?'Promoción actualizada ✓':'Promoción guardada ✓');
+    });
+    if(window.lucide)lucide.createIcons();
+  },80);
+}
+
+/* ============================================================
+   PLANES (precios y beneficios del landing/checkout)
+   ============================================================ */
+let _planes=[];
+window.renderPlanes=async function(){
+  $("#p-planes").innerHTML=`<div class="ad-table-wrap"><table class="ad-table">
+    <thead><tr><th>Plan</th><th>Precio</th><th>Recomendado</th><th style="text-align:right">Acción</th></tr></thead>
+    <tbody id="pl-body"><tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+  </table></div>`;
+  const{data}=await supabase.from('planes').select('*').order('orden');
+  _planes=data||[];
+  $("#pl-body").innerHTML=_planes.length?_planes.map(p=>`<tr>
+    <td><div class="ad-cell-user__name">${p.tag}</div></td>
+    <td><span class="ad-num-strong verde">${p.precio_texto}${p.precio_sufijo||''}</span></td>
+    <td>${p.recomendado?`<span class="ad-pill activo"><span class="d"></span>Sí</span>`:'—'}</td>
+    <td style="text-align:right"><button class="ad-btn" data-ed-plan="${p.slug}">${ic("pencil")} Editar</button></td>
+  </tr>`).join(''):`<tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">No se encontraron planes. Corre la migración SQL primero.</td></tr>`;
+  if(window.lucide)lucide.createIcons();
+};
+function htmlFormPlan(p){
+  return `
+  <div class="ad-field-2">
+    <div class="ad-field"><label>Etiqueta (arriba de la tarjeta)</label><input id="pl-tag" type="text" value="${(p.tag||'').replace(/"/g,'&quot;')}" placeholder="Ej: Plan premium"></div>
+    <div class="ad-field"><label>Nombre corto</label><input id="pl-nombre" type="text" value="${(p.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Premium"></div>
+  </div>
+  <div class="ad-field-2">
+    <div class="ad-field"><label>Precio real (para cobrar) *</label><input id="pl-precio" type="number" min="0" step="1000" value="${p.precio??0}"></div>
+    <div class="ad-field"><label>Precio en texto grande</label><input id="pl-precio-texto" type="text" value="${(p.precio_texto||'').replace(/"/g,'&quot;')}" placeholder="Ej: $20k"></div>
+  </div>
+  <div class="ad-field-2">
+    <div class="ad-field"><label>Sufijo del precio</label><input id="pl-sufijo" type="text" value="${(p.precio_sufijo||'/mes').replace(/"/g,'&quot;')}" placeholder="/mes"></div>
+    <div class="ad-field"><label>Botón de acción</label><input id="pl-cta" type="text" value="${(p.cta_texto||'').replace(/"/g,'&quot;')}" placeholder="Ej: Elegir premium"></div>
+  </div>
+  <div class="ad-field-2">
+    <div class="ad-field"><label>Precio "antes" <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pl-antes" type="text" value="${(p.antes_texto||'').replace(/"/g,'&quot;')}" placeholder="Antes $50.000"></div>
+    <div class="ad-field"><label>Texto de ahorro <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pl-ahorra" type="text" value="${(p.ahorra_texto||'').replace(/"/g,'&quot;')}" placeholder="Ahorra 40%"></div>
+  </div>
+  <div class="ad-field"><label>Subtítulo (bajo el precio)</label><input id="pl-ciclo" type="text" value="${(p.ciclo_texto||'').replace(/"/g,'&quot;')}" placeholder="Sin cláusulas · cancela cuando quieras"></div>
+  <div class="ad-field"><label>Beneficios <span style="font-weight:400;color:rgba(26,26,24,.4)">(uno por línea)</span></label>
+    <textarea id="pl-beneficios" rows="5">${(p.beneficios||[]).join('\n')}</textarea></div>
+  <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:4px 0 14px;cursor:pointer">
+    <input id="pl-recomendado" type="checkbox" ${p.recomendado?'checked':''}> Mostrar badge "Recomendado"
+  </label>
+  ${p.slug==='vitalicia'?`
+  <div class="ad-field"><label>Cintillo superior <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pl-ribbon" type="text" value="${(p.ribbon_texto||'').replace(/"/g,'&quot;')}" placeholder="PARA SIEMPRE · GRATIS"></div>
+  <div class="ad-field"><label>Aviso de urgencia <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pl-urgencia" type="text" value="${(p.urgencia_texto||'').replace(/"/g,'&quot;')}" placeholder="⏰ Últimos 50 cupos..."></div>
+  `:''}
+  <div class="ad-toolbar" style="margin:16px 0 0"><div class="ad-spacer"></div>
+    <button class="ad-btn" id="pl-cancel">Cancelar</button>
+    <button class="ad-btn ad-btn--verde" id="pl-save" data-slug="${p.slug}">${ic("check")} Guardar cambios</button>
+  </div>`;
+}
+function bindFormPlan(){
+  setTimeout(()=>{
+    $("#pl-cancel")?.addEventListener('click',()=>window.cerrarModal?.());
+    const btn=$("#pl-save");
+    btn?.addEventListener('click',async()=>{
+      const precio=parseFloat($("#pl-precio")?.value);
+      if(!$("#pl-tag")?.value.trim()||!$("#pl-precio-texto")?.value.trim()){toast('Completa la etiqueta y el precio en texto');return;}
+      if(isNaN(precio)||precio<0){toast('El precio real debe ser un número válido');return;}
+      btn.disabled=true;btn.innerHTML=`${ic("loader")} Guardando…`;if(window.lucide)lucide.createIcons();
+      const beneficios=($("#pl-beneficios")?.value||'').split('\n').map(s=>s.trim()).filter(Boolean);
+      const payload={
+        tag:$("#pl-tag").value.trim(), nombre:$("#pl-nombre")?.value.trim()||null,
+        precio, precio_texto:$("#pl-precio-texto").value.trim(),
+        precio_sufijo:$("#pl-sufijo")?.value.trim()||'/mes',
+        cta_texto:$("#pl-cta")?.value.trim()||'Elegir',
+        antes_texto:$("#pl-antes")?.value.trim()||null, ahorra_texto:$("#pl-ahorra")?.value.trim()||null,
+        ciclo_texto:$("#pl-ciclo")?.value.trim()||null, beneficios,
+        recomendado:$("#pl-recomendado")?.checked||false,
+        ribbon_texto:$("#pl-ribbon")?.value.trim()||null, urgencia_texto:$("#pl-urgencia")?.value.trim()||null,
+        updated_at:new Date().toISOString(),
+      };
+      const{error}=await supabase.from('planes').update(payload).eq('slug',btn.dataset.slug);
+      if(error){toast('Error: '+error.message);btn.disabled=false;btn.innerHTML=`${ic("check")} Guardar cambios`;if(window.lucide)lucide.createIcons();return;}
+      window.cerrarModal?.();window.renderPlanes();toast('Plan actualizado ✓');
     });
     if(window.lucide)lucide.createIcons();
   },80);
@@ -1027,6 +1110,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const edAl=e.target.closest('[data-ed-aliado]');if(edAl){const a=_aliados.find(x=>x.id===edAl.dataset.edAliado);if(a){abrirModal('Editar aliado',a.nombre,htmlFormAliado(a));bindFormAliado();}return;}
     const togAl=e.target.closest('[data-tog-aliado]');if(togAl){const activo=togAl.dataset.activo==='true';await supabase.from('aliados').update({activo:!activo}).eq('id',togAl.dataset.togAliado);cargarAliados();return;}
     const rmAl=e.target.closest('[data-rm-aliado]');if(rmAl&&confirm('¿Eliminar este aliado?')){await supabase.from('aliados').delete().eq('id',rmAl.dataset.rmAliado);cargarAliados();toast('Aliado eliminado');return;}
+    const edPlan=e.target.closest('[data-ed-plan]');if(edPlan){const p=_planes.find(x=>x.slug===edPlan.dataset.edPlan);if(p){abrirModal('Editar plan',p.tag,htmlFormPlan(p));bindFormPlan();}return;}
   });
 });
   </script>

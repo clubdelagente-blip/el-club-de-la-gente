@@ -83,7 +83,7 @@
 .plan-pick--premium .plan-pick__antes { color: rgba(248,246,241,.42); }
 .plan-pick__ahorra { font-size: 11.5px; font-weight: 700; color: var(--verde); background: var(--verde-soft); padding: 5px 12px; border-radius: 100px; }
 .plan-pick--premium .plan-pick__ahorra { color: var(--verde-claro); background: rgba(111,220,140,.14); }
-.plan-pick__precio { font-family: var(--display); font-size: 72px; font-weight: 600; line-height: .9; position: relative; z-index: 2; }
+.plan-pick__precio { font-family: var(--display); font-size: clamp(40px, 7vw, 72px); font-weight: 600; line-height: .9; position: relative; z-index: 2; white-space: nowrap; }
 .plan-pick__precio small { font-size: 17px; font-family: var(--cuerpo); font-weight: 500; color: var(--tinta-60); }
 .plan-pick--premium .plan-pick__precio small { color: rgba(248,246,241,.55); }
 .plan-pick__ciclo { font-size: 13px; color: var(--tinta-60); margin: 10px 0 26px; position: relative; z-index: 2; }

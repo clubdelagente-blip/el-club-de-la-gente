@@ -55,6 +55,42 @@ async function cargarAliadosPub() {
   if (window.lucide) lucide.createIcons();
 }
 
+/* ---------- Planes (precios y beneficios editables desde Admin) ---------- */
+function tarjetaPlanHtml(p, i) {
+  const esVitalicia = p.slug === "vitalicia";
+  const esPremium = p.slug === "premium";
+  const claseSlug = esPremium ? "plan--premium" : esVitalicia ? "plan--vitalicia" : p.slug === "gratis" ? "plan--gratis" : "plan--basica";
+  const colorVital = esVitalicia ? ' style="color:#1a7a3c"' : "";
+  const dotVital = esVitalicia ? ' style="background:#1a7a3c"' : "";
+  const btnClase = esPremium ? "btn--primario" : "btn--secundario";
+
+  return `
+    <article class="plan ${claseSlug} fade-up" style="--delay:${i * 60}ms">
+      ${p.recomendado ? `<span class="plan__badge-rec" id="badge-rec">Recomendado</span>` : ""}
+      <span class="plan__tag"${colorVital}>${p.tag}</span>
+      ${p.ribbon_texto ? `<span style="display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:#1a7a3c;color:#fff;padding:7px 14px;border-radius:100px;margin-top:12px;">${p.ribbon_texto}</span>` : ""}
+      ${(p.antes_texto || p.ahorra_texto) ? `<div class="plan__precio-row">
+        ${p.antes_texto ? `<span class="plan__antes">${p.antes_texto}</span>` : ""}
+        ${p.ahorra_texto ? `<span class="plan__ahorra">${p.ahorra_texto}</span>` : ""}
+      </div>` : ""}
+      <div class="plan__precio"${colorVital}>${p.precio_texto}<small> ${p.precio_sufijo || ""}</small></div>
+      <div class="plan__ciclo">${p.ciclo_texto || ""}</div>
+      <ul class="plan__beneficios">
+        ${(p.beneficios || []).map(b => `<li><span class="dot"${dotVital}></span>${b}</li>`).join("")}
+      </ul>
+      <button class="btn ${btnClase} btn--bloque" data-plan="${p.slug}">${p.cta_texto || "Elegir"}${esPremium ? ' <span class="ar">&rarr;</span>' : ""}</button>
+    </article>`;
+}
+async function cargarPlanesPub() {
+  const { data, error } = await supabase.from('planes').select('*').order('orden');
+  if (error || !data?.length) return; // sin datos: deja el contenido estático de respaldo tal cual
+
+  const cont = document.querySelector('.planes');
+  if (!cont) return;
+  cont.innerHTML = data.map(tarjetaPlanHtml).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
 /* ---------- Programas ---------- */
 async function cargarProgramasPub() {
   const { data, error } = await supabase
@@ -112,6 +148,7 @@ async function cargarProfesionalesPub() {
 
 document.addEventListener('DOMContentLoaded', () => {
   cargarAliadosPub();
+  cargarPlanesPub();
   cargarProgramasPub();
   cargarProfesionalesPub();
 });

@@ -232,7 +232,7 @@
           <div class="plan__precio">$10k<small> /mes</small></div>
           <div class="plan__ciclo">Sin cláusulas · cancela cuando quieras</div>
           <ul class="plan__beneficios">
-            <li><span class="dot"></span>Acceso limitado a todos los aliados con descuento</li>
+            <li><span class="dot"></span>Acceso a todos los aliados con descuento</li>
             <li><span class="dot"></span>ClubCard digital en tu perfil</li>
             <li><span class="dot"></span>Calculadora de ahorro y comprobantes</li>
             <li><span class="dot"></span>Resumen mensual de ahorros por WhatsApp</li>
@@ -247,10 +247,10 @@
             <span class="plan__antes">Antes $50.000</span>
             <span class="plan__ahorra">Ahorra 40%</span>
           </div>
-          <div class="plan__precio"><span id="precio-premium">$20k</span><small> /mes</small></div>
+          <div class="plan__precio">$20k<small> /mes</small></div>
           <div class="plan__ciclo">Sin cláusulas · cancela cuando quieras</div>
           <ul class="plan__beneficios">
-            <li><span class="dot"></span><span id="bene-premium-top">Acceso ilimitado a todos los aliados con descuento</span></li>
+            <li><span class="dot"></span>Acceso ilimitado a todos los aliados con descuento</li>
             <li><span class="dot"></span>Sorteos exclusivos para miembros Premium</li>
             <li><span class="dot"></span>Descuentos premium y beneficios ampliados</li>
             <li><span class="dot"></span>Acceso prioritario a eventos del Club</li>
@@ -317,65 +317,84 @@
   <script type="module" src="app-cms.js?v=1"></script>
 
   <!-- ============================================================
-       TWEAKS PANEL
+       TWEAKS PANEL — solo para edición de diseño, nunca para visitantes.
+       El contenido vive inerte dentro de <template> (el navegador no lo
+       carga ni ejecuta) y solo se activa con ?tweaks=1 en la URL, quedando
+       recordado en este navegador hasta que se pase ?tweaks=0.
+       Nota: el precio/beneficio de Premium y el badge "Recomendado" ya no
+       se editan acá — ahora se editan de verdad en Admin → Planes.
        ============================================================ -->
-  <div id="tweaks-root"></div>
-  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-  <script type="text/babel" src="tweaks-panel.jsx"></script>
-  <script type="text/babel">
-    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-      "accent": "#008000",
-      "premiumBenefit": "Acceso ilimitado a todos los aliados con descuento",
-      "premiumPrice": "$20k",
-      "showRecomendado": true
-    }/*EDITMODE-END*/;
+  <template id="tweaks-panel-template">
+    <div id="tweaks-root"></div>
+    <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+    <script type="text/babel" src="tweaks-panel.jsx"></script>
+    <script type="text/babel">
+      const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+        "accent": "#008000"
+      }/*EDITMODE-END*/;
 
-    function ClubTweaks() {
-      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      function ClubTweaks() {
+        const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
 
-      React.useEffect(() => {
-        const r = document.documentElement.style;
-        r.setProperty("--verde", t.accent);
-        r.setProperty("--verde-hover", `color-mix(in srgb, ${t.accent}, #000 18%)`);
-        r.setProperty("--verde-soft", `color-mix(in srgb, ${t.accent} 10%, transparent)`);
-        r.setProperty("--verde-claro", `color-mix(in srgb, ${t.accent}, #fff 35%)`);
-      }, [t.accent]);
+        React.useEffect(() => {
+          const r = document.documentElement.style;
+          r.setProperty("--verde", t.accent);
+          r.setProperty("--verde-hover", `color-mix(in srgb, ${t.accent}, #000 18%)`);
+          r.setProperty("--verde-soft", `color-mix(in srgb, ${t.accent} 10%, transparent)`);
+          r.setProperty("--verde-claro", `color-mix(in srgb, ${t.accent}, #fff 35%)`);
+        }, [t.accent]);
 
-      React.useEffect(() => {
-        const el = document.getElementById("bene-premium-top");
-        if (el) el.textContent = t.premiumBenefit;
-      }, [t.premiumBenefit]);
+        return (
+          <TweaksPanel>
+            <TweakSection label="Marca" />
+            <TweakColor label="Color de acento" value={t.accent}
+              options={["#008000", "#0E7C4B", "#1C7C8C", "#3B5BDB"]}
+              onChange={(v) => setTweak("accent", v)} />
+          </TweaksPanel>
+        );
+      }
 
-      React.useEffect(() => {
-        const el = document.getElementById("precio-premium");
-        if (el) el.textContent = t.premiumPrice;
-      }, [t.premiumPrice]);
+      ReactDOM.createRoot(document.getElementById("tweaks-root")).render(<ClubTweaks />);
+    </script>
+  </template>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      if (params.get("tweaks") === "1") localStorage.setItem("ecdlg_tweaks", "1");
+      if (params.get("tweaks") === "0") localStorage.removeItem("ecdlg_tweaks");
+      if (localStorage.getItem("ecdlg_tweaks") !== "1") return;
 
-      React.useEffect(() => {
-        const el = document.getElementById("badge-rec");
-        if (el) el.style.display = t.showRecomendado ? "" : "none";
-      }, [t.showRecomendado]);
+      const tpl = document.getElementById("tweaks-panel-template");
+      const clone = tpl.content.cloneNode(true);
+      const root = clone.querySelector("#tweaks-root");
+      const libScripts = [...clone.querySelectorAll('script[src]:not([type="text/babel"])')];
+      const babelNodes = [...clone.querySelectorAll('script[type="text/babel"]')];
 
-      return (
-        <TweaksPanel>
-          <TweakSection label="Marca" />
-          <TweakColor label="Color de acento" value={t.accent}
-            options={["#008000", "#0E7C4B", "#1C7C8C", "#3B5BDB"]}
-            onChange={(v) => setTweak("accent", v)} />
-          <TweakSection label="Plan premium · $20k" />
-          <TweakText label="Beneficio destacado" value={t.premiumBenefit}
-            onChange={(v) => setTweak("premiumBenefit", v)} />
-          <TweakText label="Precio" value={t.premiumPrice}
-            onChange={(v) => setTweak("premiumPrice", v)} />
-          <TweakToggle label="Mostrar “Recomendado”" value={t.showRecomendado}
-            onChange={(v) => setTweak("showRecomendado", v)} />
-        </TweaksPanel>
-      );
-    }
+      document.body.appendChild(root);
 
-    ReactDOM.createRoot(document.getElementById("tweaks-root")).render(<ClubTweaks />);
+      function cargarScript(src, attrs) {
+        return new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = src;
+          for (const [k, v] of Object.entries(attrs || {})) s.setAttribute(k, v);
+          s.onload = resolve;
+          s.onerror = reject;
+          document.body.appendChild(s);
+        });
+      }
+
+      (async function () {
+        for (const orig of libScripts) {
+          const attrs = {};
+          for (const a of orig.attributes) if (a.name !== "src") attrs[a.name] = a.value;
+          await cargarScript(orig.src, attrs);
+        }
+        document.body.append(...babelNodes);
+        window.Babel.transformScriptTags(document.querySelectorAll('script[type="text/babel"]'));
+      })();
+    })();
   </script>
 
   <template id="__bundler_thumbnail">

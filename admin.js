@@ -17,6 +17,7 @@ const PANELES = {
   dashboard:    { t: "Dashboard", s: "Vista general en tiempo real" },
   miembros:     { t: "Miembros", s: "Gestión de la base de miembros" },
   aliados:      { t: "Aliados", s: "Establecimientos, fotos y descuentos" },
+  planes:       { t: "Planes", s: "Precios y beneficios de cada membresía" },
   profesionales:{ t: "Profesionales", s: "Asesores jurídicos, psicológicos y contables" },
   marcas:       { t: "Marcas Amazon", s: "Logos y links de afiliado que aparecen en el carrusel" },
   tienda:       { t: "Tienda", s: "Catálogo de productos con descuentos para miembros" },
@@ -686,7 +687,7 @@ function irPanel(panel) {
   $("#ad-sub").textContent = PANELES[panel].s;
   $("#admin").classList.remove("menu-open");
   if (!RENDERED[panel]) {
-    ({ dashboard: renderDashboard, miembros: renderMiembros, aliados: renderAliados, profesionales: renderProfesionales, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: renderProgramas, ventas: renderVentas, suscripciones: renderSuscripciones, config: renderConfig, agente: renderAgente })[panel]?.();
+    ({ dashboard: renderDashboard, miembros: renderMiembros, aliados: renderAliados, planes: window.renderPlanes, profesionales: renderProfesionales, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: renderProgramas, ventas: renderVentas, suscripciones: renderSuscripciones, config: renderConfig, agente: renderAgente })[panel]?.();
     RENDERED[panel] = true;
   }
   if (window.lucide) lucide.createIcons();
