@@ -272,15 +272,19 @@ async function cargarPostulaciones(){
 }
 function htmlFormAliado(a={}){
   const sel=(a.categoria||'').split(',').map(s=>s.trim()).filter(Boolean);
-  const chips=CATS.map(c=>`<button type="button" class="fa-chip${sel.includes(c)?' is-on':''}" data-cat="${c}">${c}</button>`).join('')+`<button type="button" class="fa-chip${sel.some(s=>!CATS.includes(s))?' is-on':''}" data-cat="__otra__" id="fa-chip-otra">Otra</button>`;
-  const otraVal=sel.find(s=>!CATS.includes(s))||'';
+  const chips=CATS.map(c=>`<button type="button" class="fa-chip${sel.includes(c)?' is-on':''}" data-cat="${c}">${c}</button>`).join('');
+  const personalizadas=sel.filter(c=>!CATS.includes(c));
+  const customChips=personalizadas.map(c=>`<button type="button" class="fa-chip is-on" data-cat="${c.replace(/"/g,'&quot;')}" data-custom="1">${c} &times;</button>`).join('');
   return `
   <div class="ad-field"><label>Nombre del negocio *</label><input id="fa-nombre" type="text" value="${(a.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Café del Parque"></div>
   <div class="ad-field"><label>Categoría</label>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:2px" id="fa-chips">${chips}</div>
-    <input type="text" id="fa-cat-otra" placeholder="Describe la categoría" style="margin-top:10px;display:${otraVal?'block':'none'};width:100%;font-family:var(--cuerpo);font-size:13.5px;color:#1a1a18;padding:10px 14px;border:1.5px solid rgba(26,26,24,.13);border-radius:8px;background:#f5f4f0" value="${otraVal}">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px" id="fa-chips-custom">${customChips}</div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <input type="text" id="fa-cat-nueva" placeholder="Agregar otra categoría…" style="flex:1;font-family:var(--cuerpo);font-size:13.5px;color:#1a1a18;padding:10px 14px;border:1.5px solid rgba(26,26,24,.13);border-radius:8px;background:#f5f4f0">
+      <button type="button" class="ad-btn" id="fa-cat-add">${ic("plus")} Agregar</button>
+    </div>
     <input type="hidden" id="fa-cat" value="${(a.categoria||'').replace(/"/g,'&quot;')}"></div>
-  <div class="ad-field"><label>Descuento</label><input id="fa-dsc" type="text" value="${(a.descuento||'').replace(/"/g,'&quot;')}" placeholder="Ej: 20%"></div>
   <div class="ad-field"><label>Visible para miembros con plan</label>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:2px" id="fa-planes-chips">${PLANES_VIS.map(p=>`<button type="button" class="fa-chip${(a.planes_visibles||['basica','premium']).includes(p.val)?' is-on':''}" data-plan-vis="${p.val}">${p.lbl}</button>`).join('')}</div>
     <input type="hidden" id="fa-planes" value="${(a.planes_visibles||['basica','premium']).join(',')}">
@@ -307,23 +311,39 @@ function htmlFormAliado(a={}){
     <button class="ad-btn ad-btn--verde" id="fa-save" data-id="${a.id||''}">${ic("check")} ${a.id?'Guardar cambios':'Agregar aliado'}</button>
   </div>`;}
 function actualizarCatHidden(){
-  const sel=[...document.querySelectorAll('#fa-chips .fa-chip.is-on')].map(b=>b.dataset.cat);
-  const cats=sel.filter(c=>c!=='__otra__');
-  const otraInput=$("#fa-cat-otra");
-  if(sel.includes('__otra__')&&otraInput?.value.trim())cats.push(otraInput.value.trim());
-  const h=$("#fa-cat");if(h)h.value=cats.join(', ');
+  const fijas=[...document.querySelectorAll('#fa-chips .fa-chip.is-on')].map(b=>b.dataset.cat);
+  const personalizadas=[...document.querySelectorAll('#fa-chips-custom .fa-chip')].map(b=>b.dataset.cat);
+  const h=$("#fa-cat");if(h)h.value=[...fijas,...personalizadas].join(', ');
 }
 function bindFormAliado(){
   setTimeout(()=>{
     document.querySelectorAll('#fa-chips .fa-chip').forEach(chip=>{
       chip.addEventListener('click',()=>{
         chip.classList.toggle('is-on');
-        const otraOn=$("#fa-chip-otra")?.classList.contains('is-on');
-        const oi=$("#fa-cat-otra");if(oi)oi.style.display=otraOn?'block':'none';
         actualizarCatHidden();
       });
     });
-    $("#fa-cat-otra")?.addEventListener('input',actualizarCatHidden);
+    const bindChipPersonalizada=(chip)=>{
+      chip.addEventListener('click',()=>{ chip.remove(); actualizarCatHidden(); });
+    };
+    document.querySelectorAll('#fa-chips-custom .fa-chip').forEach(bindChipPersonalizada);
+    const agregarCategoriaPersonalizada=()=>{
+      const input=$("#fa-cat-nueva");
+      const val=input?.value.trim();
+      if(!val)return;
+      const yaExiste=[...document.querySelectorAll('#fa-chips .fa-chip, #fa-chips-custom .fa-chip')]
+        .some(b=>(b.dataset.cat||'').toLowerCase()===val.toLowerCase());
+      if(yaExiste){toast('Esa categoría ya está agregada');input.value='';return;}
+      const chip=document.createElement('button');
+      chip.type='button';chip.className='fa-chip is-on';chip.dataset.cat=val;chip.dataset.custom='1';
+      chip.innerHTML=`${val} &times;`;
+      bindChipPersonalizada(chip);
+      $("#fa-chips-custom")?.appendChild(chip);
+      input.value='';
+      actualizarCatHidden();
+    };
+    $("#fa-cat-add")?.addEventListener('click',agregarCategoriaPersonalizada);
+    $("#fa-cat-nueva")?.addEventListener('keydown',(e)=>{if(e.key==='Enter'){e.preventDefault();agregarCategoriaPersonalizada();}});
     document.querySelectorAll('#fa-planes-chips .fa-chip').forEach(chip=>{
       chip.addEventListener('click',()=>{
         chip.classList.toggle('is-on');
@@ -341,7 +361,7 @@ function bindFormAliado(){
       const file=$("#fa-img")?.files?.[0];
       if(file)try{imagen_url=await subirImagen(file);}catch(_){toast('Error al subir imagen');}
       const planesSel=$("#fa-planes")?.value.split(',').map(s=>s.trim()).filter(Boolean);
-      const payload={nombre,categoria:$("#fa-cat")?.value.trim()||null,descuento:$("#fa-dsc")?.value.trim()||null,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:$("#fa-wa")?.value.trim()||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,imagen_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
+      const payload={nombre,categoria:$("#fa-cat")?.value.trim()||null,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:$("#fa-wa")?.value.trim()||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,imagen_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
       const id=btn.dataset.id;
       const{error}=id?await supabase.from('aliados').update(payload).eq('id',id):await supabase.from('aliados').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}
