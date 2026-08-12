@@ -357,6 +357,11 @@ function sheetAliado(i) {
       <span class="foto-ph__txt">FOTO · ${a.foto}</span>
     </div>
     <p class="sheet__desc">${a.desc}</p>
+    ${(a.direccion || a.maps_url) ? `
+    <div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px;flex-wrap:wrap;">
+      ${a.direccion ? `<span style="font-size:13px;color:#666;display:flex;align-items:center;gap:5px;">${ic("map-pin")}${a.direccion}</span>` : ''}
+      ${a.maps_url ? `<a href="${a.maps_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#e8f5ee;color:#1a7a3c;border-radius:99px;font-size:12px;font-weight:600;text-decoration:none;">${ic("navigation")}Ver en mapa</a>` : ''}
+    </div>` : ''}
     <div class="sheet__sub">Descuentos disponibles</div>
     ${a.descuentos.map((d, di) => `
       <div class="descuento">

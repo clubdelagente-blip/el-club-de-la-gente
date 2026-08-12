@@ -48,6 +48,8 @@ async function cargarAliadosPub() {
       pct: a.descuento || '',
       foto: a.imagen_url || '',
       desc: a.descripcion || '',
+      direccion: a.direccion || '',
+      maps_url: a.maps_url || '',
       descuentos: [{ pct: a.descuento || '', nombre: 'Descuento para miembros', desc: '' }],
     })));
   }
