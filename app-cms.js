@@ -185,10 +185,13 @@ async function cargarCarruselPromos() {
     </div>`;
   }).join('');
   wrap.style.display = 'block';
+  // El elemento estaba display:none al cargar la página, así que el
+  // IntersectionObserver de fade-up nunca lo pudo "ver" a tiempo -- se
+  // revela directo, igual que el hero, en vez de depender del scroll.
+  requestAnimationFrame(() => wrap.classList.add('is-in'));
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  cargarAliadosPub();
   cargarPlanesPub();
   cargarProgramasPub();
   cargarProfesionalesPub();
