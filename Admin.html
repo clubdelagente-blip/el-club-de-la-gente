@@ -392,10 +392,19 @@ async function cargarPromosInModal(aliadoId){
         <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.descripcion}</div>
         <div style="font-size:11px;color:rgba(26,26,24,.45)">${TIPO_LBL[p.tipo]||p.tipo} · ${ahorro} · <span style="color:${p.activa?'#1a7a3c':'#888'}">${p.activa?'Activa':'Inactiva'}</span></div>
       </div>
+      <button class="ad-btn ${p.en_carrusel?'ad-btn--verde':''}" data-carr-promo-in="${p.id}" data-carr="${p.en_carrusel}" style="font-size:11px;padding:4px 8px;flex-shrink:0" title="${p.en_carrusel?'Quitar del carrusel del landing':'Mostrar en el carrusel del landing (necesita foto)'}">${ic("image")}</button>
       <button class="ad-btn" data-ed-promo-in="${p.id}" style="font-size:11px;padding:4px 8px;flex-shrink:0">${ic("pencil")}</button>
       <button class="ad-btn" data-rm-promo-in="${p.id}" style="font-size:11px;padding:4px 8px;flex-shrink:0">${ic("trash-2")}</button>
     </div>`;
   }).join(''):`<p style="font-size:12px;color:rgba(26,26,24,.4);text-align:center;padding:6px 0">No hay promociones aún.</p>`;
+  list.querySelectorAll('[data-carr-promo-in]').forEach(btn=>{
+    btn.addEventListener('click',async()=>{
+      const activar=btn.dataset.carr!=='true';
+      if(activar&&!_promos.find(x=>x.id===btn.dataset.carrPromoIn)?.foto_url){toast('Esta promoción necesita una foto antes de mostrarse en el carrusel');return;}
+      await supabase.from('promociones').update({en_carrusel:activar}).eq('id',btn.dataset.carrPromoIn);
+      cargarPromosInModal(aliadoId);
+    });
+  });
   list.querySelectorAll('[data-ed-promo-in]').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const p=_promos.find(x=>x.id===btn.dataset.edPromoIn);if(!p)return;
@@ -685,6 +694,7 @@ function htmlListaPromociones(promos,aliadoId,aliadoNombre){
         ${p.aplica_a&&p.aplica_a!=='toda_la_tienda'?`<div style="font-size:11px;color:rgba(26,26,24,.4);margin-top:2px">${p.producto_especifico||p.aplica_a}</div>`:''}
       </div>
       <div style="display:flex;gap:6px;align-items:flex-start;flex-shrink:0">
+        <button class="ad-btn ${p.en_carrusel?'ad-btn--verde':''}" data-carr-promo="${p.id}" data-carr="${p.en_carrusel}" style="font-size:12px" title="${p.en_carrusel?'Quitar del carrusel del landing':'Mostrar en el carrusel del landing (necesita foto)'}">${ic("image")}</button>
         <button class="ad-btn" data-ed-promo="${p.id}" style="font-size:12px">${ic("pencil")}</button>
         <button class="ad-btn" data-rm-promo="${p.id}" style="font-size:12px">${ic("trash-2")}</button>
       </div>
@@ -703,6 +713,14 @@ function bindListaPromociones(aliadoId,aliadoNombre){
     });
     document.querySelectorAll('[data-rm-promo]').forEach(btn=>{
       btn.addEventListener('click',async()=>{if(!confirm('¿Eliminar esta promoción?'))return;await supabase.from('promociones').delete().eq('id',btn.dataset.rmPromo);cargarYMostrarPromociones(aliadoId,aliadoNombre);toast('Promoción eliminada');});
+    });
+    document.querySelectorAll('[data-carr-promo]').forEach(btn=>{
+      btn.addEventListener('click',async()=>{
+        const activar=btn.dataset.carr!=='true';
+        if(activar&&!_promos.find(x=>x.id===btn.dataset.carrPromo)?.foto_url){toast('Esta promoción necesita una foto antes de mostrarse en el carrusel');return;}
+        await supabase.from('promociones').update({en_carrusel:activar}).eq('id',btn.dataset.carrPromo);
+        cargarYMostrarPromociones(aliadoId,aliadoNombre);
+      });
     });
     if(window.lucide)lucide.createIcons();
   },80);

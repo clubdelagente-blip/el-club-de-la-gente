@@ -250,6 +250,22 @@ a { color: inherit; text-decoration: none; }
 .dest-card__desc { font-size: 11px; color: var(--tinta-suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ============================================================
+   CARRUSEL DE PROMOCIONES (imágenes grandes, solo visual)
+   ============================================================ */
+.promo-carrusel { overflow: hidden; padding: 8px 0 32px; position: relative; }
+.promo-carrusel::before, .promo-carrusel::after { content: ""; position: absolute; top: 0; bottom: 0; width: 90px; z-index: 3; pointer-events: none; }
+.promo-carrusel::before { left: 0; background: linear-gradient(to right, var(--crema), transparent); }
+.promo-carrusel::after  { right: 0; background: linear-gradient(to left, var(--crema), transparent); }
+.promo-carrusel__track { display: flex; gap: 20px; width: max-content; animation: scroll-x 42s linear infinite; padding: 0 24px; }
+.promo-carrusel__track:hover { animation-play-state: paused; }
+.promo-card { background: #fff; border: 1px solid var(--linea); border-radius: 16px; overflow: hidden; width: 320px; flex-shrink: 0; box-shadow: 0 2px 16px rgba(0,0,0,.04); }
+.promo-card__img { width: 100%; height: 200px; object-fit: cover; display: block; background: var(--crema-2); }
+.promo-card__body { padding: 14px 18px 18px; }
+.promo-card__cat { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--verde); }
+.promo-card__nombre { font-size: 15px; font-weight: 700; color: var(--tinta); margin: 2px 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.promo-card__desc { font-size: 12.5px; color: var(--tinta-suave); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ============================================================
    TIENDA DEL CLUB
    ============================================================ */
 .tienda-filtro { background: transparent; border: 1.5px solid var(--linea-fuerte); color: var(--tinta); border-radius: 100px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; }

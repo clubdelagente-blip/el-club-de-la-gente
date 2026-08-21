@@ -148,9 +148,49 @@ async function cargarProfesionalesPub() {
   if (window.lucide) lucide.createIcons();
 }
 
+/* ---------- Carrusel de promociones destacadas (solo visual) ---------- */
+async function cargarCarruselPromos() {
+  const { data: promos, error } = await supabase
+    .from('promociones')
+    .select('*')
+    .eq('en_carrusel', true)
+    .eq('activa', true)
+    .not('foto_url', 'is', null)
+    .order('created_at', { ascending: false });
+
+  if (error || !promos?.length) return;
+
+  const aliadoIds = [...new Set(promos.map(p => p.aliado_id))];
+  const { data: aliadosData } = await supabase
+    .from('aliados')
+    .select('id, nombre, categoria')
+    .in('id', aliadoIds);
+  const aliadosMap = new Map((aliadosData || []).map(a => [a.id, a]));
+
+  const wrap = document.getElementById('promo-carrusel-wrap');
+  const track = document.getElementById('promo-carrusel-track');
+  if (!wrap || !track) return;
+
+  const items = [...promos, ...promos];
+  track.innerHTML = items.map(p => {
+    const al = aliadosMap.get(p.aliado_id);
+    return `
+    <div class="promo-card">
+      <img class="promo-card__img" src="${p.foto_url}" alt="${p.descripcion || ''}">
+      <div class="promo-card__body">
+        ${al?.categoria ? `<div class="promo-card__cat">${al.categoria}</div>` : ''}
+        <div class="promo-card__nombre">${al?.nombre || ''}</div>
+        <p class="promo-card__desc">${p.descripcion || ''}</p>
+      </div>
+    </div>`;
+  }).join('');
+  wrap.style.display = 'block';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   cargarAliadosPub();
   cargarPlanesPub();
   cargarProgramasPub();
   cargarProfesionalesPub();
+  cargarCarruselPromos();
 });
