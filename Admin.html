@@ -290,6 +290,13 @@ function htmlFormAliado(a={}){
     <input type="hidden" id="fa-planes" value="${(a.planes_visibles||['basica','premium']).join(',')}">
     <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Este aliado y sus promociones solo aparecen en el Directorio de los miembros con alguno de estos planes.</span>
   </div>
+  <div class="ad-field"><label>Código de aliado</label>
+    <div style="display:flex;gap:8px">
+      <input id="fa-codigo" type="text" value="${(a.codigo_aliado||'').replace(/"/g,'&quot;')}" placeholder="Ej: 4821" style="flex:1">
+      <button type="button" class="ad-btn" id="fa-codigo-gen">${ic("shuffle")} Generar</button>
+    </div>
+    <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">El aliado escribe este código para confirmar cada redención de descuento. No se muestra en ningún lado público — solo dáselo directamente al negocio.</span>
+  </div>
   <div class="ad-field"><label>Descripción</label><textarea id="fa-desc" rows="3" placeholder="Describe el negocio y sus beneficios">${a.descripcion||''}</textarea></div>
   <div class="ad-field-2">
     <div class="ad-field"><label>WhatsApp</label><input id="fa-wa" type="tel" value="${(a.whatsapp||'').replace(/"/g,'&quot;')}" placeholder="300 000 0000"></div>
@@ -344,6 +351,9 @@ function bindFormAliado(){
     };
     $("#fa-cat-add")?.addEventListener('click',agregarCategoriaPersonalizada);
     $("#fa-cat-nueva")?.addEventListener('keydown',(e)=>{if(e.key==='Enter'){e.preventDefault();agregarCategoriaPersonalizada();}});
+    $("#fa-codigo-gen")?.addEventListener('click',()=>{
+      const input=$("#fa-codigo");if(input)input.value=String(Math.floor(1000+Math.random()*9000));
+    });
     document.querySelectorAll('#fa-planes-chips .fa-chip').forEach(chip=>{
       chip.addEventListener('click',()=>{
         chip.classList.toggle('is-on');
@@ -361,7 +371,7 @@ function bindFormAliado(){
       const file=$("#fa-img")?.files?.[0];
       if(file)try{imagen_url=await subirImagen(file);}catch(_){toast('Error al subir imagen');}
       const planesSel=$("#fa-planes")?.value.split(',').map(s=>s.trim()).filter(Boolean);
-      const payload={nombre,categoria:$("#fa-cat")?.value.trim()||null,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:$("#fa-wa")?.value.trim()||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,imagen_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
+      const payload={nombre,categoria:$("#fa-cat")?.value.trim()||null,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:$("#fa-wa")?.value.trim()||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
       const id=btn.dataset.id;
       const{error}=id?await supabase.from('aliados').update(payload).eq('id',id):await supabase.from('aliados').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}

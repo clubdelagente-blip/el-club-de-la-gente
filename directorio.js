@@ -73,7 +73,10 @@ let query = "";
 
 /* ---------- CARGA DE ALIADOS (filtrados por plan) ---------- */
 async function cargarAliados() {
-  const { data } = await supabase.from("aliados").select("*").eq("activo", true).order("nombre");
+  // Nota: "codigo_aliado" NUNCA se pide acá a propósito — se valida server-side (RPC verificar_codigo_aliado)
+  const { data } = await supabase.from("aliados")
+    .select("id, nombre, categoria, descuento, descripcion, whatsapp, direccion, maps_url, imagen_url, destacado, planes_visibles")
+    .eq("activo", true).order("nombre");
   const todos = data || [];
   ALIADOS = todos.filter(a => (a.planes_visibles && a.planes_visibles.length ? a.planes_visibles : ["basica", "premium"]).includes(PLAN_ACTUAL));
 
@@ -258,7 +261,13 @@ function sheetAliado(a) {
             <div style="font-weight:700;color:#b45309;font-size:14px;margin-bottom:4px">⚠ Límite mensual alcanzado</div>
             <p style="font-size:12px;color:#92400e;line-height:1.4">Este miembro ya usó los descuentos disponibles de su plan este mes.</p>
            </div>`
-        : `<button class="btn btn--primario btn--bloque" id="calc-aplicar" style="margin-top:16px">Aplicar descuento &rarr;</button>`
+        : `<button class="btn btn--primario btn--bloque" id="calc-aplicar" style="margin-top:16px">Aplicar descuento &rarr;</button>
+           <div id="calc-codigo-wrap" style="display:none;margin-top:16px">
+             <label style="font-size:12px;color:#666;display:block;margin-bottom:6px">Pídele al negocio su código de aliado para confirmar</label>
+             <input type="text" id="calc-codigo" placeholder="Código" inputmode="numeric" autocomplete="off" style="width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:18px;letter-spacing:.1em;text-align:center">
+             <button class="btn btn--primario btn--bloque" id="calc-confirmar" style="margin-top:10px">Confirmar y aplicar &rarr;</button>
+             <p id="calc-codigo-error" style="display:none;color:#c0392b;font-size:12px;margin-top:8px;text-align:center">Código incorrecto. Pídeselo de nuevo al negocio.</p>
+           </div>`
       }
       <div id="calc-exito" style="display:none;text-align:center;padding:24px 0 8px">
         <div style="font-size:48px;line-height:1">✓</div>
@@ -318,16 +327,12 @@ function wireCalc(a) {
 
   const btnAplicar = $("#calc-aplicar");
   const exitoEl = $("#calc-exito");
+  const codigoWrap = $("#calc-codigo-wrap");
+  const inCodigo = $("#calc-codigo");
+  const btnConfirmar = $("#calc-confirmar");
+  const codigoError = $("#calc-codigo-error");
 
-  btnAplicar?.addEventListener("click", async () => {
-    const p = promos[+selDesc.value];
-    const usaPorcentaje = esPorcentajeUsable(p);
-    if (usaPorcentaje && !monto) { toast("Ingresa el valor de la compra primero", false); inMonto.focus(); return; }
-    const ahorro = usaPorcentaje ? Math.round(monto * (pctDerivada(p) / 100)) : (p.ahorro_fijo || 0);
-
-    btnAplicar.disabled = true;
-    btnAplicar.textContent = "Aplicando...";
-
+  async function finalizarAplicacion(p, usaPorcentaje, ahorro) {
     if (MIEMBRO_ID) {
       await registrarDescuento({
         aliado_id: a.id, aliado_nombre: a.nombre, categoria: a.categoria,
@@ -342,10 +347,55 @@ function wireCalc(a) {
       supabase.functions.invoke("whatsapp-send", { body: { to: MIEMBRO_WA, body: msg } }).catch(() => {});
     }
 
-    btnAplicar.style.display = "none";
+    if (codigoWrap) codigoWrap.style.display = "none";
     if (notaEl) notaEl.style.display = "none";
     exitoEl.style.display = "block";
     if (window.lucide) lucide.createIcons();
+  }
+
+  btnAplicar?.addEventListener("click", () => {
+    const p = promos[+selDesc.value];
+    const usaPorcentaje = esPorcentajeUsable(p);
+    if (usaPorcentaje && !monto) { toast("Ingresa el valor de la compra primero", false); inMonto.focus(); return; }
+
+    // Sin miembro identificado no hay nada real que proteger (es solo vista previa)
+    if (!MIEMBRO_ID) {
+      const ahorro = usaPorcentaje ? Math.round(monto * (pctDerivada(p) / 100)) : (p.ahorro_fijo || 0);
+      finalizarAplicacion(p, usaPorcentaje, ahorro);
+      return;
+    }
+
+    // Con miembro identificado: el negocio debe confirmar con su código antes de registrar nada
+    btnAplicar.style.display = "none";
+    if (codigoWrap) codigoWrap.style.display = "block";
+    if (codigoError) codigoError.style.display = "none";
+    inCodigo?.focus();
+  });
+
+  btnConfirmar?.addEventListener("click", async () => {
+    const codigo = (inCodigo?.value || "").trim();
+    if (!codigo) { toast("Escribe el código del negocio", false); inCodigo?.focus(); return; }
+
+    btnConfirmar.disabled = true;
+    btnConfirmar.textContent = "Verificando...";
+    if (codigoError) codigoError.style.display = "none";
+
+    const { data: valido, error } = await supabase.rpc("verificar_codigo_aliado", {
+      p_aliado_id: a.id, p_codigo: codigo,
+    });
+
+    if (error || !valido) {
+      btnConfirmar.disabled = false;
+      btnConfirmar.textContent = "Confirmar y aplicar →";
+      if (codigoError) codigoError.style.display = "block";
+      inCodigo?.focus();
+      return;
+    }
+
+    const p = promos[+selDesc.value];
+    const usaPorcentaje = esPorcentajeUsable(p);
+    const ahorro = usaPorcentaje ? Math.round(monto * (pctDerivada(p) / 100)) : (p.ahorro_fijo || 0);
+    await finalizarAplicacion(p, usaPorcentaje, ahorro);
   });
 
   actualizarModo();
