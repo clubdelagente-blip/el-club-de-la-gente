@@ -114,14 +114,9 @@ function render() {
   const tablaEl = $("#tabla-body");
   if (tablaEl) tablaEl.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#888;padding:16px">Sin actividad aún</td></tr>`;
 
-  // Rol aliado: mostrar "Mi negocio"
-  if (u.rol === "aliado") {
-    const li = $("#sb-negocio-li");
-    if (li) li.hidden = false;
-    const negNombre = $("#negocio-nombre"); if (negNombre) negNombre.textContent = u.negocio;
-    const negCat = $("#negocio-cat"); if (negCat && u.negocioCat) negCat.textContent = u.negocioCat;
-    if (u.negocio) cargarVentasNegocio(u.negocio);
-  }
+  // Rol aliado ("Mi negocio") ya no se decide acá con localStorage — se
+  // resuelve con la sesión real de Supabase más abajo, en el callback de
+  // getSession(), donde se busca el aliado vinculado por user_id.
 
   // Rol profesional: mostrar "Mi consultorio"
   if (u.rol === "profesional") {
@@ -286,11 +281,11 @@ async function cargarDescuentos(userId) {
 }
 
 /* ---------- Ventas del negocio (aliados) ---------- */
-async function cargarVentasNegocio(nombreNegocio) {
+async function cargarVentasNegocio(aliadoId) {
   const { data, error } = await supabase
     .from("descuentos")
     .select("miembro_id, descuento_pct, compra, ahorro, created_at")
-    .eq("aliado_nombre", nombreNegocio)
+    .eq("aliado_id", aliadoId)
     .order("created_at", { ascending: false });
 
   if (error || !data?.length) return;
@@ -532,7 +527,7 @@ document.addEventListener("DOMContentLoaded", () => {
       history.replaceState({}, "", location.pathname);
     }
 
-    const { data: perfData } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp").eq("id", userId).maybeSingle();
+    const { data: perfData } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol").eq("id", userId).maybeSingle();
     const plan = perfData?.plan || null;
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
     if (plan) { localStorage.setItem("ecdlg_plan", plan); const sbPlanEl = document.getElementById("sb-plan-name"); if (sbPlanEl) sbPlanEl.textContent = PLAN_LABEL[plan] || plan; }
@@ -566,6 +561,17 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       cargarDescuentos(userId);
       inicializarBannerReferidos(userId);
+    }
+
+    // Rol aliado (cuenta real, no localStorage): "Mi negocio" conectado por aliado_id
+    if (perfData?.rol === "aliado") {
+      const { data: negocio } = await supabase.from("aliados").select("id, nombre, categoria").eq("user_id", userId).maybeSingle();
+      if (negocio) {
+        const li = $("#sb-negocio-li"); if (li) li.hidden = false;
+        const negNombre = $("#negocio-nombre"); if (negNombre) negNombre.textContent = negocio.nombre;
+        const negCat = $("#negocio-cat"); if (negCat && negocio.categoria) negCat.textContent = negocio.categoria;
+        cargarVentasNegocio(negocio.id);
+      }
     }
     cargarReferidos(userId);
     cargarMarcasCarrusel();

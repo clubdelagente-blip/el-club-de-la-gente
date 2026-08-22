@@ -214,6 +214,16 @@ const supabase = createClient(
 );
 const $ = (s) => document.querySelector(s);
 const ic = (n) => `<i data-lucide="${n}"></i>`;
+// Cliente aislado (sin persistir sesión) para crear cuentas de aliados desde
+// el Admin sin reemplazar la sesión del administrador logueado -- signUp()
+// en el cliente principal movería la sesión activa a la cuenta recién creada.
+function clienteAislado(){
+  return createClient(
+    "https://egwaedadpqfwnbfosiao.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4",
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  );
+}
 let _aliados=[], _anuncios=[], _programas=[], _profesionales=[];
 
 const CATS=['Restaurante / Cafetería','Salud y bienestar','Belleza y estética','Barbería','Odontología','Veterinaria','Ropa y accesorios','Supermercado / Tienda','Educación','Deporte y gym','Tecnología'];
@@ -306,6 +316,17 @@ function htmlFormAliado(a={}){
   <div class="ad-field"><label>Foto del establecimiento</label>
     ${a.imagen_url?`<img src="${a.imagen_url}" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:10px">`:''}
     <input id="fa-img" type="file" accept="image/*"><input type="hidden" id="fa-img-url" value="${a.imagen_url||''}"></div>
+  ${a.id?`
+  <hr style="border:none;border-top:1px solid rgba(26,26,24,.12);margin:20px 0 14px">
+  <div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(26,26,24,.4);margin-bottom:10px">Cuenta de acceso</div>
+  ${a.user_id?`
+    <p style="font-size:13px;color:#1a7a3c;background:rgba(31,157,60,.08);padding:10px 14px;border-radius:8px">✓ Ya tiene cuenta. Puede iniciar sesión con su email en Registro.html (pestaña "Inicia sesión" → "¿Eres profesional?").</p>
+  `:`
+    <div class="ad-field"><label>Email para su cuenta</label><input id="fa-cuenta-email" type="email" placeholder="negocio@correo.com"></div>
+    <button type="button" class="ad-btn ad-btn--verde" id="fa-crear-cuenta" style="font-size:12px">${ic("key")} Crear cuenta de acceso</button>
+    <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Se genera una contraseña automática y se envía por WhatsApp junto con el acceso (si el aliado tiene WhatsApp registrado).</span>
+  `}
+  `:''}
   <hr style="border:none;border-top:1px solid rgba(26,26,24,.12);margin:20px 0 14px">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
     <span style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(26,26,24,.4)">Promociones de descuento</span>
@@ -353,6 +374,39 @@ function bindFormAliado(){
     $("#fa-cat-nueva")?.addEventListener('keydown',(e)=>{if(e.key==='Enter'){e.preventDefault();agregarCategoriaPersonalizada();}});
     $("#fa-codigo-gen")?.addEventListener('click',()=>{
       const input=$("#fa-codigo");if(input)input.value=String(Math.floor(1000+Math.random()*9000));
+    });
+    $("#fa-crear-cuenta")?.addEventListener('click',async()=>{
+      const btn=$("#fa-crear-cuenta");
+      const aliadoId=$("#fa-save")?.dataset.id;
+      const email=$("#fa-cuenta-email")?.value.trim();
+      const nombre=$("#fa-nombre")?.value.trim();
+      const whatsapp=$("#fa-wa")?.value.trim();
+      if(!aliadoId){toast('Guarda el aliado primero');return;}
+      if(!email){toast('Escribe un email para la cuenta');return;}
+      btn.disabled=true;btn.innerHTML=`${ic("loader")} Creando…`;if(window.lucide)lucide.createIcons();
+
+      const password=Array.from(crypto.getRandomValues(new Uint8Array(6))).map(b=>b.toString(16).padStart(2,'0')).join('');
+      const aislado=clienteAislado();
+      const{data,error}=await aislado.auth.signUp({email,password,options:{data:{nombre,rol:'aliado'}}});
+
+      if(error||!data?.user){
+        toast('Error creando la cuenta: '+(error?.message||'desconocido'));
+        btn.disabled=false;btn.innerHTML=`${ic("key")} Crear cuenta de acceso`;if(window.lucide)lucide.createIcons();
+        return;
+      }
+
+      await supabase.from('aliados').update({user_id:data.user.id}).eq('id',aliadoId);
+      await supabase.from('perfiles').upsert({id:data.user.id,nombre,whatsapp:whatsapp||null,rol:'aliado'});
+
+      if(whatsapp){
+        const wa=whatsapp.replace(/\D/g,'');
+        const msg=`¡Hola! Ya tienes acceso al panel de tu negocio en El Club de la Gente.\n\nEntra en https://elclubdelagente.com/Registro.html?tab=login con estos datos:\n\nUsuario: ${email}\nContraseña: ${password}\n\nTe recomendamos cambiarla la primera vez que entres (opción "¿Olvidaste tu contraseña?").`;
+        await supabase.functions.invoke('whatsapp-send',{body:{to:wa,body:msg}}).catch(()=>{});
+      }
+
+      toast('Cuenta creada ✓'+(whatsapp?' — datos enviados por WhatsApp':' (el aliado no tiene WhatsApp registrado, comparte el acceso manualmente)'));
+      const a=_aliados.find(x=>x.id===aliadoId);
+      if(a){abrirModal('Editar aliado',a.nombre,htmlFormAliado({...a,user_id:data.user.id}));bindFormAliado();}
     });
     document.querySelectorAll('#fa-planes-chips .fa-chip').forEach(chip=>{
       chip.addEventListener('click',()=>{
