@@ -324,7 +324,7 @@ function htmlFormAliado(a={}){
   `:`
     <div class="ad-field"><label>Email para su cuenta</label><input id="fa-cuenta-email" type="email" placeholder="negocio@correo.com"></div>
     <button type="button" class="ad-btn ad-btn--verde" id="fa-crear-cuenta" style="font-size:12px">${ic("key")} Crear cuenta de acceso</button>
-    <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Se crea la cuenta y le llega un correo al aliado para que defina su propia contraseña.</span>
+    <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Se genera una contraseña automática que te mostramos una sola vez para que se la compartas al aliado.</span>
   `}
   `:''}
   <hr style="border:none;border-top:1px solid rgba(26,26,24,.12);margin:20px 0 14px">
@@ -398,13 +398,25 @@ function bindFormAliado(){
       await supabase.from('aliados').update({user_id:data.user.id}).eq('id',aliadoId);
       await supabase.from('perfiles').upsert({id:data.user.id,nombre,whatsapp:whatsapp||null,rol:'aliado'});
 
-      const{error:mailErr}=await aislado.auth.resetPasswordForEmail(email,{
-        redirectTo:'https://clubdelagente-blip.github.io/el-club-de-la-gente/Registro.html',
-      });
-
-      toast(mailErr?'Cuenta creada, pero falló el envío del correo: '+mailErr.message:'Cuenta creada ✓ — le llegó un correo para definir su contraseña');
       const a=_aliados.find(x=>x.id===aliadoId);
-      if(a){abrirModal('Editar aliado',a.nombre,htmlFormAliado({...a,user_id:data.user.id}));bindFormAliado();}
+      abrirModal('Cuenta creada ✓',nombre,`
+        <p style="font-size:13px;color:rgba(242,240,234,.6);margin-bottom:16px">Comparte estos datos con el aliado (por el canal que prefieras). No se van a volver a mostrar.</p>
+        <div class="ad-field"><label>Email</label><input type="text" readonly value="${email}" id="fa-cred-email"></div>
+        <div class="ad-field"><label>Contraseña</label><input type="text" readonly value="${password}" id="fa-cred-pass"></div>
+        <button type="button" class="ad-btn" id="fa-cred-copiar" style="margin-bottom:16px">${ic("copy")} Copiar email y contraseña</button>
+        <div class="ad-toolbar" style="margin:0"><div class="ad-spacer"></div>
+          <button class="ad-btn ad-btn--verde" id="fa-cred-listo">${ic("check")} Listo</button>
+        </div>
+      `);
+      if(window.lucide)lucide.createIcons();
+      $("#fa-cred-copiar")?.addEventListener('click',async()=>{
+        await navigator.clipboard.writeText(`Email: ${email}\nContraseña: ${password}`).catch(()=>{});
+        toast('Copiado ✓');
+      });
+      $("#fa-cred-listo")?.addEventListener('click',()=>{
+        if(a){abrirModal('Editar aliado',a.nombre,htmlFormAliado({...a,user_id:data.user.id}));bindFormAliado();}
+        else window.cerrarModal?.();
+      });
     });
     document.querySelectorAll('#fa-planes-chips .fa-chip').forEach(chip=>{
       chip.addEventListener('click',()=>{
