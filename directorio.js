@@ -57,12 +57,13 @@ async function resolverPlanVisitante() {
 }
 
 async function registrarDescuento({ aliado_id, aliado_nombre, categoria, descuento_pct, compra, ahorro }) {
-  if (!MIEMBRO_ID) return false;
+  if (!MIEMBRO_ID) return { ok: false, error: null };
   const { error } = await supabase.from("descuentos").insert({
     miembro_id: MIEMBRO_ID, aliado_id, aliado_nombre, categoria,
     descuento_pct, compra: compra || null, ahorro: ahorro || 0,
   });
-  return !error;
+  if (error) console.error("registrarDescuento:", error);
+  return { ok: !error, error };
 }
 
 /* ---------- ESTADO ---------- */
@@ -334,10 +335,18 @@ function wireCalc(a) {
 
   async function finalizarAplicacion(p, usaPorcentaje, ahorro) {
     if (MIEMBRO_ID) {
-      await registrarDescuento({
+      const { ok } = await registrarDescuento({
         aliado_id: a.id, aliado_nombre: a.nombre, categoria: a.categoria,
         descuento_pct: badgePromo(p), compra: usaPorcentaje ? monto : null, ahorro,
       });
+      if (!ok) {
+        toast("No se pudo registrar el descuento. Intenta de nuevo.", false);
+        if (btnConfirmar) {
+          btnConfirmar.disabled = false;
+          btnConfirmar.textContent = "Confirmar y aplicar →";
+        }
+        return;
+      }
     }
 
     if (MIEMBRO_WA) {
