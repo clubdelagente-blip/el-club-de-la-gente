@@ -335,12 +335,12 @@ function wireCalc(a) {
 
   async function finalizarAplicacion(p, usaPorcentaje, ahorro) {
     if (MIEMBRO_ID) {
-      const { ok } = await registrarDescuento({
+      const { ok, error } = await registrarDescuento({
         aliado_id: a.id, aliado_nombre: a.nombre, categoria: a.categoria,
         descuento_pct: badgePromo(p), compra: usaPorcentaje ? monto : null, ahorro,
       });
       if (!ok) {
-        toast("No se pudo registrar el descuento. Intenta de nuevo.", false);
+        toast("Error: " + (error?.message || "desconocido"), false);
         if (btnConfirmar) {
           btnConfirmar.disabled = false;
           btnConfirmar.textContent = "Confirmar y aplicar →";
