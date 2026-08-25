@@ -370,6 +370,20 @@ async function cargarReferidos(userId) {
   }
 }
 
+/* ---------- Links a Directorio con datos del miembro (mismo esquema que Verificar.html) ---------- */
+async function actualizarLinksAliados(userId, plan, whatsapp) {
+  const limite = LIMITE_DESCUENTOS[plan] ?? 1;
+  let usos = 0;
+  if (limite !== Infinity) {
+    const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0, 0, 0, 0);
+    const { count } = await supabase.from("descuentos").select("id", { count: "exact", head: true })
+      .eq("miembro_id", userId).gte("created_at", inicioMes.toISOString());
+    usos = count || 0;
+  }
+  const qs = `?miembro=${userId}&wa=${encodeURIComponent(whatsapp || "")}&plan=${plan || "basica"}&usos=${usos}`;
+  document.querySelectorAll('a[href="Directorio.html"]').forEach(a => a.href = "Directorio.html" + qs);
+}
+
 /* ---------- QR de verificación ---------- */
 function generarQR(userId) {
   if (!userId) return;
@@ -561,6 +575,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       cargarDescuentos(userId);
       inicializarBannerReferidos(userId);
+      actualizarLinksAliados(userId, plan, perfData?.whatsapp);
     }
 
     // Rol aliado (cuenta real, no localStorage): "Mi negocio" conectado por aliado_id
