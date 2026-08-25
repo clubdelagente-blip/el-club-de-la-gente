@@ -281,47 +281,118 @@ async function cargarDescuentos(userId) {
 }
 
 /* ---------- Ventas del negocio (aliados) ---------- */
+const MES_LBL = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+
 async function cargarVentasNegocio(aliadoId) {
-  const { data, error } = await supabase
-    .from("descuentos")
-    .select("miembro_id, descuento_pct, compra, ahorro, created_at")
-    .eq("aliado_id", aliadoId)
-    .order("created_at", { ascending: false });
-
-  if (error || !data?.length) return;
-
+  const panel = document.querySelector("[data-panel='negocio']");
+  if (!panel) return;
   const ahora = new Date();
+
+  const [{ data, error }, { data: promos }, { data: todas }] = await Promise.all([
+    supabase.from("descuentos")
+      .select("miembro_id, descuento_pct, compra, ahorro, created_at")
+      .eq("aliado_id", aliadoId)
+      .order("created_at", { ascending: false }),
+    supabase.from("promociones")
+      .select("tipo, descripcion, precio_normal, precio_descuento, ahorro_fijo")
+      .eq("aliado_id", aliadoId).eq("activa", true)
+      .order("created_at", { ascending: false }).limit(1),
+    supabase.from("descuentos")
+      .select("aliado_id")
+      .gte("created_at", new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString()),
+  ]);
+
+  if (error) { console.error("cargarVentasNegocio:", error); return; }
+  const filas = data || [];
+
   const esMes = d => {
     const f = new Date(d.created_at);
     return f.getMonth() === ahora.getMonth() && f.getFullYear() === ahora.getFullYear();
   };
-  const mes = data.filter(esMes);
+  const mes = filas.filter(esMes);
   const totalVentas  = mes.reduce((s, d) => s + (d.compra || 0), 0);
   const totalAhorro  = mes.reduce((s, d) => s + (d.ahorro || 0), 0);
   const countDesc    = mes.length;
   const countClients = new Set(mes.map(d => d.miembro_id)).size;
 
-  // Actualizar stats del panel negocio
-  const panel = document.querySelector("[data-panel='negocio']");
-  if (!panel) return;
+  // Stats
   const nums = panel.querySelectorAll(".stat__num");
   if (nums[0]) nums[0].textContent = fmtCOP(totalVentas);
   if (nums[1]) nums[1].textContent = countClients;
   if (nums[2]) nums[2].textContent = countDesc;
   if (nums[3]) nums[3].textContent = fmtCOP(totalAhorro);
 
-  // Actualizar tabla de ventas
+  // Tabla de ventas
   const tbody = panel.querySelector(".tabla tbody");
-  if (!tbody) return;
   const fmtF = iso => new Date(iso).toLocaleDateString("es-CO", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" });
-  tbody.innerHTML = data.slice(0, 15).map(it => `
-    <tr>
-      <td><span class="tabla__name">Miembro del Club</span></td>
-      <td>${fmtF(it.created_at)}</td>
-      <td><span class="tag-pct">${it.descuento_pct}</span></td>
-      <td>${fmtCOP(it.compra)}</td>
-      <td class="tabla__ahorro">−${fmtCOP(it.ahorro)}</td>
-    </tr>`).join("");
+  if (tbody) {
+    tbody.innerHTML = filas.length
+      ? filas.slice(0, 15).map(it => `
+        <tr>
+          <td><span class="tabla__name">Miembro del Club</span></td>
+          <td>${fmtF(it.created_at)}</td>
+          <td><span class="tag-pct">${it.descuento_pct}</span></td>
+          <td>${it.compra ? fmtCOP(it.compra) : "—"}</td>
+          <td class="tabla__ahorro">−${fmtCOP(it.ahorro || 0)}</td>
+        </tr>`).join("")
+      : `<tr><td colspan="5" style="text-align:center;color:var(--tinta-40);padding:16px">Aún no tienes ventas registradas con el Club</td></tr>`;
+  }
+
+  // Gráfico de los últimos 6 meses (real)
+  const chart = document.getElementById("negocio-chart");
+  const chartYear = document.getElementById("negocio-chart-year");
+  if (chart) {
+    const meses = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
+      meses.push({ y: d.getFullYear(), m: d.getMonth(), total: 0 });
+    }
+    filas.forEach(f => {
+      const d = new Date(f.created_at);
+      const slot = meses.find(x => x.y === d.getFullYear() && x.m === d.getMonth());
+      if (slot) slot.total += (f.compra || 0);
+    });
+    const max = Math.max(1, ...meses.map(x => x.total));
+    chart.innerHTML = meses.map((x, i) => `
+      <div class="neg-col"><span class="neg-bar${i === meses.length - 1 ? " neg-bar--now" : ""}" style="height:${x.total ? Math.max(6, Math.round(x.total / max * 100)) : 2}%"></span><span class="neg-lbl">${MES_LBL[x.m]}</span></div>
+    `).join("");
+    if (chartYear) chartYear.textContent = String(ahora.getFullYear());
+  }
+
+  // Beneficio activo (promo real del aliado)
+  const promo = promos?.[0];
+  const pctEl = document.getElementById("negocio-benef-pct");
+  const nameEl = document.getElementById("negocio-benef-name");
+  const estadoEl = document.getElementById("negocio-benef-estado");
+  if (promo) {
+    let badge = "Promo";
+    if (promo.tipo === "porcentaje" && promo.precio_normal && promo.ahorro_fijo) badge = Math.round(promo.ahorro_fijo / promo.precio_normal * 100) + "%";
+    else if (promo.tipo === "monto_fijo" && promo.ahorro_fijo) badge = "-" + fmtCOP(promo.ahorro_fijo);
+    else if (promo.tipo === "precio_especial" && promo.precio_descuento != null) badge = fmtCOP(promo.precio_descuento);
+    else if (promo.tipo === "regalo") badge = "🎁";
+    else if (promo.tipo === "2x1") badge = "2×1";
+    if (pctEl) pctEl.textContent = badge;
+    if (nameEl) nameEl.textContent = promo.descripcion || "Descuento para miembros";
+    if (estadoEl) estadoEl.innerHTML = `<span class="dot"></span> Activo y publicado en el directorio`;
+  } else {
+    if (pctEl) pctEl.textContent = "—";
+    if (nameEl) nameEl.textContent = "Sin promociones activas";
+    if (estadoEl) estadoEl.textContent = "Crea una promoción desde el Directorio para que los miembros la vean";
+  }
+
+  // Posición en usos este mes (ranking real entre todos los aliados)
+  const posEl = document.getElementById("negocio-posicion");
+  if (posEl) {
+    if (todas?.length) {
+      const conteos = {};
+      todas.forEach(r => { conteos[r.aliado_id] = (conteos[r.aliado_id] || 0) + 1; });
+      const orden = Object.entries(conteos).sort((a, b) => b[1] - a[1]);
+      const idx = orden.findIndex(([id]) => id === aliadoId);
+      posEl.textContent = idx >= 0 ? `#${idx + 1} del mes` : "Sin usos este mes";
+    } else {
+      posEl.textContent = "Sin usos este mes";
+    }
+  }
 
   if (window.lucide) lucide.createIcons();
 }
