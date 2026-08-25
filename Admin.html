@@ -324,7 +324,7 @@ function htmlFormAliado(a={}){
   `:`
     <div class="ad-field"><label>Email para su cuenta</label><input id="fa-cuenta-email" type="email" placeholder="negocio@correo.com"></div>
     <button type="button" class="ad-btn ad-btn--verde" id="fa-crear-cuenta" style="font-size:12px">${ic("key")} Crear cuenta de acceso</button>
-    <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Se genera una contraseña automática y se envía por WhatsApp junto con el acceso (si el aliado tiene WhatsApp registrado).</span>
+    <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Se crea la cuenta y le llega un correo al aliado para que defina su propia contraseña.</span>
   `}
   `:''}
   <hr style="border:none;border-top:1px solid rgba(26,26,24,.12);margin:20px 0 14px">
@@ -398,13 +398,11 @@ function bindFormAliado(){
       await supabase.from('aliados').update({user_id:data.user.id}).eq('id',aliadoId);
       await supabase.from('perfiles').upsert({id:data.user.id,nombre,whatsapp:whatsapp||null,rol:'aliado'});
 
-      if(whatsapp){
-        const wa=whatsapp.replace(/\D/g,'');
-        const msg=`¡Hola! Ya tienes acceso al panel de tu negocio en El Club de la Gente.\n\nEntra en https://elclubdelagente.com/Registro.html?tab=login con estos datos:\n\nUsuario: ${email}\nContraseña: ${password}\n\nTe recomendamos cambiarla la primera vez que entres (opción "¿Olvidaste tu contraseña?").`;
-        await supabase.functions.invoke('whatsapp-send',{body:{to:wa,body:msg}}).catch(()=>{});
-      }
+      const{error:mailErr}=await aislado.auth.resetPasswordForEmail(email,{
+        redirectTo:'https://clubdelagente-blip.github.io/el-club-de-la-gente/Registro.html',
+      });
 
-      toast('Cuenta creada ✓'+(whatsapp?' — datos enviados por WhatsApp':' (el aliado no tiene WhatsApp registrado, comparte el acceso manualmente)'));
+      toast(mailErr?'Cuenta creada, pero falló el envío del correo: '+mailErr.message:'Cuenta creada ✓ — le llegó un correo para definir su contraseña');
       const a=_aliados.find(x=>x.id===aliadoId);
       if(a){abrirModal('Editar aliado',a.nombre,htmlFormAliado({...a,user_id:data.user.id}));bindFormAliado();}
     });
