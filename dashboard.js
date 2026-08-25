@@ -284,7 +284,7 @@ async function cargarDescuentos(userId) {
 const MES_LBL = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 
 async function cargarVentasNegocio(aliadoId) {
-  const panel = document.querySelector("[data-panel='negocio']");
+  const panel = document.querySelector("section[data-panel='negocio']");
   if (!panel) return;
   const ahora = new Date();
 
