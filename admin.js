@@ -25,6 +25,7 @@ const PANELES = {
   programas:    { t: "Programas sociales", s: "Programas, fundaciones, eventos y voluntarios" },
   ventas:       { t: "Ventas", s: "Historial de transacciones y proyecciones" },
   suscripciones:{ t: "Suscripciones", s: "Renovaciones y cobros automáticos" },
+  contabilidad: { t: "Contabilidad", s: "Ingresos, gastos y balance del Club" },
   agente:       { t: "Agente WhatsApp", s: "Bandeja de conversaciones y difusión masiva" },
   config:       { t: "Configuración", s: "Ajustes generales de la plataforma" },
 };
@@ -687,7 +688,7 @@ function irPanel(panel) {
   $("#ad-sub").textContent = PANELES[panel].s;
   $("#admin").classList.remove("menu-open");
   if (!RENDERED[panel]) {
-    ({ dashboard: renderDashboard, miembros: renderMiembros, aliados: renderAliados, planes: window.renderPlanes, profesionales: renderProfesionales, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: renderProgramas, ventas: renderVentas, suscripciones: renderSuscripciones, config: renderConfig, agente: renderAgente })[panel]?.();
+    ({ dashboard: renderDashboard, miembros: renderMiembros, aliados: renderAliados, planes: window.renderPlanes, profesionales: renderProfesionales, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: renderProgramas, ventas: renderVentas, suscripciones: renderSuscripciones, contabilidad: window.renderContabilidad, config: renderConfig, agente: renderAgente })[panel]?.();
     RENDERED[panel] = true;
   }
   if (window.lucide) lucide.createIcons();

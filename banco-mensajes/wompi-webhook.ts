@@ -75,6 +75,14 @@ Deno.serve(async (req: Request) => {
 
   console.log(`Membresía ${plan} activada para miembro ${miembroId}`);
 
+  const { error: pagoError } = await supabase.from("pagos").insert({
+    miembro_id: miembroId,
+    monto: Math.round(monto / 100),
+    plan,
+    referencia: tx.reference,
+  });
+  if (pagoError) console.error("Error registrando pago:", pagoError);
+
   // Validar si el referidor alcanzó 5 referidos activos → vitalicia
   try {
     await fetch(`${SUPABASE_URL}/functions/v1/validar-referidos`, {
