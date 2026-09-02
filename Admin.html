@@ -226,7 +226,7 @@ function clienteAislado(){
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
 }
-let _aliados=[], _anuncios=[], _programas=[], _profesionales=[], _gastos=[], _categoriasGasto=[], _pagos=[];
+let _aliados=[], _anuncios=[], _programas=[], _profesionales=[], _gastos=[], _categoriasGasto=[], _pagos=[], _contMes=null, _contGastosMes=[], _contPagosMes=[];
 
 const CATS=['Restaurante / Cafetería','Salud y bienestar','Belleza y estética','Barbería','Odontología','Veterinaria','Ropa y accesorios','Supermercado / Tienda','Educación','Deporte y gym','Tecnología'];
 const PLANES_VIS=[{val:'gratis',lbl:'Gratis'},{val:'basica',lbl:'Básica'},{val:'premium',lbl:'Premium'}];
@@ -998,61 +998,82 @@ document.addEventListener('DOMContentLoaded',async()=>{
 
   /* ---- CONTABILIDAD ---- */
   const COPc=(n)=>'$'+Number(n||0).toLocaleString('es-CO');
+  function descargarCSV(nombreArchivo,headers,rows){
+    const esc=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+    const csv=[headers.map(esc).join(','),...rows.map(r=>r.map(esc).join(','))].join('\r\n');
+    const blob=new Blob(["﻿"+csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=nombreArchivo;document.body.appendChild(a);a.click();document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
   async function cargarContabilidad(){
-    const ahora=new Date();
-    const mesAnt=new Date(ahora.getFullYear(),ahora.getMonth()-1,1);
+    const hoy=new Date();
+    if(!_contMes)_contMes=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
     const[{data:pagos},{data:gastos},{data:cats}]=await Promise.all([
       supabase.from('pagos').select('id,monto,plan,referencia,created_at,perfiles(nombre)').order('created_at',{ascending:false}),
-      supabase.from('gastos').select('id,monto,proveedor,fecha,nota,categoria_id,categorias_gasto(nombre)').order('fecha',{ascending:false}),
+      supabase.from('gastos').select('id,monto,proveedor,fecha,nota,categoria_id,factura_url,categorias_gasto(nombre)').order('fecha',{ascending:false}),
       supabase.from('categorias_gasto').select('*').order('nombre'),
     ]);
     _pagos=pagos||[];_gastos=gastos||[];_categoriasGasto=cats||[];
-
-    const enMes=(iso,ref)=>{const d=new Date(iso);return d.getFullYear()===ref.getFullYear()&&d.getMonth()===ref.getMonth();};
-    const ingresosMes=_pagos.filter(p=>enMes(p.created_at,ahora)).reduce((s,p)=>s+(p.monto||0),0);
-    const ingresosMesAnt=_pagos.filter(p=>enMes(p.created_at,mesAnt)).reduce((s,p)=>s+(p.monto||0),0);
-    const gastosMes=_gastos.filter(g=>enMes(g.fecha,ahora)).reduce((s,g)=>s+(g.monto||0),0);
+    renderContabilidadUI();
+  }
+  function renderContabilidadUI(){
+    const[y,m]=_contMes.split('-').map(Number);
+    const mesAnt=m===1?`${y-1}-12`:`${y}-${String(m-1).padStart(2,'0')}`;
+    const enMes=(iso,ymStr)=>{const d=new Date(iso);const[yy,mm]=ymStr.split('-').map(Number);return d.getFullYear()===yy&&(d.getMonth()+1)===mm;};
+    _contGastosMes=_gastos.filter(g=>enMes(g.fecha,_contMes));
+    _contPagosMes=_pagos.filter(p=>enMes(p.created_at,_contMes));
     const gastosMesAnt=_gastos.filter(g=>enMes(g.fecha,mesAnt)).reduce((s,g)=>s+(g.monto||0),0);
+    const ingresosMesAnt=_pagos.filter(p=>enMes(p.created_at,mesAnt)).reduce((s,p)=>s+(p.monto||0),0);
+    const ingresosMes=_contPagosMes.reduce((s,p)=>s+(p.monto||0),0);
+    const gastosMes=_contGastosMes.reduce((s,g)=>s+(g.monto||0),0);
     const balanceMes=ingresosMes-gastosMes;
     const pctChip=(actual,anterior)=>{if(!anterior)return{chip:'—',dir:'up'};const pct=Math.round((actual-anterior)/anterior*100);return{chip:(pct>=0?'+':'')+pct+'%',dir:pct>=0?'up':'down'};};
     const chIng=pctChip(ingresosMes,ingresosMesAnt),chGas=pctChip(gastosMes,gastosMesAnt);
 
     $("#p-contabilidad").innerHTML=`
+      <div class="ad-toolbar">
+        <div class="ad-card__title">Mostrando</div>
+        <input type="month" id="cont-mes" value="${_contMes}" style="background:transparent;border:1px solid rgba(242,240,234,.15);border-radius:8px;color:inherit;padding:8px 10px;font-family:inherit;font-size:13px">
+        <div class="ad-spacer"></div>
+      </div>
       <div class="ad-metrics">
         ${metric('banknote',COPc(ingresosMes),'Ingresos del mes','membresías vía Wompi',chIng.chip,chIng.dir)}
         ${metric('receipt',COPc(gastosMes),'Gastos del mes','registrados a mano',chGas.chip,chGas.dir)}
         ${metric('scale',COPc(balanceMes),'Balance del mes',balanceMes>=0?'positivo':'negativo','','up')}
       </div>
-      <div class="ad-toolbar"><div class="ad-card__title">Gastos</div><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="gasto-add">${ic('plus')} Agregar gasto</button></div>
+      <div class="ad-toolbar"><div class="ad-card__title">Gastos</div><div class="ad-spacer"></div><button class="ad-btn" id="gastos-csv">${ic('download')} Descargar Excel</button><button class="ad-btn ad-btn--verde" id="gasto-add">${ic('plus')} Agregar gasto</button></div>
       <div class="ad-table-wrap">
         <table class="ad-table">
           <thead><tr><th>Proveedor / Descripción</th><th>Categoría</th><th>Fecha</th><th style="text-align:right">Monto</th><th></th></tr></thead>
-          <tbody>${_gastos.length?_gastos.map(g=>`
+          <tbody>${_contGastosMes.length?_contGastosMes.map(g=>`
             <tr>
-              <td>${g.proveedor||'—'}</td>
+              <td>${g.proveedor||'—'}${g.factura_url?` <a href="${g.factura_url}" target="_blank" title="Ver factura" style="margin-left:4px;vertical-align:middle">${ic('paperclip')}</a>`:''}</td>
               <td><span class="ad-table__num">${g.categorias_gasto?.nombre||'Sin categoría'}</span></td>
               <td><span class="ad-table__num">${new Date(g.fecha+'T00:00:00').toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}</span></td>
               <td style="text-align:right"><span class="ad-num-strong">${COPc(g.monto)}</span></td>
               <td style="text-align:right"><div style="display:flex;gap:6px;justify-content:flex-end"><button class="ad-btn" data-ed-gasto="${g.id}">${ic('pencil')}</button><button class="ad-btn" data-rm-gasto="${g.id}">${ic('trash-2')}</button></div></td>
-            </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Aún no hay gastos registrados</td></tr>`}
+            </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">No hay gastos registrados este mes</td></tr>`}
           </tbody>
         </table>
       </div>
-      <div class="ad-toolbar" style="margin-top:24px"><div class="ad-card__title">Ingresos (pagos de membresías)</div></div>
+      <div class="ad-toolbar" style="margin-top:24px"><div class="ad-card__title">Ingresos (pagos de membresías)</div><div class="ad-spacer"></div><button class="ad-btn" id="pagos-csv">${ic('download')} Descargar Excel</button></div>
       <div class="ad-table-wrap">
         <table class="ad-table">
           <thead><tr><th>Miembro</th><th>Plan</th><th>Fecha</th><th style="text-align:right">Monto</th></tr></thead>
-          <tbody>${_pagos.length?_pagos.slice(0,30).map(p=>`
+          <tbody>${_contPagosMes.length?_contPagosMes.map(p=>`
             <tr>
               <td>${p.perfiles?.nombre||'—'}</td>
               <td><span class="ad-pill ${p.plan}"><span class="d"></span>${p.plan==='premium'?'Premium':'Básica'}</span></td>
               <td><span class="ad-table__num">${new Date(p.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}</span></td>
               <td style="text-align:right"><span class="ad-num-strong">${COPc(p.monto)}</span></td>
-            </tr>`).join(''):`<tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Aún no hay pagos registrados. Se registran solos cuando Wompi aprueba una membresía.</td></tr>`}
+            </tr>`).join(''):`<tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">No hay pagos registrados este mes</td></tr>`}
           </tbody>
         </table>
       </div>`;
     if(window.lucide)lucide.createIcons();
+    $("#cont-mes")?.addEventListener('change',(e)=>{if(e.target.value){_contMes=e.target.value;renderContabilidadUI();}});
   }
   function htmlFormGasto(g={}){
     const catOptions=_categoriasGasto.map(c=>`<option value="${c.id}" ${g.categoria_id===c.id?'selected':''}>${c.nombre}</option>`).join('');
@@ -1071,6 +1092,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
       <div class="ad-field"><label>Fecha</label><input id="gf-fecha" type="date" value="${g.fecha||new Date().toISOString().slice(0,10)}"></div>
     </div>
     <div class="ad-field"><label>Nota (opcional)</label><textarea id="gf-nota" rows="2">${g.nota||''}</textarea></div>
+    <div class="ad-field"><label>Factura (foto o PDF)</label>
+      ${g.factura_url?`<div style="margin-bottom:8px"><a href="${g.factura_url}" target="_blank" style="font-size:12px">${ic('paperclip')} Ver factura actual ↗</a></div>`:''}
+      <input id="gf-factura" type="file" accept="image/*,.pdf">
+      <input type="hidden" id="gf-factura-url" value="${g.factura_url||''}">
+    </div>
     <div class="ad-toolbar" style="margin:16px 0 0"><div class="ad-spacer"></div>
       <button class="ad-btn" id="gf-cancel">Cancelar</button>
       <button class="ad-btn ad-btn--verde" id="gf-save" data-id="${g.id||''}">${ic("check")} ${g.id?'Guardar cambios':'Agregar gasto'}</button>
@@ -1098,7 +1124,13 @@ document.addEventListener('DOMContentLoaded',async()=>{
           if(catErr){toast('Error creando categoría: '+catErr.message);resetBtn();return;}
           categoriaId=catData.id;
         }
-        const payload={categoria_id:categoriaId||null,proveedor:proveedor||null,monto,fecha,nota};
+        let facturaUrl=$("#gf-factura-url")?.value||null;
+        const facturaFile=$("#gf-factura")?.files?.[0];
+        if(facturaFile){
+          try{facturaUrl=await subirImagen(facturaFile);}
+          catch(_){toast('Error subiendo la factura');resetBtn();return;}
+        }
+        const payload={categoria_id:categoriaId||null,proveedor:proveedor||null,monto,fecha,nota,factura_url:facturaUrl};
         const{error}=id?await supabase.from('gastos').update(payload).eq('id',id):await supabase.from('gastos').insert(payload);
         if(error){toast('Error: '+error.message);resetBtn();return;}
         window.cerrarModal?.();
@@ -1339,8 +1371,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const rmAl=e.target.closest('[data-rm-aliado]');if(rmAl&&confirm('¿Eliminar este aliado?')){await supabase.from('aliados').delete().eq('id',rmAl.dataset.rmAliado);cargarAliados();toast('Aliado eliminado');return;}
     const edPlan=e.target.closest('[data-ed-plan]');if(edPlan){const p=_planes.find(x=>x.slug===edPlan.dataset.edPlan);if(p){abrirModal('Editar plan',p.tag,htmlFormPlan(p));bindFormPlan();}return;}
     if(e.target.closest('#gasto-add')){abrirModal('Agregar gasto','Registro manual de un gasto del Club',htmlFormGasto());bindFormGasto();return;}
-    const edGasto=e.target.closest('[data-ed-gasto]');if(edGasto){const g=_gastos.find(x=>x.id===edGasto.dataset.edGasto);if(g){abrirModal('Editar gasto',g.proveedor||'Gasto',htmlFormGasto(g));bindFormGasto();}return;}
+    const edGasto=e.target.closest('[data-ed-gasto]');if(edGasto){const g=_gastos.find(x=>x.id===edGasto.dataset.edGasto);if(g){abrirModal('Editar gasto',g.proveedor||'Gasto',htmlFormGasto(g));bindFormGasto(g);}return;}
     const rmGasto=e.target.closest('[data-rm-gasto]');if(rmGasto&&confirm('¿Eliminar este gasto?')){await supabase.from('gastos').delete().eq('id',rmGasto.dataset.rmGasto);cargarContabilidad();toast('Gasto eliminado');return;}
+    if(e.target.closest('#gastos-csv')){descargarCSV(`gastos-${_contMes}.csv`,['Proveedor','Categoría','Fecha','Monto','Nota'],_contGastosMes.map(g=>[g.proveedor||'',g.categorias_gasto?.nombre||'',g.fecha,g.monto,g.nota||'']));return;}
+    if(e.target.closest('#pagos-csv')){descargarCSV(`ingresos-${_contMes}.csv`,['Miembro','Plan','Fecha','Monto'],_contPagosMes.map(p=>[p.perfiles?.nombre||'',p.plan||'',p.created_at,p.monto]));return;}
   });
 });
   </script>
