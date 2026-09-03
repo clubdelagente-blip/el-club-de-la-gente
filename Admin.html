@@ -226,7 +226,7 @@ function clienteAislado(){
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
 }
-let _aliados=[], _anuncios=[], _programas=[], _profesionales=[], _gastos=[], _categoriasGasto=[], _pagos=[], _contMes=null, _contGastosMes=[], _contPagosMes=[];
+let _aliados=[], _anuncios=[], _programas=[], _profesionales=[], _gastos=[], _categoriasGasto=[], _pagos=[], _contMes=null, _contGastosMes=[], _contPagosMes=[], _contConfig={iva_pct:19,ica_pct:0.92,fundadores_pct:40,renta_pct:35};
 
 const CATS=['Restaurante / Cafetería','Salud y bienestar','Belleza y estética','Barbería','Odontología','Veterinaria','Ropa y accesorios','Supermercado / Tienda','Educación','Deporte y gym','Tecnología'];
 const PLANES_VIS=[{val:'gratis',lbl:'Gratis'},{val:'basica',lbl:'Básica'},{val:'premium',lbl:'Premium'}];
@@ -1010,12 +1010,14 @@ document.addEventListener('DOMContentLoaded',async()=>{
   async function cargarContabilidad(){
     const hoy=new Date();
     if(!_contMes)_contMes=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
-    const[{data:pagos},{data:gastos},{data:cats}]=await Promise.all([
+    const[{data:pagos},{data:gastos},{data:cats},{data:cfg}]=await Promise.all([
       supabase.from('pagos').select('id,monto,plan,referencia,created_at,perfiles(nombre)').order('created_at',{ascending:false}),
       supabase.from('gastos').select('id,monto,proveedor,fecha,nota,categoria_id,factura_url,categorias_gasto(nombre)').order('fecha',{ascending:false}),
       supabase.from('categorias_gasto').select('*').order('nombre'),
+      supabase.from('config_contabilidad').select('*').eq('id',1).maybeSingle(),
     ]);
     _pagos=pagos||[];_gastos=gastos||[];_categoriasGasto=cats||[];
+    if(cfg)_contConfig=cfg;
     renderContabilidadUI();
   }
   function renderContabilidadUI(){
@@ -1031,6 +1033,18 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const balanceMes=ingresosMes-gastosMes;
     const pctChip=(actual,anterior)=>{if(!anterior)return{chip:'—',dir:'up'};const pct=Math.round((actual-anterior)/anterior*100);return{chip:(pct>=0?'+':'')+pct+'%',dir:pct>=0?'up':'down'};};
     const chIng=pctChip(ingresosMes,ingresosMesAnt),chGas=pctChip(gastosMes,gastosMesAnt);
+
+    // Desglose de ingresos (IVA → ICA → fundadores → gastos → renta)
+    const cfg=_contConfig;
+    const ivaValor=ingresosMes-(ingresosMes/(1+cfg.iva_pct/100));
+    const trasIva=ingresosMes-ivaValor;
+    const icaValor=trasIva*(cfg.ica_pct/100);
+    const trasIca=trasIva-icaValor;
+    const fundadoresValor=trasIca*(cfg.fundadores_pct/100);
+    const trasFundadores=trasIca-fundadoresValor;
+    const trasGastos=trasFundadores-gastosMes;
+    const rentaValor=Math.max(0,trasGastos)*(cfg.renta_pct/100);
+    const utilidadNeta=trasGastos-rentaValor;
 
     $("#p-contabilidad").innerHTML=`
       <div class="ad-toolbar">
@@ -1071,9 +1085,51 @@ document.addEventListener('DOMContentLoaded',async()=>{
             </tr>`).join(''):`<tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">No hay pagos registrados este mes</td></tr>`}
           </tbody>
         </table>
+      </div>
+      <div class="ad-toolbar" style="margin-top:24px"><div class="ad-card__title">Desglose de ingresos</div><div class="ad-spacer"></div><button class="ad-btn" id="cont-cfg">${ic('settings')} Editar porcentajes</button></div>
+      <div class="ad-table-wrap">
+        <table class="ad-table">
+          <thead><tr><th>Concepto</th><th>Cálculo</th><th style="text-align:right">Valor</th><th style="text-align:right">Queda</th></tr></thead>
+          <tbody>
+            <tr><td>Ingresos del mes</td><td>—</td><td style="text-align:right">—</td><td style="text-align:right"><span class="ad-num-strong">${COPc(ingresosMes)}</span></td></tr>
+            <tr><td>(-) IVA (${cfg.iva_pct}%, incluido en el precio)</td><td><span class="ad-table__num">${COPc(ingresosMes)} − (${COPc(ingresosMes)} ÷ ${(1+cfg.iva_pct/100).toFixed(2)})</span></td><td style="text-align:right">${COPc(ivaValor)}</td><td style="text-align:right">${COPc(trasIva)}</td></tr>
+            <tr><td>(-) ICA + Avisos y Tableros (≈${cfg.ica_pct}%)</td><td><span class="ad-table__num">${COPc(trasIva)} × ${cfg.ica_pct}%</span></td><td style="text-align:right">${COPc(icaValor)}</td><td style="text-align:right">${COPc(trasIca)}</td></tr>
+            <tr><td>(-) Remuneración de los fundadores (${cfg.fundadores_pct}%)</td><td><span class="ad-table__num">${COPc(trasIca)} × ${cfg.fundadores_pct}%</span></td><td style="text-align:right">${COPc(fundadoresValor)}</td><td style="text-align:right">${COPc(trasFundadores)}</td></tr>
+            <tr><td>(-) Gastos operativos y sociales</td><td><span class="ad-table__num">Gastos reales del mes</span></td><td style="text-align:right">${COPc(gastosMes)}</td><td style="text-align:right">${COPc(trasGastos)}</td></tr>
+            <tr><td>(-) Impuesto de Renta (${cfg.renta_pct}% sobre la utilidad)</td><td><span class="ad-table__num">${COPc(Math.max(0,trasGastos))} × ${cfg.renta_pct}%</span></td><td style="text-align:right">${COPc(rentaValor)}</td><td style="text-align:right">${COPc(utilidadNeta)}</td></tr>
+            <tr><td colspan="3"><b>Disponible real / utilidad neta del Club</b></td><td style="text-align:right"><span class="ad-num-strong">≈ ${COPc(utilidadNeta)}</span></td></tr>
+          </tbody>
+        </table>
       </div>`;
     if(window.lucide)lucide.createIcons();
     $("#cont-mes")?.addEventListener('change',(e)=>{if(e.target.value){_contMes=e.target.value;renderContabilidadUI();}});
+    $("#cont-cfg")?.addEventListener('click',()=>{
+      abrirModal('Editar porcentajes','Se aplican al desglose de ingresos',`
+        <div class="ad-field"><label>IVA (%)</label><input id="cf-iva" type="number" step="0.01" value="${cfg.iva_pct}"></div>
+        <div class="ad-field"><label>ICA + Avisos y Tableros (%)</label><input id="cf-ica" type="number" step="0.01" value="${cfg.ica_pct}"></div>
+        <div class="ad-field"><label>Remuneración de los fundadores (%)</label><input id="cf-fund" type="number" step="0.01" value="${cfg.fundadores_pct}"></div>
+        <div class="ad-field"><label>Impuesto de Renta (%)</label><input id="cf-renta" type="number" step="0.01" value="${cfg.renta_pct}"></div>
+        <div class="ad-toolbar" style="margin:16px 0 0"><div class="ad-spacer"></div>
+          <button class="ad-btn" id="cf-cancel">Cancelar</button>
+          <button class="ad-btn ad-btn--verde" id="cf-save">${ic('check')} Guardar</button>
+        </div>`);
+      $("#cf-cancel")?.addEventListener('click',()=>window.cerrarModal?.());
+      $("#cf-save")?.addEventListener('click',async()=>{
+        const btn=$("#cf-save");btn.disabled=true;btn.innerHTML=`${ic('loader')} Guardando…`;if(window.lucide)lucide.createIcons();
+        const payload={
+          id:1,
+          iva_pct:parseFloat($("#cf-iva")?.value)||0,
+          ica_pct:parseFloat($("#cf-ica")?.value)||0,
+          fundadores_pct:parseFloat($("#cf-fund")?.value)||0,
+          renta_pct:parseFloat($("#cf-renta")?.value)||0,
+        };
+        const{error}=await supabase.from('config_contabilidad').upsert(payload);
+        if(error){toast('Error: '+error.message);btn.disabled=false;btn.innerHTML=`${ic('check')} Guardar`;if(window.lucide)lucide.createIcons();return;}
+        _contConfig=payload;
+        window.cerrarModal?.();toast('Porcentajes actualizados ✓');
+        renderContabilidadUI();
+      });
+    });
   }
   function htmlFormGasto(g={}){
     const catOptions=_categoriasGasto.map(c=>`<option value="${c.id}" ${g.categoria_id===c.id?'selected':''}>${c.nombre}</option>`).join('');
