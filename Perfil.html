@@ -845,9 +845,9 @@
   </div>
 
   <div class="activar-overlay" id="modal-tienda" style="display:none" role="dialog" aria-modal="true">
-    <div class="activar-modal" style="text-align:left;max-width:520px;max-height:85vh;overflow-y:auto">
+    <div class="activar-modal" id="modal-tienda-box" style="text-align:left;max-width:520px;max-height:85vh;overflow-y:auto;background:#fff">
       <button class="activar-modal__close" id="modal-tienda-close" aria-label="Cerrar">&times;</button>
-      <h2 class="activar-modal__title" id="modal-tienda-title" style="text-align:left;font-size:20px">—</h2>
+      <h2 class="activar-modal__title" id="modal-tienda-title" style="text-align:left;font-size:20px;color:#0e0e0e">—</h2>
       <div id="modal-tienda-body"></div>
     </div>
   </div>
@@ -930,6 +930,17 @@
     .activar-opt strong { display: block; font-size: 14px; font-weight: 700; margin-bottom: 2px; }
     .activar-opt span { display: block; font-size: 12px; color: #777; }
     .activar-opt--pay strong { color: #1a7a3c; }
+
+    /* Campos de formulario (Mi tienda, Mi perfil, etc.) */
+    #modal-tienda-box { color: #0e0e0e; }
+    .cfg-campo { margin-bottom: 14px; }
+    .cfg-label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; }
+    .cfg-input {
+      width: 100%; padding: 10px 12px; border: 1px solid #ebebeb; border-radius: 10px;
+      font-family: 'Montserrat', sans-serif; font-size: 14px; background: #fff; color: #0e0e0e;
+      box-sizing: border-box;
+    }
+    textarea.cfg-input { resize: vertical; }
 
     /* Tabs de Mi negocio */
     .neg-tab-btn {
