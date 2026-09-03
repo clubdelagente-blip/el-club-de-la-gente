@@ -694,6 +694,8 @@ function inicializarBannerReferidos(userId) {
 /* ---------- TIENDA ---------- */
 const COP = n => n != null ? '$' + Number(n).toLocaleString('es-CO') : '';
 let _tiendaCargada = false;
+let _miembroId = null;
+let _comisionTiendaPct = 10;
 
 async function cargarTienda() {
   if (_tiendaCargada) return;
@@ -746,6 +748,136 @@ async function cargarTienda() {
     });
   }
   renderGrid();
+  cargarTiendaAliados();
+}
+
+/* ---------- Tienda de aliados (vitrina + checkout) ---------- */
+async function cargarTiendaAliados() {
+  const grid = document.getElementById('tienda-aliados-grid');
+  const wrap = document.getElementById('tienda-aliados-wrap');
+  if (!grid || !wrap) return;
+
+  const hoy = new Date().toISOString().slice(0, 10);
+  const [{ data: prods }, { data: cfg }] = await Promise.all([
+    supabase.from('productos_aliado')
+      .select('*, categorias_productos(nombre), aliados(nombre, tienda_nombre, whatsapp, maps_url, tienda_llave_pago)')
+      .eq('estado', 'aprobado').eq('activo', true)
+      .or(`fecha_fin.is.null,fecha_fin.gte.${hoy}`)
+      .order('created_at', { ascending: false }),
+    supabase.from('config_contabilidad').select('comision_tienda_pct').eq('id', 1).maybeSingle(),
+  ]);
+  if (cfg?.comision_tienda_pct != null) _comisionTiendaPct = cfg.comision_tienda_pct;
+
+  const productos = prods || [];
+  if (!productos.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+
+  grid.innerHTML = productos.map(p => {
+    const precioNormal = p.precio_normal != null ? COP(p.precio_normal) : '';
+    const precioDesc   = p.precio_descuento != null ? COP(p.precio_descuento) : '';
+    return `<div class="tienda-card">
+      ${p.imagen_url ? `<img src="${p.imagen_url}" class="tienda-card__img" alt="${p.nombre}">` : `<div class="tienda-card__img tienda-card__img--ph"></div>`}
+      <div class="tienda-card__body">
+        ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat">${p.categorias_productos.nombre}</span>` : ''}
+        <div class="tienda-card__nombre">${p.nombre}</div>
+        <div style="font-size:12px;color:var(--tinta-60);margin-bottom:4px">${p.aliados?.tienda_nombre || p.aliados?.nombre || ''}</div>
+        ${p.descripcion ? `<div class="tienda-card__desc">${p.descripcion}</div>` : ''}
+        <div class="tienda-card__precios">
+          ${precioNormal ? `<span class="tienda-card__antes">${precioNormal}</span>` : ''}
+          ${precioDesc ? `<span class="tienda-card__precio">${precioDesc}</span>` : ''}
+        </div>
+        <button class="tienda-card__btn" data-comprar-prodal="${p.id}" style="border:none;cursor:pointer;width:100%;font:inherit">Comprar</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('[data-comprar-prodal]').forEach(btn => btn.addEventListener('click', () => {
+    const p = productos.find(x => x.id === btn.dataset.comprarProdal);
+    if (p) abrirCheckoutProducto(p);
+  }));
+}
+
+function abrirCheckoutProducto(p) {
+  const precio = p.precio_descuento ?? p.precio_normal ?? 0;
+  abrirModalTienda(`Comprar: ${p.nombre}`, `
+    <p style="font-size:14px;margin-bottom:16px">Vas a pagar <b>${COP(precio)}</b> a <b>${p.aliados?.tienda_nombre || p.aliados?.nombre || 'el negocio'}</b>.</p>
+    <div class="cfg-campo">
+      <label class="cfg-label">¿Cómo recibes tu pedido?</label>
+      <select class="cfg-input" id="pc-entrega">
+        <option value="envio">Envío a domicilio</option>
+        <option value="recoger">Recoger en el negocio</option>
+      </select>
+    </div>
+    <div id="pc-envio-campos">
+      <div class="cfg-campo"><label class="cfg-label">Nombre de quien recibe</label><input class="cfg-input" id="pc-nombre" type="text"></div>
+      <div class="cfg-campo"><label class="cfg-label">Dirección</label><input class="cfg-input" id="pc-direccion" type="text"></div>
+      <div class="cfg-campo"><label class="cfg-label">Teléfono de contacto</label><input class="cfg-input" id="pc-telefono" type="tel"></div>
+    </div>
+    <div id="pc-recoger-campos" style="display:none">
+      ${p.aliados?.maps_url ? `<a href="${p.aliados.maps_url}" target="_blank" rel="noopener" style="font-size:13px;color:#1a7a3c">Ver ubicación en Google Maps ↗</a>` : `<p style="font-size:13px;color:#777">El negocio no registró una ubicación.</p>`}
+    </div>
+    <div class="cfg-campo" style="margin-top:16px">
+      <label class="cfg-label">Llave de pago del negocio</label>
+      <input class="cfg-input" readonly value="${p.aliados?.tienda_llave_pago || 'No registrada — contacta al negocio por WhatsApp'}">
+      <span style="font-size:12px;color:#777;display:block;margin-top:4px">Transfiere ${COP(precio)} a esa llave antes de continuar.</span>
+    </div>
+    <div class="cfg-campo">
+      <label class="cfg-label">Comprobante de pago *</label>
+      <input type="file" id="pc-comprobante" accept="image/*">
+    </div>
+    <button class="btn btn--primario" id="pc-confirmar" style="margin-top:8px">Confirmar pedido <i data-lucide="check" style="width:15px;height:15px"></i></button>
+  `);
+
+  $("#pc-entrega")?.addEventListener("change", (e) => {
+    const esEnvio = e.target.value === "envio";
+    const envioEl = $("#pc-envio-campos"); if (envioEl) envioEl.style.display = esEnvio ? "" : "none";
+    const recogerEl = $("#pc-recoger-campos"); if (recogerEl) recogerEl.style.display = esEnvio ? "none" : "";
+  });
+
+  $("#pc-confirmar")?.addEventListener("click", async () => {
+    const btn = $("#pc-confirmar");
+    const tipoEntrega = $("#pc-entrega")?.value || "envio";
+    const file = $("#pc-comprobante")?.files?.[0];
+    if (!file) { toast("Sube el comprobante de pago"); return; }
+    const nombre = $("#pc-nombre")?.value.trim();
+    const direccion = $("#pc-direccion")?.value.trim();
+    const telefono = $("#pc-telefono")?.value.trim();
+    if (tipoEntrega === "envio" && (!nombre || !direccion)) { toast("Completa nombre y dirección"); return; }
+
+    btn.disabled = true; btn.textContent = "Enviando…";
+    const ext = file.name.split(".").pop();
+    const path = `comprobante-${_miembroId}-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+    if (upErr) { toast("Error subiendo el comprobante"); btn.disabled = false; btn.textContent = "Confirmar pedido"; return; }
+    const comprobante_url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+
+    const comisionValor = Math.round(precio * (_comisionTiendaPct / 100));
+    const payload = {
+      producto_id: p.id,
+      aliado_id: p.aliado_id,
+      miembro_id: _miembroId,
+      tipo_entrega: tipoEntrega,
+      envio_nombre: tipoEntrega === "envio" ? nombre : null,
+      envio_direccion: tipoEntrega === "envio" ? direccion : null,
+      envio_telefono: tipoEntrega === "envio" ? telefono : null,
+      comprobante_url,
+      monto: precio,
+      comision_pct: _comisionTiendaPct,
+      comision_valor: comisionValor,
+      estado: "pendiente",
+    };
+    const { error } = await supabase.from("pedidos").insert(payload);
+    if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Confirmar pedido"; return; }
+
+    if (p.whatsapp) {
+      const wa = p.whatsapp.replace(/\D/g, "");
+      const nombreMiembro = leerPerfil()?.nombre || "Un miembro del Club";
+      const msg = `¡Nuevo pedido! ${nombreMiembro} pidió "${p.nombre}" por ${COP(precio)}. Revisa el comprobante en tu panel "Mi negocio" → "Mi tienda" para confirmarlo.`;
+      supabase.functions.invoke("whatsapp-send", { body: { to: wa, body: msg } }).catch(() => {});
+    }
+    cerrarModalTienda();
+    toast("¡Pedido enviado! El negocio confirmará tu pago pronto.");
+  });
 }
 
 /* ---------- CARRUSEL MARCAS ---------- */
@@ -772,6 +904,7 @@ document.addEventListener("DOMContentLoaded", () => {
   supabase.auth.getSession().then(async ({ data: { session } }) => {
     if (!session?.user?.id) return;
     const userId = session.user.id;
+    _miembroId = userId;
     generarQR(userId);
 
     // Si viene de un pago aprobado, activar el plan en Supabase

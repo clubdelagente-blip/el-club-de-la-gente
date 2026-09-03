@@ -325,6 +325,14 @@
           <div id="tienda-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
             <div style="text-align:center;padding:60px 20px;color:var(--tinta-suave);grid-column:1/-1">Cargando productos…</div>
           </div>
+
+          <div id="tienda-aliados-wrap" style="display:none;margin-top:36px">
+            <div class="dash-greet">
+              <h1 style="font-size:22px">Tienda de nuestros aliados</h1>
+              <p>Productos vendidos directamente por los aliados del Club, con descuento para miembros.</p>
+            </div>
+            <div id="tienda-aliados-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px"></div>
+          </div>
         </section>
 
         <!-- ============================================================
@@ -967,7 +975,7 @@
   </style>
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <script type="module" src="dashboard.js?v=16"></script>
+  <script type="module" src="dashboard.js?v=17"></script>
   <script src="agente.js"></script>
 
   <template id="__bundler_thumbnail">
