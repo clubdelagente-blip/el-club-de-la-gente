@@ -285,8 +285,8 @@ function renderTienda() {
         <div class="ad-card__head"><div class="ad-card__title">Tiendas de aliados activas</div></div>
         <div class="ad-table-wrap">
           <table class="ad-table">
-            <thead><tr><th>Tienda</th><th>Aliado</th><th>Productos publicados</th><th style="text-align:right">Pedidos</th></tr></thead>
-            <tbody id="tiendas-aliados-body"><tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+            <thead><tr><th>Tienda</th><th>Aliado</th><th>Productos</th><th>Pedidos</th><th>Ventas confirmadas</th><th style="text-align:right">Comisión a cobrar</th></tr></thead>
+            <tbody id="tiendas-aliados-body"><tr><td colspan="6" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
           </table>
         </div>
       </div>
