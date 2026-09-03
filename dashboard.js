@@ -468,6 +468,7 @@ function inicializarMiTienda(negocio) {
   $("#btn-agregar-producto")?.addEventListener("click", () => abrirFormProducto());
 
   cargarMisProductos(negocio.id);
+  cargarPedidosAliado(negocio.id);
 }
 
 const ESTADO_PRODUCTO_ALIADO = {
@@ -565,6 +566,73 @@ async function abrirFormProducto(p = {}) {
     toast(id ? "Producto actualizado — vuelve a quedar en revisión" : "Producto agregado — queda en revisión");
     cargarMisProductos(_tiendaAliadoId);
   });
+}
+
+const ESTADO_PEDIDO = {
+  pendiente:  { c: "#b45309", bg: "#fef3c7", t: "Pendiente de confirmar" },
+  confirmado: { c: "#1a7a3c", bg: "#e8f5ee", t: "Confirmado" },
+  entregado:  { c: "#1a7a3c", bg: "#e8f5ee", t: "Entregado" },
+  rechazado:  { c: "#c0392b", bg: "#fdecea", t: "Rechazado" },
+};
+
+async function cargarPedidosAliado(aliadoId) {
+  const list = $("#tienda-pedidos-list");
+  if (!list) return;
+  const { data } = await supabase
+    .from("pedidos")
+    .select("*, productos_aliado(nombre)")
+    .eq("aliado_id", aliadoId)
+    .order("created_at", { ascending: false });
+  const pedidos = data || [];
+
+  const resumenEl = $("#pedidos-comision-resumen");
+  if (resumenEl) {
+    const pendiente = pedidos.filter(p => p.estado === "pendiente" || p.estado === "confirmado").reduce((s, p) => s + (p.comision_valor || 0), 0);
+    const pagada = pedidos.filter(p => p.estado === "entregado").reduce((s, p) => s + (p.comision_valor || 0), 0);
+    resumenEl.textContent = pedidos.length ? `Comisión por confirmar: ${COP(pendiente)} · ya liquidada: ${COP(pagada)}` : "";
+  }
+
+  if (!pedidos.length) { list.innerHTML = `<p style="padding:8px 0">Aún no has recibido pedidos.</p>`; return; }
+
+  list.innerHTML = pedidos.map(p => {
+    const est = ESTADO_PEDIDO[p.estado] || ESTADO_PEDIDO.pendiente;
+    const entrega = p.tipo_entrega === "envio"
+      ? `Envío a ${p.envio_nombre || "—"} · ${p.envio_direccion || ""}${p.envio_telefono ? " · " + p.envio_telefono : ""}`
+      : "Recoge en el negocio";
+    return `
+    <div style="padding:14px 0;border-bottom:1px solid #ebebeb">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <div style="font-weight:600;font-size:14px">${p.productos_aliado?.nombre || "Producto"} — ${COP(p.monto)}</div>
+          <div style="font-size:12px;color:#777">${entrega}</div>
+          <div style="font-size:12px;color:#777">Comisión: ${COP(p.comision_valor)} (${p.comision_pct}%)</div>
+        </div>
+        <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};white-space:nowrap">${est.t}</span>
+      </div>
+      ${p.comprobante_url ? `<a href="${p.comprobante_url}" target="_blank" style="font-size:12px;color:#1a7a3c;display:inline-block;margin-top:6px">Ver comprobante ↗</a>` : ""}
+      <div style="display:flex;gap:8px;margin-top:10px">
+        ${p.estado === "pendiente" ? `
+          <button data-confirmar-pedido="${p.id}" class="btn btn--primario" style="padding:8px 14px;font-size:12px">Confirmar pago</button>
+          <button data-rechazar-pedido="${p.id}" style="padding:8px 14px;font-size:12px;border:1px solid #ebebeb;border-radius:8px;background:none;cursor:pointer">Rechazar</button>
+        ` : ""}
+        ${p.estado === "confirmado" ? `<button data-entregar-pedido="${p.id}" class="btn btn--primario" style="padding:8px 14px;font-size:12px">Marcar entregado</button>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+
+  list.querySelectorAll("[data-confirmar-pedido]").forEach(btn => btn.addEventListener("click", async () => {
+    await supabase.from("pedidos").update({ estado: "confirmado" }).eq("id", btn.dataset.confirmarPedido);
+    cargarPedidosAliado(aliadoId);
+  }));
+  list.querySelectorAll("[data-rechazar-pedido]").forEach(btn => btn.addEventListener("click", async () => {
+    if (!confirm("¿Rechazar este pedido?")) return;
+    await supabase.from("pedidos").update({ estado: "rechazado" }).eq("id", btn.dataset.rechazarPedido);
+    cargarPedidosAliado(aliadoId);
+  }));
+  list.querySelectorAll("[data-entregar-pedido]").forEach(btn => btn.addEventListener("click", async () => {
+    await supabase.from("pedidos").update({ estado: "entregado" }).eq("id", btn.dataset.entregarPedido);
+    cargarPedidosAliado(aliadoId);
+  }));
 }
 
 /* ---------- Referidos ---------- */

@@ -587,12 +587,20 @@
                 </div>
               </div>
 
-              <div class="card">
+              <div class="card" style="margin-bottom:20px">
                 <div class="card__head">
                   <span class="card__title">Tus productos</span>
                   <button class="card__link" id="btn-agregar-producto" type="button" style="cursor:pointer;border:none;background:none;font:inherit">+ Agregar producto</button>
                 </div>
                 <div id="tienda-productos-list" style="padding:8px 0;font-size:13px;color:var(--tinta-40)">Cargando…</div>
+              </div>
+
+              <div class="card">
+                <div class="card__head">
+                  <span class="card__title">Pedidos recibidos</span>
+                  <span class="card__sub" id="pedidos-comision-resumen" style="font-size:12px;color:var(--tinta-60)"></span>
+                </div>
+                <div id="tienda-pedidos-list" style="padding:8px 0;font-size:13px;color:var(--tinta-40)">Cargando…</div>
               </div>
             </div>
           </div>
@@ -975,7 +983,7 @@
   </style>
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <script type="module" src="dashboard.js?v=17"></script>
+  <script type="module" src="dashboard.js?v=18"></script>
   <script src="agente.js"></script>
 
   <template id="__bundler_thumbnail">
