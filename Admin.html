@@ -1290,7 +1290,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
           const conf=confirmadosDe(t.id);
           const ventas=conf.reduce((s,p)=>s+(p.monto||0),0);
           const comision=conf.reduce((s,p)=>s+(p.comision_valor||0),0);
-          return `<tr>
+          return `<tr data-ver-tienda="${t.id}" data-nom-tienda="${(t.tienda_nombre||t.nombre).replace(/"/g,'&quot;')}" style="cursor:pointer">
           <td>${t.tienda_nombre||t.nombre}</td>
           <td style="font-size:12px">${t.nombre}</td>
           <td>${countAprobados(t.id)}</td>
@@ -1304,6 +1304,36 @@ document.addEventListener('DOMContentLoaded',async()=>{
     if(window.lucide)lucide.createIcons();
   }
   window.cargarTiendasAliados=cargarTiendasAliados;
+
+  const ESTADO_PEDIDO_ADMIN={
+    pendiente:{c:'#fbbf24',t:'Pendiente'},
+    confirmado:{c:'#6fdc8c',t:'Confirmado'},
+    entregado:{c:'#6fdc8c',t:'Entregado'},
+    rechazado:{c:'#f87171',t:'Rechazado'},
+  };
+  async function verDetalleTienda(aliadoId,nombreTienda){
+    const{data}=await supabase.from('pedidos').select('*,productos_aliado(nombre)').eq('aliado_id',aliadoId).order('created_at',{ascending:false});
+    const pedidos=data||[];
+    abrirModal(nombreTienda,'Pedidos de esta tienda',
+      !pedidos.length
+        ?`<p style="color:rgba(242,240,234,.4);text-align:center;padding:20px 0">Esta tienda no tiene pedidos todavía</p>`
+        :`<div class="ad-table-wrap"><table class="ad-table">
+            <thead><tr><th>Producto</th><th>Fecha</th><th>Entrega</th><th>Monto</th><th>Comisión</th><th style="text-align:right">Estado</th></tr></thead>
+            <tbody>${pedidos.map(p=>{
+              const est=ESTADO_PEDIDO_ADMIN[p.estado]||ESTADO_PEDIDO_ADMIN.pendiente;
+              return `<tr>
+                <td>${p.productos_aliado?.nombre||'—'}${p.comprobante_url?` · <a href="${p.comprobante_url}" target="_blank" style="color:rgba(242,240,234,.5)">comprobante</a>`:''}</td>
+                <td style="font-size:12px">${new Date(p.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}</td>
+                <td style="font-size:12px">${p.tipo_entrega==='envio'?'Envío':'Recoger'}</td>
+                <td>${COP(p.monto)}</td>
+                <td>${COP(p.comision_valor)} <span style="color:rgba(242,240,234,.4)">(${p.comision_pct}%)</span></td>
+                <td style="text-align:right"><span class="ad-pill" style="background:${est.c}22;color:${est.c}"><span class="d"></span>${est.t}</span></td>
+              </tr>`;
+            }).join('')}</tbody>
+          </table></div>`
+    );
+  }
+  window.verDetalleTienda=verDetalleTienda;
 
   function htmlFormCat(c = {}) {
     return `
@@ -1492,6 +1522,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const rmGasto=e.target.closest('[data-rm-gasto]');if(rmGasto&&confirm('¿Eliminar este gasto?')){await supabase.from('gastos').delete().eq('id',rmGasto.dataset.rmGasto);cargarContabilidad();toast('Gasto eliminado');return;}
     if(e.target.closest('#gastos-csv')){descargarCSV(`gastos-${_contMes}.csv`,['Proveedor','Categoría','Fecha','Monto','Nota'],_contGastosMes.map(g=>[g.proveedor||'',g.categorias_gasto?.nombre||'',g.fecha,g.monto,g.nota||'']));return;}
     if(e.target.closest('#pagos-csv')){descargarCSV(`ingresos-${_contMes}.csv`,['Miembro','Plan','Fecha','Monto'],_contPagosMes.map(p=>[p.perfiles?.nombre||'',p.plan||'',p.created_at,p.monto]));return;}
+    const verTienda=e.target.closest('[data-ver-tienda]');if(verTienda&&!e.target.closest('a')){verDetalleTienda(verTienda.dataset.verTienda,verTienda.dataset.nomTienda);return;}
     const aprobarProdal=e.target.closest('[data-aprobar-prodal]');if(aprobarProdal){await supabase.from('productos_aliado').update({estado:'aprobado'}).eq('id',aprobarProdal.dataset.aprobarProdal);window.cargarTiendasAliados?.();toast('Producto aprobado ✓');return;}
     const rechazarProdal=e.target.closest('[data-rechazar-prodal]');if(rechazarProdal&&confirm('¿Rechazar este producto?')){await supabase.from('productos_aliado').update({estado:'rechazado'}).eq('id',rechazarProdal.dataset.rechazarProdal);window.cargarTiendasAliados?.();toast('Producto rechazado');return;}
   });
