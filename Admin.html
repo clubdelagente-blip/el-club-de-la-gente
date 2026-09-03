@@ -1046,6 +1046,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const rentaValor=Math.max(0,trasGastos)*(cfg.renta_pct/100);
     const utilidadNeta=trasGastos-rentaValor;
 
+    const ingresosAnio=_pagos.filter(p=>new Date(p.created_at).getFullYear()===y).reduce((s,p)=>s+(p.monto||0),0);
+    const gastosAnio=_gastos.filter(g=>new Date(g.fecha).getFullYear()===y).reduce((s,g)=>s+(g.monto||0),0);
+    const balanceAnio=ingresosAnio-gastosAnio;
+
     $("#p-contabilidad").innerHTML=`
       <div class="ad-toolbar">
         <div class="ad-card__title">Mostrando</div>
@@ -1056,6 +1060,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
         ${metric('banknote',COPc(ingresosMes),'Ingresos del mes','membresías vía Wompi',chIng.chip,chIng.dir)}
         ${metric('receipt',COPc(gastosMes),'Gastos del mes','registrados a mano',chGas.chip,chGas.dir)}
         ${metric('scale',COPc(balanceMes),'Balance del mes',balanceMes>=0?'positivo':'negativo','','up')}
+        ${metric('landmark',COPc(balanceAnio),'Balance del año',`año ${y} · ingresos ${COPc(ingresosAnio)} − gastos ${COPc(gastosAnio)}`,'','up')}
       </div>
       <div class="ad-toolbar"><div class="ad-card__title">Gastos</div><div class="ad-spacer"></div><button class="ad-btn" id="gastos-csv">${ic('download')} Descargar Excel</button><button class="ad-btn ad-btn--verde" id="gasto-add">${ic('plus')} Agregar gasto</button></div>
       <div class="ad-table-wrap">
