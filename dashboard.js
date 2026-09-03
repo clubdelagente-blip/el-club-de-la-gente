@@ -397,6 +397,176 @@ async function cargarVentasNegocio(aliadoId) {
   if (window.lucide) lucide.createIcons();
 }
 
+/* ---------- Mi tienda (aliado) ---------- */
+let _tiendaAliadoId = null;
+let _tiendaCategorias = [];
+
+function abrirModalTienda(titulo, bodyHtml) {
+  const t = $("#modal-tienda-title"); if (t) t.textContent = titulo;
+  const b = $("#modal-tienda-body"); if (b) b.innerHTML = bodyHtml;
+  const m = $("#modal-tienda"); if (m) m.style.display = "flex";
+  document.body.style.overflow = "hidden";
+  if (window.lucide) lucide.createIcons();
+}
+function cerrarModalTienda() {
+  const m = $("#modal-tienda"); if (m) m.style.display = "none";
+  document.body.style.overflow = "";
+}
+
+function renderTiendaEstado(negocio) {
+  const explicador = $("#tienda-aliado-explicador");
+  const panel = $("#tienda-aliado-panel");
+  if (negocio.tienda_activa) {
+    if (explicador) explicador.style.display = "none";
+    if (panel) panel.style.display = "";
+    const nombreEl = $("#tda-nombre"); if (nombreEl) nombreEl.value = negocio.tienda_nombre || negocio.nombre || "";
+    const llaveEl = $("#tda-llave"); if (llaveEl) llaveEl.value = negocio.tienda_llave_pago || "";
+  } else {
+    if (explicador) explicador.style.display = "";
+    if (panel) panel.style.display = "none";
+  }
+}
+
+function inicializarMiTienda(negocio) {
+  _tiendaAliadoId = negocio.id;
+
+  $$(".neg-tab-btn").forEach(b => b.addEventListener("click", () => {
+    $$(".neg-tab-btn").forEach(x => x.classList.toggle("is-active", x === b));
+    const tab = b.dataset.negtab;
+    const res = $("#negtab-resumen"); if (res) res.style.display = tab === "resumen" ? "" : "none";
+    const tie = $("#negtab-tienda"); if (tie) tie.style.display = tab === "tienda" ? "" : "none";
+  }));
+
+  $("#modal-tienda-close")?.addEventListener("click", cerrarModalTienda);
+  $("#modal-tienda")?.addEventListener("click", (e) => { if (e.target === e.currentTarget) cerrarModalTienda(); });
+
+  renderTiendaEstado(negocio);
+
+  $("#btn-activar-tienda")?.addEventListener("click", async () => {
+    const btn = $("#btn-activar-tienda");
+    btn.disabled = true;
+    const tiendaNombre = negocio.tienda_nombre || negocio.nombre;
+    const { error } = await supabase.from("aliados").update({ tienda_activa: true, tienda_nombre: tiendaNombre }).eq("id", negocio.id);
+    if (error) { toast("Error activando la tienda"); btn.disabled = false; return; }
+    negocio.tienda_activa = true;
+    negocio.tienda_nombre = tiendaNombre;
+    renderTiendaEstado(negocio);
+  });
+
+  $("#tda-guardar")?.addEventListener("click", async () => {
+    const btn = $("#tda-guardar");
+    const nombre = $("#tda-nombre")?.value.trim();
+    const llave = $("#tda-llave")?.value.trim();
+    btn.disabled = true;
+    const { error } = await supabase.from("aliados").update({ tienda_nombre: nombre || null, tienda_llave_pago: llave || null }).eq("id", negocio.id);
+    btn.disabled = false;
+    if (error) { toast("Error guardando los datos"); return; }
+    const msg = $("#tda-guardado-msg");
+    if (msg) { msg.style.display = "inline"; setTimeout(() => { msg.style.display = "none"; }, 2000); }
+  });
+
+  $("#btn-agregar-producto")?.addEventListener("click", () => abrirFormProducto());
+
+  cargarMisProductos(negocio.id);
+}
+
+const ESTADO_PRODUCTO_ALIADO = {
+  pendiente: { c: "#b45309", bg: "#fef3c7", t: "En revisión" },
+  aprobado:  { c: "#1a7a3c", bg: "#e8f5ee", t: "Publicado" },
+  rechazado: { c: "#c0392b", bg: "#fdecea", t: "Rechazado" },
+};
+
+async function cargarMisProductos(aliadoId) {
+  const list = $("#tienda-productos-list");
+  if (!list) return;
+  const { data } = await supabase.from("productos_aliado").select("*, categorias_productos(nombre)").eq("aliado_id", aliadoId).order("created_at", { ascending: false });
+  const productos = data || [];
+  if (!productos.length) { list.innerHTML = `<p style="padding:8px 0">Aún no has agregado productos.</p>`; return; }
+  list.innerHTML = productos.map(p => {
+    const est = ESTADO_PRODUCTO_ALIADO[p.estado] || ESTADO_PRODUCTO_ALIADO.pendiente;
+    return `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #ebebeb">
+      ${p.imagen_url ? `<img src="${p.imagen_url}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<div style="width:44px;height:44px;border-radius:8px;background:#f0faf4;flex-shrink:0"></div>`}
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:14px">${p.nombre}</div>
+        <div style="font-size:12px;color:#777">${p.categorias_productos?.nombre || "Sin categoría"}${p.fecha_fin ? " · promo hasta " + new Date(p.fecha_fin + "T00:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "short" }) : ""}</div>
+      </div>
+      <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};flex-shrink:0;white-space:nowrap">${est.t}</span>
+      <button data-ed-prodal="${p.id}" style="border:none;background:none;cursor:pointer;color:#777"><i data-lucide="pencil" style="width:16px;height:16px"></i></button>
+      <button data-rm-prodal="${p.id}" style="border:none;background:none;cursor:pointer;color:#c0392b"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>
+    </div>`;
+  }).join("");
+  if (window.lucide) lucide.createIcons();
+  list.querySelectorAll("[data-ed-prodal]").forEach(btn => btn.addEventListener("click", () => {
+    const p = productos.find(x => x.id === btn.dataset.edProdal);
+    if (p) abrirFormProducto(p);
+  }));
+  list.querySelectorAll("[data-rm-prodal]").forEach(btn => btn.addEventListener("click", async () => {
+    if (!confirm("¿Eliminar este producto?")) return;
+    await supabase.from("productos_aliado").delete().eq("id", btn.dataset.rmProdal);
+    cargarMisProductos(aliadoId);
+  }));
+}
+
+async function abrirFormProducto(p = {}) {
+  if (!_tiendaCategorias.length) {
+    const { data } = await supabase.from("categorias_productos").select("*").order("nombre");
+    _tiendaCategorias = data || [];
+  }
+  const catOpts = _tiendaCategorias.map(c => `<option value="${c.id}" ${p.categoria_id === c.id ? "selected" : ""}>${c.nombre}</option>`).join("");
+  abrirModalTienda(p.id ? "Editar producto" : "Agregar producto", `
+    <div class="cfg-campo"><label class="cfg-label">Nombre del producto *</label><input class="cfg-input" id="pa-nombre" type="text" value="${(p.nombre || "").replace(/"/g, "&quot;")}" placeholder="Ej: Torta de tres leches"></div>
+    <div class="cfg-campo"><label class="cfg-label">Descripción</label><textarea class="cfg-input" id="pa-desc" rows="2">${p.descripcion || ""}</textarea></div>
+    <div class="cfg-campo"><label class="cfg-label">Categoría</label><select class="cfg-input" id="pa-cat"><option value="">Sin categoría</option>${catOpts}</select></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="cfg-campo"><label class="cfg-label">Precio normal</label><input class="cfg-input" id="pa-precio" type="number" min="0" value="${p.precio_normal || ""}" placeholder="50000"></div>
+      <div class="cfg-campo"><label class="cfg-label">Precio con descuento</label><input class="cfg-input" id="pa-descuento" type="number" min="0" value="${p.precio_descuento || ""}" placeholder="40000"></div>
+    </div>
+    <div class="cfg-campo"><label class="cfg-label">WhatsApp para atender pedidos</label><input class="cfg-input" id="pa-wa" type="tel" value="${p.whatsapp || ""}" placeholder="300 000 0000"></div>
+    <div class="cfg-campo"><label class="cfg-label">Promoción válida hasta (opcional)</label><input class="cfg-input" id="pa-fecha" type="date" value="${p.fecha_fin || ""}"></div>
+    <div class="cfg-campo"><label class="cfg-label">Foto del producto</label>
+      ${p.imagen_url ? `<img src="${p.imagen_url}" style="height:60px;border-radius:8px;display:block;margin-bottom:8px">` : ""}
+      <input type="file" id="pa-img" accept="image/*">
+      <input type="hidden" id="pa-img-url" value="${p.imagen_url || ""}">
+    </div>
+    <button class="btn btn--primario" id="pa-save" data-id="${p.id || ""}" style="margin-top:8px">${p.id ? "Guardar cambios" : "Agregar producto"} <i data-lucide="check" style="width:15px;height:15px"></i></button>
+  `);
+  $("#pa-save")?.addEventListener("click", async () => {
+    const btn = $("#pa-save");
+    const nombre = $("#pa-nombre")?.value.trim();
+    if (!nombre) { toast("El nombre es obligatorio"); return; }
+    btn.disabled = true; btn.textContent = "Guardando…";
+    let imagen_url = $("#pa-img-url")?.value || null;
+    const file = $("#pa-img")?.files?.[0];
+    if (file) {
+      const ext = file.name.split(".").pop();
+      const path = `producto-${_tiendaAliadoId}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+      if (!upErr) imagen_url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+    }
+    const id = btn.dataset.id;
+    const payload = {
+      aliado_id: _tiendaAliadoId,
+      nombre,
+      descripcion: $("#pa-desc")?.value.trim() || null,
+      categoria_id: $("#pa-cat")?.value || null,
+      precio_normal: parseInt($("#pa-precio")?.value) || null,
+      precio_descuento: parseInt($("#pa-descuento")?.value) || null,
+      whatsapp: $("#pa-wa")?.value.trim() || null,
+      fecha_fin: $("#pa-fecha")?.value || null,
+      imagen_url,
+      estado: "pendiente",
+    };
+    const { error } = id
+      ? await supabase.from("productos_aliado").update(payload).eq("id", id)
+      : await supabase.from("productos_aliado").insert(payload);
+    if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = id ? "Guardar cambios" : "Agregar producto"; return; }
+    cerrarModalTienda();
+    toast(id ? "Producto actualizado — vuelve a quedar en revisión" : "Producto agregado — queda en revisión");
+    cargarMisProductos(_tiendaAliadoId);
+  });
+}
+
 /* ---------- Referidos ---------- */
 async function cargarReferidos(userId) {
   const linkEl = document.getElementById("ref-link");
@@ -651,12 +821,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Rol aliado (cuenta real, no localStorage): "Mi negocio" conectado por aliado_id
     if (perfData?.rol === "aliado") {
-      const { data: negocio } = await supabase.from("aliados").select("id, nombre, categoria").eq("user_id", userId).maybeSingle();
+      const { data: negocio } = await supabase.from("aliados").select("id, nombre, categoria, whatsapp, tienda_activa, tienda_nombre, tienda_llave_pago").eq("user_id", userId).maybeSingle();
       if (negocio) {
         const li = $("#sb-negocio-li"); if (li) li.hidden = false;
         const negNombre = $("#negocio-nombre"); if (negNombre) negNombre.textContent = negocio.nombre;
         const negCat = $("#negocio-cat"); if (negCat && negocio.categoria) negCat.textContent = negocio.categoria;
         cargarVentasNegocio(negocio.id);
+        inicializarMiTienda(negocio);
       }
     }
     cargarReferidos(userId);

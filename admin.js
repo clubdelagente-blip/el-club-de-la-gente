@@ -243,30 +243,62 @@ window.renderMarcas = renderMarcas;
    ============================================================ */
 function renderTienda() {
   $("#p-tienda").innerHTML = `
-    <div style="display:flex;gap:12px;margin-bottom:20px">
-      <button class="ad-btn ad-btn--verde" id="cat-add">${ic("folder-plus")} Nueva categoría</button>
-      <button class="ad-btn ad-btn--verde" id="prod-add">${ic("plus")} Agregar producto</button>
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      <button class="ad-link" data-tiendatab="amazon" style="width:auto;display:inline-flex" data-is-tab>Catálogo Amazon</button>
+      <button class="ad-link" data-tiendatab="aliados" style="width:auto;display:inline-flex" data-is-tab>Tiendas de aliados</button>
     </div>
-    <div class="ad-card" style="margin-bottom:20px">
-      <div class="ad-card__head"><div class="ad-card__title">Categorías</div></div>
-      <div class="ad-table-wrap">
-        <table class="ad-table">
-          <thead><tr><th>Nombre</th><th style="text-align:right">Estado</th></tr></thead>
-          <tbody id="cats-body"><tr><td colspan="2" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
-        </table>
+    <div id="tiendatab-amazon">
+      <div style="display:flex;gap:12px;margin-bottom:20px">
+        <button class="ad-btn ad-btn--verde" id="cat-add">${ic("folder-plus")} Nueva categoría</button>
+        <button class="ad-btn ad-btn--verde" id="prod-add">${ic("plus")} Agregar producto</button>
+      </div>
+      <div class="ad-card" style="margin-bottom:20px">
+        <div class="ad-card__head"><div class="ad-card__title">Categorías</div></div>
+        <div class="ad-table-wrap">
+          <table class="ad-table">
+            <thead><tr><th>Nombre</th><th style="text-align:right">Estado</th></tr></thead>
+            <tbody id="cats-body"><tr><td colspan="2" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="ad-card">
+        <div class="ad-card__head"><div class="ad-card__title">Productos</div></div>
+        <div class="ad-table-wrap">
+          <table class="ad-table">
+            <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Precio miembro</th><th style="text-align:right">Estado</th></tr></thead>
+            <tbody id="prods-body"><tr><td colspan="5" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+          </table>
+        </div>
       </div>
     </div>
-    <div class="ad-card">
-      <div class="ad-card__head"><div class="ad-card__title">Productos</div></div>
-      <div class="ad-table-wrap">
-        <table class="ad-table">
-          <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Precio miembro</th><th style="text-align:right">Estado</th></tr></thead>
-          <tbody id="prods-body"><tr><td colspan="5" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
-        </table>
+    <div id="tiendatab-aliados" style="display:none">
+      <div class="ad-card" style="margin-bottom:20px">
+        <div class="ad-card__head"><div class="ad-card__title">Productos pendientes de aprobación</div></div>
+        <div class="ad-table-wrap">
+          <table class="ad-table">
+            <thead><tr><th>Producto</th><th>Tienda</th><th>Precio</th><th style="text-align:right">Acción</th></tr></thead>
+            <tbody id="prodal-pend-body"><tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="ad-card">
+        <div class="ad-card__head"><div class="ad-card__title">Tiendas de aliados activas</div></div>
+        <div class="ad-table-wrap">
+          <table class="ad-table">
+            <thead><tr><th>Tienda</th><th>Aliado</th><th>Productos publicados</th><th style="text-align:right">Pedidos</th></tr></thead>
+            <tbody id="tiendas-aliados-body"><tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+          </table>
+        </div>
       </div>
     </div>`;
   if (window.lucide) lucide.createIcons();
   window.cargarTiendaAdmin?.();
+  $$("[data-tiendatab]").forEach(b => b.addEventListener("click", () => {
+    const tab = b.dataset.tiendatab;
+    $("#tiendatab-amazon").style.display = tab === "amazon" ? "" : "none";
+    $("#tiendatab-aliados").style.display = tab === "aliados" ? "" : "none";
+    if (tab === "aliados") window.cargarTiendasAliados?.();
+  }));
 }
 window.renderTienda = renderTienda;
 
