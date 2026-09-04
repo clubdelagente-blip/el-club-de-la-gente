@@ -204,6 +204,7 @@
        SCRIPTS
        ============================================================ -->
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=4"></script>
   <script src="admin.js?v=14"></script>
   <script type="module">
@@ -526,7 +527,7 @@ window.enviarDifusionReal=enviarDifusionReal;
 
 /* ---- AGENTE WHATSAPP: bandeja real ---- */
 let _agConvsAll=[], _agActive=null, _agQ='', _agPendingFile=null;
-let _agRecording=false, _agRecStream=null, _agRecRecorder=null, _agRecChunks=[], _agRecStartTs=0, _agRecInterval=null, _agRecMime='';
+let _agRecording=false, _agRecRecorder=null, _agRecCancel=null, _agRecStartTs=0, _agRecInterval=null;
 function _agTiempo(iso){return new Date(iso).toLocaleTimeString('es-CO',{hour:'numeric',minute:'2-digit',hour12:true}).toLowerCase();}
 
 async function cargarAgenteReal(){
@@ -654,64 +655,18 @@ window.abrirConvReal=function(numero){
   renderAgThreadReal();
 };
 
-function _agBestAudioMime(){
-  if(!window.MediaRecorder)return'';
-  const opciones=['audio/ogg;codecs=opus','audio/webm;codecs=opus','audio/webm','audio/mp4'];
-  for(const o of opciones){try{if(MediaRecorder.isTypeSupported(o))return o;}catch(_){}}
-  return'';
-}
-function _agStopStream(){
-  if(_agRecInterval){clearInterval(_agRecInterval);_agRecInterval=null;}
-  if(_agRecStream){_agRecStream.getTracks().forEach(t=>t.stop());_agRecStream=null;}
-}
 window.agStartRecording=async function(){
   if(_agRecording)return;
-  if(!navigator.mediaDevices?.getUserMedia){toast('Tu navegador no permite grabar audio');return;}
-  try{
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-    _agRecStream=stream;
-    _agRecMime=_agBestAudioMime();
-    _agRecRecorder=_agRecMime?new MediaRecorder(stream,{mimeType:_agRecMime}):new MediaRecorder(stream);
-    _agRecChunks=[];
-    _agRecRecorder.ondataavailable=e=>{if(e.data&&e.data.size>0)_agRecChunks.push(e.data);};
-    _agRecRecorder.start();
-    _agRecStartTs=Date.now();
-    _agRecording=true;
-    renderAgThreadReal();
-    _agRecInterval=setInterval(()=>{
-      const s=Math.floor((Date.now()-_agRecStartTs)/1000);
-      const el=$("#ag-rec-timer");
-      if(el)el.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-    },500);
-  }catch(e){
-    toast('No se pudo acceder al micrófono');
-  }
-};
-window.agCancelRecording=function(){
-  if(!_agRecording)return;
-  const rec=_agRecRecorder;
-  _agRecording=false;
-  _agStopStream();
-  try{if(rec&&rec.state!=='inactive')rec.stop();}catch(_){}
-  _agRecChunks=[];
-  renderAgThreadReal();
-};
-window.agSendRecording=function(){
-  if(!_agRecording||!_agRecRecorder)return;
-  const dur=Date.now()-_agRecStartTs;
-  const rec=_agRecRecorder;
-  const mime=_agRecMime||'audio/webm';
+  if(!window.Recorder||!Recorder.isRecordingSupported()){toast('Tu navegador no permite grabar audio');return;}
   const numero=_agActive;
-  rec.onstop=async()=>{
-    _agStopStream();
-    _agRecording=false;
-    if(dur<800){_agRecChunks=[];renderAgThreadReal();toast('Grabación muy corta');return;}
-    const blob=new Blob(_agRecChunks,{type:mime});
-    _agRecChunks=[];
-    renderAgThreadReal();
-    if(!numero)return;
-    const ext=mime.includes('ogg')?'ogg':mime.includes('mp4')?'m4a':'webm';
-    const file=new File([blob],`nota-de-voz-${Date.now()}.${ext}`,{type:mime});
+  if(!numero)return;
+  const rec=new Recorder({encoderPath:'vendor/encoderWorker.min.js',encoderSampleRate:16000,numberOfChannels:1,encoderApplication:2048,encoderBitRate:24000});
+  let cancelado=false,startTs=0;
+  rec.ondataavailable=async(arrayBuffer)=>{
+    if(cancelado)return;
+    if(Date.now()-startTs<800){toast('Grabación muy corta');return;}
+    const blob=new Blob([arrayBuffer],{type:'audio/ogg'});
+    const file=new File([blob],`nota-de-voz-${Date.now()}.ogg`,{type:'audio/ogg'});
     try{
       const mediaUrl=await subirImagen(file);
       const res=await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3",{
@@ -724,7 +679,44 @@ window.agSendRecording=function(){
       toast('Error subiendo el audio: '+e.message);
     }
   };
-  try{rec.stop();}catch(_){}
+  try{
+    await rec.start();
+  }catch(e){
+    toast('No se pudo acceder al micrófono');
+    return;
+  }
+  startTs=Date.now();
+  _agRecStartTs=startTs;
+  _agRecRecorder=rec;
+  _agRecCancel=()=>{cancelado=true;};
+  _agRecording=true;
+  renderAgThreadReal();
+  _agRecInterval=setInterval(()=>{
+    const s=Math.floor((Date.now()-startTs)/1000);
+    const el=$("#ag-rec-timer");
+    if(el)el.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  },500);
+};
+function _agEndRecording(){
+  if(_agRecInterval){clearInterval(_agRecInterval);_agRecInterval=null;}
+  _agRecording=false;
+  const rec=_agRecRecorder;
+  _agRecRecorder=null;
+  if(rec){
+    try{rec.stop();}catch(_){}
+    setTimeout(()=>{try{rec.close();}catch(_){}},300);
+  }
+}
+window.agCancelRecording=function(){
+  if(!_agRecording)return;
+  _agRecCancel&&_agRecCancel();
+  _agEndRecording();
+  renderAgThreadReal();
+};
+window.agSendRecording=function(){
+  if(!_agRecording)return;
+  _agEndRecording();
+  renderAgThreadReal();
 };
 
 window.agAttachFile=function(file){
