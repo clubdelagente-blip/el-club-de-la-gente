@@ -1052,8 +1052,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
 
     // Desglose de ingresos (IVA → ICA → fundadores → gastos → renta)
     const cfg=_contConfig;
-    const ivaValor=ingresosMes-(ingresosMes/(1+cfg.iva_pct/100));
-    const trasIva=ingresosMes-ivaValor;
+    // Wompi solo cobra su comision sobre lo que realmente procesa (pagos de membresia), no sobre comisiones ni ingresos manuales
+    const wompiFeeMes=_contPagosMes.reduce((s,p)=>s+((p.monto||0)*0.0265+700)*1.19,0);
+    const trasWompi=ingresosMes-wompiFeeMes;
+    const ivaValor=trasWompi-(trasWompi/(1+cfg.iva_pct/100));
+    const trasIva=trasWompi-ivaValor;
     const icaValor=trasIva*(cfg.ica_pct/100);
     const trasIca=trasIva-icaValor;
     const fundadoresValor=trasIca*(cfg.fundadores_pct/100);
@@ -1123,7 +1126,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
           <thead><tr><th>Concepto</th><th>Cálculo</th><th style="text-align:right">Valor</th><th style="text-align:right">Queda</th></tr></thead>
           <tbody>
             <tr><td>Ingresos del mes</td><td>—</td><td style="text-align:right">—</td><td style="text-align:right"><span class="ad-num-strong">${COPc(ingresosMes)}</span></td></tr>
-            <tr><td>(-) IVA (${cfg.iva_pct}%, incluido en el precio)</td><td><span class="ad-table__num">${COPc(ingresosMes)} − (${COPc(ingresosMes)} ÷ ${(1+cfg.iva_pct/100).toFixed(2)})</span></td><td style="text-align:right">${COPc(ivaValor)}</td><td style="text-align:right">${COPc(trasIva)}</td></tr>
+            <tr><td>(-) Wompi (2,65% + $700 fijo + IVA 19% sobre esa comisión)</td><td><span class="ad-table__num">Solo sobre pagos de membresía vía Wompi</span></td><td style="text-align:right">${COPc(wompiFeeMes)}</td><td style="text-align:right">${COPc(trasWompi)}</td></tr>
+            <tr><td>(-) IVA (${cfg.iva_pct}%, incluido en el precio)</td><td><span class="ad-table__num">${COPc(trasWompi)} − (${COPc(trasWompi)} ÷ ${(1+cfg.iva_pct/100).toFixed(2)})</span></td><td style="text-align:right">${COPc(ivaValor)}</td><td style="text-align:right">${COPc(trasIva)}</td></tr>
             <tr><td>(-) ICA + Avisos y Tableros (≈${cfg.ica_pct}%)</td><td><span class="ad-table__num">${COPc(trasIva)} × ${cfg.ica_pct}%</span></td><td style="text-align:right">${COPc(icaValor)}</td><td style="text-align:right">${COPc(trasIca)}</td></tr>
             <tr><td>(-) Remuneración de los fundadores (${cfg.fundadores_pct}%)</td><td><span class="ad-table__num">${COPc(trasIca)} × ${cfg.fundadores_pct}%</span></td><td style="text-align:right">${COPc(fundadoresValor)}</td><td style="text-align:right">${COPc(trasFundadores)}</td></tr>
             <tr><td>(-) Gastos operativos y sociales</td><td><span class="ad-table__num">Gastos reales del mes</span></td><td style="text-align:right">${COPc(gastosMes)}</td><td style="text-align:right">${COPc(trasGastos)}</td></tr>
