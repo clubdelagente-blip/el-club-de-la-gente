@@ -441,6 +441,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const tpl = e.target.closest("[data-tpl]");
     if (tpl) { const inp = $("#ag-input"); if (inp) { inp.value = ADM_WA_PLANTILLAS[tpl.dataset.tpl].txt; inp.focus(); inp.style.height = "auto"; inp.style.height = inp.scrollHeight + "px"; } return; }
     if (e.target.closest("#ag-send")) { window.enviarMsgReal?.(); return; }
+    if (e.target.closest("#ag-attach-btn")) { $("#ag-attach-input")?.click(); return; }
+    if (e.target.closest("#ag-attach-remove")) { window.agRemoveAttach?.(); return; }
     if (e.target.closest("#ag-broadcast")) { window.abrirDifusionReal?.(); return; }
     const verM = e.target.closest("[data-ver-miembro]");
     if (verM) { window.abrirMiembroReal?.(verM.dataset.verMiembro); return; }
@@ -487,6 +489,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.id === "a-search") { window.filtrarAliadosReal?.(e.target.value); }
     if (e.target.id === "ag-search") { window.filtrarConvsReal?.(e.target.value); }
     if (e.target.id === "ag-input") { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }
+  });
+
+  // Adjuntar foto/video en el Agente WhatsApp
+  document.addEventListener("change", (e) => {
+    if (e.target.id === "ag-attach-input") { window.agAttachFile?.(e.target.files[0]); e.target.value = ""; }
   });
 
   // Enter para enviar mensaje del agente

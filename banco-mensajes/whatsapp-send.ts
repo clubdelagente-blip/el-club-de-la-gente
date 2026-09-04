@@ -26,10 +26,13 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
   try {
-    const { to, body } = await req.json();
-    if (!to || !body) return new Response(JSON.stringify({ error: "Faltan datos" }), { status: 400, headers: cors });
-    if (typeof body !== "string" || body.length > 1000) {
+    const { to, body, mediaUrl } = await req.json();
+    if (!to || (!body && !mediaUrl)) return new Response(JSON.stringify({ error: "Faltan datos" }), { status: 400, headers: cors });
+    if (body && (typeof body !== "string" || body.length > 1000)) {
       return new Response(JSON.stringify({ error: "Mensaje inválido" }), { status: 400, headers: cors });
+    }
+    if (mediaUrl && (typeof mediaUrl !== "string" || !/^https:\/\//.test(mediaUrl))) {
+      return new Response(JSON.stringify({ error: "Media inválida" }), { status: 400, headers: cors });
     }
 
     const num = to.replace(/\D/g, "");
@@ -54,7 +57,10 @@ Deno.serve(async (req) => {
 
     const destino = "whatsapp:+" + (num.startsWith("57") ? num : "57" + num);
 
-    const form = new URLSearchParams({ From: FROM, To: destino, Body: body });
+    const formFields: Record<string, string> = { From: FROM, To: destino };
+    if (body) formFields.Body = body;
+    if (mediaUrl) formFields.MediaUrl = mediaUrl;
+    const form = new URLSearchParams(formFields);
     const creds = btoa(`${TWILIO_SID}:${TWILIO_TOKEN}`);
 
     const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
