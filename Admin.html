@@ -484,7 +484,7 @@ async function enviarDifusionReal(audienciaId){
     const primerNombre=(p.nombre||'').trim().split(' ')[0]||'';
     const texto=msg.replace(/\{nombre\}/gi,primerNombre);
     try{
-      const{error}=await supabase.functions.invoke('whatsapp-send',{body:{to:p.whatsapp,body:texto}});
+      const{error}=await supabase.functions.invoke('whatsapp-send-3',{body:{to:p.whatsapp,body:texto}});
       if(error)fallidos++;else enviados++;
     }catch(_){fallidos++;}
     if(progEl)progEl.textContent=`Enviando… ${enviados+fallidos}/${aud.list.length} (✓ ${enviados} · ✗ ${fallidos})`;
@@ -612,7 +612,7 @@ window.enviarMsgReal=async function(){
   const txt=inp.value.trim();
   if(!txt)return;
   inp.disabled=true;
-  const{error}=await supabase.functions.invoke('whatsapp-send',{body:{to:c.numero,body:txt}});
+  const{error}=await supabase.functions.invoke('whatsapp-send-3',{body:{to:c.numero,body:txt}});
   if(error){toast('Error enviando el mensaje: '+error.message);inp.disabled=false;return;}
   await supabase.from('conversaciones').insert({whatsapp:c.numero,rol:'assistant',contenido:txt});
   c.msgs.push({whatsapp:c.numero,rol:'assistant',contenido:txt,created_at:new Date().toISOString()});
