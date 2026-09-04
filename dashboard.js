@@ -421,6 +421,7 @@ function renderTiendaEstado(negocio) {
     if (panel) panel.style.display = "";
     const nombreEl = $("#tda-nombre"); if (nombreEl) nombreEl.value = negocio.tienda_nombre || negocio.nombre || "";
     const llaveEl = $("#tda-llave"); if (llaveEl) llaveEl.value = negocio.tienda_llave_pago || "";
+    const mapsEl = $("#tda-maps"); if (mapsEl) mapsEl.value = negocio.maps_url || "";
   } else {
     if (explicador) explicador.style.display = "";
     if (panel) panel.style.display = "none";
@@ -457,8 +458,9 @@ function inicializarMiTienda(negocio) {
     const btn = $("#tda-guardar");
     const nombre = $("#tda-nombre")?.value.trim();
     const llave = $("#tda-llave")?.value.trim();
+    const maps = $("#tda-maps")?.value.trim();
     btn.disabled = true;
-    const { error } = await supabase.from("aliados").update({ tienda_nombre: nombre || null, tienda_llave_pago: llave || null }).eq("id", negocio.id);
+    const { error } = await supabase.from("aliados").update({ tienda_nombre: nombre || null, tienda_llave_pago: llave || null, maps_url: maps || null }).eq("id", negocio.id);
     btn.disabled = false;
     if (error) { toast("Error guardando los datos"); return; }
     const msg = $("#tda-guardado-msg");
@@ -1022,7 +1024,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Rol aliado (cuenta real, no localStorage): "Mi negocio" conectado por aliado_id
     if (perfData?.rol === "aliado") {
-      const { data: negocio } = await supabase.from("aliados").select("id, nombre, categoria, whatsapp, tienda_activa, tienda_nombre, tienda_llave_pago").eq("user_id", userId).maybeSingle();
+      const { data: negocio } = await supabase.from("aliados").select("id, nombre, categoria, whatsapp, maps_url, tienda_activa, tienda_nombre, tienda_llave_pago").eq("user_id", userId).maybeSingle();
       if (negocio) {
         const li = $("#sb-negocio-li"); if (li) li.hidden = false;
         const negNombre = $("#negocio-nombre"); if (negNombre) negNombre.textContent = negocio.nombre;

@@ -582,6 +582,11 @@
                     <label class="cfg-label">Llave de pago (Nequi, Daviplata, Bre-B...)</label>
                     <input class="cfg-input" id="tda-llave" type="text" placeholder="Ej: 300 123 4567">
                   </div>
+                  <div class="cfg-campo">
+                    <label class="cfg-label">Ubicación (link de Google Maps)</label>
+                    <input class="cfg-input" id="tda-maps" type="url" placeholder="https://maps.app.goo.gl/...">
+                    <span style="font-size:12px;color:var(--tinta-40);display:block;margin-top:4px">Se le muestra al miembro cuando elige "Recoger en el negocio" al comprar.</span>
+                  </div>
                   <button class="btn btn--primario" id="tda-guardar">Guardar datos <i data-lucide="check" style="width:15px;height:15px"></i></button>
                   <span id="tda-guardado-msg" style="font-size:13px;color:var(--verde);margin-left:14px;display:none">¡Guardado!</span>
                 </div>
@@ -983,7 +988,7 @@
   </style>
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <script type="module" src="dashboard.js?v=18"></script>
+  <script type="module" src="dashboard.js?v=19"></script>
   <script src="agente.js"></script>
 
   <template id="__bundler_thumbnail">
