@@ -353,7 +353,11 @@ function wireCalc(a) {
       const msg = usaPorcentaje
         ? `¡Hola! 🎉 Tu descuento en ${a.nombre} ya quedó registrado.\n\nAhorraste ${fmtCOP(ahorro)} en una compra de ${fmtCOP(monto)}. 💳\n\n🌿 Con esta compra contribuyes al impacto social del Club en Fusagasugá.\n\nEl Club de la Gente`
         : `¡Hola! 🎉 Tu beneficio en ${a.nombre} ya quedó registrado: ${p.descripcion}.\n\n🌿 Con esta compra contribuyes al impacto social del Club en Fusagasugá.\n\nEl Club de la Gente`;
-      supabase.functions.invoke("whatsapp-send-3", { body: { to: MIEMBRO_WA, body: msg } }).catch(() => {});
+      fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: MIEMBRO_WA, body: msg }),
+      }).catch(() => {});
     }
 
     if (codigoWrap) codigoWrap.style.display = "none";

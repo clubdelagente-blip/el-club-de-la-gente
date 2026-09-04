@@ -434,8 +434,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (whatsapp) {
       const primerNombre = nombre.split(" ")[0];
       const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nYa eres parte de una comunidad que ahorra, aprende y apoya a Fusagasugá. 🎉\n\nDesde aquí recibirás confirmaciones de tus descuentos y novedades del Club.\n\nEl Club de la Gente`;
-      supabase.functions.invoke("whatsapp-send-3", {
-        body: { to: whatsapp, body: msgBienvenida }
+      fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: whatsapp, body: msgBienvenida }),
       }).catch(() => {});
     }
 

@@ -612,8 +612,11 @@ window.enviarMsgReal=async function(){
   const txt=inp.value.trim();
   if(!txt)return;
   inp.disabled=true;
-  const{error}=await supabase.functions.invoke('whatsapp-send-3',{body:{to:c.numero,body:txt}});
-  if(error){toast('Error enviando el mensaje: '+error.message);inp.disabled=false;return;}
+  const res=await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({to:c.numero,body:txt})
+  }).catch(()=>null);
+  if(!res||!res.ok){toast('Error enviando el mensaje');inp.disabled=false;return;}
   await supabase.from('conversaciones').insert({whatsapp:c.numero,rol:'assistant',contenido:txt});
   c.msgs.push({whatsapp:c.numero,rol:'assistant',contenido:txt,created_at:new Date().toISOString()});
   c.lastText=txt.slice(0,80);c.lastFrom='assistant';c.lastTime=new Date().toISOString();c.necesitaRespuesta=false;

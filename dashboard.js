@@ -972,7 +972,11 @@ function abrirCheckoutProducto(p) {
       const wa = p.whatsapp.replace(/\D/g, "");
       const nombreMiembro = leerPerfil()?.nombre || "Un miembro del Club";
       const msg = `¡Nuevo pedido! ${nombreMiembro} pidió "${p.nombre}" por ${COP(precio)}. Revisa el comprobante en tu panel "Mi negocio" → "Mi tienda" para confirmarlo.`;
-      supabase.functions.invoke("whatsapp-send-3", { body: { to: wa, body: msg } }).catch(() => {});
+      fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: wa, body: msg }),
+      }).catch(() => {});
     }
     cerrarModalTienda();
     toast("¡Pedido enviado! El negocio confirmará tu pago pronto.");
