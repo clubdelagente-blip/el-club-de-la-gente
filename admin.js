@@ -11,6 +11,9 @@ const COPk = (n) => n >= 1000000 ? "$" + (n / 1000000).toFixed(1).replace(".0", 
 const ini = (nombre) => nombre.split(" ").filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
 const norm = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const planLbl = (p) => p === "premium" ? "Premium" : "Básica";
+// Expuestos por window para que el script inline (type="module") de Admin.html
+// pueda reusarlos sin depender del scope compartido entre script clasico y modulo.
+window.nf = nf; window.ini = ini; window.planLbl = planLbl;
 
 /* ---------- TÍTULOS DE PANEL ---------- */
 const PANELES = {
@@ -34,83 +37,16 @@ const PANELES = {
    RENDER: DASHBOARD
    ============================================================ */
 function renderDashboard() {
-  const m = ADM_METRICAS;
-  $("#p-dashboard").innerHTML = `
-    <div class="ad-metrics">
-      ${metric("users", m.miembros.toLocaleString("es-CO"), "Miembros activos", `${m.miembrosNuevos} nuevos este mes`, m.miembrosTrend, "up")}
-      ${metric("banknote", COPk(m.ingresos), "Ingresos del mes", "vs. mes anterior", m.ingresosTrend, "up")}
-      ${metric("ticket-percent", nf.format(m.descuentos), "Descuentos usados", `${m.descuentosSemana} esta semana`, "+7%", "up")}
-      ${metric("sparkles", COPk(m.ahorroAcum), "Ahorro generado", "acumulado total", m.ahorroTrend, "up")}
-    </div>
-
-    <div class="ad-grid">
-      <div class="ad-card">
-        <div class="ad-card__head">
-          <div><div class="ad-card__title">Ingresos por mes</div><div class="ad-card__sub">Recaudo de membresías · 2026</div></div>
-        </div>
-        ${chart()}
-        <div class="ad-chart-legend">
-          <div class="ad-leg"><div class="ad-leg__top"><span class="ad-leg__sw b"></span> Básica</div><div class="ad-leg__val">${ADM_DESGLOSE.basica.miembros} <small>· ${COP(ADM_DESGLOSE.basica.valor)}</small></div></div>
-          <div class="ad-leg"><div class="ad-leg__top"><span class="ad-leg__sw p"></span> Premium</div><div class="ad-leg__val">${ADM_DESGLOSE.premium.miembros} <small>· ${COP(ADM_DESGLOSE.premium.valor)}</small></div></div>
-        </div>
-      </div>
-
-      <div class="ad-card">
-        <div class="ad-card__head"><div><div class="ad-card__title">Actividad en vivo</div><div class="ad-card__sub">Últimos movimientos</div></div></div>
-        <ul class="ad-feed">
-          ${ADM_FEED.map(f => `
-            <li><span class="ad-feed__dot ${f.tipo}"></span>
-              <div class="ad-feed__body"><div class="ad-feed__txt">${f.txt}</div><div class="ad-feed__time">${f.time}</div></div>
-            </li>`).join("")}
-        </ul>
-      </div>
-    </div>
-
-    <div class="ad-grid-2">
-      <div class="ad-card">
-        <div class="ad-card__head"><div><div class="ad-card__title">Últimos miembros</div></div><button class="ad-card__link" data-goto="miembros">Ver todos ${ic("arrow-right")}</button></div>
-        <div class="ad-table-wrap" style="border:none">
-          <table class="ad-table">
-            <tbody>
-              ${ADM_MIEMBROS.slice(0, 4).map(u => `
-                <tr data-miembro="${u.num}">
-                  <td><div class="ad-cell-user"><span class="ad-av">${ini(u.nombre)}</span><div><div class="ad-cell-user__name">${u.nombre}</div><div class="ad-table__num">#${u.num}</div></div></div></td>
-                  <td><span class="ad-pill ${u.plan}"><span class="d"></span>${planLbl(u.plan)}</span></td>
-                  <td style="text-align:right"><span class="ad-pill ${u.estado}"><span class="d"></span>${u.estado === "activo" ? "Activo" : "Inactivo"}</span></td>
-                </tr>`).join("")}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="ad-card">
-        <div class="ad-card__head"><div><div class="ad-card__title">Aliados más usados</div><div class="ad-card__sub">Este mes</div></div><button class="ad-card__link" data-goto="aliados">Gestionar ${ic("arrow-right")}</button></div>
-        <ul class="ad-rank">
-          ${ADM_ALIADOS.slice(0, 5).map((a, i) => `
-            <li><span class="ad-rank__pos">${i + 1}</span><span class="ad-rank__ic">${ic(a.icon)}</span>
-              <div><div class="ad-rank__name">${a.nombre}</div><div class="ad-rank__cat">${a.cat}</div></div>
-              <div class="ad-rank__usos"><b>${a.usos}</b><small>usos</small></div>
-            </li>`).join("")}
-        </ul>
-      </div>
-    </div>`;
+  $("#p-dashboard").innerHTML = `<div style="text-align:center;padding:60px 20px;color:rgba(242,240,234,.3)">Cargando…</div>`;
+  window.cargarDashboardReal?.();
 }
 function metric(icon, num, lbl, sub, chip, dir) {
   return `<div class="ad-metric">
-    <div class="ad-metric__top"><span class="ad-metric__ic">${ic(icon)}</span><span class="ad-metric__chip ${dir}">${ic(dir === "up" ? "trending-up" : "trending-down")} ${chip}</span></div>
+    <div class="ad-metric__top"><span class="ad-metric__ic">${ic(icon)}</span>${chip ? `<span class="ad-metric__chip ${dir}">${ic(dir === "up" ? "trending-up" : "trending-down")} ${chip}</span>` : ""}</div>
     <div class="ad-metric__num">${num}</div><div class="ad-metric__lbl">${lbl}</div><div class="ad-metric__sub">${sub}</div>
   </div>`;
 }
-function chart() {
-  const max = Math.max(...ADM_INGRESOS.map(d => d.valor));
-  return `<div class="ad-chart">
-    ${ADM_INGRESOS.map(d => `
-      <div class="ad-bar-col ${d.now ? "is-now" : ""}">
-        <div class="ad-bar ${d.now ? "is-now" : ""}" style="height:${(d.valor / max * 100).toFixed(1)}%"><span class="ad-bar__val">${COPk(d.valor)}</span></div>
-        <span class="ad-bar-col__lbl">${d.mes}</span>
-      </div>`).join("")}
-  </div>`;
-}
+window.metric = metric;
 
 /* ============================================================
    RENDER: MIEMBROS

@@ -205,7 +205,7 @@
        ============================================================ -->
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="admin-data.js?v=3"></script>
-  <script src="admin.js?v=7"></script>
+  <script src="admin.js?v=8"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -249,6 +249,106 @@ function formatearInputMoneda(input){
 function valorMoneda(input){return parseInt((input?.value||'').replace(/\D/g,''))||0;}
 function abrirModal(t,s,b){$("#modal-title").textContent=t;$("#modal-sub").textContent=s;$("#modal-body").innerHTML=b;$("#ad-modal-ov").classList.add("is-open");if(window.lucide)lucide.createIcons();}
 async function subirImagen(file){const ext=file.name.split('.').pop();const path=`${Date.now()}-${Math.random().toString(36).substr(2,5)}.${ext}`;const{error}=await supabase.storage.from('contenido').upload(path,file);if(error)throw error;return supabase.storage.from('contenido').getPublicUrl(path).data.publicUrl;}
+
+/* ---- DASHBOARD (datos reales) ---- */
+const MES_LBL_DASH=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+function tiempoRelativo(iso){
+  const min=Math.floor((Date.now()-new Date(iso).getTime())/60000);
+  if(min<1)return'ahora mismo';
+  if(min<60)return`hace ${min} min`;
+  const h=Math.floor(min/60);if(h<24)return`hace ${h} h`;
+  const d=Math.floor(h/24);return`hace ${d} d`;
+}
+async function cargarDashboardReal(){
+  const hoy=new Date();
+  const enMes=(iso,ref)=>{const d=new Date(iso);return d.getFullYear()===ref.getFullYear()&&d.getMonth()===ref.getMonth();};
+  const mesAnt=new Date(hoy.getFullYear(),hoy.getMonth()-1,1);
+  const inicioSemana=new Date(hoy.getTime()-7*24*60*60*1000);
+
+  const[{data:perfiles},{data:pagos},{data:descuentos}]=await Promise.all([
+    supabase.from('perfiles').select('nombre,plan,created_at').order('created_at',{ascending:false}),
+    supabase.from('pagos').select('monto,plan,created_at,perfiles(nombre)').order('created_at',{ascending:false}),
+    supabase.from('descuentos').select('aliado_nombre,ahorro,compra,created_at').order('created_at',{ascending:false}),
+  ]);
+  const P=perfiles||[],PG=pagos||[],D=descuentos||[];
+
+  const miembrosActivos=P.filter(p=>['gratis','basica','premium','vitalicia'].includes(p.plan)).length;
+  const miembrosNuevos=P.filter(p=>enMes(p.created_at,hoy)).length;
+
+  const ingresosMes=PG.filter(p=>enMes(p.created_at,hoy)).reduce((s,p)=>s+(p.monto||0),0);
+  const ingresosMesAnt=PG.filter(p=>enMes(p.created_at,mesAnt)).reduce((s,p)=>s+(p.monto||0),0);
+  const ingresosTrend=ingresosMesAnt?Math.round((ingresosMes-ingresosMesAnt)/ingresosMesAnt*100):null;
+
+  const descuentosMes=D.filter(d=>enMes(d.created_at,hoy));
+  const descuentosSemana=D.filter(d=>new Date(d.created_at)>=inicioSemana).length;
+  const ahorroAcum=D.reduce((s,d)=>s+(d.ahorro||0),0);
+
+  const usosPorAliado={};
+  descuentosMes.forEach(d=>{const n=d.aliado_nombre||'—';usosPorAliado[n]=(usosPorAliado[n]||0)+1;});
+  const ranking=Object.entries(usosPorAliado).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  const desglose={basica:{miembros:0,valor:0},premium:{miembros:0,valor:0}};
+  PG.filter(p=>enMes(p.created_at,hoy)).forEach(p=>{
+    const key=p.plan==='premium'?'premium':'basica';
+    desglose[key].miembros++;desglose[key].valor+=(p.monto||0);
+  });
+
+  const meses=[];
+  for(let i=5;i>=0;i--){const d=new Date(hoy.getFullYear(),hoy.getMonth()-i,1);meses.push({y:d.getFullYear(),m:d.getMonth(),total:0});}
+  PG.forEach(p=>{const d=new Date(p.created_at);const slot=meses.find(x=>x.y===d.getFullYear()&&x.m===d.getMonth());if(slot)slot.total+=(p.monto||0);});
+  const maxMes=Math.max(1,...meses.map(x=>x.total));
+
+  const feed=[
+    ...P.slice(0,5).map(p=>({tipo:'miembro',txt:`<b>${esc(p.nombre)}</b> se unió al plan ${p.plan==='premium'?'Premium':p.plan==='basica'?'Básica':(esc(p.plan)||'—')}`,fecha:p.created_at})),
+    ...PG.slice(0,5).map(p=>({tipo:'pago',txt:`Pago recibido de <b>${esc(p.perfiles?.nombre)||'un miembro'}</b> · ${COP(p.monto)}`,fecha:p.created_at})),
+    ...D.slice(0,5).map(d=>({tipo:'descuento',txt:`<b>${esc(d.aliado_nombre)||'Aliado'}</b> · descuento aplicado · ahorro ${COP(d.ahorro||0)}`,fecha:d.created_at})),
+  ].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).slice(0,8);
+
+  $("#p-dashboard").innerHTML=`
+    <div class="ad-metrics">
+      ${window.metric('users',miembrosActivos.toLocaleString('es-CO'),'Miembros activos',`${miembrosNuevos} nuevos este mes`)}
+      ${window.metric('banknote',COP(ingresosMes),'Ingresos del mes','vs. mes anterior',ingresosTrend!=null?`${ingresosTrend>=0?'+':''}${ingresosTrend}%`:'',ingresosTrend>=0?'up':'down')}
+      ${window.metric('ticket-percent',window.nf.format(descuentosMes.length),'Descuentos usados',`${descuentosSemana} esta semana`)}
+      ${window.metric('sparkles',COP(ahorroAcum),'Ahorro generado','acumulado total')}
+    </div>
+    <div class="ad-grid">
+      <div class="ad-card">
+        <div class="ad-card__head"><div><div class="ad-card__title">Ingresos por mes</div><div class="ad-card__sub">Recaudo de membresías · ${hoy.getFullYear()}</div></div></div>
+        <div class="ad-chart">${meses.map((x,i)=>`
+          <div class="ad-bar-col${i===meses.length-1?' is-now':''}">
+            <div class="ad-bar${i===meses.length-1?' is-now':''}" style="height:${x.total?Math.max(6,Math.round(x.total/maxMes*100)):2}%"><span class="ad-bar__val">${COP(x.total)}</span></div>
+            <span class="ad-bar-col__lbl">${MES_LBL_DASH[x.m]}</span>
+          </div>`).join('')}</div>
+        <div class="ad-chart-legend">
+          <div class="ad-leg"><div class="ad-leg__top"><span class="ad-leg__sw b"></span> Básica</div><div class="ad-leg__val">${desglose.basica.miembros} <small>· ${COP(desglose.basica.valor)}</small></div></div>
+          <div class="ad-leg"><div class="ad-leg__top"><span class="ad-leg__sw p"></span> Premium</div><div class="ad-leg__val">${desglose.premium.miembros} <small>· ${COP(desglose.premium.valor)}</small></div></div>
+        </div>
+      </div>
+      <div class="ad-card">
+        <div class="ad-card__head"><div><div class="ad-card__title">Actividad en vivo</div><div class="ad-card__sub">Últimos movimientos</div></div></div>
+        <ul class="ad-feed">${feed.length?feed.map(f=>`
+          <li><span class="ad-feed__dot ${f.tipo}"></span><div class="ad-feed__body"><div class="ad-feed__txt">${f.txt}</div><div class="ad-feed__time">${tiempoRelativo(f.fecha)}</div></div></li>`).join(''):`<li style="color:rgba(242,240,234,.3);padding:10px 0;list-style:none">Sin actividad todavía</li>`}</ul>
+      </div>
+    </div>
+    <div class="ad-grid-2">
+      <div class="ad-card">
+        <div class="ad-card__head"><div><div class="ad-card__title">Últimos miembros</div></div><button class="ad-card__link" data-goto="miembros">Ver todos ${ic('arrow-right')}</button></div>
+        <div class="ad-table-wrap" style="border:none"><table class="ad-table"><tbody>
+          ${P.length?P.slice(0,4).map(u=>`<tr>
+            <td><div class="ad-cell-user"><span class="ad-av">${esc(window.ini(u.nombre||'?'))}</span><div><div class="ad-cell-user__name">${esc(u.nombre)}</div><div class="ad-table__num">${new Date(u.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short'})}</div></div></div></td>
+            <td style="text-align:right"><span class="ad-pill ${u.plan}"><span class="d"></span>${window.planLbl(u.plan)}</span></td>
+          </tr>`).join(''):`<tr><td style="text-align:center;padding:20px;color:rgba(242,240,234,.3)">Sin miembros aún</td></tr>`}
+        </tbody></table></div>
+      </div>
+      <div class="ad-card">
+        <div class="ad-card__head"><div><div class="ad-card__title">Aliados más usados</div><div class="ad-card__sub">Este mes</div></div><button class="ad-card__link" data-goto="aliados">Gestionar ${ic('arrow-right')}</button></div>
+        <ul class="ad-rank">${ranking.length?ranking.map(([nombre,usos],i)=>`
+          <li><span class="ad-rank__pos">${i+1}</span><span class="ad-rank__ic">${ic('store')}</span><div><div class="ad-rank__name">${esc(nombre)}</div></div><div class="ad-rank__usos"><b>${usos}</b><small>usos</small></div></li>`).join(''):`<li style="color:rgba(242,240,234,.3);padding:10px 0;list-style:none">Sin usos este mes</li>`}</ul>
+      </div>
+    </div>`;
+  if(window.lucide)lucide.createIcons();
+}
+window.cargarDashboardReal=cargarDashboardReal;
 
 /* ---- ALIADOS ---- */
 async function cargarAliados(){
