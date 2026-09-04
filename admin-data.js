@@ -113,34 +113,17 @@ const ADM_PROGRAMAS = [
   },
 ];
 
-/* ---------- VENTAS ---------- */
+/* ---------- VENTAS (sin conectar a datos reales todavia) ---------- */
 const ADM_VENTAS_METRICAS = {
-  mes: 31460000, anterior: 29100000, proyeccion: 392000000, ticket: 15360,
+  mes: 0, anterior: 0, proyeccion: 0, ticket: 0,
 };
-const ADM_TRANSACCIONES = [
-  { nombre: "Laura Restrepo Mesa", num: "2047", plan: "premium", fecha: "12 jun 2026", valor: 20000 },
-  { nombre: "Andrés Gómez Vidal", num: "2046", plan: "premium", fecha: "11 jun 2026", valor: 20000 },
-  { nombre: "Diana Castaño Ruiz", num: "2045", plan: "basica", fecha: "11 jun 2026", valor: 10000 },
-  { nombre: "Mónica Salazar León", num: "2044", plan: "basica", fecha: "10 jun 2026", valor: 10000 },
-  { nombre: "Julián Ortiz Parra", num: "2043", plan: "premium", fecha: "10 jun 2026", valor: 20000 },
-  { nombre: "Sandra Quintero Niño", num: "2042", plan: "premium", fecha: "9 jun 2026", valor: 20000 },
-  { nombre: "Paola Mahecha Soto", num: "2040", plan: "premium", fecha: "8 jun 2026", valor: 20000 },
-  { nombre: "Ricardo Beltrán Cruz", num: "2039", plan: "basica", fecha: "7 jun 2026", valor: 10000 },
-];
+const ADM_TRANSACCIONES = [];
 
-/* ---------- SUSCRIPCIONES ---------- */
+/* ---------- SUSCRIPCIONES (sin conectar a datos reales todavia) ---------- */
 const ADM_SUSC_METRICAS = {
-  activas: 1962, vencen: 47, canceladas: 38, renovacion: "94%",
+  activas: 0, vencen: 0, canceladas: 0, renovacion: "0%",
 };
-const ADM_RENOVACIONES = [
-  { nombre: "Carlos Andrés Pérez", num: "2048", plan: "premium", fecha: "1 jul 2026", cobro: "auto" },
-  { nombre: "Sandra Quintero Niño", num: "2042", plan: "premium", fecha: "2 jul 2026", cobro: "auto" },
-  { nombre: "Ricardo Beltrán Cruz", num: "2039", plan: "basica", fecha: "3 jul 2026", cobro: "pend" },
-  { nombre: "Camila Forero Lara", num: "2038", plan: "premium", fecha: "4 jul 2026", cobro: "auto" },
-  { nombre: "Felipe Naranjo Díaz", num: "2041", plan: "basica", fecha: "5 jul 2026", cobro: "fallido" },
-  { nombre: "Paola Mahecha Soto", num: "2040", plan: "premium", fecha: "6 jul 2026", cobro: "auto" },
-  { nombre: "Mónica Salazar León", num: "2044", plan: "basica", fecha: "7 jul 2026", cobro: "pend" },
-];
+const ADM_RENOVACIONES = [];
 
 /* ---------- ARQUETIPOS (para el modal de miembro) ---------- */
 const ADM_ARQUETIPOS = {

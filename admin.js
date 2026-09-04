@@ -368,9 +368,9 @@ function renderVentas() {
   const v = ADM_VENTAS_METRICAS;
   $("#p-ventas").innerHTML = `
     <div class="ad-metrics">
-      ${metric("banknote", COPk(v.mes), "Ingresos del mes", "junio 2026", "+8%", "up")}
-      ${metric("calendar", COPk(v.anterior), "Mes anterior", "mayo 2026", "", "up").replace(/<span class="ad-metric__chip up">.*?<\/span>/, "")}
-      ${metric("trending-up", COPk(v.proyeccion), "Proyección anual", "estimado 2026", "+15%", "up")}
+      ${metric("banknote", COPk(v.mes), "Ingresos del mes", "", "", "up").replace(/<span class="ad-metric__chip up">.*?<\/span>/, "")}
+      ${metric("calendar", COPk(v.anterior), "Mes anterior", "", "", "up").replace(/<span class="ad-metric__chip up">.*?<\/span>/, "")}
+      ${metric("trending-up", COPk(v.proyeccion), "Proyección anual", "", "", "up").replace(/<span class="ad-metric__chip up">.*?<\/span>/, "")}
       ${metric("receipt", COP(v.ticket), "Ticket promedio", "por miembro / mes", "", "up").replace(/<span class="ad-metric__chip up">.*?<\/span>/, "")}
     </div>
     <div class="ad-toolbar"><div class="ad-card__title">Últimas transacciones</div><div class="ad-spacer"></div><button class="ad-btn" id="v-csv">${ic("download")} Exportar historial</button></div>
@@ -378,13 +378,13 @@ function renderVentas() {
       <table class="ad-table">
         <thead><tr><th>Miembro</th><th>Plan</th><th>Fecha</th><th style="text-align:right">Valor</th></tr></thead>
         <tbody>
-          ${ADM_TRANSACCIONES.map(t => `
+          ${ADM_TRANSACCIONES.length ? ADM_TRANSACCIONES.map(t => `
             <tr>
               <td><div class="ad-cell-user"><span class="ad-av">${ini(t.nombre)}</span><div><div class="ad-cell-user__name">${t.nombre}</div><div class="ad-table__num">#${t.num}</div></div></div></td>
               <td><span class="ad-pill ${t.plan}"><span class="d"></span>${planLbl(t.plan)}</span></td>
               <td><span class="ad-table__num">${t.fecha}</span></td>
               <td style="text-align:right"><span class="ad-num-strong">${COP(t.valor)}</span></td>
-            </tr>`).join("")}
+            </tr>`).join("") : `<tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Este panel todavía no está conectado a datos reales</td></tr>`}
         </tbody>
       </table>
     </div>`;
@@ -399,23 +399,23 @@ function renderSuscripciones() {
   const s = ADM_SUSC_METRICAS;
   $("#p-suscripciones").innerHTML = `
     <div class="ad-metrics">
-      ${metric("badge-check", nf.format(s.activas), "Suscripciones activas", "al día de hoy", "+5%", "up")}
+      ${metric("badge-check", nf.format(s.activas), "Suscripciones activas", "", "", "up").replace(/<span class="ad-metric__chip up">.*?<\/span>/, "")}
       ${metric("clock", s.vencen, "Vencen esta semana", "requieren recordatorio", "", "up").replace(/<span class="ad-metric__chip up">.*?<\/span>/, "")}
-      ${metric("x-circle", s.canceladas, "Canceladas", "este mes", "-2%", "down")}
-      ${metric("repeat", s.renovacion, "Tasa de renovación", "últimos 30 días", "+1%", "up")}
+      ${metric("x-circle", s.canceladas, "Canceladas", "este mes", "", "up").replace(/<span class="ad-metric__chip up">.*?<\/span>/, "")}
+      ${metric("repeat", s.renovacion, "Tasa de renovación", "", "", "up").replace(/<span class="ad-metric__chip up">.*?<\/span>/, "")}
     </div>
     <div class="ad-toolbar"><div class="ad-card__title">Próximas renovaciones</div><div class="ad-spacer"></div><button class="ad-btn ad-btn--wa" id="s-rem">${ic("bell")} Enviar recordatorios</button></div>
     <div class="ad-table-wrap">
       <table class="ad-table">
         <thead><tr><th>Miembro</th><th>Plan</th><th>Renueva</th><th style="text-align:right">Cobro automático</th></tr></thead>
         <tbody>
-          ${ADM_RENOVACIONES.map(r => `
+          ${ADM_RENOVACIONES.length ? ADM_RENOVACIONES.map(r => `
             <tr>
               <td><div class="ad-cell-user"><span class="ad-av">${ini(r.nombre)}</span><div><div class="ad-cell-user__name">${r.nombre}</div><div class="ad-table__num">#${r.num}</div></div></div></td>
               <td><span class="ad-pill ${r.plan}"><span class="d"></span>${planLbl(r.plan)}</span></td>
               <td><span class="ad-table__num">${r.fecha}</span></td>
               <td style="text-align:right"><span class="ad-pill ${COBRO[r.cobro].c}"><span class="d"></span>${COBRO[r.cobro].t}</span></td>
-            </tr>`).join("")}
+            </tr>`).join("") : `<tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Este panel todavía no está conectado a datos reales</td></tr>`}
         </tbody>
       </table>
     </div>`;
