@@ -443,6 +443,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.closest("#ag-send")) { window.enviarMsgReal?.(); return; }
     if (e.target.closest("#ag-attach-btn")) { $("#ag-attach-input")?.click(); return; }
     if (e.target.closest("#ag-attach-remove")) { window.agRemoveAttach?.(); return; }
+    if (e.target.closest("#ag-mic-btn")) { window.agStartRecording?.(); return; }
+    if (e.target.closest("#ag-rec-cancel")) { window.agCancelRecording?.(); return; }
+    if (e.target.closest("#ag-rec-send")) { window.agSendRecording?.(); return; }
     if (e.target.closest("#ag-broadcast")) { window.abrirDifusionReal?.(); return; }
     const verM = e.target.closest("[data-ver-miembro]");
     if (verM) { window.abrirMiembroReal?.(verM.dataset.verMiembro); return; }

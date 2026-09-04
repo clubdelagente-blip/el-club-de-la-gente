@@ -205,7 +205,7 @@
        ============================================================ -->
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="admin-data.js?v=4"></script>
-  <script src="admin.js?v=13"></script>
+  <script src="admin.js?v=14"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -526,6 +526,7 @@ window.enviarDifusionReal=enviarDifusionReal;
 
 /* ---- AGENTE WHATSAPP: bandeja real ---- */
 let _agConvsAll=[], _agActive=null, _agQ='', _agPendingFile=null;
+let _agRecording=false, _agRecStream=null, _agRecRecorder=null, _agRecChunks=[], _agRecStartTs=0, _agRecInterval=null, _agRecMime='';
 function _agTiempo(iso){return new Date(iso).toLocaleTimeString('es-CO',{hour:'numeric',minute:'2-digit',hour12:true}).toLowerCase();}
 
 async function cargarAgenteReal(){
@@ -607,7 +608,9 @@ function renderAgThreadReal(){
           ${m.rol==='assistant'?`<span class="ag-b__auto">${ic('bot')} Automático</span>`:''}
           ${m.media_url?(m.media_type==='video'
             ?`<video controls style="max-width:260px;max-height:320px;border-radius:10px;display:block;margin-bottom:${m.contenido?'6px':'2px'}"><source src="${esc(m.media_url)}"></video>`
-            :`<img src="${esc(m.media_url)}" style="max-width:260px;max-height:320px;border-radius:10px;display:block;margin-bottom:${m.contenido?'6px':'2px'}">`):''}
+            :m.media_type==='audio'
+              ?`<audio controls style="max-width:260px;display:block;margin-bottom:${m.contenido?'6px':'2px'}"><source src="${esc(m.media_url)}"></audio>`
+              :`<img src="${esc(m.media_url)}" style="max-width:260px;max-height:320px;border-radius:10px;display:block;margin-bottom:${m.contenido?'6px':'2px'}">`):''}
           ${m.contenido?esc(m.contenido):''}
           <span class="t">${_agTiempo(m.created_at)}${m.rol!=='user'?' '+ic('check-check'):''}</span>
         </div>`).join('')}
@@ -618,32 +621,118 @@ function renderAgThreadReal(){
       </div>
       ${_agPendingFile?`
       <div style="display:flex;align-items:center;gap:10px;background:rgba(242,240,234,.06);border:1px solid rgba(242,240,234,.14);border-radius:10px;padding:8px 12px;margin-bottom:10px">
-        <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(242,240,234,.7);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_agPendingFile.type.startsWith('video')?ic('video'):ic('image')} ${esc(_agPendingFile.name)}</span>
+        <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(242,240,234,.7);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_agPendingFile.type.startsWith('video')?ic('video'):_agPendingFile.type.startsWith('audio')?ic('mic'):ic('image')} ${esc(_agPendingFile.name)}</span>
         <button id="ag-attach-remove" type="button" style="background:none;border:none;color:rgba(242,240,234,.5);cursor:pointer;display:flex;padding:0">${ic('x')}</button>
       </div>`:''}
+      ${_agRecording?`
+      <div class="ag-compose__row" style="display:flex;align-items:center;gap:10px">
+        <button id="ag-rec-cancel" type="button" style="width:44px;height:44px;border-radius:50%;background:rgba(242,240,234,.06);border:1px solid rgba(242,240,234,.18);color:#f2f0ea;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none">${ic('trash-2')}</button>
+        <div style="flex:1;display:flex;align-items:center;gap:10px;padding:0 6px">
+          <span style="width:9px;height:9px;border-radius:50%;background:#e5484d;flex:none"></span>
+          <span style="font-size:13px;color:rgba(242,240,234,.75)">Grabando…</span>
+          <span id="ag-rec-timer" style="font-size:13px;color:rgba(242,240,234,.5);font-variant-numeric:tabular-nums">0:00</span>
+        </div>
+        <button id="ag-rec-send" type="button" style="width:44px;height:44px;border-radius:50%;background:#1a7a3c;color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none">${ic('send-horizontal')}</button>
+      </div>`:`
       <div class="ag-compose__row" style="display:flex;align-items:flex-end;gap:10px">
-        <input type="file" id="ag-attach-input" accept="image/*,video/*" style="display:none">
+        <input type="file" id="ag-attach-input" accept="image/*,video/*,audio/*" style="display:none">
         <button id="ag-attach-btn" type="button" style="width:44px;height:44px;border-radius:50%;background:rgba(242,240,234,.06);border:1px solid rgba(242,240,234,.18);color:#f2f0ea;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none">${ic('paperclip')}</button>
         <textarea class="ag-compose__in" id="ag-input" rows="1" placeholder="Escribe un mensaje para ${esc((c.nombre||'').split(' ')[0])}…" style="flex:1;font-size:13.5px;color:#f2f0ea;padding:12px 16px;border:1px solid rgba(242,240,234,.18);border-radius:22px;background:#0e0e0d;resize:none;max-height:120px;line-height:1.45"></textarea>
+        <button id="ag-mic-btn" type="button" style="width:44px;height:44px;border-radius:50%;background:rgba(242,240,234,.06);border:1px solid rgba(242,240,234,.18);color:#f2f0ea;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none">${ic('mic')}</button>
         <button class="ag-send" id="ag-send" style="width:44px;height:44px;border-radius:50%;background:#1a7a3c;color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none">${ic('send-horizontal')}</button>
-      </div>
+      </div>`}
     </div>`;
   if(window.lucide)lucide.createIcons();
   const m=$("#ag-msgs");if(m)m.scrollTop=m.scrollHeight;
 }
 
 window.abrirConvReal=function(numero){
+  if(_agRecording)window.agCancelRecording?.();
   _agActive=numero;
   _agPendingFile=null;
   renderAgConvsReal();
   renderAgThreadReal();
 };
 
+function _agBestAudioMime(){
+  if(!window.MediaRecorder)return'';
+  const opciones=['audio/ogg;codecs=opus','audio/webm;codecs=opus','audio/webm','audio/mp4'];
+  for(const o of opciones){try{if(MediaRecorder.isTypeSupported(o))return o;}catch(_){}}
+  return'';
+}
+function _agStopStream(){
+  if(_agRecInterval){clearInterval(_agRecInterval);_agRecInterval=null;}
+  if(_agRecStream){_agRecStream.getTracks().forEach(t=>t.stop());_agRecStream=null;}
+}
+window.agStartRecording=async function(){
+  if(_agRecording)return;
+  if(!navigator.mediaDevices?.getUserMedia){toast('Tu navegador no permite grabar audio');return;}
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    _agRecStream=stream;
+    _agRecMime=_agBestAudioMime();
+    _agRecRecorder=_agRecMime?new MediaRecorder(stream,{mimeType:_agRecMime}):new MediaRecorder(stream);
+    _agRecChunks=[];
+    _agRecRecorder.ondataavailable=e=>{if(e.data&&e.data.size>0)_agRecChunks.push(e.data);};
+    _agRecRecorder.start();
+    _agRecStartTs=Date.now();
+    _agRecording=true;
+    renderAgThreadReal();
+    _agRecInterval=setInterval(()=>{
+      const s=Math.floor((Date.now()-_agRecStartTs)/1000);
+      const el=$("#ag-rec-timer");
+      if(el)el.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+    },500);
+  }catch(e){
+    toast('No se pudo acceder al micrófono');
+  }
+};
+window.agCancelRecording=function(){
+  if(!_agRecording)return;
+  const rec=_agRecRecorder;
+  _agRecording=false;
+  _agStopStream();
+  try{if(rec&&rec.state!=='inactive')rec.stop();}catch(_){}
+  _agRecChunks=[];
+  renderAgThreadReal();
+};
+window.agSendRecording=function(){
+  if(!_agRecording||!_agRecRecorder)return;
+  const dur=Date.now()-_agRecStartTs;
+  const rec=_agRecRecorder;
+  const mime=_agRecMime||'audio/webm';
+  const numero=_agActive;
+  rec.onstop=async()=>{
+    _agStopStream();
+    _agRecording=false;
+    if(dur<800){_agRecChunks=[];renderAgThreadReal();toast('Grabación muy corta');return;}
+    const blob=new Blob(_agRecChunks,{type:mime});
+    _agRecChunks=[];
+    renderAgThreadReal();
+    if(!numero)return;
+    const ext=mime.includes('ogg')?'ogg':mime.includes('mp4')?'m4a':'webm';
+    const file=new File([blob],`nota-de-voz-${Date.now()}.${ext}`,{type:mime});
+    try{
+      const mediaUrl=await subirImagen(file);
+      const res=await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({to:numero,mediaUrl})
+      }).catch(()=>null);
+      if(!res||!res.ok){toast('Error enviando el audio');return;}
+      await supabase.from('conversaciones').insert({whatsapp:numero,rol:'assistant',contenido:'',media_url:mediaUrl,media_type:'audio'});
+    }catch(e){
+      toast('Error subiendo el audio: '+e.message);
+    }
+  };
+  try{rec.stop();}catch(_){}
+};
+
 window.agAttachFile=function(file){
   if(!file)return;
   const esVideo=file.type.startsWith('video/');
   const esImagen=file.type.startsWith('image/');
-  if(!esVideo&&!esImagen){toast('Solo se pueden enviar imágenes o videos');return;}
+  const esAudio=file.type.startsWith('audio/');
+  if(!esVideo&&!esImagen&&!esAudio){toast('Solo se pueden enviar imágenes, videos o audios');return;}
   if(file.size>20*1024*1024){toast('El archivo pesa más de 20MB');return;}
   _agPendingFile=file;
   renderAgThreadReal();
@@ -663,7 +752,7 @@ window.enviarMsgReal=async function(){
   if(file){
     try{
       mediaUrl=await subirImagen(file);
-      mediaType=file.type.startsWith('video')?'video':'image';
+      mediaType=file.type.startsWith('video')?'video':file.type.startsWith('audio')?'audio':'image';
     }catch(e){
       toast('Error subiendo el archivo: '+e.message);
       inp.disabled=false;if(sendBtn)sendBtn.disabled=false;
