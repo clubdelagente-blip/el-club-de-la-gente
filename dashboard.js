@@ -904,8 +904,12 @@ function abrirCheckoutProducto(p) {
     </div>
     <div class="cfg-campo" style="margin-top:16px">
       <label class="cfg-label">Llave de pago del negocio</label>
-      <input class="cfg-input" readonly value="${esc(p.aliados?.tienda_llave_pago) || 'No registrada — contacta al negocio por WhatsApp'}">
+      <div style="display:flex;gap:8px">
+        <input class="cfg-input" id="pc-llave" readonly value="${esc(p.aliados?.tienda_llave_pago) || 'No registrada — contacta al negocio por WhatsApp'}" style="flex:1">
+        ${p.aliados?.tienda_llave_pago ? `<button type="button" class="btn" id="pc-copiar-llave" style="padding:0 16px;white-space:nowrap">${ic('copy')} Copiar</button>` : ''}
+      </div>
       <span style="font-size:12px;color:#777;display:block;margin-top:4px">Transfiere ${COP(precio)} a esa llave antes de continuar.</span>
+      <div style="text-align:center;font-weight:800;letter-spacing:.02em;font-size:13px;color:#111;border:1px solid #ebebeb;border-radius:8px;padding:6px;margin-top:8px;background:#fff">Bre-B</div>
     </div>
     <div class="cfg-campo">
       <label class="cfg-label">Comprobante de pago *</label>
@@ -918,6 +922,15 @@ function abrirCheckoutProducto(p) {
     const esEnvio = e.target.value === "envio";
     const envioEl = $("#pc-envio-campos"); if (envioEl) envioEl.style.display = esEnvio ? "" : "none";
     const recogerEl = $("#pc-recoger-campos"); if (recogerEl) recogerEl.style.display = esEnvio ? "none" : "";
+  });
+
+  $("#pc-copiar-llave")?.addEventListener("click", () => {
+    const btn = $("#pc-copiar-llave");
+    navigator.clipboard.writeText($("#pc-llave")?.value || "").then(() => {
+      btn.innerHTML = `${ic('check')} Copiada`;
+      setTimeout(() => { btn.innerHTML = `${ic('copy')} Copiar`; if (window.lucide) lucide.createIcons(); }, 2000);
+      if (window.lucide) lucide.createIcons();
+    });
   });
 
   $("#pc-confirmar")?.addEventListener("click", async () => {
