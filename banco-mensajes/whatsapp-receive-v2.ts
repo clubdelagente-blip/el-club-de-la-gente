@@ -1,6 +1,11 @@
 // whatsapp-receive — El Club de la Gente
 // Supabase Edge Function · JWT: OFF
-// Groq API (llama-3.3-70b-versatile) + perfiles numerológicos
+// Groq API (openai/gpt-oss-120b) + perfiles numerológicos
+//
+// NOTA (2026-09-04): antes usaba llama-3.3-70b-versatile, pero ese modelo
+// paso a ser exclusivo para cuentas Enterprise de Groq el 26 de agosto de
+// 2026 y ya no esta disponible en el plan estandar. Se cambio a
+// openai/gpt-oss-120b, que si esta disponible.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -558,7 +563,7 @@ Deno.serve(async (req: Request) => {
         Authorization: `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: "openai/gpt-oss-120b",
         messages: [
           { role: "system", content: systemPrompt },
           ...mensajesHistorial,
