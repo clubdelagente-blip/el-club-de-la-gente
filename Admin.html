@@ -425,24 +425,32 @@ window.exportarMiembrosCSV=exportarMiembrosCSV;
 
 /* ---- DIFUSIÓN MASIVA (datos reales) ---- */
 let _difusionAudiencias=[];
+const CATEGORIAS_INTERES=['Bienestar y salud','Odontología','Cuidado personal','Turismo','Veterinaria','Canasta familiar','Comida rápida','Ropa y moda','Regalos','Heladería'];
+
 async function abrirDifusionReal(){
-  const{data:perfiles}=await supabase.from('perfiles').select('id,nombre,whatsapp,plan,fecha_vencimiento');
+  const{data:perfiles}=await supabase.from('perfiles').select('id,nombre,whatsapp,plan,fecha_vencimiento,categorias_interes');
   const P=perfiles||[];
   const tieneWa=p=>!!(p.whatsapp||'').replace(/\D/g,'').length;
   const hoy=new Date();
   const en7dias=new Date(hoy.getTime()+7*24*60*60*1000);
-  _difusionAudiencias=[
+  const audienciasBase=[
     {id:'todos',lbl:'Todos los miembros',list:P.filter(p=>tieneWa(p))},
     {id:'premium',lbl:'Solo Premium',list:P.filter(p=>tieneWa(p)&&p.plan==='premium')},
     {id:'basica',lbl:'Solo Básica',list:P.filter(p=>tieneWa(p)&&p.plan==='basica')},
     {id:'vencen',lbl:'Vencen esta semana',list:P.filter(p=>tieneWa(p)&&p.fecha_vencimiento&&new Date(p.fecha_vencimiento)<=en7dias&&new Date(p.fecha_vencimiento)>=hoy)},
     {id:'inactivos',lbl:'Miembros inactivos (sin plan)',list:P.filter(p=>tieneWa(p)&&(!p.plan||p.plan==='sin_plan'))},
   ];
+  const audienciasCategoria=CATEGORIAS_INTERES.map(cat=>({
+    id:'cat:'+cat,
+    lbl:`Interesados en ${cat}`,
+    list:P.filter(p=>tieneWa(p)&&(p.categorias_interes||[]).includes(cat)),
+  })).filter(a=>a.list.length>0);
+  _difusionAudiencias=[...audienciasBase,...audienciasCategoria];
   $("#modal-body").innerHTML=`
     <div class="ad-field">
       <label>Audiencia</label>
       <div class="ag-aud" id="ag-aud">
-        ${_difusionAudiencias.map((a,i)=>`
+        ${audienciasBase.map((a,i)=>`
           <div class="ag-aud__opt${i===0?' is-on':''}" data-aud="${a.id}">
             <span class="ag-aud__radio"></span>
             <span class="ag-aud__lbl">${a.lbl}</span>
@@ -450,6 +458,18 @@ async function abrirDifusionReal(){
           </div>`).join('')}
       </div>
     </div>
+    ${audienciasCategoria.length?`
+    <div class="ad-field">
+      <label>Por categoría de interés</label>
+      <div class="ag-aud" id="ag-aud-cat">
+        ${audienciasCategoria.map(a=>`
+          <div class="ag-aud__opt" data-aud="${a.id}">
+            <span class="ag-aud__radio"></span>
+            <span class="ag-aud__lbl">${a.lbl}</span>
+            <span class="ag-aud__n"><b>${a.list.length.toLocaleString('es-CO')}</b> miembros</span>
+          </div>`).join('')}
+      </div>
+    </div>`:''}
     <div class="ad-field"><label>Mensaje</label><textarea id="ag-bc-msg" rows="4" placeholder="Escribe el mensaje que recibirán por WhatsApp…">🌿 Hola {nombre}, desde El Club de la Gente queremos contarte que…</textarea></div>
     <div class="ad-field" style="margin-bottom:6px"><label>Plantillas rápidas</label>
       <div class="ag-tpls" style="padding:0">${(window.ADM_WA_PLANTILLAS||[]).map((p,i)=>`<button class="ag-tpl" type="button" data-bc-tpl="${i}">${p.lbl}</button>`).join('')}</div>
@@ -484,8 +504,11 @@ async function enviarDifusionReal(audienciaId){
     const primerNombre=(p.nombre||'').trim().split(' ')[0]||'';
     const texto=msg.replace(/\{nombre\}/gi,primerNombre);
     try{
-      const{error}=await supabase.functions.invoke('whatsapp-send-3',{body:{to:p.whatsapp,body:texto}});
-      if(error)fallidos++;else enviados++;
+      const res=await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3",{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({to:p.whatsapp,body:texto})
+      });
+      if(res.ok)enviados++;else fallidos++;
     }catch(_){fallidos++;}
     if(progEl)progEl.textContent=`Enviando… ${enviados+fallidos}/${aud.list.length} (✓ ${enviados} · ✗ ${fallidos})`;
     await new Promise(r=>setTimeout(r,300));

@@ -445,11 +445,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const verM = e.target.closest("[data-ver-miembro]");
     if (verM) { window.abrirMiembroReal?.(verM.dataset.verMiembro); return; }
     const aud = e.target.closest("[data-aud]");
-    if (aud) { $$("#ag-aud .ag-aud__opt").forEach(o => o.classList.toggle("is-on", o === aud)); return; }
+    if (aud) { $$(".ag-aud .ag-aud__opt").forEach(o => o.classList.toggle("is-on", o === aud)); return; }
     const bcTpl = e.target.closest("[data-bc-tpl]");
     if (bcTpl) { const m = $("#ag-bc-msg"); if (m) m.value = ADM_WA_PLANTILLAS[bcTpl.dataset.bcTpl].txt; return; }
     if (e.target.closest("#ag-bc-send")) {
-      const sel = $("#ag-aud .ag-aud__opt.is-on");
+      const sel = $(".ag-aud .ag-aud__opt.is-on");
       window.enviarDifusionReal?.(sel?.dataset.aud || "todos");
       return;
     }
