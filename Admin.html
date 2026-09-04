@@ -974,13 +974,24 @@ document.addEventListener('DOMContentLoaded',async()=>{
     }
     if(window.lucide)lucide.createIcons();
   }
-  function showLoginScreen(){
+  function showLoginScreen(msg){
     if(loginScreen)loginScreen.style.display='flex';
     if(adminEl)adminEl.style.display='none';
+    if(msg){const errEl=document.getElementById('login-error');if(errEl){errEl.textContent=msg;errEl.style.display='block';}}
+  }
+  async function verificarYMostrarAdmin(user){
+    if(!user){showLoginScreen();return;}
+    const{data:perfil}=await supabase.from('perfiles').select('rol').eq('id',user.id).maybeSingle();
+    if(perfil?.rol==='admin'){
+      showAdmin(user);
+    }else{
+      await supabase.auth.signOut();
+      showLoginScreen('Esta cuenta no tiene permisos de administrador.');
+    }
   }
   const{data:{session:initSession}}=await supabase.auth.getSession();
-  if(initSession)showAdmin(initSession.user);
-  supabase.auth.onAuthStateChange((_e,s)=>{s?showAdmin(s.user):showLoginScreen();});
+  await verificarYMostrarAdmin(initSession?.user);
+  supabase.auth.onAuthStateChange((_e,s)=>{verificarYMostrarAdmin(s?.user);});
   document.getElementById('login-btn')?.addEventListener('click',async()=>{
     const email=document.getElementById('login-email')?.value.trim();
     const pass=document.getElementById('login-pass')?.value;

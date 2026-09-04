@@ -840,15 +840,15 @@ async function cargarTiendaAliados() {
   if (!grid || !wrap) return;
 
   const hoy = new Date().toISOString().slice(0, 10);
-  const [{ data: prods }, { data: cfg }] = await Promise.all([
+  const [{ data: prods }, { data: comPct }] = await Promise.all([
     supabase.from('productos_aliado')
       .select('*, categorias_productos(nombre), aliados(nombre, tienda_nombre, whatsapp, maps_url, tienda_llave_pago)')
       .eq('estado', 'aprobado').eq('activo', true)
       .or(`fecha_fin.is.null,fecha_fin.gte.${hoy}`)
       .order('created_at', { ascending: false }),
-    supabase.from('config_contabilidad').select('comision_tienda_pct').eq('id', 1).maybeSingle(),
+    supabase.rpc('get_comision_tienda_pct'),
   ]);
-  if (cfg?.comision_tienda_pct != null) _comisionTiendaPct = cfg.comision_tienda_pct;
+  if (comPct != null) _comisionTiendaPct = comPct;
 
   const productos = prods || [];
   if (!productos.length) { wrap.style.display = 'none'; return; }
