@@ -618,11 +618,33 @@ window.enviarMsgReal=async function(){
   }).catch(()=>null);
   if(!res||!res.ok){toast('Error enviando el mensaje');inp.disabled=false;return;}
   await supabase.from('conversaciones').insert({whatsapp:c.numero,rol:'assistant',contenido:txt});
-  c.msgs.push({whatsapp:c.numero,rol:'assistant',contenido:txt,created_at:new Date().toISOString()});
-  c.lastText=txt.slice(0,80);c.lastFrom='assistant';c.lastTime=new Date().toISOString();c.necesitaRespuesta=false;
   inp.value='';inp.style.height='auto';inp.disabled=false;
-  renderAgThreadReal();
+};
+
+/* ---- Tiempo real: nuevos mensajes entran/salen sin recargar ---- */
+let _agRealtimeCh=null;
+function _agHandleRealtimeMsg(row){
+  const key=(row.whatsapp||'').replace(/\D/g,'');
+  if(!key)return;
+  const c=_agConvsAll.find(x=>x.numero===key);
+  if(!c){cargarAgenteReal();return;}
+  c.msgs.push(row);
+  c.lastText=(row.contenido||'').slice(0,80);
+  c.lastFrom=row.rol;
+  c.lastTime=row.created_at;
+  c.necesitaRespuesta=row.rol==='user';
+  _agConvsAll.sort((a,b)=>new Date(b.lastTime)-new Date(a.lastTime));
+  const titleEl=$("#ag-title");if(titleEl)titleEl.textContent=`Conversaciones · ${_agConvsAll.length} chats`;
+  const nPend=_agConvsAll.filter(x=>x.necesitaRespuesta).length;
+  const navEl=$("#ag-nav-count");if(navEl){navEl.textContent=nPend?nPend:'';navEl.style.display=nPend?'':'none';}
   renderAgConvsReal();
+  if(c.numero===_agActive)renderAgThreadReal();
+}
+window._agInitRealtime=function(){
+  if(_agRealtimeCh)return;
+  _agRealtimeCh=supabase.channel('conversaciones-admin')
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'conversaciones'},payload=>_agHandleRealtimeMsg(payload.new))
+    .subscribe();
 };
 
 window.actualizarAgCountReal=async function(){
@@ -1369,6 +1391,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       if(nm)nm.textContent=user.email;
     }
     if(window.lucide)lucide.createIcons();
+    window._agInitRealtime?.();
   }
   function showLoginScreen(msg){
     if(loginScreen)loginScreen.style.display='flex';
