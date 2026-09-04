@@ -480,34 +480,7 @@ function enviarMsg() {
   fillConvs();
 }
 
-function abrirDifusion() {
-  let aud = "todos";
-  $("#modal-body").innerHTML = `
-    <div class="ad-field">
-      <label>Audiencia</label>
-      <div class="ag-aud" id="ag-aud">
-        ${ADM_WA_AUDIENCIAS.map(a => `
-          <div class="ag-aud__opt ${a.id === aud ? "is-on" : ""}" data-aud="${a.id}">
-            <span class="ag-aud__radio"></span>
-            <span class="ag-aud__lbl">${a.lbl}</span>
-            <span class="ag-aud__n"><b>${a.n.toLocaleString("es-CO")}</b> miembros</span>
-          </div>`).join("")}
-      </div>
-    </div>
-    <div class="ad-field"><label>Mensaje</label><textarea id="ag-bc-msg" rows="4" placeholder="Escribe el mensaje que recibirán por WhatsApp…">🌿 Hola {nombre}, desde El Club de la Gente queremos contarte que…</textarea></div>
-    <div class="ad-field" style="margin-bottom:6px"><label>Plantillas rápidas</label>
-      <div class="ag-tpls" style="padding:0">${ADM_WA_PLANTILLAS.map((p, i) => `<button class="ag-tpl" data-bc-tpl="${i}">${p.lbl}</button>`).join("")}</div>
-    </div>
-    <div class="ad-toolbar" style="margin:6px 0 0">
-      <span style="font-size:12px;color:var(--txt-40)">${ic("info")} Se enviará desde el número oficial del Club</span>
-      <div class="ad-spacer"></div>
-      <button class="ad-btn ad-btn--verde" id="ag-bc-send">${ic("send-horizontal")} Enviar difusión</button>
-    </div>`;
-  $("#modal-title").textContent = "Difusión masiva por WhatsApp";
-  $("#modal-sub").textContent = "Mensaje a un grupo de miembros";
-  $("#ad-modal-ov").classList.add("is-open");
-  if (window.lucide) lucide.createIcons();
-}
+window.ADM_WA_PLANTILLAS = ADM_WA_PLANTILLAS;
 
 /* ============================================================
    MODAL DE MIEMBRO
@@ -654,7 +627,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tpl = e.target.closest("[data-tpl]");
     if (tpl) { const inp = $("#ag-input"); if (inp) { inp.value = ADM_WA_PLANTILLAS[tpl.dataset.tpl].txt; inp.focus(); inp.style.height = "auto"; inp.style.height = inp.scrollHeight + "px"; } return; }
     if (e.target.closest("#ag-send")) { enviarMsg(); return; }
-    if (e.target.closest("#ag-broadcast")) { abrirDifusion(); return; }
+    if (e.target.closest("#ag-broadcast")) { window.abrirDifusionReal?.(); return; }
     const verM = e.target.closest("[data-ver-miembro]");
     if (verM) { window.abrirMiembroReal?.(verM.dataset.verMiembro); return; }
     const aud = e.target.closest("[data-aud]");
@@ -663,8 +636,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (bcTpl) { const m = $("#ag-bc-msg"); if (m) m.value = ADM_WA_PLANTILLAS[bcTpl.dataset.bcTpl].txt; return; }
     if (e.target.closest("#ag-bc-send")) {
       const sel = $("#ag-aud .ag-aud__opt.is-on");
-      const a = ADM_WA_AUDIENCIAS.find(x => x.id === (sel?.dataset.aud || "todos"));
-      cerrarModal(); toast(`Difusión enviada a ${a.n.toLocaleString("es-CO")} miembros · ${a.lbl}`); return;
+      window.enviarDifusionReal?.(sel?.dataset.aud || "todos");
+      return;
     }
 
     if (e.target.closest("#a-add")) { abrirAgregarAliado(); return; }
