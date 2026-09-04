@@ -53,26 +53,6 @@ const ADM_MIEMBROS = [
   { nombre: "Esteban Rojas Pinto", num: "2037", plan: "basica", estado: "inactivo", ahorro: 2300, mision: 1, fecha: "18 abr 2026", wsp: "302 556 1199", barrio: "Coburgo" },
 ];
 
-/* ---------- ALIADOS (gestión) ---------- */
-const ADM_ALIADOS = [
-  { nombre: "Patitas Felices", cat: "Veterinaria", icon: "paw-print", usos: 184, pct: "30%", estado: "activo" },
-  { nombre: "Barbería Don Carlos", cat: "Barbería", icon: "scissors", usos: 161, pct: "30%", estado: "activo" },
-  { nombre: "Sonrisa Sana", cat: "Odontología", icon: "smile", usos: 142, pct: "25%", estado: "activo" },
-  { nombre: "Mercado del Campo", cat: "Canasta familiar", icon: "shopping-basket", usos: 138, pct: "12%", estado: "activo" },
-  { nombre: "Heladería La Sumapaz", cat: "Heladería", icon: "ice-cream", usos: 119, pct: "2x1", estado: "activo" },
-  { nombre: "El Buen Sabor", cat: "Comida rápida", icon: "sandwich", usos: 96, pct: "25%", estado: "activo" },
-  { nombre: "Bienestar Integral Spa", cat: "Bienestar y salud", icon: "heart-pulse", usos: 74, pct: "20%", estado: "activo" },
-  { nombre: "Estilo Propio", cat: "Ropa personalizada", icon: "shirt", usos: 53, pct: "20%", estado: "activo" },
-  { nombre: "Fusa Aventura Tours", cat: "Turismo", icon: "mountain-snow", usos: 41, pct: "15%", estado: "inactivo" },
-];
-
-/* ---------- PROFESIONALES ---------- */
-const ADM_PROFESIONALES = [
-  { nombre: "Dra. Marcela Téllez", area: "Asesoría jurídica", icon: "scale", consultas: 64, estado: "activo" },
-  { nombre: "Ps. Daniela Romero", area: "Asesoría psicológica", icon: "brain", consultas: 48, estado: "activo" },
-  { nombre: "C.P. Andrés Linares", area: "Asesoría contable", icon: "calculator", consultas: 37, estado: "activo" },
-];
-
 /* ---------- CONTENIDO (galería) ---------- */
 const ADM_CONTENIDO = [
   { nombre: "Banner hero junio", tipo: "Banner", icon: "image", fecha: "1 jun 2026" },
@@ -134,80 +114,15 @@ const ADM_ARQUETIPOS = {
 
 /* ============================================================
    MÓDULO 7 — AGENTE DE WHATSAPP
-   Conversaciones del agente con los miembros (demo)
    ============================================================ */
 
-/* Plantillas de respuesta rápida del agente */
+/* Plantillas de respuesta rápida del agente (texto de ejemplo reutilizable,
+   no son datos de negocio -- se mantienen) */
 const ADM_WA_PLANTILLAS = [
   { lbl: "Saludo", txt: "¡Hola! 👋 Soy el agente de El Club de la Gente. ¿En qué te puedo ayudar hoy?" },
   { lbl: "Resumen de ahorro", txt: "Este mes ya llevas un ahorro estupendo con tu membresía 🎉 ¿Quieres ver el detalle por aliado?" },
   { lbl: "Descuento nuevo", txt: "Tenemos un descuento nuevo que te puede interesar según tus categorías. ¿Te cuento? 👀" },
   { lbl: "Recordar renovación", txt: "Tu membresía se renueva pronto. El cobro es automático, no tienes que hacer nada 🙌" },
   { lbl: "Cómo usar", txt: "Para usar un beneficio solo muestra tu ClubCard o el QR en el local aliado. ¡Así de fácil!" },
-];
-
-/* Audiencias para difusión masiva */
-const ADM_WA_AUDIENCIAS = [
-  { id: "todos",    lbl: "Todos los miembros",   n: 2048 },
-  { id: "premium",  lbl: "Solo Premium",          n: 730 },
-  { id: "basica",   lbl: "Solo Básica",           n: 1318 },
-  { id: "vencen",   lbl: "Vencen esta semana",    n: 47 },
-  { id: "inactivos",lbl: "Miembros inactivos",    n: 86 },
-];
-
-/* Hilos de conversación. from: "user" (miembro) | "agent" (Club).
-   estado de cada msg del agente: "auto" (enviado por el bot) o normal. */
-const ADM_CONVERS = [
-  {
-    num: "2048", nombre: "Carlos Andrés Pérez", plan: "premium", wsp: "300 412 8890",
-    online: true, unread: 1, time: "8:14 a.m.",
-    msgs: [
-      { from: "agent", auto: true, txt: "¡Hola, Carlos! 👋 Aquí tu resumen de mayo: ahorraste $22.140 en 4 compras. ¡Tu mejor mes! 🎉", time: "8:01 a.m." },
-      { from: "agent", auto: true, txt: "Como te interesa Veterinaria, te recuerdo: Patitas Felices tiene 30% para miembros, a 4 cuadras de ti.", time: "8:01 a.m." },
-      { from: "user", txt: "¡Gracias! 🙌 ¿Y para mercado qué aliado me recomiendas?", time: "8:14 a.m." },
-    ],
-  },
-  {
-    num: "2047", nombre: "Laura Restrepo Mesa", plan: "premium", wsp: "311 556 7720",
-    online: false, unread: 2, time: "Ayer",
-    msgs: [
-      { from: "agent", auto: true, txt: "¡Bienvenida al Club, Laura! 🌿 Soy tu agente personal. Escríbeme cuando quieras ver tus beneficios.", time: "Ayer · 9:30 a.m." },
-      { from: "user", txt: "Hola! ¿La barbería tiene descuento también para corte de niños?", time: "Ayer · 6:02 p.m." },
-      { from: "user", txt: "Es para mi hijo 🙂", time: "Ayer · 6:02 p.m." },
-    ],
-  },
-  {
-    num: "2046", nombre: "Andrés Gómez Vidal", plan: "premium", wsp: "320 778 1145",
-    online: false, unread: 0, time: "Ayer",
-    msgs: [
-      { from: "user", txt: "Cuánto me ahorro si compro $80.000 en Patitas Felices?", time: "Ayer · 3:10 p.m." },
-      { from: "agent", txt: "Con el 30% de Patitas Felices, en $80.000 te ahorras $24.000 y pagas $56.000 ✅", time: "Ayer · 3:11 p.m." },
-      { from: "user", txt: "Buenísimo, gracias!", time: "Ayer · 3:12 p.m." },
-    ],
-  },
-  {
-    num: "2044", nombre: "Mónica Salazar León", plan: "basica", wsp: "301 664 3320",
-    online: true, unread: 1, time: "9:48 a.m.",
-    msgs: [
-      { from: "user", txt: "Hola, quiero postularme como voluntaria en Mesa Compartida 🙋‍♀️", time: "9:48 a.m." },
-    ],
-  },
-  {
-    num: "2045", nombre: "Diana Castaño Ruiz", plan: "basica", wsp: "315 220 9981",
-    online: false, unread: 0, time: "2 jun",
-    msgs: [
-      { from: "agent", auto: true, txt: "Hola Diana, tu membresía se renueva el 11 de junio. El cobro es automático, no tienes que hacer nada 🙌", time: "2 jun · 10:00 a.m." },
-      { from: "user", txt: "Perfecto, gracias por avisar", time: "2 jun · 11:20 a.m." },
-      { from: "agent", txt: "¡Con gusto! Cualquier cosa aquí estoy 🌿", time: "2 jun · 11:21 a.m." },
-    ],
-  },
-  {
-    num: "2043", nombre: "Julián Ortiz Parra", plan: "premium", wsp: "312 998 4410",
-    online: false, unread: 0, time: "1 jun",
-    msgs: [
-      { from: "agent", auto: true, txt: "¡Bienvenido al Club, Julián! 🎉 Ya eres parte de la familia. Tu ClubCard digital ya está activa en tu perfil.", time: "1 jun · 4:00 p.m." },
-      { from: "user", txt: "Excelente! ya quiero usarla 😄", time: "1 jun · 4:45 p.m." },
-    ],
-  },
 ];
 

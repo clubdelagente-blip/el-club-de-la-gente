@@ -204,8 +204,8 @@
        SCRIPTS
        ============================================================ -->
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <script src="admin-data.js?v=3"></script>
-  <script src="admin.js?v=10"></script>
+  <script src="admin-data.js?v=4"></script>
+  <script src="admin.js?v=11"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -501,13 +501,141 @@ async function enviarDifusionReal(audienciaId){
 }
 window.enviarDifusionReal=enviarDifusionReal;
 
+/* ---- AGENTE WHATSAPP: bandeja real ---- */
+let _agConvsAll=[], _agActive=null, _agQ='';
+function _agTiempo(iso){return new Date(iso).toLocaleTimeString('es-CO',{hour:'numeric',minute:'2-digit',hour12:true}).toLowerCase();}
+
+async function cargarAgenteReal(){
+  const[{data:conv},{data:perfiles}]=await Promise.all([
+    supabase.from('conversaciones').select('whatsapp,rol,contenido,created_at').order('created_at',{ascending:true}),
+    supabase.from('perfiles').select('id,nombre,whatsapp,plan'),
+  ]);
+  const C=conv||[],P=perfiles||[];
+  const porNumero={};
+  C.forEach(m=>{
+    const key=(m.whatsapp||'').replace(/\D/g,'');
+    if(!key)return;
+    (porNumero[key]=porNumero[key]||[]).push(m);
+  });
+  const buscarPerfil=numero=>P.find(p=>{
+    const d=(p.whatsapp||'').replace(/\D/g,'');
+    return d && (d.endsWith(numero)||numero.endsWith(d));
+  });
+  _agConvsAll=Object.entries(porNumero).map(([numero,msgs])=>{
+    const perfil=buscarPerfil(numero);
+    const last=msgs[msgs.length-1];
+    return{
+      numero,msgs,
+      nombre:perfil?.nombre||('+57 '+numero),
+      plan:perfil?.plan||null,
+      miembroId:perfil?.id||null,
+      lastText:(last?.contenido||'').slice(0,80),
+      lastFrom:last?.rol,
+      lastTime:last?.created_at,
+      necesitaRespuesta:last?.rol==='user',
+    };
+  }).sort((a,b)=>new Date(b.lastTime)-new Date(a.lastTime));
+
+  if(!_agActive||!_agConvsAll.find(c=>c.numero===_agActive))_agActive=_agConvsAll[0]?.numero||null;
+
+  const titleEl=$("#ag-title");if(titleEl)titleEl.textContent=`Conversaciones · ${_agConvsAll.length} chats`;
+  const nPend=_agConvsAll.filter(c=>c.necesitaRespuesta).length;
+  const navEl=$("#ag-nav-count");if(navEl){navEl.textContent=nPend?nPend:'';navEl.style.display=nPend?'':'none';}
+  renderAgConvsReal();
+  renderAgThreadReal();
+}
+window.cargarAgenteReal=cargarAgenteReal;
+
+function renderAgConvsReal(){
+  const q=_agQ.trim().toLowerCase();
+  const list=_agConvsAll.filter(c=>!q||c.nombre.toLowerCase().includes(q)||c.numero.includes(q));
+  const pendN=$("#ag-pend-n");if(pendN){const n=_agConvsAll.filter(c=>c.necesitaRespuesta).length;pendN.textContent=n?`${n} esperando respuesta`:'';}
+  const el=$("#ag-convs");if(!el)return;
+  el.innerHTML=list.length?list.map(c=>`
+    <li class="ag-conv ${c.numero===_agActive?'is-active':''}" data-conv="${c.numero}">
+      <span class="ag-conv__av"><span class="av">${esc(window.ini(c.nombre))}</span></span>
+      <span class="ag-conv__main">
+        <span class="ag-conv__row"><span class="ag-conv__name">${esc(c.nombre)}</span><span class="ag-conv__time">${c.lastTime?_agTiempo(c.lastTime):''}</span></span>
+        <span class="ag-conv__row"><span class="ag-conv__prev">${c.lastFrom==='assistant'?`<span class="me">Tú: ${esc(c.lastText)}</span>`:esc(c.lastText)}</span>${c.necesitaRespuesta?`<span class="ag-conv__badge">1</span>`:''}</span>
+      </span>
+    </li>`).join(''):`<li style="padding:30px;text-align:center;color:var(--txt-40);font-size:13px">Sin conversaciones</li>`;
+}
+window.filtrarConvsReal=function(q){_agQ=q||'';renderAgConvsReal();};
+
+function renderAgThreadReal(){
+  const c=_agConvsAll.find(x=>x.numero===_agActive);
+  const wrap=$("#ag-thread");if(!wrap)return;
+  if(!c){wrap.innerHTML=`<div class="ag-empty"><span class="ag-empty__ic">${ic('message-circle')}</span><h3>Selecciona una conversación</h3><p>Elige un miembro de la bandeja para ver y responder sus mensajes.</p></div>`;if(window.lucide)lucide.createIcons();return;}
+  wrap.innerHTML=`
+    <div class="ag-thread__head">
+      <span class="av">${esc(window.ini(c.nombre))}</span>
+      <div class="ag-thread__id">
+        <div class="ag-thread__name">${esc(c.nombre)} ${c.plan?`<span class="ad-pill ${c.plan}"><span class="d"></span>${window.planLbl(c.plan)}</span>`:''}</div>
+        <div class="ag-thread__meta">+57 ${c.numero}</div>
+      </div>
+      <div class="ag-thread__actions">
+        ${c.miembroId?`<button class="ad-btn" data-ver-miembro="${c.miembroId}">${ic('user')} Ver perfil</button>`:''}
+        <a class="ad-btn ad-btn--wa" href="https://wa.me/57${c.numero}" target="_blank">${ic('external-link')} WhatsApp</a>
+      </div>
+    </div>
+    <div class="ag-msgs" id="ag-msgs">
+      ${c.msgs.map(m=>`
+        <div class="ag-b ag-b--${m.rol==='user'?'user':'agent'}">
+          ${m.rol==='assistant'?`<span class="ag-b__auto">${ic('bot')} Automático</span>`:''}
+          ${esc(m.contenido)}
+          <span class="t">${_agTiempo(m.created_at)}${m.rol!=='user'?' '+ic('check-check'):''}</span>
+        </div>`).join('')}
+    </div>
+    <div class="ag-compose">
+      <div class="ag-tpls">
+        ${(window.ADM_WA_PLANTILLAS||[]).map((p,i)=>`<button class="ag-tpl" type="button" data-tpl="${i}">${p.lbl}</button>`).join('')}
+      </div>
+      <div class="ag-compose__row">
+        <textarea class="ag-compose__in" id="ag-input" rows="1" placeholder="Escribe un mensaje para ${esc((c.nombre||'').split(' ')[0])}…"></textarea>
+        <button class="ag-send" id="ag-send">${ic('send-horizontal')}</button>
+      </div>
+    </div>`;
+  if(window.lucide)lucide.createIcons();
+  const m=$("#ag-msgs");if(m)m.scrollTop=m.scrollHeight;
+}
+
+window.abrirConvReal=function(numero){
+  _agActive=numero;
+  renderAgConvsReal();
+  renderAgThreadReal();
+};
+
+window.enviarMsgReal=async function(){
+  const inp=$("#ag-input");
+  const c=_agConvsAll.find(x=>x.numero===_agActive);
+  if(!inp||!c)return;
+  const txt=inp.value.trim();
+  if(!txt)return;
+  inp.disabled=true;
+  const{error}=await supabase.functions.invoke('whatsapp-send',{body:{to:c.numero,body:txt}});
+  if(error){toast('Error enviando el mensaje: '+error.message);inp.disabled=false;return;}
+  await supabase.from('conversaciones').insert({whatsapp:c.numero,rol:'assistant',contenido:txt});
+  c.msgs.push({whatsapp:c.numero,rol:'assistant',contenido:txt,created_at:new Date().toISOString()});
+  c.lastText=txt.slice(0,80);c.lastFrom='assistant';c.lastTime=new Date().toISOString();c.necesitaRespuesta=false;
+  inp.value='';inp.style.height='auto';inp.disabled=false;
+  renderAgThreadReal();
+  renderAgConvsReal();
+};
+
+window.actualizarAgCountReal=async function(){
+  const{data:conv}=await supabase.from('conversaciones').select('whatsapp,rol,created_at').order('created_at',{ascending:true});
+  const porNumero={};
+  (conv||[]).forEach(m=>{const k=(m.whatsapp||'').replace(/\D/g,'');if(k)porNumero[k]=m;});
+  const n=Object.values(porNumero).filter(m=>m.rol==='user').length;
+  const el=$("#ag-nav-count");
+  if(el){el.textContent=n?n:'';el.style.display=n?'':'none';}
+};
+
 /* ---- ALIADOS ---- */
-async function cargarAliados(){
-  const{data}=await supabase.from('aliados').select('*').order('created_at',{ascending:false});
-  _aliados=data||[];
+function renderTablaAliados(list){
   const tbody=$("#a-body");if(!tbody)return;
-  if(!_aliados.length){tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Aún no hay aliados →</td></tr>`;return;}
-  tbody.innerHTML=_aliados.map(a=>`<tr>
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">${_aliados.length?'Sin resultados':'Aún no hay aliados →'}</td></tr>`;return;}
+  tbody.innerHTML=list.map(a=>`<tr>
     <td><div class="ad-cell-user">${a.imagen_url?`<img src="${a.imagen_url}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0">`:`<span class="ad-av">${(a.nombre||'?')[0]}</span>`}<div class="ad-cell-user__name">${a.nombre}</div></div></td>
     <td><span class="ad-table__num">${a.categoria||'—'}</span><br><span style="font-size:10px;color:rgba(242,240,234,.35)">${PLANES_VIS.filter(p=>(a.planes_visibles||['basica','premium']).includes(p.val)).map(p=>p.lbl).join(' · ')||'Sin plan asignado'}</span></td>
     <td><span class="ad-num-strong verde">${a.descuento||'—'}</span></td>
@@ -521,6 +649,16 @@ async function cargarAliados(){
     </div></td></tr>`).join('');
   if(window.lucide)lucide.createIcons();
 }
+async function cargarAliados(){
+  const{data}=await supabase.from('aliados').select('*').order('created_at',{ascending:false});
+  _aliados=data||[];
+  renderTablaAliados(_aliados);
+}
+function filtrarAliadosReal(q){
+  const nq=(q||'').trim().toLowerCase();
+  renderTablaAliados(!nq?_aliados:_aliados.filter(a=>(a.nombre||'').toLowerCase().includes(nq)||(a.categoria||'').toLowerCase().includes(nq)));
+}
+window.filtrarAliadosReal=filtrarAliadosReal;
 async function cargarPostulaciones(){
   const{data}=await supabase.from('aliados_postulaciones').select('*').eq('estado','pendiente').order('created_at',{ascending:false});
   const post=data||[];const panel=$("#p-aliados");if(!panel||!post.length)return;

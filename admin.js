@@ -73,69 +73,6 @@ function renderMiembros() {
 }
 
 /* ============================================================
-   RENDER: ALIADOS
-   ============================================================ */
-function renderAliados() {
-  $("#p-aliados").innerHTML = `
-    <div class="ad-toolbar">
-      <div class="ad-search-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="a-search" placeholder="Buscar aliado…" autocomplete="off"></div>
-      <div class="ad-spacer"></div>
-      <button class="ad-btn ad-btn--verde" id="a-add">${ic("plus")} Agregar aliado</button>
-    </div>
-    <div class="ad-table-wrap">
-      <table class="ad-table">
-        <thead><tr><th>Establecimiento</th><th>Categoría</th><th>Usos del mes</th><th>Descuento</th><th style="text-align:right">Estado</th></tr></thead>
-        <tbody id="a-body"></tbody>
-      </table>
-    </div>`;
-  fillAliados("");
-}
-function fillAliados(q) {
-  const nq = norm(q.trim());
-  const list = ADM_ALIADOS.filter(a => !nq || norm(a.nombre).includes(nq) || norm(a.cat).includes(nq));
-  $("#a-body").innerHTML = list.map(a => `
-    <tr>
-      <td><div class="ad-cell-user"><span class="ad-rank__ic">${ic(a.icon)}</span><div class="ad-cell-user__name">${a.nombre}</div></div></td>
-      <td><span class="ad-table__num">${a.cat}</span></td>
-      <td><span class="ad-num-strong">${a.usos}</span></td>
-      <td><span class="ad-num-strong verde">${a.pct}</span></td>
-      <td style="text-align:right"><span class="ad-pill ${a.estado}"><span class="d"></span>${a.estado === "activo" ? "Activo" : "Inactivo"}</span></td>
-    </tr>`).join("");
-  if (window.lucide) lucide.createIcons();
-}
-
-/* ============================================================
-   RENDER: PROFESIONALES
-   ============================================================ */
-function renderProfesionales() {
-  $("#p-profesionales").innerHTML = `
-    <div class="ad-toolbar">
-      <div class="ad-search-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="prof-search" placeholder="Buscar profesional…" autocomplete="off"></div>
-      <div class="ad-spacer"></div>
-      <button class="ad-btn ad-btn--verde" id="prof-add">${ic("plus")} Agregar profesional</button>
-    </div>
-    <div class="ad-table-wrap">
-      <table class="ad-table">
-        <thead><tr><th>Profesional</th><th>Área</th><th>Consultas del mes</th><th style="text-align:right">Estado</th></tr></thead>
-        <tbody id="prof-body"></tbody>
-      </table>
-    </div>`;
-  fillProfesionales("");
-}
-function fillProfesionales(q) {
-  const nq = norm(q.trim());
-  const list = ADM_PROFESIONALES.filter(p => !nq || norm(p.nombre).includes(nq) || norm(p.area).includes(nq));
-  $("#prof-body").innerHTML = list.map(p => `
-    <tr>
-      <td><div class="ad-cell-user"><span class="ad-rank__ic">${ic(p.icon)}</span><div class="ad-cell-user__name">${p.nombre}</div></div></td>
-      <td><span class="ad-table__num">${p.area}</span></td>
-      <td><span class="ad-num-strong">${p.consultas}</span></td>
-      <td style="text-align:right"><span class="ad-pill ${p.estado}"><span class="d"></span>${p.estado === "activo" ? "Activo" : "Inactivo"}</span></td>
-    </tr>`).join("");
-  if (window.lucide) lucide.createIcons();
-}
-
-/* ============================================================
    RENDER: MARCAS AMAZON
    ============================================================ */
 function renderMarcas() {
@@ -363,169 +300,40 @@ function renderConfig() {
 }
 
 /* ============================================================
-   MÓDULO 7 — AGENTE DE WHATSAPP (bandeja del admin)
+   MÓDULO 7 — AGENTE DE WHATSAPP (bandeja del admin, datos reales)
    ============================================================ */
-let agActive = null, agQ = "";
-
-function agPrev(c) {
-  const last = c.msgs[c.msgs.length - 1];
-  if (!last) return "";
-  const txt = last.txt.replace(/<[^>]+>/g, "");
-  return last.from === "agent" ? `<span class="me">Tú: ${txt}</span>` : txt;
-}
-function agUnreadTotal() { return ADM_CONVERS.reduce((s, c) => s + (c.unread || 0), 0); }
-function updateAgCount() {
-  const el = $("#ag-nav-count");
-  if (el) { const n = agUnreadTotal(); el.textContent = n ? n : ""; el.style.display = n ? "" : "none"; }
-}
-
 function renderAgente() {
-  if (!agActive) agActive = ADM_CONVERS[0]?.num || null;
   $("#p-agente").innerHTML = `
     <div class="ad-toolbar">
-      <div class="ad-card__title">Conversaciones · ${ADM_CONVERS.length} chats activos</div>
+      <div class="ad-card__title" id="ag-title">Conversaciones</div>
       <div class="ad-spacer"></div>
       <button class="ad-btn ad-btn--verde" id="ag-broadcast">${ic("megaphone")} Difusión masiva</button>
     </div>
     <div class="ag-wrap">
       <div class="ag-list">
         <div class="ag-list__top">
-          <div class="ag-list__title"><h3>Bandeja</h3><span class="n">${agUnreadTotal()} sin leer</span></div>
+          <div class="ag-list__title"><h3>Bandeja</h3><span class="n" id="ag-pend-n"></span></div>
           <div class="ag-search-mini">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input id="ag-search" placeholder="Buscar conversación…" autocomplete="off" value="${agQ}">
+            <input id="ag-search" placeholder="Buscar conversación…" autocomplete="off">
           </div>
         </div>
-        <ul class="ag-convs" id="ag-convs"></ul>
+        <ul class="ag-convs" id="ag-convs"><li style="padding:30px;text-align:center;color:var(--txt-40);font-size:13px">Cargando…</li></ul>
       </div>
       <div class="ag-thread" id="ag-thread"></div>
     </div>`;
-  fillConvs();
-  renderThread();
   if (window.lucide) lucide.createIcons();
+  window.cargarAgenteReal?.();
 }
 
-function fillConvs() {
-  const q = norm(agQ.trim());
-  const list = ADM_CONVERS.filter(c => !q || norm(c.nombre).includes(q) || c.num.includes(q));
-  $("#ag-convs").innerHTML = list.length ? list.map(c => `
-    <li class="ag-conv ${c.num === agActive ? "is-active" : ""}" data-conv="${c.num}">
-      <span class="ag-conv__av"><span class="av">${ini(c.nombre)}</span>${c.online ? '<span class="ag-conv__on"></span>' : ""}</span>
-      <span class="ag-conv__main">
-        <span class="ag-conv__row"><span class="ag-conv__name">${c.nombre}</span><span class="ag-conv__time">${c.time}</span></span>
-        <span class="ag-conv__row"><span class="ag-conv__prev">${agPrev(c)}</span>${c.unread ? `<span class="ag-conv__badge">${c.unread}</span>` : ""}</span>
-      </span>
-    </li>`).join("") : `<li style="padding:30px;text-align:center;color:var(--txt-40);font-size:13px">Sin conversaciones</li>`;
-}
-
-function renderThread() {
-  const c = ADM_CONVERS.find(x => x.num === agActive);
-  const wrap = $("#ag-thread");
-  if (!c) { wrap.innerHTML = `<div class="ag-empty"><span class="ag-empty__ic">${ic("message-circle")}</span><h3>Selecciona una conversación</h3><p>Elige un miembro de la bandeja para ver y responder sus mensajes.</p></div>`; if (window.lucide) lucide.createIcons(); return; }
-  wrap.innerHTML = `
-    <div class="ag-thread__head">
-      <span class="av">${ini(c.nombre)}</span>
-      <div class="ag-thread__id">
-        <div class="ag-thread__name">${c.nombre} <span class="ad-pill ${c.plan}"><span class="d"></span>${planLbl(c.plan)}</span></div>
-        <div class="ag-thread__meta">#${c.num} · ${c.online ? "en línea" : "visto recientemente"} · +57 ${c.wsp}</div>
-      </div>
-      <div class="ag-thread__actions">
-        <button class="ad-btn" data-ver-miembro="${c.num}">${ic("user")} Ver perfil</button>
-        <a class="ad-btn ad-btn--wa" href="https://wa.me/57${c.wsp.replace(/\s/g, "")}" target="_blank">${ic("external-link")} WhatsApp</a>
-      </div>
-    </div>
-    <div class="ag-msgs" id="ag-msgs">
-      ${c.msgs.map(m => `
-        <div class="ag-b ag-b--${m.from}">
-          ${m.from === "agent" && m.auto ? `<span class="ag-b__auto">${ic("bot")} Automático</span>` : ""}
-          ${m.txt}
-          <span class="t">${m.time}${m.from === "agent" ? " " + ic("check-check") : ""}</span>
-        </div>`).join("")}
-    </div>
-    <div class="ag-compose">
-      <div class="ag-tpls">
-        ${ADM_WA_PLANTILLAS.map((p, i) => `<button class="ag-tpl" data-tpl="${i}">${p.lbl}</button>`).join("")}
-      </div>
-      <div class="ag-compose__row">
-        <textarea class="ag-compose__in" id="ag-input" rows="1" placeholder="Escribe un mensaje para ${c.nombre.split(" ")[0]}…"></textarea>
-        <button class="ag-send" id="ag-send">${ic("send-horizontal")}</button>
-      </div>
-    </div>`;
-  if (window.lucide) lucide.createIcons();
-  scrollMsgs();
-}
-function scrollMsgs() { const m = $("#ag-msgs"); if (m) m.scrollTop = m.scrollHeight; }
-
-function abrirConv(num) {
-  agActive = num;
-  const c = ADM_CONVERS.find(x => x.num === num);
-  if (c) c.unread = 0;
-  fillConvs();
-  renderThread();
-  updateAgCount();
-}
-function ahora() {
-  return new Date().toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit", hour12: true }).toLowerCase();
-}
-function enviarMsg() {
-  const inp = $("#ag-input");
-  const c = ADM_CONVERS.find(x => x.num === agActive);
-  if (!inp || !c) return;
-  const txt = inp.value.trim();
-  if (!txt) return;
-  c.msgs.push({ from: "agent", txt: txt.replace(/</g, "&lt;"), time: ahora() });
-  c.time = "ahora";
-  inp.value = ""; inp.style.height = "auto";
-  renderThread();
-  fillConvs();
-}
+function updateAgCount() { window.actualizarAgCountReal?.(); }
 
 window.ADM_WA_PLANTILLAS = ADM_WA_PLANTILLAS;
 
 /* ============================================================
    MODAL DE MIEMBRO
    ============================================================ */
-function abrirAgregarAliado() {
-  $("#modal-body").innerHTML = `
-    <div class="ad-field"><label>Nombre del establecimiento</label><input placeholder="Ej: Café del Parque"></div>
-    <div class="ad-field-2">
-      <div class="ad-field"><label>Categoría</label>
-        <select>${["Salud", "Odontología", "Turismo", "Veterinaria", "Canasta familiar", "Barbería", "Comida rápida", "Heladería", "Ropa personalizada", "Negocios"].map(c => `<option>${c}</option>`).join("")}</select>
-      </div>
-      <div class="ad-field"><label>Descuento principal</label><input placeholder="Ej: 20%"></div>
-    </div>
-    <div class="ad-field"><label>Descripción del negocio</label><textarea rows="3" placeholder="Cuéntale al Club qué ofrece este aliado…"></textarea></div>
-    <div class="ad-field"><label>Foto del lugar</label>
-      <div class="ad-drop" style="padding:28px"><div class="ad-drop__ic" style="width:42px;height:42px;margin-bottom:10px">${ic("image-plus")}</div><p>Subir foto del establecimiento</p></div>
-    </div>
-    <div class="ad-toolbar" style="margin:6px 0 0"><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="aliado-guardar">${ic("check")} Guardar aliado</button></div>`;
-  $("#modal-title").textContent = "Agregar aliado";
-  $("#modal-sub").textContent = "Se publicará en el directorio";
-  $("#ad-modal-ov").classList.add("is-open");
-  if (window.lucide) lucide.createIcons();
-}
 function cerrarModal() { $("#ad-modal-ov").classList.remove("is-open"); }
-
-/* ---------- MODAL: Agregar profesional ---------- */
-function abrirAgregarProfesional() {
-  $("#modal-body").innerHTML = `
-    <div class="ad-field"><label>Nombre del profesional</label><input placeholder="Ej: Dra. Laura Gómez"></div>
-    <div class="ad-field-2">
-      <div class="ad-field"><label>Área de asesoría</label>
-        <select>${["Asesoría jurídica", "Asesoría psicológica", "Asesoría contable", "Asesoría financiera", "Asesoría empresarial"].map(c => `<option>${c}</option>`).join("")}</select>
-      </div>
-      <div class="ad-field"><label>WhatsApp de contacto</label><input placeholder="300 000 0000"></div>
-    </div>
-    <div class="ad-field"><label>Servicios que ofrece a los miembros</label><textarea rows="3" placeholder="Describe las asesorías y beneficios para miembros del Club…"></textarea></div>
-    <div class="ad-field"><label>Foto del profesional</label>
-      <div class="ad-drop" style="padding:28px"><div class="ad-drop__ic" style="width:42px;height:42px;margin-bottom:10px">${ic("image-plus")}</div><p>Subir foto del profesional</p></div>
-    </div>
-    <div class="ad-toolbar" style="margin:6px 0 0"><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="prof-guardar">${ic("check")} Guardar profesional</button></div>`;
-  $("#modal-title").textContent = "Agregar profesional";
-  $("#modal-sub").textContent = "Se publicará en la sección Profesionales de la web";
-  $("#ad-modal-ov").classList.add("is-open");
-  if (window.lucide) lucide.createIcons();
-}
 
 /* ---------- MODAL: Crear evento ---------- */
 function abrirCrearEvento() {
@@ -623,10 +431,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Agente WhatsApp ---
     const conv = e.target.closest("[data-conv]");
-    if (conv) { abrirConv(conv.dataset.conv); return; }
+    if (conv) { window.abrirConvReal?.(conv.dataset.conv); return; }
     const tpl = e.target.closest("[data-tpl]");
     if (tpl) { const inp = $("#ag-input"); if (inp) { inp.value = ADM_WA_PLANTILLAS[tpl.dataset.tpl].txt; inp.focus(); inp.style.height = "auto"; inp.style.height = inp.scrollHeight + "px"; } return; }
-    if (e.target.closest("#ag-send")) { enviarMsg(); return; }
+    if (e.target.closest("#ag-send")) { window.enviarMsgReal?.(); return; }
     if (e.target.closest("#ag-broadcast")) { window.abrirDifusionReal?.(); return; }
     const verM = e.target.closest("[data-ver-miembro]");
     if (verM) { window.abrirMiembroReal?.(verM.dataset.verMiembro); return; }
@@ -670,15 +478,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // Búsqueda + drag&drop (delegado en input/dragover)
   document.addEventListener("input", (e) => {
     if (e.target.id === "m-search") { miembroQ = e.target.value; window.filtrarMiembrosReal?.(miembroTab, miembroQ); }
-    if (e.target.id === "a-search") { fillAliados(e.target.value); }
-    if (e.target.id === "prof-search") { fillProfesionales(e.target.value); }
-    if (e.target.id === "ag-search") { agQ = e.target.value; fillConvs(); }
+    if (e.target.id === "a-search") { window.filtrarAliadosReal?.(e.target.value); }
+    if (e.target.id === "ag-search") { window.filtrarConvsReal?.(e.target.value); }
     if (e.target.id === "ag-input") { e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }
   });
 
   // Enter para enviar mensaje del agente
   document.addEventListener("keydown", (e) => {
-    if (e.target.id === "ag-input" && e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviarMsg(); }
+    if (e.target.id === "ag-input" && e.key === "Enter" && !e.shiftKey) { e.preventDefault(); window.enviarMsgReal?.(); }
   });
   document.addEventListener("dragover", (e) => { const d = e.target.closest("#ad-drop"); if (d) { e.preventDefault(); d.classList.add("is-over"); } });
   document.addEventListener("dragleave", (e) => { const d = e.target.closest("#ad-drop"); if (d) d.classList.remove("is-over"); });
