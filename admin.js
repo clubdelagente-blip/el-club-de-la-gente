@@ -19,7 +19,7 @@ const PANELES = {
   aliados:      { t: "Aliados", s: "Establecimientos, fotos y descuentos" },
   planes:       { t: "Planes", s: "Precios y beneficios de cada membresía" },
   profesionales:{ t: "Profesionales", s: "Asesores jurídicos, psicológicos y contables" },
-  marcas:       { t: "Marcas Amazon", s: "Logos y links de afiliado que aparecen en el carrusel" },
+  marcas:       { t: "Marcas", s: "Logos y links de afiliado que aparecen en el carrusel" },
   tienda:       { t: "Tienda", s: "Catálogo de productos con descuentos para miembros" },
   contenido:    { t: "Contenido", s: "Imágenes, videos y publicaciones de la web" },
   programas:    { t: "Programas sociales", s: "Programas, fundaciones, eventos y voluntarios" },
