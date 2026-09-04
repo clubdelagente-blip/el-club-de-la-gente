@@ -121,11 +121,9 @@ Deno.serve(async (req: Request) => {
       return json({ error: "El código debe tener 6 dígitos." }, 400);
     }
 
-    const codeHash = await hashCode(otp);
-
     const { data: token, error: tokenErr } = await supabase
       .from("otp_tokens")
-      .select("id, code_hash")
+      .select("id, code_hash, intentos")
       .eq("phone", digits)
       .eq("used", false)
       .gt("expires_at", new Date().toISOString())
@@ -133,7 +131,21 @@ Deno.serve(async (req: Request) => {
       .limit(1)
       .maybeSingle();
 
-    if (tokenErr || !token || token.code_hash !== codeHash) {
+    if (tokenErr || !token) {
+      return json({ error: "Código incorrecto o vencido. Solicita uno nuevo." }, 401);
+    }
+
+    // Limite de intentos por codigo -- sin esto, se podian probar los
+    // 1.000.000 de combinaciones de 6 digitos dentro de la ventana de 10 min.
+    const MAX_INTENTOS = 5;
+    if ((token.intentos ?? 0) >= MAX_INTENTOS) {
+      await supabase.from("otp_tokens").update({ used: true }).eq("id", token.id);
+      return json({ error: "Demasiados intentos. Solicita un código nuevo." }, 429);
+    }
+
+    const codeHash = await hashCode(otp);
+    if (token.code_hash !== codeHash) {
+      await supabase.from("otp_tokens").update({ intentos: (token.intentos ?? 0) + 1 }).eq("id", token.id);
       return json({ error: "Código incorrecto o vencido. Solicita uno nuevo." }, 401);
     }
 
