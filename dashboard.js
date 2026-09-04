@@ -11,6 +11,16 @@ const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 const ic = (n) => `<i data-lucide="${n}"></i>`;
 const fmtCOP = (n) => "$" + new Intl.NumberFormat("es-CO").format(n);
+// Campos de dinero: texto con separador de miles en vivo (un <input type="number"> interpreta
+// el "." que la gente escribe para miles como punto decimal, ej. "62.000" -> 62).
+function formatearInputMoneda(input) {
+  if (!input) return;
+  input.addEventListener("input", () => {
+    const digits = input.value.replace(/\D/g, "");
+    input.value = digits ? Number(digits).toLocaleString("es-CO") : "";
+  });
+}
+function valorMoneda(input) { return parseInt((input?.value || "").replace(/\D/g, "")) || 0; }
 
 /* ---------- TOAST ---------- */
 let _toastT;
@@ -522,8 +532,8 @@ async function abrirFormProducto(p = {}) {
     <div class="cfg-campo"><label class="cfg-label">Descripción</label><textarea class="cfg-input" id="pa-desc" rows="2">${p.descripcion || ""}</textarea></div>
     <div class="cfg-campo"><label class="cfg-label">Categoría</label><select class="cfg-input" id="pa-cat"><option value="">Sin categoría</option>${catOpts}</select></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="cfg-campo"><label class="cfg-label">Precio normal</label><input class="cfg-input" id="pa-precio" type="number" min="0" value="${p.precio_normal || ""}" placeholder="50000"></div>
-      <div class="cfg-campo"><label class="cfg-label">Precio con descuento</label><input class="cfg-input" id="pa-descuento" type="number" min="0" value="${p.precio_descuento || ""}" placeholder="40000"></div>
+      <div class="cfg-campo"><label class="cfg-label">Precio normal (COP)</label><input class="cfg-input" id="pa-precio" type="text" inputmode="numeric" value="${p.precio_normal ? Number(p.precio_normal).toLocaleString("es-CO") : ""}" placeholder="Ej: 50.000"></div>
+      <div class="cfg-campo"><label class="cfg-label">Precio con descuento (COP)</label><input class="cfg-input" id="pa-descuento" type="text" inputmode="numeric" value="${p.precio_descuento ? Number(p.precio_descuento).toLocaleString("es-CO") : ""}" placeholder="Ej: 40.000"></div>
     </div>
     <div class="cfg-campo"><label class="cfg-label">WhatsApp para atender pedidos</label><input class="cfg-input" id="pa-wa" type="tel" value="${p.whatsapp || ""}" placeholder="300 000 0000"></div>
     <div class="cfg-campo"><label class="cfg-label">Promoción válida hasta (opcional)</label><input class="cfg-input" id="pa-fecha" type="date" value="${p.fecha_fin || ""}"></div>
@@ -534,6 +544,8 @@ async function abrirFormProducto(p = {}) {
     </div>
     <button class="btn btn--primario" id="pa-save" data-id="${p.id || ""}" style="margin-top:8px">${p.id ? "Guardar cambios" : "Agregar producto"} <i data-lucide="check" style="width:15px;height:15px"></i></button>
   `);
+  formatearInputMoneda($("#pa-precio"));
+  formatearInputMoneda($("#pa-descuento"));
   $("#pa-save")?.addEventListener("click", async () => {
     const btn = $("#pa-save");
     const nombre = $("#pa-nombre")?.value.trim();
@@ -553,8 +565,8 @@ async function abrirFormProducto(p = {}) {
       nombre,
       descripcion: $("#pa-desc")?.value.trim() || null,
       categoria_id: $("#pa-cat")?.value || null,
-      precio_normal: parseInt($("#pa-precio")?.value) || null,
-      precio_descuento: parseInt($("#pa-descuento")?.value) || null,
+      precio_normal: valorMoneda($("#pa-precio")) || null,
+      precio_descuento: valorMoneda($("#pa-descuento")) || null,
       whatsapp: $("#pa-wa")?.value.trim() || null,
       fecha_fin: $("#pa-fecha")?.value || null,
       imagen_url,

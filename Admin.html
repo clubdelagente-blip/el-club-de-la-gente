@@ -233,6 +233,16 @@ const CATS=['Restaurante / Cafetería','Salud y bienestar','Belleza y estética'
 const PLANES_VIS=[{val:'gratis',lbl:'Gratis'},{val:'basica',lbl:'Básica'},{val:'premium',lbl:'Premium'}];
 
 function toast(msg){const t=$("#ad-toast");if(!t)return;t.textContent=msg;t.classList.add("is-show");setTimeout(()=>t.classList.remove("is-show"),3000);}
+// Campos de dinero: texto con separador de miles en vivo (un <input type="number"> interpreta
+// el "." que la gente escribe para miles como punto decimal, ej. "62.000" -> 62).
+function formatearInputMoneda(input){
+  if(!input)return;
+  input.addEventListener('input',()=>{
+    const digits=input.value.replace(/\D/g,'');
+    input.value=digits?Number(digits).toLocaleString('es-CO'):'';
+  });
+}
+function valorMoneda(input){return parseInt((input?.value||'').replace(/\D/g,''))||0;}
 function abrirModal(t,s,b){$("#modal-title").textContent=t;$("#modal-sub").textContent=s;$("#modal-body").innerHTML=b;$("#ad-modal-ov").classList.add("is-open");if(window.lucide)lucide.createIcons();}
 async function subirImagen(file){const ext=file.name.split('.').pop();const path=`${Date.now()}-${Math.random().toString(36).substr(2,5)}.${ext}`;const{error}=await supabase.storage.from('contenido').upload(path,file);if(error)throw error;return supabase.storage.from('contenido').getPublicUrl(path).data.publicUrl;}
 
@@ -1180,7 +1190,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     </div>
     <div class="ad-field"><label>Proveedor / Descripción</label><input id="gf-proveedor" type="text" value="${(g.proveedor||'').replace(/"/g,'&quot;')}" placeholder="Ej: Arriendo local, Facebook Ads..."></div>
     <div class="ad-field-2">
-      <div class="ad-field"><label>Monto</label><input id="gf-monto" type="number" min="0" value="${g.monto||''}" placeholder="0"></div>
+      <div class="ad-field"><label>Monto (COP)</label><input id="gf-monto" type="text" inputmode="numeric" value="${g.monto?Number(g.monto).toLocaleString('es-CO'):''}" placeholder="Ej: 62.000"></div>
       <div class="ad-field"><label>Fecha</label><input id="gf-fecha" type="date" value="${g.fecha||new Date().toISOString().slice(0,10)}"></div>
     </div>
     <div class="ad-field"><label>Nota (opcional)</label><textarea id="gf-nota" rows="2">${g.nota||''}</textarea></div>
@@ -1198,13 +1208,14 @@ document.addEventListener('DOMContentLoaded',async()=>{
     setTimeout(()=>{
       $("#gf-categoria")?.addEventListener('change',(e)=>{const n=$("#gf-categoria-nueva");if(n)n.style.display=e.target.value==='__nueva__'?'block':'none';});
       $("#gf-cancel")?.addEventListener('click',()=>window.cerrarModal?.());
+      formatearInputMoneda($("#gf-monto"));
       $("#gf-save")?.addEventListener('click',async()=>{
         const btn=$("#gf-save");const id=btn.dataset.id;
         const resetBtn=()=>{btn.disabled=false;btn.innerHTML=`${ic("check")} ${id?'Guardar cambios':'Agregar gasto'}`;if(window.lucide)lucide.createIcons();};
         let categoriaId=$("#gf-categoria")?.value;
         const nuevaCat=$("#gf-categoria-nueva")?.value.trim();
         const proveedor=$("#gf-proveedor")?.value.trim();
-        const monto=parseInt($("#gf-monto")?.value)||0;
+        const monto=valorMoneda($("#gf-monto"));
         const fecha=$("#gf-fecha")?.value;
         const nota=$("#gf-nota")?.value.trim()||null;
         if(!monto){toast('Ingresa un monto válido');return;}
@@ -1245,7 +1256,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     </div>
     <div class="ad-field"><label>Descripción</label><input id="if-desc" type="text" value="${(i.descripcion||'').replace(/"/g,'&quot;')}" placeholder="Ej: Patrocinio, venta de mercancía..."></div>
     <div class="ad-field-2">
-      <div class="ad-field"><label>Monto</label><input id="if-monto" type="number" min="0" value="${i.monto||''}" placeholder="0"></div>
+      <div class="ad-field"><label>Monto (COP)</label><input id="if-monto" type="text" inputmode="numeric" value="${i.monto?Number(i.monto).toLocaleString('es-CO'):''}" placeholder="Ej: 62.000"></div>
       <div class="ad-field"><label>Fecha</label><input id="if-fecha" type="date" value="${i.fecha||new Date().toISOString().slice(0,10)}"></div>
     </div>
     <div class="ad-field"><label>Nota (opcional)</label><textarea id="if-nota" rows="2">${i.nota||''}</textarea></div>
@@ -1258,13 +1269,14 @@ document.addEventListener('DOMContentLoaded',async()=>{
     setTimeout(()=>{
       $("#if-categoria")?.addEventListener('change',(e)=>{const n=$("#if-categoria-nueva");if(n)n.style.display=e.target.value==='__nueva__'?'block':'none';});
       $("#if-cancel")?.addEventListener('click',()=>window.cerrarModal?.());
+      formatearInputMoneda($("#if-monto"));
       $("#if-save")?.addEventListener('click',async()=>{
         const btn=$("#if-save");const id=btn.dataset.id;
         const resetBtn=()=>{btn.disabled=false;btn.innerHTML=`${ic("check")} ${id?'Guardar cambios':'Agregar ingreso'}`;if(window.lucide)lucide.createIcons();};
         let categoriaId=$("#if-categoria")?.value;
         const nuevaCat=$("#if-categoria-nueva")?.value.trim();
         const descripcion=$("#if-desc")?.value.trim();
-        const monto=parseInt($("#if-monto")?.value)||0;
+        const monto=valorMoneda($("#if-monto"));
         const fecha=$("#if-fecha")?.value;
         const nota=$("#if-nota")?.value.trim()||null;
         if(!monto){toast('Ingresa un monto válido');return;}
@@ -1453,8 +1465,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
       <div class="ad-field"><label>Descripción</label><textarea id="fp-desc" rows="2" placeholder="Breve descripción del producto">${p.descripcion||''}</textarea></div>
       <div class="ad-field"><label>Categoría</label><select id="fp-cat"><option value="">Sin categoría</option>${catOpts}</select></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div class="ad-field"><label>Precio normal</label><input id="fp-precio" type="number" value="${p.precio_normal||''}" placeholder="150000" min="0"></div>
-        <div class="ad-field"><label>Precio miembro</label><input id="fp-descuento" type="number" value="${p.precio_descuento||''}" placeholder="120000" min="0"></div>
+        <div class="ad-field"><label>Precio normal (COP)</label><input id="fp-precio" type="text" inputmode="numeric" value="${p.precio_normal?Number(p.precio_normal).toLocaleString('es-CO'):''}" placeholder="Ej: 150.000"></div>
+        <div class="ad-field"><label>Precio miembro (COP)</label><input id="fp-descuento" type="text" inputmode="numeric" value="${p.precio_descuento?Number(p.precio_descuento).toLocaleString('es-CO'):''}" placeholder="Ej: 120.000"></div>
       </div>
       <div class="ad-field"><label>Link afiliado *</label><input id="fp-link" type="url" value="${(p.link_afiliado||'').replace(/"/g,'&quot;')}" placeholder="https://amzn.to/..."></div>
       <div class="ad-field"><label>Imagen del producto</label>
@@ -1471,6 +1483,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
   function bindFormProd() {
     setTimeout(() => {
       $('#fp-cancel')?.addEventListener('click', () => $('#ad-modal-ov').classList.remove('is-open'));
+      formatearInputMoneda($('#fp-precio'));
+      formatearInputMoneda($('#fp-descuento'));
       $('#fp-save')?.addEventListener('click', async () => {
         const nombre = $('#fp-nombre')?.value.trim(); if (!nombre) { toast('El nombre es obligatorio'); return; }
         const link = $('#fp-link')?.value.trim(); if (!link) { toast('El link de afiliado es obligatorio'); return; }
@@ -1481,8 +1495,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
         const payload = {
           nombre, descripcion: $('#fp-desc')?.value.trim()||null,
           categoria_id: $('#fp-cat')?.value || null,
-          precio_normal: parseFloat($('#fp-precio')?.value)||null,
-          precio_descuento: parseFloat($('#fp-descuento')?.value)||null,
+          precio_normal: valorMoneda($('#fp-precio'))||null,
+          precio_descuento: valorMoneda($('#fp-descuento'))||null,
           link_afiliado: link, imagen_url,
           orden: parseInt($('#fp-orden')?.value||0), activo: true
         };
