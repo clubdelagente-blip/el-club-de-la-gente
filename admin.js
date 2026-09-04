@@ -395,8 +395,14 @@ function irPanel(panel) {
   $("#ad-sub").textContent = PANELES[panel].s;
   $("#admin").classList.remove("menu-open");
   if (!RENDERED[panel]) {
-    ({ dashboard: renderDashboard, miembros: renderMiembros, aliados: renderAliados, planes: window.renderPlanes, profesionales: renderProfesionales, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: renderProgramas, ventas: renderVentas, suscripciones: renderSuscripciones, contabilidad: window.renderContabilidad, config: renderConfig, agente: renderAgente })[panel]?.();
-    RENDERED[panel] = true;
+    // window.X (no la variable local sin prefijo) para las funciones que vive en el
+    // script inline de Admin.html: ese script es type="module" y puede tardar un
+    // instante en terminar de cargar (importa supabase-js desde un CDN), y una
+    // referencia sin prefijo a un nombre que todavia no existe en ningun lado
+    // (ni local ni en window) lanza ReferenceError y rompe TODO irPanel -- incluidos
+    // paneles que no tienen nada que ver, como pasó con Dashboard.
+    const fn = ({ dashboard: renderDashboard, miembros: renderMiembros, aliados: window.renderAliados, planes: window.renderPlanes, profesionales: window.renderProfesionales, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: renderProgramas, ventas: renderVentas, suscripciones: renderSuscripciones, contabilidad: window.renderContabilidad, config: renderConfig, agente: renderAgente })[panel];
+    if (fn) { fn(); RENDERED[panel] = true; }
   }
   if (window.lucide) lucide.createIcons();
   $(".ad-content")?.scrollTo?.({ top: 0 });
@@ -448,8 +454,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (e.target.closest("#a-add")) { abrirAgregarAliado(); return; }
-    if (e.target.closest("#prof-add")) { abrirAgregarProfesional(); return; }
+    if (e.target.closest("#a-add")) { window.abrirAgregarAliado?.(); return; }
+    if (e.target.closest("#prof-add")) { window.abrirAgregarProfesional?.(); return; }
     if (e.target.closest("#prof-guardar")) { cerrarModal(); toast("Profesional guardado · publicado en la web"); return; }
     if (e.target.closest("#modal-close") || e.target.id === "ad-modal-ov") { cerrarModal(); return; }
     if (e.target.closest("#aliado-guardar")) { cerrarModal(); toast("Aliado guardado · publicado en el directorio"); return; }
