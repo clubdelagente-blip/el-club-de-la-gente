@@ -69,26 +69,7 @@ function renderMiembros() {
         <tbody id="m-body"></tbody>
       </table>
     </div>`;
-  fillMiembros();
-}
-function filtroMiembros() {
-  const q = norm(miembroQ.trim());
-  return ADM_MIEMBROS.filter(u => {
-    const okTab = miembroTab === "todos" || (miembroTab === "inactivos" ? u.estado === "inactivo" : u.plan === miembroTab && u.estado === "activo");
-    const okQ = !q || norm(u.nombre).includes(q) || u.num.includes(q);
-    return okTab && okQ;
-  });
-}
-function fillMiembros() {
-  const list = filtroMiembros();
-  $("#m-body").innerHTML = list.length ? list.map(u => `
-    <tr data-miembro="${u.num}">
-      <td><div class="ad-cell-user"><span class="ad-av">${ini(u.nombre)}</span><div><div class="ad-cell-user__name">${u.nombre}</div><div class="ad-table__num">#${u.num} · ${u.fecha}</div></div></div></td>
-      <td><span class="ad-pill ${u.plan}"><span class="d"></span>${planLbl(u.plan)}</span></td>
-      <td><span class="ad-pill ${u.estado}"><span class="d"></span>${u.estado === "activo" ? "Activo" : "Inactivo"}</span></td>
-      <td style="text-align:right"><span class="ad-num-strong verde">${COP(u.ahorro)}</span></td>
-    </tr>`).join("") : `<tr><td colspan="4" style="text-align:center;padding:50px;color:var(--txt-40)">Sin resultados</td></tr>`;
-  if (window.lucide) lucide.createIcons();
+  window.cargarMiembrosReal?.(miembroTab, miembroQ);
 }
 
 /* ============================================================
@@ -531,29 +512,6 @@ function abrirDifusion() {
 /* ============================================================
    MODAL DE MIEMBRO
    ============================================================ */
-function abrirMiembro(num) {
-  const u = ADM_MIEMBROS.find(x => x.num === num);
-  if (!u) return;
-  $("#modal-body").innerHTML = `
-    <div class="ad-field-2">
-      <div class="ad-field"><label>Plan</label><input value="${planLbl(u.plan)}" readonly></div>
-      <div class="ad-field"><label>Estado</label><input value="${u.estado === "activo" ? "Activo" : "Inactivo"}" readonly></div>
-    </div>
-    <div class="ad-field-2">
-      <div class="ad-field"><label>Miembro desde</label><input value="${u.fecha}" readonly></div>
-      <div class="ad-field"><label>Barrio</label><input value="${u.barrio}" readonly></div>
-    </div>
-    <div class="ad-field"><label>WhatsApp</label><input value="${u.wsp}" readonly></div>
-    <div class="ad-field"><label>Ahorro total acumulado</label><input value="${COP(u.ahorro)}" readonly></div>
-    <div class="ad-toolbar" style="margin:6px 0 0">
-      <a class="ad-btn ad-btn--wa" href="https://wa.me/57${u.wsp.replace(/\s/g, "")}" target="_blank">${ic("message-circle")} Escribir por WhatsApp</a>
-      <div class="ad-spacer"></div>
-    </div>`;
-  $("#modal-title").textContent = u.nombre;
-  $("#modal-sub").textContent = "Miembro #" + u.num;
-  $("#ad-modal-ov").classList.add("is-open");
-  if (window.lucide) lucide.createIcons();
-}
 function abrirAgregarAliado() {
   $("#modal-body").innerHTML = `
     <div class="ad-field"><label>Nombre del establecimiento</label><input placeholder="Ej: Café del Parque"></div>
@@ -685,10 +643,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (goto) { irPanel(goto.dataset.goto); return; }
 
     const mTab = e.target.closest("[data-tab]");
-    if (mTab) { miembroTab = mTab.dataset.tab; $$("#m-tabs .ad-tab").forEach(t => t.classList.toggle("is-on", t === mTab)); fillMiembros(); return; }
+    if (mTab) { miembroTab = mTab.dataset.tab; $$("#m-tabs .ad-tab").forEach(t => t.classList.toggle("is-on", t === mTab)); window.filtrarMiembrosReal?.(miembroTab, miembroQ); return; }
 
     const row = e.target.closest("tr[data-miembro]");
-    if (row) { abrirMiembro(row.dataset.miembro); return; }
+    if (row) { window.abrirMiembroReal?.(row.dataset.miembro); return; }
 
     // --- Agente WhatsApp ---
     const conv = e.target.closest("[data-conv]");
@@ -698,7 +656,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.closest("#ag-send")) { enviarMsg(); return; }
     if (e.target.closest("#ag-broadcast")) { abrirDifusion(); return; }
     const verM = e.target.closest("[data-ver-miembro]");
-    if (verM) { abrirMiembro(verM.dataset.verMiembro); return; }
+    if (verM) { window.abrirMiembroReal?.(verM.dataset.verMiembro); return; }
     const aud = e.target.closest("[data-aud]");
     if (aud) { $$("#ag-aud .ag-aud__opt").forEach(o => o.classList.toggle("is-on", o === aud)); return; }
     const bcTpl = e.target.closest("[data-bc-tpl]");
@@ -714,7 +672,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.closest("#prof-guardar")) { cerrarModal(); toast("Profesional guardado · publicado en la web"); return; }
     if (e.target.closest("#modal-close") || e.target.id === "ad-modal-ov") { cerrarModal(); return; }
     if (e.target.closest("#aliado-guardar")) { cerrarModal(); toast("Aliado guardado · publicado en el directorio"); return; }
-    if (e.target.closest("#m-csv") || e.target.closest("#v-csv")) { toast("Exportando CSV…"); return; }
+    if (e.target.closest("#m-csv")) { window.exportarMiembrosCSV?.(); return; }
+    if (e.target.closest("#v-csv")) { toast("Exportando CSV…"); return; }
     if (e.target.closest("#m-wa")) { toast("Mensaje masivo programado por WhatsApp"); return; }
     if (e.target.closest("#s-rem")) { toast("Recordatorios enviados a los que vencen pronto"); return; }
     if (e.target.closest("#ev-add")) { abrirCrearEvento(); return; }
@@ -737,7 +696,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Búsqueda + drag&drop (delegado en input/dragover)
   document.addEventListener("input", (e) => {
-    if (e.target.id === "m-search") { miembroQ = e.target.value; fillMiembros(); }
+    if (e.target.id === "m-search") { miembroQ = e.target.value; window.filtrarMiembrosReal?.(miembroTab, miembroQ); }
     if (e.target.id === "a-search") { fillAliados(e.target.value); }
     if (e.target.id === "prof-search") { fillProfesionales(e.target.value); }
     if (e.target.id === "ag-search") { agQ = e.target.value; fillConvs(); }

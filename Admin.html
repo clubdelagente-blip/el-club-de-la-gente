@@ -205,7 +205,7 @@
        ============================================================ -->
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="admin-data.js?v=3"></script>
-  <script src="admin.js?v=8"></script>
+  <script src="admin.js?v=9"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -349,6 +349,79 @@ async function cargarDashboardReal(){
   if(window.lucide)lucide.createIcons();
 }
 window.cargarDashboardReal=cargarDashboardReal;
+
+/* ---- MIEMBROS (datos reales) ---- */
+let _miembros=[];
+async function cargarMiembrosReal(tab,q){
+  const[{data:perfiles},{data:descuentos}]=await Promise.all([
+    supabase.from('perfiles').select('id,nombre,whatsapp,plan,barrio,created_at').order('created_at',{ascending:false}),
+    supabase.from('descuentos').select('miembro_id,ahorro'),
+  ]);
+  const ahorroPorMiembro={};
+  (descuentos||[]).forEach(d=>{ahorroPorMiembro[d.miembro_id]=(ahorroPorMiembro[d.miembro_id]||0)+(d.ahorro||0);});
+  _miembros=(perfiles||[]).map(p=>({
+    id:p.id,
+    nombre:p.nombre||'(sin nombre)',
+    whatsapp:p.whatsapp||'',
+    plan:p.plan||'sin_plan',
+    barrio:p.barrio||'—',
+    fecha:new Date(p.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'}),
+    fechaISO:p.created_at,
+    estado:['gratis','basica','premium','vitalicia'].includes(p.plan)?'activo':'inactivo',
+    ahorro:ahorroPorMiembro[p.id]||0,
+  }));
+  filtrarMiembrosReal(tab,q);
+}
+function filtrarMiembrosReal(tab,q){
+  const qn=(q||'').trim().toLowerCase();
+  const list=_miembros.filter(u=>{
+    const okTab=!tab||tab==='todos'||(tab==='inactivos'?u.estado==='inactivo':u.plan===tab&&u.estado==='activo');
+    const okQ=!qn||u.nombre.toLowerCase().includes(qn);
+    return okTab&&okQ;
+  });
+  const body=$('#m-body');
+  if(!body)return;
+  body.innerHTML=list.length?list.map(u=>`
+    <tr data-miembro="${u.id}">
+      <td><div class="ad-cell-user"><span class="ad-av">${esc(window.ini(u.nombre))}</span><div><div class="ad-cell-user__name">${esc(u.nombre)}</div><div class="ad-table__num">Desde ${u.fecha}</div></div></div></td>
+      <td><span class="ad-pill ${u.plan}"><span class="d"></span>${window.planLbl(u.plan)}</span></td>
+      <td><span class="ad-pill ${u.estado}"><span class="d"></span>${u.estado==='activo'?'Activo':'Inactivo'}</span></td>
+      <td style="text-align:right"><span class="ad-num-strong verde">${COP(u.ahorro)}</span></td>
+    </tr>`).join(''):`<tr><td colspan="4" style="text-align:center;padding:50px;color:rgba(242,240,234,.3)">Sin resultados</td></tr>`;
+  if(window.lucide)lucide.createIcons();
+}
+function abrirMiembroReal(id){
+  const u=_miembros.find(x=>x.id===id);
+  if(!u)return;
+  const waDigits=(u.whatsapp||'').replace(/\D/g,'');
+  $("#modal-body").innerHTML=`
+    <div class="ad-field-2">
+      <div class="ad-field"><label>Plan</label><input value="${esc(window.planLbl(u.plan))}" readonly></div>
+      <div class="ad-field"><label>Estado</label><input value="${u.estado==='activo'?'Activo':'Inactivo'}" readonly></div>
+    </div>
+    <div class="ad-field-2">
+      <div class="ad-field"><label>Miembro desde</label><input value="${u.fecha}" readonly></div>
+      <div class="ad-field"><label>Barrio</label><input value="${esc(u.barrio)}" readonly></div>
+    </div>
+    <div class="ad-field"><label>WhatsApp</label><input value="${esc(u.whatsapp)||'—'}" readonly></div>
+    <div class="ad-field"><label>Ahorro total acumulado</label><input value="${COP(u.ahorro)}" readonly></div>
+    <div class="ad-toolbar" style="margin:6px 0 0">
+      ${waDigits?`<a class="ad-btn ad-btn--wa" href="https://wa.me/57${waDigits}" target="_blank">${ic('message-circle')} Escribir por WhatsApp</a>`:''}
+      <div class="ad-spacer"></div>
+    </div>`;
+  $("#modal-title").textContent=u.nombre;
+  $("#modal-sub").textContent="Miembro del Club";
+  $("#ad-modal-ov").classList.add("is-open");
+  if(window.lucide)lucide.createIcons();
+}
+function exportarMiembrosCSV(){
+  descargarCSV('miembros.csv',['Nombre','WhatsApp','Plan','Estado','Barrio','Miembro desde','Ahorro total'],
+    _miembros.map(u=>[u.nombre,u.whatsapp,u.plan,u.estado,u.barrio,u.fechaISO,u.ahorro]));
+}
+window.cargarMiembrosReal=cargarMiembrosReal;
+window.filtrarMiembrosReal=filtrarMiembrosReal;
+window.abrirMiembroReal=abrirMiembroReal;
+window.exportarMiembrosCSV=exportarMiembrosCSV;
 
 /* ---- ALIADOS ---- */
 async function cargarAliados(){
