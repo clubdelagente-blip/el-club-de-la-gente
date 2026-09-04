@@ -889,11 +889,12 @@ function abrirCheckoutProducto(p) {
     <div class="cfg-campo">
       <label class="cfg-label">¿Cómo recibes tu pedido?</label>
       <select class="cfg-input" id="pc-entrega">
-        <option value="envio">Envío a domicilio</option>
+        <option value="envio">Envío a domicilio (gratis)</option>
         <option value="recoger">Recoger en el negocio</option>
       </select>
     </div>
     <div id="pc-envio-campos">
+      <p style="font-size:12px;color:#1a7a3c;font-weight:600;margin:-4px 0 12px">✓ El envío es completamente gratis</p>
       <div class="cfg-campo"><label class="cfg-label">Nombre de quien recibe</label><input class="cfg-input" id="pc-nombre" type="text"></div>
       <div class="cfg-campo"><label class="cfg-label">Dirección</label><input class="cfg-input" id="pc-direccion" type="text"></div>
       <div class="cfg-campo"><label class="cfg-label">Teléfono de contacto</label><input class="cfg-input" id="pc-telefono" type="tel"></div>
