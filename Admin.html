@@ -216,6 +216,10 @@ const supabase = createClient(
 );
 const $ = (s) => document.querySelector(s);
 const ic = (n) => `<i data-lucide="${n}"></i>`;
+// Escapa texto de usuarios (postulaciones publicas, formularios de aliados/profesionales)
+// antes de insertarlo en innerHTML -- sin esto, cualquiera podia mandar un <script>
+// en el nombre del negocio y que se ejecutara en la sesion del admin al revisarlo.
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // Cliente aislado (sin persistir sesión) para crear cuentas de aliados desde
 // el Admin sin reemplazar la sesión del administrador logueado -- signUp()
 // en el cliente principal movería la sesión activa a la cuenta recién creada.
@@ -278,8 +282,8 @@ async function cargarPostulaciones(){
       const waUrl=wa?`https://wa.me/57${wa}?text=${msg}`:'';
       return `<div style="display:flex;gap:12px;padding:14px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:10px;margin-bottom:8px">
         <div style="flex:1;min-width:0">
-          <div style="font-weight:600;margin-bottom:2px">${p.nombre_negocio||'(sin nombre)'}</div>
-          <div style="font-size:12px;color:rgba(242,240,234,.4)">${p.categoria||''} · ${p.nombre_responsable||''} · ${p.whatsapp||''}</div>
+          <div style="font-weight:600;margin-bottom:2px">${esc(p.nombre_negocio)||'(sin nombre)'}</div>
+          <div style="font-size:12px;color:rgba(242,240,234,.4)">${esc(p.categoria)} · ${esc(p.nombre_responsable)} · ${esc(p.whatsapp)}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
           <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">Pendiente</span>
@@ -719,8 +723,8 @@ async function cargarProfesionales(){
     const msg=encodeURIComponent(`Hola ${p.nombre}, tu perfil de profesional en El Club de la Gente fue aprobado ✅\n\nPara activar tu perfil y aparecer en el directorio, realiza el pago de tu membresía mensual ($20.000 COP) aquí:\n\n[Agrega el link de pago aquí]\n\n¡Bienvenido al Club!\nEl equipo de El Club de la Gente`);
     const waUrl=wa?`https://wa.me/57${wa}?text=${msg}`:'';
     return `<div style="display:flex;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
-    ${p.imagen_url?`<img src="${p.imagen_url}" style="width:52px;height:52px;object-fit:cover;border-radius:50%;flex-shrink:0">`:`<span class="ad-av">${(p.nombre||'P')[0]}</span>`}
-    <div style="flex:1;min-width:0"><div style="font-weight:600;margin-bottom:2px">${p.nombre}</div><div style="font-size:12px;color:rgba(242,240,234,.4);margin-bottom:4px">${p.area||''} ${p.whatsapp?`· ${p.whatsapp}`:''}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${p.descripcion||''}</div></div>
+    ${p.imagen_url?`<img src="${p.imagen_url}" style="width:52px;height:52px;object-fit:cover;border-radius:50%;flex-shrink:0">`:`<span class="ad-av">${esc((p.nombre||'P')[0])}</span>`}
+    <div style="flex:1;min-width:0"><div style="font-weight:600;margin-bottom:2px">${esc(p.nombre)}</div><div style="font-size:12px;color:rgba(242,240,234,.4);margin-bottom:4px">${esc(p.area)} ${p.whatsapp?`· ${esc(p.whatsapp)}`:''}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${esc(p.descripcion)}</div></div>
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0">
       <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${col}22;color:${col};border:1px solid ${col}55">${lbl}</span>
       <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
@@ -1371,10 +1375,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
         ?`<tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">No hay productos pendientes de aprobación</td></tr>`
         :_prodalPendientes.map(p=>`<tr>
             <td><div class="ad-cell-user">
-              ${p.imagen_url?`<img src="${p.imagen_url}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;flex-shrink:0">`:`<span class="ad-av">${(p.nombre||'?')[0]}</span>`}
-              <div class="ad-cell-user__name">${p.nombre}</div>
+              ${p.imagen_url?`<img src="${p.imagen_url}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;flex-shrink:0">`:`<span class="ad-av">${esc((p.nombre||'?')[0])}</span>`}
+              <div class="ad-cell-user__name">${esc(p.nombre)}</div>
             </div></td>
-            <td style="font-size:12px">${p.aliados?.tienda_nombre||p.aliados?.nombre||'—'}</td>
+            <td style="font-size:12px">${esc(p.aliados?.tienda_nombre||p.aliados?.nombre)||'—'}</td>
             <td style="font-size:13px;font-weight:700">${COP(p.precio_descuento||p.precio_normal)}</td>
             <td style="text-align:right"><div style="display:flex;gap:8px;justify-content:flex-end">
               <button class="ad-btn ad-btn--verde" data-aprobar-prodal="${p.id}">${ic('check')} Aprobar</button>
@@ -1398,9 +1402,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
           const conf=confirmadosDe(t.id);
           const ventas=conf.reduce((s,p)=>s+(p.monto||0),0);
           const comision=conf.reduce((s,p)=>s+(p.comision_valor||0),0);
-          return `<tr data-ver-tienda="${t.id}" data-nom-tienda="${(t.tienda_nombre||t.nombre).replace(/"/g,'&quot;')}" style="cursor:pointer">
-          <td>${t.tienda_nombre||t.nombre}</td>
-          <td style="font-size:12px">${t.nombre}</td>
+          return `<tr data-ver-tienda="${t.id}" data-nom-tienda="${esc(t.tienda_nombre||t.nombre)}" style="cursor:pointer">
+          <td>${esc(t.tienda_nombre||t.nombre)}</td>
+          <td style="font-size:12px">${esc(t.nombre)}</td>
           <td>${countAprobados(t.id)}</td>
           <td>${pedidosDe(t.id).length}</td>
           <td>${COP(ventas)}</td>
@@ -1430,7 +1434,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
             <tbody>${pedidos.map(p=>{
               const est=ESTADO_PEDIDO_ADMIN[p.estado]||ESTADO_PEDIDO_ADMIN.pendiente;
               return `<tr>
-                <td>${p.productos_aliado?.nombre||'—'}${p.comprobante_url?` · <a href="${p.comprobante_url}" target="_blank" style="color:rgba(242,240,234,.5)">comprobante</a>`:''}</td>
+                <td>${esc(p.productos_aliado?.nombre)||'—'}${p.comprobante_url?` · <a href="${esc(p.comprobante_url)}" target="_blank" style="color:rgba(242,240,234,.5)">comprobante</a>`:''}</td>
                 <td style="font-size:12px">${new Date(p.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}</td>
                 <td style="font-size:12px">${p.tipo_entrega==='envio'?'Envío':'Recoger'}</td>
                 <td>${COP(p.monto)}</td>

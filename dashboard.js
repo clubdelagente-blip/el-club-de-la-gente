@@ -11,6 +11,9 @@ const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 const ic = (n) => `<i data-lucide="${n}"></i>`;
 const fmtCOP = (n) => "$" + new Intl.NumberFormat("es-CO").format(n);
+// Escapa texto que viene de otros usuarios (nombre de producto del aliado,
+// datos de envio del miembro) antes de insertarlo en innerHTML.
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // Campos de dinero: texto con separador de miles en vivo (un <input type="number"> interpreta
 // el "." que la gente escribe para miles como punto decimal, ej. "62.000" -> 62).
 function formatearInputMoneda(input) {
@@ -501,8 +504,8 @@ async function cargarMisProductos(aliadoId) {
     <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #ebebeb">
       ${p.imagen_url ? `<img src="${p.imagen_url}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<div style="width:44px;height:44px;border-radius:8px;background:#f0faf4;flex-shrink:0"></div>`}
       <div style="flex:1;min-width:0">
-        <div style="font-weight:600;font-size:14px">${p.nombre}</div>
-        <div style="font-size:12px;color:#777">${p.categorias_productos?.nombre || "Sin categoría"}${p.fecha_fin ? " · promo hasta " + new Date(p.fecha_fin + "T00:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "short" }) : ""}</div>
+        <div style="font-weight:600;font-size:14px">${esc(p.nombre)}</div>
+        <div style="font-size:12px;color:#777">${esc(p.categorias_productos?.nombre) || "Sin categoría"}${p.fecha_fin ? " · promo hasta " + new Date(p.fecha_fin + "T00:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "short" }) : ""}</div>
       </div>
       <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};flex-shrink:0;white-space:nowrap">${est.t}</span>
       <button data-ed-prodal="${p.id}" style="border:none;background:none;cursor:pointer;color:#777"><i data-lucide="pencil" style="width:16px;height:16px"></i></button>
@@ -611,19 +614,19 @@ async function cargarPedidosAliado(aliadoId) {
   list.innerHTML = pedidos.map(p => {
     const est = ESTADO_PEDIDO[p.estado] || ESTADO_PEDIDO.pendiente;
     const entrega = p.tipo_entrega === "envio"
-      ? `Envío a ${p.envio_nombre || "—"} · ${p.envio_direccion || ""}${p.envio_telefono ? " · " + p.envio_telefono : ""}`
+      ? `Envío a ${esc(p.envio_nombre) || "—"} · ${esc(p.envio_direccion)}${p.envio_telefono ? " · " + esc(p.envio_telefono) : ""}`
       : "Recoge en el negocio";
     return `
     <div style="padding:14px 0;border-bottom:1px solid #ebebeb">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <div style="flex:1;min-width:180px">
-          <div style="font-weight:600;font-size:14px">${p.productos_aliado?.nombre || "Producto"} — ${COP(p.monto)}</div>
+          <div style="font-weight:600;font-size:14px">${esc(p.productos_aliado?.nombre) || "Producto"} — ${COP(p.monto)}</div>
           <div style="font-size:12px;color:#777">${entrega}</div>
           <div style="font-size:12px;color:#777">Comisión: ${COP(p.comision_valor)} (${p.comision_pct}%)</div>
         </div>
         <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};white-space:nowrap">${est.t}</span>
       </div>
-      ${p.comprobante_url ? `<a href="${p.comprobante_url}" target="_blank" style="font-size:12px;color:#1a7a3c;display:inline-block;margin-top:6px">Ver comprobante ↗</a>` : ""}
+      ${p.comprobante_url ? `<a href="${esc(p.comprobante_url)}" target="_blank" style="font-size:12px;color:#1a7a3c;display:inline-block;margin-top:6px">Ver comprobante ↗</a>` : ""}
       <div style="display:flex;gap:8px;margin-top:10px">
         ${p.estado === "pendiente" ? `
           <button data-confirmar-pedido="${p.id}" class="btn btn--primario" style="padding:8px 14px;font-size:12px">Confirmar pago</button>
@@ -858,12 +861,12 @@ async function cargarTiendaAliados() {
     const precioNormal = p.precio_normal != null ? COP(p.precio_normal) : '';
     const precioDesc   = p.precio_descuento != null ? COP(p.precio_descuento) : '';
     return `<div class="tienda-card">
-      ${p.imagen_url ? `<img src="${p.imagen_url}" class="tienda-card__img" alt="${p.nombre}">` : `<div class="tienda-card__img tienda-card__img--ph"></div>`}
+      ${p.imagen_url ? `<img src="${p.imagen_url}" class="tienda-card__img" alt="${esc(p.nombre)}">` : `<div class="tienda-card__img tienda-card__img--ph"></div>`}
       <div class="tienda-card__body">
-        ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat">${p.categorias_productos.nombre}</span>` : ''}
-        <div class="tienda-card__nombre">${p.nombre}</div>
-        <div style="font-size:12px;color:var(--tinta-60);margin-bottom:4px">${p.aliados?.tienda_nombre || p.aliados?.nombre || ''}</div>
-        ${p.descripcion ? `<div class="tienda-card__desc">${p.descripcion}</div>` : ''}
+        ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat">${esc(p.categorias_productos.nombre)}</span>` : ''}
+        <div class="tienda-card__nombre">${esc(p.nombre)}</div>
+        <div style="font-size:12px;color:var(--tinta-60);margin-bottom:4px">${esc(p.aliados?.tienda_nombre || p.aliados?.nombre)}</div>
+        ${p.descripcion ? `<div class="tienda-card__desc">${esc(p.descripcion)}</div>` : ''}
         <div class="tienda-card__precios">
           ${precioNormal ? `<span class="tienda-card__antes">${precioNormal}</span>` : ''}
           ${precioDesc ? `<span class="tienda-card__precio">${precioDesc}</span>` : ''}
@@ -882,7 +885,7 @@ async function cargarTiendaAliados() {
 function abrirCheckoutProducto(p) {
   const precio = p.precio_descuento ?? p.precio_normal ?? 0;
   abrirModalTienda(`Comprar: ${p.nombre}`, `
-    <p style="font-size:14px;margin-bottom:16px">Vas a pagar <b>${COP(precio)}</b> a <b>${p.aliados?.tienda_nombre || p.aliados?.nombre || 'el negocio'}</b>.</p>
+    <p style="font-size:14px;margin-bottom:16px">Vas a pagar <b>${COP(precio)}</b> a <b>${esc(p.aliados?.tienda_nombre || p.aliados?.nombre) || 'el negocio'}</b>.</p>
     <div class="cfg-campo">
       <label class="cfg-label">¿Cómo recibes tu pedido?</label>
       <select class="cfg-input" id="pc-entrega">
@@ -896,11 +899,11 @@ function abrirCheckoutProducto(p) {
       <div class="cfg-campo"><label class="cfg-label">Teléfono de contacto</label><input class="cfg-input" id="pc-telefono" type="tel"></div>
     </div>
     <div id="pc-recoger-campos" style="display:none">
-      ${p.aliados?.maps_url ? `<a href="${p.aliados.maps_url}" target="_blank" rel="noopener" style="font-size:13px;color:#1a7a3c">Ver ubicación en Google Maps ↗</a>` : `<p style="font-size:13px;color:#777">El negocio no registró una ubicación.</p>`}
+      ${/^https?:\/\//i.test(p.aliados?.maps_url || '') ? `<a href="${esc(p.aliados.maps_url)}" target="_blank" rel="noopener" style="font-size:13px;color:#1a7a3c">Ver ubicación en Google Maps ↗</a>` : `<p style="font-size:13px;color:#777">El negocio no registró una ubicación.</p>`}
     </div>
     <div class="cfg-campo" style="margin-top:16px">
       <label class="cfg-label">Llave de pago del negocio</label>
-      <input class="cfg-input" readonly value="${p.aliados?.tienda_llave_pago || 'No registrada — contacta al negocio por WhatsApp'}">
+      <input class="cfg-input" readonly value="${esc(p.aliados?.tienda_llave_pago) || 'No registrada — contacta al negocio por WhatsApp'}">
       <span style="font-size:12px;color:#777;display:block;margin-top:4px">Transfiere ${COP(precio)} a esa llave antes de continuar.</span>
     </div>
     <div class="cfg-campo">
