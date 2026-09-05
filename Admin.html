@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=13">
+  <link rel="stylesheet" href="styles.css?v=14">
   <link rel="stylesheet" href="admin.css?v=3">
   <style>
     body { background: #0A0A0A; }
@@ -2107,10 +2107,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
         <div class="ad-field"><label>Precio miembro (COP)</label><input id="fp-descuento" type="text" inputmode="numeric" value="${p.precio_descuento?Number(p.precio_descuento).toLocaleString('es-CO'):''}" placeholder="Ej: 120.000"></div>
       </div>
       <div class="ad-field"><label>Costo del proveedor (COP) <span style="font-weight:400;opacity:.5">— opcional, solo para tu margen, no se le muestra al miembro</span></label><input id="fp-costo" type="text" inputmode="numeric" value="${p.costo_proveedor?Number(p.costo_proveedor).toLocaleString('es-CO'):''}" placeholder="Ej: 60.000"></div>
-      <div class="ad-field"><label>Imagen del producto</label>
-        ${p.imagen_url ? `<img src="${p.imagen_url}" style="height:60px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block">` : ''}
-        <input id="fp-img" type="file" accept="image/*">
-        <input type="hidden" id="fp-img-url" value="${p.imagen_url||''}">
+      <div class="ad-field"><label>Fotos del producto <span style="font-weight:400;opacity:.5">— puedes elegir varias, la primera es la foto principal</span></label>
+        ${(p.imagenes && p.imagenes.length) ? `<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">${p.imagenes.map(u=>`<img src="${u}" style="height:60px;width:60px;object-fit:cover;border-radius:8px">`).join('')}</div>` : (p.imagen_url ? `<img src="${p.imagen_url}" style="height:60px;width:60px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block">` : '')}
+        <input id="fp-img" type="file" accept="image/*" multiple>
+        <span style="font-size:11px;opacity:.5;display:block;margin-top:4px">${p.id ? 'Si eliges fotos nuevas, reemplazan a las actuales.' : ''}</span>
       </div>
       <div class="ad-field"><label>Orden</label><input id="fp-orden" type="number" value="${p.orden||0}" min="0" style="width:100px"></div>
       <div class="ad-toolbar" style="margin:16px 0 0"><div class="ad-spacer"></div>
@@ -2118,7 +2118,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
         <button class="ad-btn ad-btn--verde" id="fp-save" data-id="${p.id||''}">${ic('check')} ${p.id?'Guardar cambios':'Agregar producto'}</button>
       </div>`;
   }
-  function bindFormProd() {
+  function bindFormProd(p = {}) {
     setTimeout(() => {
       $('#fp-cancel')?.addEventListener('click', () => $('#ad-modal-ov').classList.remove('is-open'));
       formatearInputMoneda($('#fp-precio'));
@@ -2127,16 +2127,20 @@ document.addEventListener('DOMContentLoaded',async()=>{
       $('#fp-save')?.addEventListener('click', async () => {
         const nombre = $('#fp-nombre')?.value.trim(); if (!nombre) { toast('El nombre es obligatorio'); return; }
         const btn = $('#fp-save'); btn.disabled = true; btn.textContent = 'Guardando…';
-        let imagen_url = $('#fp-img-url')?.value || null;
-        const file = $('#fp-img')?.files[0];
-        if (file) try { imagen_url = await subirImagen(file); } catch(_) { toast('Error subiendo imagen'); btn.disabled=false; return; }
+        let imagenes = p.imagenes || (p.imagen_url ? [p.imagen_url] : []);
+        const files = [...($('#fp-img')?.files || [])];
+        if (files.length) {
+          try { imagenes = await Promise.all(files.map(f => subirImagen(f))); }
+          catch (_) { toast('Error subiendo las fotos'); btn.disabled = false; return; }
+        }
         const payload = {
           nombre, descripcion: $('#fp-desc')?.value.trim()||null,
           categoria_id: $('#fp-cat')?.value || null,
           precio_normal: valorMoneda($('#fp-precio'))||null,
           precio_descuento: valorMoneda($('#fp-descuento'))||null,
           costo_proveedor: valorMoneda($('#fp-costo'))||null,
-          imagen_url,
+          imagenes,
+          imagen_url: imagenes[0] || null,
           orden: parseInt($('#fp-orden')?.value||0), activo: true
         };
         const id = btn.dataset.id;
@@ -2223,7 +2227,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const togCat=e.target.closest('[data-tog-cat]');if(togCat){await supabase.from('categorias_productos').update({activa:togCat.dataset.activa!=='true'}).eq('id',togCat.dataset.togCat);cargarTiendaAdmin();return;}
     const rmCat=e.target.closest('[data-rm-cat]');if(rmCat&&confirm('¿Eliminar esta categoría?')){await supabase.from('categorias_productos').delete().eq('id',rmCat.dataset.rmCat);cargarTiendaAdmin();toast('Categoría eliminada');return;}
     if(e.target.closest('#prod-add')){abrirModal('Agregar producto','Aparecerá en la tienda del Club',htmlFormProd());bindFormProd();return;}
-    const edProd=e.target.closest('[data-ed-prod]');if(edProd){const p=_prods.find(x=>x.id===edProd.dataset.edProd);if(p){abrirModal('Editar producto',p.nombre,htmlFormProd(p));bindFormProd();}return;}
+    const edProd=e.target.closest('[data-ed-prod]');if(edProd){const p=_prods.find(x=>x.id===edProd.dataset.edProd);if(p){abrirModal('Editar producto',p.nombre,htmlFormProd(p));bindFormProd(p);}return;}
     const togProd=e.target.closest('[data-tog-prod]');if(togProd){await supabase.from('productos').update({activo:togProd.dataset.activo!=='true'}).eq('id',togProd.dataset.togProd);cargarTiendaAdmin();return;}
     const rmProd=e.target.closest('[data-rm-prod]');if(rmProd&&confirm('¿Eliminar este producto?')){await supabase.from('productos').delete().eq('id',rmProd.dataset.rmProd);cargarTiendaAdmin();toast('Producto eliminado');return;}
     if(e.target.closest('#marca-add')){ abrirModal('Agregar marca','Aparecerá en el carrusel de la plataforma',htmlFormMarca()); bindFormMarca(); return; }

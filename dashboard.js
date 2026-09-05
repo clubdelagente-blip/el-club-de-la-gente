@@ -795,26 +795,40 @@ async function cargarTienda() {
   }
 
   let catActiva = 'todos';
+  const CARRITO_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`;
   function renderGrid() {
     const filtrados = catActiva === 'todos' ? prods : prods.filter(p => p.categoria_id === catActiva);
     grid.innerHTML = filtrados.map(p => {
       const precioNormal = p.precio_normal != null ? COP(p.precio_normal) : '';
       const precioDesc   = p.precio_descuento != null ? COP(p.precio_descuento) : '';
-      return `<div class="tienda-card">
-        ${p.imagen_url ? `<img src="${p.imagen_url}" class="tienda-card__img" alt="${esc(p.nombre)}">` : `<div class="tienda-card__img tienda-card__img--ph"></div>`}
+      const imgSrc = (p.imagenes && p.imagenes[0]) || p.imagen_url;
+      const descuentoPct = (p.precio_normal && p.precio_descuento && p.precio_normal > p.precio_descuento)
+        ? Math.round((1 - p.precio_descuento / p.precio_normal) * 100) : null;
+      return `<div class="tienda-card" data-ver-prod-club="${p.id}">
+        <div class="tienda-card__img-wrap">
+          ${imgSrc ? `<img src="${imgSrc}" class="tienda-card__img" alt="${esc(p.nombre)}">` : `<div class="tienda-card__img tienda-card__img--ph"></div>`}
+          ${descuentoPct ? `<span class="tienda-card__badge">-${descuentoPct}%</span>` : ''}
+        </div>
         <div class="tienda-card__body">
           ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat">${esc(p.categorias_productos.nombre)}</span>` : ''}
           <div class="tienda-card__nombre">${esc(p.nombre)}</div>
-          ${p.descripcion ? `<div class="tienda-card__desc">${esc(p.descripcion)}</div>` : ''}
           <div class="tienda-card__precios">
-            ${precioNormal ? `<span class="tienda-card__antes">${precioNormal}</span>` : ''}
-            ${precioDesc ? `<span class="tienda-card__precio">${precioDesc}</span>` : ''}
+            <div class="tienda-card__precios-txt">
+              ${precioNormal ? `<span class="tienda-card__antes">${precioNormal}</span>` : ''}
+              <span class="tienda-card__precio">${precioDesc || precioNormal}</span>
+            </div>
+            <button class="tienda-card__cart" data-comprar-club="${p.id}" type="button" aria-label="Comprar">${CARRITO_SVG}</button>
           </div>
-          <button class="tienda-card__btn" data-comprar-club="${p.id}" style="border:none;cursor:pointer;width:100%;font:inherit">Comprar</button>
         </div>
       </div>`;
     }).join('');
-    grid.querySelectorAll('[data-comprar-club]').forEach(btn => btn.addEventListener('click', () => {
+    grid.querySelectorAll('[data-ver-prod-club]').forEach(card => card.addEventListener('click', (e) => {
+      if (e.target.closest('[data-comprar-club]')) return;
+      const p = prods.find(x => x.id === card.dataset.verProdClub);
+      if (p) abrirDetalleProductoClub(p);
+    }));
+    grid.querySelectorAll('[data-comprar-club]').forEach(btn => btn.addEventListener('click', (e) => {
+      e.stopPropagation();
       const p = prods.find(x => x.id === btn.dataset.comprarClub);
       if (p) abrirCheckoutClub(p);
     }));
@@ -846,6 +860,37 @@ const ESTADO_PEDIDO_CLUB = {
 };
 
 /* ---------- Tienda del Club (checkout con Wompi + seguimiento de pedido) ---------- */
+function abrirDetalleProductoClub(p) {
+  const precio = p.precio_descuento ?? p.precio_normal ?? 0;
+  const imgs = (p.imagenes && p.imagenes.length) ? p.imagenes : (p.imagen_url ? [p.imagen_url] : []);
+  abrirModalTienda(p.nombre, `
+    <div class="tprod-galeria">
+      <div class="tprod-galeria__main" id="tpg-main">
+        ${imgs[0] ? `<img src="${esc(imgs[0])}" alt="${esc(p.nombre)}">` : ''}
+      </div>
+      ${imgs.length > 1 ? `<div class="tprod-galeria__thumbs">
+        ${imgs.map((url, i) => `<div class="tprod-galeria__thumb${i === 0 ? ' is-on' : ''}" data-tpg-thumb="${i}"><img src="${esc(url)}" alt=""></div>`).join('')}
+      </div>` : ''}
+    </div>
+    ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat" style="display:block;margin-top:16px">${esc(p.categorias_productos.nombre)}</span>` : ''}
+    <p style="font-size:14px;line-height:1.6;color:#444;margin:8px 0 16px">${p.descripcion ? esc(p.descripcion) : 'Sin descripción adicional.'}</p>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+      ${p.precio_normal && p.precio_descuento && p.precio_normal > p.precio_descuento ? `<span style="font-size:14px;color:#999;text-decoration:line-through">${COP(p.precio_normal)}</span>` : ''}
+      <span style="font-size:24px;font-weight:800;color:var(--verde)">${COP(precio)}</span>
+    </div>
+    <button class="btn btn--primario" id="tpg-comprar" style="width:100%">Comprar</button>
+  `);
+  if (imgs.length > 1) {
+    document.querySelectorAll('[data-tpg-thumb]').forEach(t => t.addEventListener('click', () => {
+      const i = +t.dataset.tpgThumb;
+      const main = document.getElementById('tpg-main');
+      if (main) main.innerHTML = `<img src="${esc(imgs[i])}" alt="${esc(p.nombre)}">`;
+      document.querySelectorAll('[data-tpg-thumb]').forEach(x => x.classList.toggle('is-on', x === t));
+    }));
+  }
+  document.getElementById('tpg-comprar')?.addEventListener('click', () => abrirCheckoutClub(p));
+}
+
 function abrirCheckoutClub(p) {
   const precio = p.precio_descuento ?? p.precio_normal ?? 0;
   abrirModalTienda(`Comprar: ${esc(p.nombre)}`, `
