@@ -98,8 +98,15 @@ async function abrirWompi(plan, card) {
   const textoOriginal = estadoEl.textContent;
   estadoEl.textContent = "Un momento…";
 
+  const { data: { session } } = await supabase.auth.getSession();
+  const miembroId = session?.user?.id;
+  if (!miembroId) {
+    estadoEl.textContent = textoOriginal;
+    alert("Debes iniciar sesión antes de pagar. Vuelve a intentarlo desde tu perfil.");
+    return;
+  }
+
   const amountInCents = precio * 100;
-  const miembroId = localStorage.getItem("ecdlg_miembro_id") || localStorage.getItem("ecdlg_uid") || "unknown";
   const reference = `ECDLG-${miembroId}-${Date.now()}-${Math.random().toString(36).substr(2,6).toUpperCase()}`;
   const currency = "COP";
 
