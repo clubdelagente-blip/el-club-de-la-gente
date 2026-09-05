@@ -95,7 +95,7 @@
 .plan-pick--premium .plan-pick__bens .dot { background: var(--verde-claro); }
 .plan-pick--premium .plan-pick__bens li { color: rgba(248,246,241,.82); }
 
-.plan-pick__state { margin-top: auto; text-align: center; font-size: 13px; font-weight: 700; letter-spacing: .04em; padding: 13px; border-radius: 4px; position: relative; z-index: 2; transition: background .25s, color .25s; }
+.plan-pick__state { margin-top: auto; text-align: center; font-size: 13px; font-weight: 700; letter-spacing: .04em; padding: 13px; border-radius: 100px; position: relative; z-index: 2; transition: background .25s, color .25s; }
 .plan-pick .plan-pick__state { border: 1.5px solid var(--linea-fuerte); color: var(--tinta-60); }
 .plan-pick--premium .plan-pick__state { border-color: rgba(248,246,241,.3); color: rgba(248,246,241,.7); }
 .plan-pick.is-selected .plan-pick__state { background: var(--verde); border-color: var(--verde); color: #fff; }

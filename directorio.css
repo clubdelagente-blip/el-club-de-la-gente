@@ -36,7 +36,7 @@
 .dir-search svg { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); width: 19px; height: 19px; color: var(--tinta-45); pointer-events: none; }
 .dir-search input {
   width: 100%; font-family: var(--cuerpo); font-size: 15px; color: var(--tinta);
-  padding: 15px 18px 15px 50px; border: 1.5px solid var(--linea-fuerte); border-radius: 4px; background: #fff;
+  padding: 15px 18px 15px 50px; border: 1.5px solid var(--linea-fuerte); border-radius: 100px; background: #fff;
   transition: border-color .2s, box-shadow .2s;
 }
 .dir-search input::placeholder { color: var(--tinta-45); }
