@@ -1112,6 +1112,22 @@ document.addEventListener("DOMContentLoaded", () => {
       history.replaceState({}, "", location.pathname);
     }
 
+    // Primera vez que llega desde el registro: invitarlo a seguir el Instagram del Club
+    if (new URLSearchParams(location.search).get("bienvenida") === "1") {
+      history.replaceState({}, "", location.pathname);
+      abrirModalTienda("¡Bienvenido/a al Club! 🌿", `
+        <div style="text-align:center;padding:8px 0 4px">
+          <p style="font-size:14px;margin-bottom:20px">Síguenos en Instagram para no perderte las nuevas promos, los aliados que se van sumando y las novedades del Club.</p>
+          <a href="https://www.instagram.com/clubdelagente" target="_blank" rel="noopener" class="btn btn--primario" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+            Seguir en Instagram
+          </a>
+        </div>
+        <button type="button" id="bienvenida-cerrar" style="display:block;margin:16px auto 0;background:none;border:none;color:#999;font-size:12px;cursor:pointer;text-decoration:underline">Ahora no</button>
+      `);
+      document.getElementById("bienvenida-cerrar")?.addEventListener("click", cerrarModalTienda);
+    }
+
     const { data: perfData } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol").eq("id", userId).maybeSingle();
     const plan = perfData?.plan || null;
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;

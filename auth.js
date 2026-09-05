@@ -442,7 +442,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     setLoading(btn, false, "Crear mi cuenta →");
-    location.href = "Perfil.html";
+    location.href = "Perfil.html?bienvenida=1";
   });
 
   // ---------- OLVIDÉ MI CONTRASEÑA ----------
