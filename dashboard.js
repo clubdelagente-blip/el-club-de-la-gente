@@ -37,23 +37,6 @@ function toast(msg) {
   _toastT = setTimeout(() => t.classList.remove("is-show"), 3200);
 }
 
-/* ---------- ALIADOS (subset para dashboard) ---------- */
-const ALIADOS = [
-  { nombre: "Patitas Felices",   cat: "Veterinaria",      icon: "paw-print",        pct: "30%" },
-  { nombre: "Sonrisa Sana",      cat: "Odontología",      icon: "smile",            pct: "25%" },
-  { nombre: "Barbería Don Carlos", cat: "Barbería",       icon: "scissors",         pct: "30%" },
-  { nombre: "Mercado del Campo", cat: "Canasta familiar", icon: "shopping-basket",  pct: "12%" },
-];
-
-/* ---------- ACTIVIDAD RECIENTE ---------- */
-const ACTIVIDAD = [
-  { nombre: "Heladería La Sumapaz", cat: "Heladería",       icon: "ice-cream",       fecha: "Hoy · 4:20 p.m.",    pct: "15%", compra: 24000, ahorro: 3600 },
-  { nombre: "Mercado del Campo",    cat: "Canasta familiar", icon: "shopping-basket", fecha: "Ayer · 10:05 a.m.",  pct: "12%", compra: 92000, ahorro: 11040 },
-  { nombre: "Barbería Don Carlos",  cat: "Barbería",        icon: "scissors",        fecha: "28 may · 6:30 p.m.", pct: "30%", compra: 25000, ahorro: 7500 },
-  { nombre: "Patitas Felices",      cat: "Veterinaria",     icon: "paw-print",       fecha: "24 may · 11:15 a.m.",pct: "30%", compra: 80000, ahorro: 24000 },
-  { nombre: "Sonrisa Sana",         cat: "Odontología",     icon: "smile",           fecha: "19 may · 3:00 p.m.", pct: "25%", compra: 120000, ahorro: 30000 },
-];
-
 /* ---------- Estado / perfil ---------- */
 function leerPerfil() {
   const p = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
@@ -108,17 +91,6 @@ function render() {
   const fecha = new Date(u.fechaISO + "T00:00:00");
   $("#perfil-fecha").textContent = fecha.toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" });
   $("#perfil-desde").textContent = u.desde;
-
-  // Aliados strip
-  $("#aliados-strip").innerHTML = ALIADOS.map(al => `
-    <a class="aliado-mini" href="Directorio.html">
-      <span class="aliado-mini__ic">${ic(al.icon)}</span>
-      <span>
-        <span class="aliado-mini__name">${al.nombre}</span>
-        <span class="aliado-mini__cat">${al.cat}</span>
-      </span>
-      <span class="aliado-mini__pct">${al.pct}</span>
-    </a>`).join("");
 
   // Actividad reciente: se carga desde Supabase en cargarDescuentos()
   const actEl = $("#actividad");
@@ -744,12 +716,6 @@ function inicializarBloqueo() {
     const el = document.getElementById(id);
     if (el) { el.style.display = "flex"; el.addEventListener("click", abrirModalActivar); }
   });
-
-  // Interceptar aliados strip
-  const strip = document.getElementById("aliados-strip");
-  if (strip) {
-    strip.addEventListener("click", (e) => { e.preventDefault(); abrirModalActivar(); });
-  }
 
   // Ocultar banner de usos (no aplica a usuarios sin plan)
   const bu = document.getElementById("banner-usos");
