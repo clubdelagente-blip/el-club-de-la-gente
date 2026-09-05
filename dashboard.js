@@ -538,10 +538,10 @@ async function abrirFormProducto(p = {}) {
     </div>
     <div class="cfg-campo"><label class="cfg-label">WhatsApp para atender pedidos</label><input class="cfg-input" id="pa-wa" type="tel" value="${p.whatsapp || ""}" placeholder="300 000 0000"></div>
     <div class="cfg-campo"><label class="cfg-label">Promoción válida hasta (opcional)</label><input class="cfg-input" id="pa-fecha" type="date" value="${p.fecha_fin || ""}"></div>
-    <div class="cfg-campo"><label class="cfg-label">Foto del producto</label>
-      ${p.imagen_url ? `<img src="${p.imagen_url}" style="height:60px;border-radius:8px;display:block;margin-bottom:8px">` : ""}
-      <input type="file" id="pa-img" accept="image/*">
-      <input type="hidden" id="pa-img-url" value="${p.imagen_url || ""}">
+    <div class="cfg-campo"><label class="cfg-label">Fotos del producto <span style="font-weight:400;opacity:.6">(puedes elegir varias, la primera es la principal)</span></label>
+      ${(p.imagenes && p.imagenes.length) ? `<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">${p.imagenes.map(u => `<img src="${u}" style="height:60px;width:60px;object-fit:cover;border-radius:8px">`).join("")}</div>` : (p.imagen_url ? `<img src="${p.imagen_url}" style="height:60px;width:60px;object-fit:cover;border-radius:8px;display:block;margin-bottom:8px">` : "")}
+      <input type="file" id="pa-img" accept="image/*" multiple>
+      ${p.id ? `<span style="font-size:11px;opacity:.6;display:block;margin-top:4px">Si eliges fotos nuevas, reemplazan a las actuales.</span>` : ""}
     </div>
     <button class="btn btn--primario" id="pa-save" data-id="${p.id || ""}" style="margin-top:8px">${p.id ? "Guardar cambios" : "Agregar producto"} <i data-lucide="check" style="width:15px;height:15px"></i></button>
   `);
@@ -552,13 +552,17 @@ async function abrirFormProducto(p = {}) {
     const nombre = $("#pa-nombre")?.value.trim();
     if (!nombre) { toast("El nombre es obligatorio"); return; }
     btn.disabled = true; btn.textContent = "Guardando…";
-    let imagen_url = $("#pa-img-url")?.value || null;
-    const file = $("#pa-img")?.files?.[0];
-    if (file) {
-      const ext = file.name.split(".").pop();
-      const path = `producto-${_tiendaAliadoId}-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
-      if (!upErr) imagen_url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+    let imagenes = p.imagenes || (p.imagen_url ? [p.imagen_url] : []);
+    const files = [...($("#pa-img")?.files || [])];
+    if (files.length) {
+      const subidas = [];
+      for (const file of files) {
+        const ext = file.name.split(".").pop();
+        const path = `producto-${_tiendaAliadoId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+        if (!upErr) subidas.push(supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl);
+      }
+      if (subidas.length) imagenes = subidas;
     }
     const id = btn.dataset.id;
     const payload = {
@@ -570,7 +574,8 @@ async function abrirFormProducto(p = {}) {
       precio_descuento: valorMoneda($("#pa-descuento")) || null,
       whatsapp: $("#pa-wa")?.value.trim() || null,
       fecha_fin: $("#pa-fecha")?.value || null,
-      imagen_url,
+      imagenes,
+      imagen_url: imagenes[0] || null,
       estado: "pendiente",
     };
     const { error } = id
@@ -988,8 +993,9 @@ async function cargarTiendaAliados() {
   grid.innerHTML = productos.map(p => {
     const precioNormal = p.precio_normal != null ? COP(p.precio_normal) : '';
     const precioDesc   = p.precio_descuento != null ? COP(p.precio_descuento) : '';
-    return `<div class="tienda-card">
-      ${p.imagen_url ? `<img src="${p.imagen_url}" class="tienda-card__img" alt="${esc(p.nombre)}">` : `<div class="tienda-card__img tienda-card__img--ph"></div>`}
+    const imgSrc = (p.imagenes && p.imagenes[0]) || p.imagen_url;
+    return `<div class="tienda-card" data-ver-prodal="${p.id}">
+      ${imgSrc ? `<img src="${imgSrc}" class="tienda-card__img" alt="${esc(p.nombre)}">` : `<div class="tienda-card__img tienda-card__img--ph"></div>`}
       <div class="tienda-card__body">
         ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat">${esc(p.categorias_productos.nombre)}</span>` : ''}
         <div class="tienda-card__nombre">${esc(p.nombre)}</div>
@@ -1004,10 +1010,49 @@ async function cargarTiendaAliados() {
     </div>`;
   }).join('');
 
-  grid.querySelectorAll('[data-comprar-prodal]').forEach(btn => btn.addEventListener('click', () => {
+  grid.querySelectorAll('[data-ver-prodal]').forEach(card => card.addEventListener('click', (e) => {
+    if (e.target.closest('[data-comprar-prodal]')) return;
+    const p = productos.find(x => x.id === card.dataset.verProdal);
+    if (p) abrirDetalleProductoAliado(p);
+  }));
+  grid.querySelectorAll('[data-comprar-prodal]').forEach(btn => btn.addEventListener('click', (e) => {
+    e.stopPropagation();
     const p = productos.find(x => x.id === btn.dataset.comprarProdal);
     if (p) abrirCheckoutProducto(p);
   }));
+}
+
+function abrirDetalleProductoAliado(p) {
+  const imgs = (p.imagenes && p.imagenes.length) ? p.imagenes : (p.imagen_url ? [p.imagen_url] : []);
+  const precioNormal = p.precio_normal != null ? COP(p.precio_normal) : '';
+  const precioDesc = p.precio_descuento != null ? COP(p.precio_descuento) : '';
+  abrirModalTienda(p.nombre, `
+    <div class="tprod-galeria">
+      <div class="tprod-galeria__main" id="tpg2-main">
+        ${imgs[0] ? `<img src="${esc(imgs[0])}" alt="${esc(p.nombre)}">` : ''}
+      </div>
+      ${imgs.length > 1 ? `<div class="tprod-galeria__thumbs">
+        ${imgs.map((url, i) => `<div class="tprod-galeria__thumb${i === 0 ? ' is-on' : ''}" data-tpg2-thumb="${i}"><img src="${esc(url)}" alt=""></div>`).join('')}
+      </div>` : ''}
+    </div>
+    <div style="font-size:13px;color:var(--tinta-60);margin:14px 0 4px">${esc(p.aliados?.tienda_nombre || p.aliados?.nombre)}</div>
+    ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat">${esc(p.categorias_productos.nombre)}</span>` : ''}
+    <p style="font-size:14px;line-height:1.6;color:#444;margin:8px 0 16px">${p.descripcion ? esc(p.descripcion) : 'Sin descripción adicional.'}</p>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+      ${precioNormal ? `<span style="font-size:14px;color:#999;text-decoration:line-through">${precioNormal}</span>` : ''}
+      ${precioDesc ? `<span style="font-size:24px;font-weight:800;color:var(--verde)">${precioDesc}</span>` : ''}
+    </div>
+    <button class="btn btn--primario" id="tpg2-comprar" style="width:100%">Comprar</button>
+  `);
+  if (imgs.length > 1) {
+    document.querySelectorAll('[data-tpg2-thumb]').forEach(t => t.addEventListener('click', () => {
+      const i = +t.dataset.tpg2Thumb;
+      const main = document.getElementById('tpg2-main');
+      if (main) main.innerHTML = `<img src="${esc(imgs[i])}" alt="${esc(p.nombre)}">`;
+      document.querySelectorAll('[data-tpg2-thumb]').forEach(x => x.classList.toggle('is-on', x === t));
+    }));
+  }
+  document.getElementById('tpg2-comprar')?.addEventListener('click', () => abrirCheckoutProducto(p));
 }
 
 function redesSocialesHTML(aliado) {
