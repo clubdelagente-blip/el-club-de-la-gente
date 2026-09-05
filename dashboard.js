@@ -504,7 +504,19 @@ async function cargarMisProductos(aliadoId) {
   list.querySelectorAll("[data-rm-prodal]").forEach(btn => btn.addEventListener("click", async () => {
     if (!confirm("¿Eliminar este producto?")) return;
     const { error, count } = await supabase.from("productos_aliado").delete({ count: "exact" }).eq("id", btn.dataset.rmProdal);
-    if (error) { toast("Error eliminando: " + error.message); return; }
+    if (error) {
+      if (error.code === "23503") {
+        if (confirm("Este producto ya tiene pedidos y no se puede eliminar sin perder ese historial.\n\n¿Prefieres solo desactivarlo? (desaparece de la tienda, pero conserva los pedidos y comisiones)")) {
+          const { error: errDesact } = await supabase.from("productos_aliado").update({ activo: false }).eq("id", btn.dataset.rmProdal);
+          if (errDesact) { toast("Error desactivando: " + errDesact.message); return; }
+          toast("Producto desactivado ✓");
+          cargarMisProductos(aliadoId);
+        }
+        return;
+      }
+      toast("Error eliminando: " + error.message);
+      return;
+    }
     if (!count) { toast("No se pudo eliminar (sin permiso)"); return; }
     cargarMisProductos(aliadoId);
   }));
