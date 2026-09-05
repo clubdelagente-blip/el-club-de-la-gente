@@ -411,9 +411,10 @@ function cerrarModalTienda(_desdePopstate) {
 window.addEventListener("popstate", () => {
   if (_modalTiendaAbierta) cerrarModalTienda(true);
 });
-document.addEventListener("DOMContentLoaded", () => {
-  $("#modal-tienda-close")?.addEventListener("click", () => cerrarModalTienda());
-  $("#modal-tienda")?.addEventListener("click", (e) => { if (e.target === e.currentTarget) cerrarModalTienda(); });
+// Delegado en document (no depende de que #modal-tienda ya exista ni de DOMContentLoaded)
+document.addEventListener("click", (e) => {
+  if (e.target.closest("#modal-tienda-close")) { cerrarModalTienda(); return; }
+  if (e.target.id === "modal-tienda") { cerrarModalTienda(); return; }
 });
 
 function renderTiendaEstado(negocio) {
