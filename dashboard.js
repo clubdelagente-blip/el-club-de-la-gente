@@ -10,6 +10,8 @@ const supabase = createClient(
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 const ic = (n) => `<i data-lucide="${n}"></i>`;
+// agente.js es un script clásico (no módulo) que reutiliza estos helpers vía window
+window.$ = $; window.$$ = $$; window.ic = ic;
 const fmtCOP = (n) => "$" + new Intl.NumberFormat("es-CO").format(n);
 // Escapa texto que viene de otros usuarios (nombre de producto del aliado,
 // datos de envio del miembro) antes de insertarlo en innerHTML.
@@ -57,6 +59,7 @@ function leerPerfil() {
     rol, plan,
   };
 }
+window.leerPerfil = leerPerfil;
 function iniciales(nombre) {
   return nombre.split(" ").filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
 }
@@ -135,6 +138,7 @@ function irPanel(panel) {
   $(".dash-content").scrollTo?.({ top: 0 });
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
+window.irPanel = irPanel;
 
 /* ============================================================
    SEGMENTACIÓN
