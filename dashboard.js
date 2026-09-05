@@ -1099,7 +1099,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const u = leerPerfil();
   irPanel("inicio");
   supabase.auth.getSession().then(async ({ data: { session } }) => {
-    if (!session?.user?.id) return;
+    if (!session?.user?.id) { location.href = "Registro.html?modo=login"; return; }
     const userId = session.user.id;
     _miembroId = userId;
     generarQR(userId);
