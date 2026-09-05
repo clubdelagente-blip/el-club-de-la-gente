@@ -967,21 +967,35 @@ function bindFormAliado(){
       }
 
       await supabase.from('aliados').update({user_id:data.user.id}).eq('id',aliadoId);
-      await supabase.from('perfiles').upsert({id:data.user.id,nombre,whatsapp:whatsapp||null,rol:'aliado'});
+      await supabase.from('perfiles').upsert({id:data.user.id,nombre,whatsapp:whatsapp||null,rol:'aliado',plan:'vitalicia'});
 
+      const beneficiosVitalicia=[
+        'Membresía Premium vitalicia y gratuita, para siempre',
+        'Acceso ilimitado a todos los aliados con descuento',
+        'Sorteos exclusivos para miembros Premium',
+        'Descuentos premium y beneficios ampliados',
+        'Acceso prioritario a eventos del Club',
+      ];
       const a=_aliados.find(x=>x.id===aliadoId);
       abrirModal('Cuenta creada ✓',nombre,`
         <p style="font-size:13px;color:rgba(242,240,234,.6);margin-bottom:16px">Comparte estos datos con el aliado (por el canal que prefieras). No se van a volver a mostrar.</p>
         <div class="ad-field"><label>Email</label><input type="text" readonly value="${email}" id="fa-cred-email"></div>
         <div class="ad-field"><label>Contraseña</label><input type="text" readonly value="${password}" id="fa-cred-pass"></div>
-        <button type="button" class="ad-btn" id="fa-cred-copiar" style="margin-bottom:16px">${ic("copy")} Copiar email y contraseña</button>
+        <div class="ad-field">
+          <label>Su cuenta ya incluye</label>
+          <ul style="font-size:12.5px;color:rgba(242,240,234,.75);line-height:1.7;padding-left:18px;margin:4px 0 0">
+            ${beneficiosVitalicia.map(b=>`<li>${b}</li>`).join('')}
+          </ul>
+        </div>
+        <button type="button" class="ad-btn" id="fa-cred-copiar" style="margin-bottom:16px">${ic("copy")} Copiar mensaje completo</button>
         <div class="ad-toolbar" style="margin:0"><div class="ad-spacer"></div>
           <button class="ad-btn ad-btn--verde" id="fa-cred-listo">${ic("check")} Listo</button>
         </div>
       `);
       if(window.lucide)lucide.createIcons();
       $("#fa-cred-copiar")?.addEventListener('click',async()=>{
-        await navigator.clipboard.writeText(`Email: ${email}\nContraseña: ${password}`).catch(()=>{});
+        const msg=`¡Bienvenido al Club, ${nombre}! 🌿\n\nAquí están los datos de acceso a tu cuenta de aliado:\nEmail: ${email}\nContraseña: ${password}\n\nTu cuenta ya incluye membresía Premium vitalicia y gratuita:\n${beneficiosVitalicia.map(b=>'• '+b).join('\n')}`;
+        await navigator.clipboard.writeText(msg).catch(()=>{});
         toast('Copiado ✓');
       });
       $("#fa-cred-listo")?.addEventListener('click',()=>{
