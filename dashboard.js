@@ -390,17 +390,31 @@ async function cargarVentasNegocio(aliadoId) {
 let _tiendaAliadoId = null;
 let _tiendaCategorias = [];
 
+let _modalTiendaAbierta = false;
 function abrirModalTienda(titulo, bodyHtml) {
   const t = $("#modal-tienda-title"); if (t) t.textContent = titulo;
   const b = $("#modal-tienda-body"); if (b) b.innerHTML = bodyHtml;
   const m = $("#modal-tienda"); if (m) m.style.display = "flex";
   document.body.style.overflow = "hidden";
+  if (!_modalTiendaAbierta) history.pushState({ modalTienda: true }, "");
+  _modalTiendaAbierta = true;
   if (window.lucide) lucide.createIcons();
 }
-function cerrarModalTienda() {
+function cerrarModalTienda(_desdePopstate) {
   const m = $("#modal-tienda"); if (m) m.style.display = "none";
   document.body.style.overflow = "";
+  if (_modalTiendaAbierta) {
+    _modalTiendaAbierta = false;
+    if (!_desdePopstate) history.back();
+  }
 }
+window.addEventListener("popstate", () => {
+  if (_modalTiendaAbierta) cerrarModalTienda(true);
+});
+document.addEventListener("DOMContentLoaded", () => {
+  $("#modal-tienda-close")?.addEventListener("click", () => cerrarModalTienda());
+  $("#modal-tienda")?.addEventListener("click", (e) => { if (e.target === e.currentTarget) cerrarModalTienda(); });
+});
 
 function renderTiendaEstado(negocio) {
   const explicador = $("#tienda-aliado-explicador");
@@ -429,9 +443,6 @@ function inicializarMiTienda(negocio) {
     const res = $("#negtab-resumen"); if (res) res.style.display = tab === "resumen" ? "" : "none";
     const tie = $("#negtab-tienda"); if (tie) tie.style.display = tab === "tienda" ? "" : "none";
   }));
-
-  $("#modal-tienda-close")?.addEventListener("click", cerrarModalTienda);
-  $("#modal-tienda")?.addEventListener("click", (e) => { if (e.target === e.currentTarget) cerrarModalTienda(); });
 
   renderTiendaEstado(negocio);
 
@@ -1194,7 +1205,7 @@ function abrirCheckoutProducto(p) {
       ${redesSocialesHTML(p.aliados)}
       <button class="btn btn--primario" id="pc-cerrar-exito" style="margin-top:20px;width:100%">Listo</button>
     `);
-    $("#pc-cerrar-exito")?.addEventListener("click", cerrarModalTienda);
+    $("#pc-cerrar-exito")?.addEventListener("click", () => cerrarModalTienda());
   });
 }
 
@@ -1246,7 +1257,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <button type="button" id="bienvenida-cerrar" style="display:block;margin:16px auto 0;background:none;border:none;color:#999;font-size:12px;cursor:pointer;text-decoration:underline">Ahora no</button>
       `);
-      document.getElementById("bienvenida-cerrar")?.addEventListener("click", cerrarModalTienda);
+      document.getElementById("bienvenida-cerrar")?.addEventListener("click", () => cerrarModalTienda());
     }
 
     const { data: perfData } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol").eq("id", userId).maybeSingle();
