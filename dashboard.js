@@ -1260,10 +1260,28 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("bienvenida-cerrar")?.addEventListener("click", () => cerrarModalTienda());
     }
 
-    const { data: perfData } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol").eq("id", userId).maybeSingle();
+    const { data: perfData } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol, fecha_vencimiento").eq("id", userId).maybeSingle();
     const plan = perfData?.plan || null;
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
     if (plan) { localStorage.setItem("ecdlg_plan", plan); const sbPlanEl = document.getElementById("sb-plan-name"); if (sbPlanEl) sbPlanEl.textContent = PLAN_LABEL[plan] || plan; }
+
+    // Fecha de renovación real (viene del pago aprobado por Wompi, no inventada)
+    const sbRenuevaEl = document.querySelector(".sb-plan__renueva");
+    const ccRenuevaEl = document.querySelector(".cc-card-renueva");
+    if (plan === "vitalicia") {
+      if (sbRenuevaEl) sbRenuevaEl.textContent = "Vitalicia — no vence";
+      if (ccRenuevaEl) ccRenuevaEl.textContent = "Vitalicia";
+    } else if (plan === "gratis") {
+      if (sbRenuevaEl) sbRenuevaEl.textContent = "Plan gratuito";
+      if (ccRenuevaEl) ccRenuevaEl.textContent = "—";
+    } else if (perfData?.fecha_vencimiento && (plan === "basica" || plan === "premium")) {
+      const dVenc = new Date(perfData.fecha_vencimiento + "T00:00:00");
+      if (sbRenuevaEl) sbRenuevaEl.textContent = "Renueva el " + dVenc.toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" });
+      if (ccRenuevaEl) ccRenuevaEl.textContent = dVenc.toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" });
+    } else {
+      if (sbRenuevaEl) sbRenuevaEl.textContent = "Sin membresía activa";
+      if (ccRenuevaEl) ccRenuevaEl.textContent = "—";
+    }
 
     // Segmentación del miembro nuevo: solo preguntamos lo que no sepamos ya
     // (registro manual trae nombre/fecha/whatsapp; Google solo trae nombre).
