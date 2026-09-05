@@ -829,7 +829,6 @@ async function cargarTienda() {
   }
 
   let catActiva = 'todos';
-  const CARRITO_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`;
   function renderGrid() {
     const filtrados = catActiva === 'todos' ? prods : prods.filter(p => p.categoria_id === catActiva);
     grid.innerHTML = filtrados.map(p => {
@@ -851,7 +850,7 @@ async function cargarTienda() {
               ${precioNormal ? `<span class="tienda-card__antes">${precioNormal}</span>` : ''}
               <span class="tienda-card__precio">${precioDesc || precioNormal}</span>
             </div>
-            <button class="tienda-card__cart" data-comprar-club="${p.id}" type="button" aria-label="Comprar">${CARRITO_SVG}</button>
+            <button class="tienda-card__cart" data-comprar-club="${p.id}" type="button">Comprar</button>
           </div>
         </div>
       </div>`;

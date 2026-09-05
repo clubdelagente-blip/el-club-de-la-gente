@@ -294,9 +294,8 @@ a { color: inherit; text-decoration: none; }
 .tienda-card__antes { font-size: 11px; color: var(--tinta-suave); text-decoration: line-through; }
 .tienda-card__precio { font-size: 16px; font-weight: 800; color: var(--verde); white-space: nowrap; }
 .tienda-card__precio--lock { font-size: 12px; font-weight: 600; color: var(--tinta-suave); background: var(--crema-2); padding: 3px 8px; border-radius: 6px; }
-.tienda-card__cart { flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--verde); color: #fff; border: none; display: grid; place-items: center; cursor: pointer; transition: background .15s, transform .15s; }
-.tienda-card__cart:hover { background: var(--verde-hover); transform: scale(1.08); }
-.tienda-card__cart svg { width: 16px; height: 16px; }
+.tienda-card__cart { flex: none; padding: 8px 14px; border-radius: 100px; background: var(--verde); color: #fff; border: none; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: background .15s; }
+.tienda-card__cart:hover { background: var(--verde-hover); }
 .tienda-card__btn { display: block; margin-top: auto; padding: 10px; background: var(--negro); color: var(--crema); border-radius: 10px; font-size: 13px; font-weight: 700; text-align: center; text-decoration: none; transition: opacity .15s; }
 .tienda-card__btn:hover { opacity: .8; }
 
