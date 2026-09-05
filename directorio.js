@@ -272,7 +272,7 @@ function sheetAliado(a) {
       }
       <div id="calc-exito" style="display:none;text-align:center;padding:24px 0 8px">
         <div style="font-size:48px;line-height:1">✓</div>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;margin:10px 0 6px">¡Descuento aplicado!</div>
+        <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:700;margin:10px 0 6px">¡Descuento aplicado!</div>
         <p style="font-size:13px;color:#666;line-height:1.5">Gracias por tu compra en el Club.<br>Tu ahorro ya quedó registrado.</p>
       </div>
       <p class="calc__nota" id="calc-nota"></p>

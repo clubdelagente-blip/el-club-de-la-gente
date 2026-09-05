@@ -28,8 +28,8 @@
   --tinta-clara-60: rgba(248, 246, 241, 0.62);
 
   /* Tipografía */
-  --display: "Cormorant Garamond", Georgia, serif;
-  --cuerpo: "Montserrat", system-ui, sans-serif;
+  --display: "Fraunces", Georgia, serif;
+  --cuerpo: "Inter", system-ui, sans-serif;
 
   --max: 1240px;
   --nav-h: 74px;
