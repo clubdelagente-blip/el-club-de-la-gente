@@ -1611,7 +1611,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       supabase.from('categorias_gasto').select('*').order('nombre'),
       supabase.from('config_contabilidad').select('*').eq('id',1).maybeSingle(),
       supabase.from('pedidos').select('id,monto,comision_valor,created_at,productos_aliado(nombre),aliados(nombre,tienda_nombre)').in('estado',['confirmado','entregado']).order('created_at',{ascending:false}),
-      supabase.from('ingresos_manuales').select('id,monto,descripcion,fecha,nota,categoria_id,categorias_ingreso(nombre)').order('fecha',{ascending:false}),
+      supabase.from('ingresos_manuales').select('id,monto,descripcion,fecha,nota,categoria_id,tipo,categorias_ingreso(nombre)').order('fecha',{ascending:false}),
       supabase.from('categorias_ingreso').select('*').order('nombre'),
     ]);
     _pagos=pagos||[];_gastos=gastos||[];_categoriasGasto=cats||[];
@@ -1627,7 +1627,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
     _contPagosMes=_pagos.filter(p=>enMes(p.created_at,_contMes));
     _contComisionMes=_pedidosCom.filter(p=>enMes(p.created_at,_contMes));
     _contIngManMes=_ingresosManuales.filter(i=>enMes(i.fecha,_contMes));
-    const totalIngresos=(pagosArr,comArr,manArr)=>pagosArr.reduce((s,p)=>s+(p.monto||0),0)+comArr.reduce((s,p)=>s+(p.comision_valor||0),0)+manArr.reduce((s,i)=>s+(i.monto||0),0);
+    const soloOperativo=arr=>arr.filter(i=>i.tipo!=='patrimonio');
+    const totalIngresos=(pagosArr,comArr,manArr)=>pagosArr.reduce((s,p)=>s+(p.monto||0),0)+comArr.reduce((s,p)=>s+(p.comision_valor||0),0)+soloOperativo(manArr).reduce((s,i)=>s+(i.monto||0),0);
     const gastosMesAnt=_gastos.filter(g=>enMes(g.fecha,mesAnt)).reduce((s,g)=>s+(g.monto||0),0);
     const ingresosMesAnt=totalIngresos(_pagos.filter(p=>enMes(p.created_at,mesAnt)),_pedidosCom.filter(p=>enMes(p.created_at,mesAnt)),_ingresosManuales.filter(i=>enMes(i.fecha,mesAnt)));
     const ingresosMes=totalIngresos(_contPagosMes,_contComisionMes,_contIngManMes);
@@ -1636,7 +1637,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const filasIngreso=[
       ..._contPagosMes.map(p=>({tipo:'membresia',concepto:'Membresía',detalle:p.perfiles?.nombre||'—',fecha:p.created_at,monto:p.monto})),
       ..._contComisionMes.map(p=>({tipo:'comision',concepto:'Comisión tienda de aliados',detalle:`${p.productos_aliado?.nombre||'Producto'} · ${p.aliados?.tienda_nombre||p.aliados?.nombre||''}`,fecha:p.created_at,monto:p.comision_valor})),
-      ..._contIngManMes.map(i=>({tipo:'manual',concepto:i.categorias_ingreso?.nombre||'Otros',detalle:i.descripcion||'—',fecha:i.fecha,monto:i.monto,id:i.id,editable:true})),
+      ..._contIngManMes.map(i=>({tipo:i.tipo==='patrimonio'?'patrimonio':'manual',concepto:i.categorias_ingreso?.nombre||(i.tipo==='patrimonio'?'Patrimonio':'Otros'),detalle:i.descripcion||'—',fecha:i.fecha,monto:i.monto,id:i.id,editable:true})),
     ].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
     _contFilasIngreso=filasIngreso;
     if(!_contFiltroIngreso)_contFiltroIngreso='todos';
@@ -1674,7 +1675,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
         <div class="ad-spacer"></div>
       </div>
       <div class="ad-metrics">
-        ${metric('banknote',COPc(ingresosMes),'Ingresos del mes','membresías + comisiones + otros',chIng.chip,chIng.dir)}
+        ${metric('banknote',COPc(ingresosMes),'Ingresos del mes','membresías + comisiones + otros (sin patrimonio)',chIng.chip,chIng.dir)}
         ${metric('receipt',COPc(gastosMes),'Gastos del mes','registrados a mano',chGas.chip,chGas.dir)}
         ${metric('scale',COPc(balanceMes),'Balance del mes',balanceMes>=0?'positivo':'negativo','','up')}
         ${metric('landmark',COPc(balanceAnio),'Balance del año',`año ${y} · ingresos ${COPc(ingresosAnio)} − gastos ${COPc(gastosAnio)}`,'','up')}
@@ -1696,7 +1697,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       </div>
       <div class="ad-toolbar" style="margin-top:24px"><div class="ad-card__title">Ingresos</div><div class="ad-spacer"></div><button class="ad-btn" id="ingresos-csv">${ic('download')} Descargar Excel</button><button class="ad-btn ad-btn--verde" id="ingreso-add">${ic('plus')} Agregar ingreso</button></div>
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-        ${[['todos','Todos'],['membresia','Membresías'],['comision','Comisiones'],['manual','Otros']].map(([val,lbl])=>
+        ${[['todos','Todos'],['membresia','Membresías'],['comision','Comisiones'],['manual','Otros'],['patrimonio','Patrimonio']].map(([val,lbl])=>
           `<button class="ad-btn${_contFiltroIngreso===val?' ad-btn--verde':''}" data-filtro-ingreso="${val}" style="font-size:12px">${lbl}</button>`
         ).join('')}
       </div>
@@ -1844,6 +1845,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
       <div class="ad-field"><label>Fecha</label><input id="if-fecha" type="date" value="${i.fecha||new Date().toISOString().slice(0,10)}"></div>
     </div>
     <div class="ad-field"><label>Nota (opcional)</label><textarea id="if-nota" rows="2">${i.nota||''}</textarea></div>
+    <label style="display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:rgba(242,240,234,.7);margin:4px 0 6px;cursor:pointer">
+      <input type="checkbox" id="if-patrimonio" ${i.tipo==='patrimonio'?'checked':''} style="margin-top:2px">
+      <span>Es aporte de patrimonio (capital de los fundadores, no una venta) — no cuenta en el desglose de IVA/ICA ni en la utilidad neta.</span>
+    </label>
     <div class="ad-toolbar" style="margin:16px 0 0"><div class="ad-spacer"></div>
       <button class="ad-btn" id="if-cancel">Cancelar</button>
       <button class="ad-btn ad-btn--verde" id="if-save" data-id="${i.id||''}">${ic("check")} ${i.id?'Guardar cambios':'Agregar ingreso'}</button>
@@ -1872,7 +1877,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
           if(catErr){toast('Error creando categoría: '+catErr.message);resetBtn();return;}
           categoriaId=catData.id;
         }
-        const payload={categoria_id:categoriaId||null,descripcion:descripcion||null,monto,fecha,nota};
+        const tipo=$("#if-patrimonio")?.checked?'patrimonio':'manual';
+        const payload={categoria_id:categoriaId||null,descripcion:descripcion||null,monto,fecha,nota,tipo};
         const{error}=id?await supabase.from('ingresos_manuales').update(payload).eq('id',id):await supabase.from('ingresos_manuales').insert(payload);
         if(error){toast('Error: '+error.message);resetBtn();return;}
         window.cerrarModal?.();
