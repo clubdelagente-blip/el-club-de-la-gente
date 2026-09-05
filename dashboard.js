@@ -435,6 +435,9 @@ function renderTiendaEstado(negocio) {
     const nombreEl = $("#tda-nombre"); if (nombreEl) nombreEl.value = negocio.tienda_nombre || negocio.nombre || "";
     const llaveEl = $("#tda-llave"); if (llaveEl) llaveEl.value = negocio.tienda_llave_pago || "";
     const mapsEl = $("#tda-maps"); if (mapsEl) mapsEl.value = negocio.maps_url || "";
+    const igEl = $("#tda-instagram"); if (igEl) igEl.value = negocio.instagram || "";
+    const fbEl = $("#tda-facebook"); if (fbEl) fbEl.value = negocio.facebook || "";
+    const ttEl = $("#tda-tiktok"); if (ttEl) ttEl.value = negocio.tiktok || "";
   } else {
     if (explicador) explicador.style.display = "";
     if (panel) panel.style.display = "none";
@@ -472,8 +475,11 @@ function inicializarMiTienda(negocio) {
     const nombre = $("#tda-nombre")?.value.trim();
     const llave = $("#tda-llave")?.value.trim();
     const maps = $("#tda-maps")?.value.trim();
+    const instagram = $("#tda-instagram")?.value.trim();
+    const facebook = $("#tda-facebook")?.value.trim();
+    const tiktok = $("#tda-tiktok")?.value.trim();
     btn.disabled = true;
-    const { error } = await supabase.from("aliados").update({ tienda_nombre: nombre || null, tienda_llave_pago: llave || null, maps_url: maps || null }).eq("id", negocio.id);
+    const { error } = await supabase.from("aliados").update({ tienda_nombre: nombre || null, tienda_llave_pago: llave || null, maps_url: maps || null, instagram: instagram || null, facebook: facebook || null, tiktok: tiktok || null }).eq("id", negocio.id);
     btn.disabled = false;
     if (error) { toast("Error guardando los datos"); return; }
     const msg = $("#tda-guardado-msg");
@@ -845,7 +851,7 @@ async function cargarTiendaAliados() {
   const hoy = new Date().toISOString().slice(0, 10);
   const [{ data: prods }, { data: comPct }] = await Promise.all([
     supabase.from('productos_aliado')
-      .select('*, categorias_productos(nombre), aliados(nombre, tienda_nombre, whatsapp, maps_url, tienda_llave_pago)')
+      .select('*, categorias_productos(nombre), aliados(nombre, tienda_nombre, whatsapp, maps_url, tienda_llave_pago, instagram, facebook, tiktok)')
       .eq('estado', 'aprobado').eq('activo', true)
       .or(`fecha_fin.is.null,fecha_fin.gte.${hoy}`)
       .order('created_at', { ascending: false }),
@@ -880,6 +886,22 @@ async function cargarTiendaAliados() {
     const p = productos.find(x => x.id === btn.dataset.comprarProdal);
     if (p) abrirCheckoutProducto(p);
   }));
+}
+
+function redesSocialesHTML(aliado) {
+  const redes = [
+    { url: aliado?.instagram, label: "Instagram", icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>` },
+    { url: aliado?.facebook, label: "Facebook", icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H7.9V12h2.6V9.8c0-2.6 1.5-4 3.9-4 1.1 0 2.3.2 2.3.2v2.5h-1.3c-1.3 0-1.7.8-1.7 1.6V12h2.9l-.5 2.9h-2.4v7A10 10 0 0 0 22 12z"/></svg>` },
+    { url: aliado?.tiktok, label: "TikTok", icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 5.82a4.28 4.28 0 0 1-3.05-3.06h-3.1v13.44a2.6 2.6 0 1 1-1.9-2.5V10.6a5.7 5.7 0 1 0 4.9 5.66V9.83a7.3 7.3 0 0 0 4.15 1.3V8.1a4.3 4.3 0 0 1-1-2.28z"/></svg>` },
+  ].filter(r => /^https?:\/\//i.test(r.url || ""));
+  if (!redes.length) return "";
+  return `
+    <div style="margin-top:22px;padding-top:18px;border-top:1px solid #ebebeb;text-align:center">
+      <p style="font-size:13px;font-weight:600;margin-bottom:12px">¡Síguenos para no perderte nuevas promos! 🌿</p>
+      <div style="display:flex;gap:10px;justify-content:center">
+        ${redes.map(r => `<a href="${esc(r.url)}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:7px;padding:9px 14px;border:1px solid #ebebeb;border-radius:100px;color:#111;text-decoration:none;font-size:12.5px;font-weight:600"><span style="width:16px;height:16px;display:inline-flex">${r.icon}</span>${r.label}</a>`).join("")}
+      </div>
+    </div>`;
 }
 
 function abrirCheckoutProducto(p) {
@@ -978,8 +1000,15 @@ function abrirCheckoutProducto(p) {
         body: JSON.stringify({ to: wa, body: msg }),
       }).catch(() => {});
     }
-    cerrarModalTienda();
-    toast("¡Pedido enviado! El negocio confirmará tu pago pronto.");
+    abrirModalTienda("¡Pedido enviado!", `
+      <div style="text-align:center;padding:8px 0">
+        <div style="font-size:44px;line-height:1">✓</div>
+        <p style="font-size:14px;margin-top:12px">Gracias por tu compra en <b>${esc(p.aliados?.tienda_nombre || p.aliados?.nombre) || 'el negocio'}</b>.<br>El negocio confirmará tu pago pronto.</p>
+      </div>
+      ${redesSocialesHTML(p.aliados)}
+      <button class="btn btn--primario" id="pc-cerrar-exito" style="margin-top:20px;width:100%">Listo</button>
+    `);
+    $("#pc-cerrar-exito")?.addEventListener("click", cerrarModalTienda);
   });
 }
 
@@ -1057,7 +1086,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Rol aliado (cuenta real, no localStorage): "Mi negocio" conectado por aliado_id
     if (perfData?.rol === "aliado") {
-      const { data: negocio } = await supabase.from("aliados").select("id, nombre, categoria, whatsapp, maps_url, tienda_activa, tienda_nombre, tienda_llave_pago").eq("user_id", userId).maybeSingle();
+      const { data: negocio } = await supabase.from("aliados").select("id, nombre, categoria, whatsapp, maps_url, tienda_activa, tienda_nombre, tienda_llave_pago, instagram, facebook, tiktok").eq("user_id", userId).maybeSingle();
       if (negocio) {
         const li = $("#sb-negocio-li"); if (li) li.hidden = false;
         const negNombre = $("#negocio-nombre"); if (negNombre) negNombre.textContent = negocio.nombre;
