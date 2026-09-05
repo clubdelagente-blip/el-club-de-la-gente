@@ -264,7 +264,13 @@ a { color: inherit; text-decoration: none; }
 .promo-card__cat { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--verde); }
 .promo-card__nombre { font-size: 20px; font-weight: 700; color: var(--tinta); margin: 3px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .promo-card__desc { font-size: 14px; color: var(--tinta-suave); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-@media (max-width: 600px) { .promo-card { width: 300px; } .promo-card__img { height: 220px; } }
+@media (max-width: 600px) {
+  .promo-carrusel { padding: 8px 0 24px; }
+  .promo-carrusel::before, .promo-carrusel::after { display: none; }
+  .promo-carrusel__track { gap: 0; padding: 0; animation: none; transition: transform .35s ease; }
+  .promo-card { width: 100vw; flex-shrink: 0; border-radius: 0; box-shadow: none; border-left: none; border-right: none; }
+  .promo-card__img { height: 260px; }
+}
 
 /* ============================================================
    TIENDA DEL CLUB

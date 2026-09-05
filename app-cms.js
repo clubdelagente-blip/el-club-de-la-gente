@@ -189,6 +189,16 @@ async function cargarCarruselPromos() {
   // IntersectionObserver de fade-up nunca lo pudo "ver" a tiempo -- se
   // revela directo, igual que el hero, en vez de depender del scroll.
   requestAnimationFrame(() => wrap.classList.add('is-in'));
+
+  // En celular: una tarjeta a todo el ancho, avanzando sola (el desfile
+  // continuo de escritorio no cabe bien en pantallas chicas).
+  if (window.matchMedia('(max-width: 600px)').matches) {
+    let idx = 0;
+    setInterval(() => {
+      idx = (idx + 1) % items.length;
+      track.style.transform = `translateX(-${idx * 100}vw)`;
+    }, 2000);
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
