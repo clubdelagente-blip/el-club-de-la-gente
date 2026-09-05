@@ -789,6 +789,8 @@ async function cargarTienda() {
 
   if (!prods || !prods.length) {
     grid.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--tinta-suave);grid-column:1/-1">Próximamente habrá productos disponibles.</div>`;
+    cargarTiendaAliados();
+    cargarMisPedidosClub();
     return;
   }
 
