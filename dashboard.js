@@ -503,7 +503,9 @@ async function cargarMisProductos(aliadoId) {
   }));
   list.querySelectorAll("[data-rm-prodal]").forEach(btn => btn.addEventListener("click", async () => {
     if (!confirm("¿Eliminar este producto?")) return;
-    await supabase.from("productos_aliado").delete().eq("id", btn.dataset.rmProdal);
+    const { error, count } = await supabase.from("productos_aliado").delete({ count: "exact" }).eq("id", btn.dataset.rmProdal);
+    if (error) { toast("Error eliminando: " + error.message); return; }
+    if (!count) { toast("No se pudo eliminar (sin permiso)"); return; }
     cargarMisProductos(aliadoId);
   }));
 }
