@@ -503,6 +503,8 @@ async function cargarMisProductos(aliadoId) {
   if (!list) return;
   const { data } = await supabase.from("productos_aliado").select("*, categorias_productos(nombre)").eq("aliado_id", aliadoId).order("created_at", { ascending: false });
   const productos = data || [];
+  const statProdEl = $("#tda-stat-productos");
+  if (statProdEl) statProdEl.textContent = productos.filter(p => p.estado === "aprobado" && p.activo).length;
   if (!productos.length) { list.innerHTML = `<p style="padding:8px 0">Aún no has agregado productos.</p>`; return; }
   list.innerHTML = productos.map(p => {
     const est = ESTADO_PRODUCTO_ALIADO[p.estado] || ESTADO_PRODUCTO_ALIADO.pendiente;
@@ -608,12 +610,12 @@ async function cargarPedidosAliado(aliadoId) {
     .order("created_at", { ascending: false });
   const pedidos = data || [];
 
-  const resumenEl = $("#pedidos-comision-resumen");
-  if (resumenEl) {
-    const pendiente = pedidos.filter(p => p.estado === "pendiente" || p.estado === "confirmado").reduce((s, p) => s + (p.comision_valor || 0), 0);
-    const pagada = pedidos.filter(p => p.estado === "entregado").reduce((s, p) => s + (p.comision_valor || 0), 0);
-    resumenEl.textContent = pedidos.length ? `Comisión por confirmar: ${COP(pendiente)} · ya liquidada: ${COP(pagada)}` : "";
-  }
+  const vendido = pedidos.filter(p => p.estado === "confirmado" || p.estado === "entregado").reduce((s, p) => s + (p.monto || 0), 0);
+  const comisionPendiente = pedidos.filter(p => p.estado === "pendiente" || p.estado === "confirmado").reduce((s, p) => s + (p.comision_valor || 0), 0);
+  const nPendientes = pedidos.filter(p => p.estado === "pendiente").length;
+  const statVendidoEl = $("#tda-stat-vendido"); if (statVendidoEl) statVendidoEl.textContent = COP(vendido);
+  const statPendEl = $("#tda-stat-pendientes"); if (statPendEl) statPendEl.textContent = nPendientes;
+  const statComEl = $("#tda-stat-comision"); if (statComEl) statComEl.textContent = COP(comisionPendiente);
 
   if (!pedidos.length) { list.innerHTML = `<p style="padding:8px 0">Aún no has recibido pedidos.</p>`; return; }
 
