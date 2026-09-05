@@ -1,0 +1,15 @@
+{
+  "name": "El Club de la Gente",
+  "short_name": "El Club",
+  "description": "Descuentos y beneficios exclusivos para miembros en Fusagasugá",
+  "start_url": "/Perfil.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F8F6F1",
+  "theme_color": "#008000",
+  "lang": "es-CO",
+  "icons": [
+    { "src": "icon-club.png", "sizes": "4500x4500", "type": "image/png", "purpose": "any" }
+  ]
+}
