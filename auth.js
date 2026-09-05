@@ -130,7 +130,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             await supabase.from("perfiles").insert({
               id: user.id, nombre, whatsapp: "", rol: "miembro", plan: "sin_plan",
             });
-            location.href = "Perfil.html";
+            location.href = "Perfil.html?bienvenida=1";
           }
         } catch (_) {
           location.href = "Perfil.html";
