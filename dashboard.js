@@ -966,7 +966,9 @@ function abrirCheckoutProducto(p) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ to: wa, body: msg }),
-      }).catch(() => {});
+      }).then(async (r) => {
+        if (!r.ok) console.error("whatsapp-send-3 (aviso al aliado) falló:", r.status, await r.text().catch(() => ""));
+      }).catch((e) => console.error("whatsapp-send-3 (aviso al aliado) error de red:", e));
     }
     abrirModalTienda("¡Pedido enviado!", `
       <div style="text-align:center;padding:8px 0">
