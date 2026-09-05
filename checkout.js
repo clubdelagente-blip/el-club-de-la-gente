@@ -115,14 +115,14 @@ async function abrirWompi(plan, card) {
     reference,
     publicKey: "pub_test_yuvhTaT4Bg2JmPbJuxpeuodluZUX7HyE",
     signature: { integrity },
-    redirectUrl: `https://clubdelagente-blip.github.io/el-club-de-la-gente/Perfil.html?activar=${plan}`,
+    redirectUrl: `https://clubdelagente-blip.github.io/el-club-de-la-gente/Perfil.html?activar=${plan}&nuevo=1`,
   });
 
   checkout.open((result) => {
     const tx = result.transaction;
     if (tx && tx.status === "APPROVED") {
       localStorage.setItem("ecdlg_plan", plan);
-      location.href = "Perfil.html?activar=" + plan;
+      location.href = "Perfil.html?activar=" + plan + "&nuevo=1";
     }
   });
 }
@@ -137,7 +137,7 @@ function wireTarjetas() {
       localStorage.setItem("ecdlg_plan", plan);
 
       if (PLANES_SIN_PAGO.includes(plan)) {
-        location.href = "Perfil.html?activar=" + plan;
+        location.href = "Perfil.html?activar=" + plan + "&nuevo=1";
         return;
       }
       abrirWompi(plan, card);
