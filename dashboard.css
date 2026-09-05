@@ -266,11 +266,13 @@
   .dash.menu-open .sidebar { transform: translateX(0); }
   .dash-backdrop { display: block; position: fixed; inset: 0; background: rgba(14,14,14,.4); z-index: 55; opacity: 0; pointer-events: none; transition: opacity .3s; }
   .dash.menu-open .dash-backdrop { opacity: 1; pointer-events: auto; }
-  .topbar__burger { display: grid; }
   .wa-banner { flex-direction: column; align-items: flex-start; }
 }
 .topbar__burger { display: none; width: 40px; height: 40px; border-radius: 9px; border: 1px solid var(--linea); background: var(--crema); place-items: center; cursor: pointer; }
 .topbar__burger i { width: 20px; height: 20px; }
+@media (max-width: 860px) {
+  .topbar__burger { display: grid; }
+}
 @media (max-width: 560px) {
   .dash-content { padding: 22px; }
   .stats { grid-template-columns: 1fr; }
