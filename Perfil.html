@@ -318,6 +318,14 @@
             <div style="text-align:center;padding:60px 20px;color:var(--tinta-suave);grid-column:1/-1">Cargando productos…</div>
           </div>
 
+          <div id="mis-pedidos-club-wrap" style="display:none;margin-top:36px">
+            <div class="dash-greet">
+              <h1 style="font-size:22px">Mis pedidos</h1>
+              <p>Estado de tus compras en la Tienda del Club.</p>
+            </div>
+            <div id="mis-pedidos-club-list"></div>
+          </div>
+
           <div id="tienda-aliados-wrap" style="display:none;margin-top:36px">
             <div class="dash-greet">
               <h1 style="font-size:22px">Tienda de nuestros aliados</h1>
@@ -1015,7 +1023,8 @@
   </style>
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <script type="module" src="dashboard.js?v=32"></script>
+  <script src="https://checkout.wompi.co/widget.js"></script>
+  <script type="module" src="dashboard.js?v=33"></script>
   <script src="agente.js"></script>
 
   <template id="__bundler_thumbnail">

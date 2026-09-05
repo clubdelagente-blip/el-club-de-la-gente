@@ -23,7 +23,7 @@ const PANELES = {
   planes:       { t: "Planes", s: "Precios y beneficios de cada membresía" },
   profesionales:{ t: "Profesionales", s: "Asesores jurídicos, psicológicos y contables" },
   marcas:       { t: "Marcas", s: "Logos y links de afiliado que aparecen en el carrusel" },
-  tienda:       { t: "Tienda", s: "Catálogo de productos con descuentos para miembros" },
+  tienda:       { t: "Tienda del Club", s: "Productos que vende el Club directamente, con envío gestionado" },
   contenido:    { t: "Contenido", s: "Imágenes, videos y publicaciones de la web" },
   programas:    { t: "Programas sociales", s: "Programas, fundaciones, eventos y voluntarios" },
   ventas:       { t: "Ventas", s: "Historial de transacciones y proyecciones" },
@@ -98,10 +98,11 @@ window.renderMarcas = renderMarcas;
 function renderTienda() {
   $("#p-tienda").innerHTML = `
     <div style="display:flex;gap:8px;margin-bottom:20px">
-      <button class="ad-link" data-tiendatab="amazon" style="width:auto;display:inline-flex" data-is-tab>Catálogo Amazon</button>
+      <button class="ad-link" data-tiendatab="club" style="width:auto;display:inline-flex" data-is-tab>Tienda del Club</button>
+      <button class="ad-link" data-tiendatab="pedidos" style="width:auto;display:inline-flex" data-is-tab>Pedidos</button>
       <button class="ad-link" data-tiendatab="aliados" style="width:auto;display:inline-flex" data-is-tab>Tiendas de aliados</button>
     </div>
-    <div id="tiendatab-amazon">
+    <div id="tiendatab-club">
       <div style="display:flex;gap:12px;margin-bottom:20px">
         <button class="ad-btn ad-btn--verde" id="cat-add">${ic("folder-plus")} Nueva categoría</button>
         <button class="ad-btn ad-btn--verde" id="prod-add">${ic("plus")} Agregar producto</button>
@@ -123,6 +124,19 @@ function renderTienda() {
             <tbody id="prods-body"><tr><td colspan="5" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
           </table>
         </div>
+      </div>
+    </div>
+    <div id="tiendatab-pedidos" style="display:none">
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap" id="pc-filtros">
+        ${[['todos','Todos'],['pagado','Pagados'],['pedido_proveedor','Pedidos al proveedor'],['en_transito','En tránsito'],['aduana','Aduana'],['entregado','Entregados'],['cancelado','Cancelados']].map(([val,lbl])=>
+          `<button class="ad-btn" data-pc-filtro="${val}" style="font-size:12px">${lbl}</button>`
+        ).join('')}
+      </div>
+      <div class="ad-table-wrap">
+        <table class="ad-table">
+          <thead><tr><th>Producto</th><th>Miembro</th><th>Envío</th><th>Monto</th><th>Estado</th><th style="text-align:right">Acción</th></tr></thead>
+          <tbody id="pc-body"><tr><td colspan="6" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+        </table>
       </div>
     </div>
     <div id="tiendatab-aliados" style="display:none">
@@ -149,8 +163,10 @@ function renderTienda() {
   window.cargarTiendaAdmin?.();
   $$("[data-tiendatab]").forEach(b => b.addEventListener("click", () => {
     const tab = b.dataset.tiendatab;
-    $("#tiendatab-amazon").style.display = tab === "amazon" ? "" : "none";
+    $("#tiendatab-club").style.display = tab === "club" ? "" : "none";
+    $("#tiendatab-pedidos").style.display = tab === "pedidos" ? "" : "none";
     $("#tiendatab-aliados").style.display = tab === "aliados" ? "" : "none";
+    if (tab === "pedidos") window.cargarPedidosClubAdmin?.();
     if (tab === "aliados") window.cargarTiendasAliados?.();
   }));
 }

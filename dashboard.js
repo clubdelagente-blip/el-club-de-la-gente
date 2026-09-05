@@ -787,19 +787,23 @@ async function cargarTienda() {
       const precioNormal = p.precio_normal != null ? COP(p.precio_normal) : '';
       const precioDesc   = p.precio_descuento != null ? COP(p.precio_descuento) : '';
       return `<div class="tienda-card">
-        ${p.imagen_url ? `<a href="${p.link_afiliado||'#'}" target="_blank" rel="noopener"><img src="${p.imagen_url}" class="tienda-card__img" alt="${p.nombre}"></a>` : `<div class="tienda-card__img tienda-card__img--ph"></div>`}
+        ${p.imagen_url ? `<img src="${p.imagen_url}" class="tienda-card__img" alt="${esc(p.nombre)}">` : `<div class="tienda-card__img tienda-card__img--ph"></div>`}
         <div class="tienda-card__body">
-          ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat">${p.categorias_productos.nombre}</span>` : ''}
-          <div class="tienda-card__nombre">${p.nombre}</div>
-          ${p.descripcion ? `<div class="tienda-card__desc">${p.descripcion}</div>` : ''}
+          ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat">${esc(p.categorias_productos.nombre)}</span>` : ''}
+          <div class="tienda-card__nombre">${esc(p.nombre)}</div>
+          ${p.descripcion ? `<div class="tienda-card__desc">${esc(p.descripcion)}</div>` : ''}
           <div class="tienda-card__precios">
             ${precioNormal ? `<span class="tienda-card__antes">${precioNormal}</span>` : ''}
             ${precioDesc ? `<span class="tienda-card__precio">${precioDesc}</span>` : ''}
           </div>
-          <a href="${p.link_afiliado||'#'}" target="_blank" rel="noopener" class="tienda-card__btn">Ver oferta →</a>
+          <button class="tienda-card__btn" data-comprar-club="${p.id}" style="border:none;cursor:pointer;width:100%;font:inherit">Comprar</button>
         </div>
       </div>`;
     }).join('');
+    grid.querySelectorAll('[data-comprar-club]').forEach(btn => btn.addEventListener('click', () => {
+      const p = prods.find(x => x.id === btn.dataset.comprarClub);
+      if (p) abrirCheckoutClub(p);
+    }));
   }
 
   if (cats && cats.length && catsEl) {
@@ -814,6 +818,91 @@ async function cargarTienda() {
   }
   renderGrid();
   cargarTiendaAliados();
+  cargarMisPedidosClub();
+}
+
+const ESTADO_PEDIDO_CLUB = {
+  pendiente_pago:   { c: "#6b7280", bg: "#f3f4f6", t: "Confirmando pago" },
+  pagado:           { c: "#b45309", bg: "#fef3c7", t: "Pagado · en cola para pedir" },
+  pedido_proveedor: { c: "#1d4ed8", bg: "#dbeafe", t: "Pedido al proveedor" },
+  en_transito:      { c: "#7c3aed", bg: "#ede9fe", t: "En tránsito" },
+  aduana:           { c: "#be185d", bg: "#fce7f3", t: "En aduana" },
+  entregado:        { c: "#1a7a3c", bg: "#e8f5ee", t: "Entregado" },
+  cancelado:        { c: "#c0392b", bg: "#fdecea", t: "Cancelado" },
+};
+
+/* ---------- Tienda del Club (checkout con Wompi + seguimiento de pedido) ---------- */
+function abrirCheckoutClub(p) {
+  const precio = p.precio_descuento ?? p.precio_normal ?? 0;
+  abrirModalTienda(`Comprar: ${esc(p.nombre)}`, `
+    <p style="font-size:14px;margin-bottom:16px">Vas a pagar <b>${COP(precio)}</b>. El Club se encarga de pedirlo al proveedor y hacerte llegar el envío — verás el estado en "Mis pedidos".</p>
+    <div class="cfg-campo"><label class="cfg-label">Nombre de quien recibe</label><input class="cfg-input" id="pcc-nombre" type="text"></div>
+    <div class="cfg-campo"><label class="cfg-label">Dirección</label><input class="cfg-input" id="pcc-direccion" type="text"></div>
+    <div class="cfg-campo"><label class="cfg-label">Barrio (opcional)</label><input class="cfg-input" id="pcc-barrio" type="text"></div>
+    <div class="cfg-campo"><label class="cfg-label">Teléfono de contacto</label><input class="cfg-input" id="pcc-telefono" type="tel"></div>
+    <button class="btn btn--primario" id="pcc-pagar" style="margin-top:8px;width:100%">Pagar ${COP(precio)} con Wompi</button>
+  `);
+  $("#pcc-pagar")?.addEventListener("click", async () => {
+    const btn = $("#pcc-pagar");
+    const nombre = $("#pcc-nombre")?.value.trim();
+    const direccion = $("#pcc-direccion")?.value.trim();
+    const barrio = $("#pcc-barrio")?.value.trim();
+    const telefono = $("#pcc-telefono")?.value.trim();
+    if (!nombre || !direccion || !telefono) { toast("Completa nombre, dirección y teléfono"); return; }
+    if (!precio) { toast("Este producto no tiene un precio válido"); return; }
+    if (!window.WidgetCheckout) { toast("No se pudo cargar la pasarela de pago, recarga la página"); return; }
+    btn.disabled = true; btn.textContent = "Un momento…";
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const miembroId = session?.user?.id;
+    if (!miembroId) { toast("Debes iniciar sesión"); btn.disabled = false; return; }
+
+    const { data: pedido, error } = await supabase.from("pedidos_club").insert({
+      producto_id: p.id, miembro_id: miembroId, nombre_producto: p.nombre, monto: precio,
+      envio_nombre: nombre, envio_direccion: direccion, envio_barrio: barrio || null, envio_telefono: telefono,
+      estado: "pendiente_pago",
+    }).select().single();
+    if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Pagar " + COP(precio) + " con Wompi"; return; }
+
+    const amountInCents = precio * 100;
+    const reference = `ECDLGTIENDA-${pedido.id}-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+    const currency = "COP";
+    const cadena = `${reference}${amountInCents}${currency}test_integrity_aTSPYcCp7kbu6kNCp8q9Q7TEmXPXceoh`;
+    const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(cadena));
+    const integrity = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+
+    const checkout = new window.WidgetCheckout({
+      currency, amountInCents, reference,
+      publicKey: "pub_test_yuvhTaT4Bg2JmPbJuxpeuodluZUX7HyE",
+      signature: { integrity },
+      redirectUrl: "https://elclubdelagente.com/Perfil.html",
+    });
+    cerrarModalTienda();
+    checkout.open(() => {
+      toast("Confirmando tu pago… en unos segundos verás el pedido en \"Mis pedidos\"");
+      setTimeout(cargarMisPedidosClub, 4000);
+    });
+  });
+}
+
+async function cargarMisPedidosClub() {
+  const wrap = document.getElementById("mis-pedidos-club-wrap");
+  const list = document.getElementById("mis-pedidos-club-list");
+  if (!wrap || !list) return;
+  const { data } = await supabase.from("pedidos_club").select("*").order("created_at", { ascending: false });
+  const pedidos = data || [];
+  if (!pedidos.length) { wrap.style.display = "none"; return; }
+  wrap.style.display = "";
+  list.innerHTML = pedidos.map(p => {
+    const est = ESTADO_PEDIDO_CLUB[p.estado] || ESTADO_PEDIDO_CLUB.pendiente_pago;
+    return `<div style="padding:14px 0;border-bottom:1px solid #ebebeb;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px">
+        <div style="font-weight:600;font-size:14px">${esc(p.nombre_producto)} — ${COP(p.monto)}</div>
+        ${p.numero_guia ? `<div style="font-size:12px;color:#777">Guía: ${esc(p.numero_guia)}</div>` : ""}
+      </div>
+      <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};white-space:nowrap">${est.t}</span>
+    </div>`;
+  }).join("");
 }
 
 /* ---------- Tienda de aliados (vitrina + checkout) ---------- */

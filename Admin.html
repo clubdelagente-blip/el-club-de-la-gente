@@ -191,7 +191,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=4"></script>
-  <script src="admin.js?v=14"></script>
+  <script src="admin.js?v=15"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -1977,6 +1977,69 @@ document.addEventListener('DOMContentLoaded',async()=>{
   }
   window.cargarTiendasAliados=cargarTiendasAliados;
 
+  /* ---- TIENDA DEL CLUB: pedidos (dropshipping, fulfillment manual) ---- */
+  let _pedidosClub=[], _pcFiltro='todos';
+  const ESTADO_PEDIDO_CLUB={
+    pendiente_pago:{c:'#94a3b8',t:'Pendiente de pago'},
+    pagado:{c:'#fbbf24',t:'Pagado'},
+    pedido_proveedor:{c:'#60a5fa',t:'Pedido al proveedor'},
+    en_transito:{c:'#a78bfa',t:'En tránsito'},
+    aduana:{c:'#f472b6',t:'Aduana'},
+    entregado:{c:'#6fdc8c',t:'Entregado'},
+    cancelado:{c:'#f87171',t:'Cancelado'},
+  };
+  async function cargarPedidosClubAdmin(){
+    const{data}=await supabase.from('pedidos_club').select('*,perfiles(nombre,whatsapp)').order('created_at',{ascending:false});
+    _pedidosClub=data||[];
+    renderPedidosClubUI();
+  }
+  function renderPedidosClubUI(){
+    const body=$('#pc-body');if(!body)return;
+    const lista=_pcFiltro==='todos'?_pedidosClub:_pedidosClub.filter(p=>p.estado===_pcFiltro);
+    body.innerHTML=!lista.length
+      ?`<tr><td colspan="6" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">No hay pedidos en este estado</td></tr>`
+      :lista.map(p=>{
+        const est=ESTADO_PEDIDO_CLUB[p.estado]||ESTADO_PEDIDO_CLUB.pendiente_pago;
+        return `<tr>
+          <td>${esc(p.nombre_producto)}</td>
+          <td style="font-size:12px">${esc(p.perfiles?.nombre)||'—'}${p.perfiles?.whatsapp?` · <a href="https://wa.me/57${esc(p.perfiles.whatsapp.replace(/\D/g,''))}" target="_blank" style="color:#6fdc8c">WhatsApp</a>`:''}</td>
+          <td style="font-size:12px">${esc(p.envio_nombre)} · ${esc(p.envio_direccion)}${p.envio_barrio?', '+esc(p.envio_barrio):''}${p.envio_telefono?' · '+esc(p.envio_telefono):''}</td>
+          <td><span class="ad-num-strong">${COP(p.monto)}</span></td>
+          <td><span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.c}22;color:${est.c};white-space:nowrap">${est.t}</span>${p.numero_guia?`<div style="font-size:11px;color:rgba(242,240,234,.4);margin-top:4px">Guía: ${esc(p.numero_guia)}</div>`:''}</td>
+          <td style="text-align:right"><div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">
+            ${p.estado==='pagado'?`<button class="ad-btn ad-btn--verde" data-pc-avanzar="${p.id}" data-siguiente="pedido_proveedor">Pedir al proveedor</button>`:''}
+            ${p.estado==='pedido_proveedor'?`<button class="ad-btn" data-pc-guia="${p.id}">${ic('truck')} Guía</button><button class="ad-btn ad-btn--verde" data-pc-avanzar="${p.id}" data-siguiente="en_transito">En tránsito</button>`:''}
+            ${p.estado==='en_transito'?`<button class="ad-btn ad-btn--verde" data-pc-avanzar="${p.id}" data-siguiente="aduana">Aduana</button>`:''}
+            ${p.estado==='aduana'?`<button class="ad-btn ad-btn--verde" data-pc-avanzar="${p.id}" data-siguiente="entregado">Entregado</button>`:''}
+            ${!['entregado','cancelado','pendiente_pago'].includes(p.estado)?`<button class="ad-btn" data-pc-cancelar="${p.id}">Cancelar</button>`:''}
+          </div></td>
+        </tr>`;
+      }).join('');
+    document.querySelectorAll('[data-pc-filtro]').forEach(b=>b.classList.toggle('ad-btn--verde',b.dataset.pcFiltro===_pcFiltro));
+    if(window.lucide)lucide.createIcons();
+    document.querySelectorAll('[data-pc-filtro]').forEach(b=>b.addEventListener('click',()=>{_pcFiltro=b.dataset.pcFiltro;renderPedidosClubUI();}));
+    document.querySelectorAll('[data-pc-avanzar]').forEach(b=>b.addEventListener('click',async()=>{
+      const{error}=await supabase.from('pedidos_club').update({estado:b.dataset.siguiente}).eq('id',b.dataset.pcAvanzar);
+      if(error){toast('Error: '+error.message);return;}
+      cargarPedidosClubAdmin();
+    }));
+    document.querySelectorAll('[data-pc-cancelar]').forEach(b=>b.addEventListener('click',async()=>{
+      if(!confirm('¿Cancelar este pedido?'))return;
+      const{error}=await supabase.from('pedidos_club').update({estado:'cancelado'}).eq('id',b.dataset.pcCancelar);
+      if(error){toast('Error: '+error.message);return;}
+      cargarPedidosClubAdmin();
+    }));
+    document.querySelectorAll('[data-pc-guia]').forEach(b=>b.addEventListener('click',()=>{
+      const guia=prompt('Número de guía / tracking:');
+      if(guia===null)return;
+      supabase.from('pedidos_club').update({numero_guia:guia}).eq('id',b.dataset.pcGuia).then(({error})=>{
+        if(error){toast('Error: '+error.message);return;}
+        cargarPedidosClubAdmin();
+      });
+    }));
+  }
+  window.cargarPedidosClubAdmin=cargarPedidosClubAdmin;
+
   const ESTADO_PEDIDO_ADMIN={
     pendiente:{c:'#fbbf24',t:'Pendiente'},
     confirmado:{c:'#6fdc8c',t:'Confirmado'},
@@ -2043,7 +2106,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
         <div class="ad-field"><label>Precio normal (COP)</label><input id="fp-precio" type="text" inputmode="numeric" value="${p.precio_normal?Number(p.precio_normal).toLocaleString('es-CO'):''}" placeholder="Ej: 150.000"></div>
         <div class="ad-field"><label>Precio miembro (COP)</label><input id="fp-descuento" type="text" inputmode="numeric" value="${p.precio_descuento?Number(p.precio_descuento).toLocaleString('es-CO'):''}" placeholder="Ej: 120.000"></div>
       </div>
-      <div class="ad-field"><label>Link afiliado *</label><input id="fp-link" type="url" value="${(p.link_afiliado||'').replace(/"/g,'&quot;')}" placeholder="https://amzn.to/..."></div>
+      <div class="ad-field"><label>Costo del proveedor (COP) <span style="font-weight:400;opacity:.5">— opcional, solo para tu margen, no se le muestra al miembro</span></label><input id="fp-costo" type="text" inputmode="numeric" value="${p.costo_proveedor?Number(p.costo_proveedor).toLocaleString('es-CO'):''}" placeholder="Ej: 60.000"></div>
       <div class="ad-field"><label>Imagen del producto</label>
         ${p.imagen_url ? `<img src="${p.imagen_url}" style="height:60px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block">` : ''}
         <input id="fp-img" type="file" accept="image/*">
@@ -2060,9 +2123,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
       $('#fp-cancel')?.addEventListener('click', () => $('#ad-modal-ov').classList.remove('is-open'));
       formatearInputMoneda($('#fp-precio'));
       formatearInputMoneda($('#fp-descuento'));
+      formatearInputMoneda($('#fp-costo'));
       $('#fp-save')?.addEventListener('click', async () => {
         const nombre = $('#fp-nombre')?.value.trim(); if (!nombre) { toast('El nombre es obligatorio'); return; }
-        const link = $('#fp-link')?.value.trim(); if (!link) { toast('El link de afiliado es obligatorio'); return; }
         const btn = $('#fp-save'); btn.disabled = true; btn.textContent = 'Guardando…';
         let imagen_url = $('#fp-img-url')?.value || null;
         const file = $('#fp-img')?.files[0];
@@ -2072,7 +2135,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
           categoria_id: $('#fp-cat')?.value || null,
           precio_normal: valorMoneda($('#fp-precio'))||null,
           precio_descuento: valorMoneda($('#fp-descuento'))||null,
-          link_afiliado: link, imagen_url,
+          costo_proveedor: valorMoneda($('#fp-costo'))||null,
+          imagen_url,
           orden: parseInt($('#fp-orden')?.value||0), activo: true
         };
         const id = btn.dataset.id;

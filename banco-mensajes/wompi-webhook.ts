@@ -45,6 +45,40 @@ Deno.serve(async (req: Request) => {
   }
 
   const parts = (tx.reference || "").split("-");
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+  // Compra en la Tienda del Club (dropshipping) — referencia: ECDLGTIENDA-<pedidoId>-...
+  if (parts[0] === "ECDLGTIENDA") {
+    if (parts.length < 6) return new Response("OK", { status: 200, headers: corsHeaders });
+    const pedidoId = parts.slice(1, 6).join("-");
+
+    const { data: pedido, error: pedidoErr } = await supabase
+      .from("pedidos_club").select("id, monto, estado").eq("id", pedidoId).maybeSingle();
+    if (pedidoErr || !pedido) {
+      console.error("Pedido de tienda no encontrado:", pedidoId, pedidoErr);
+      return new Response("OK", { status: 200, headers: corsHeaders });
+    }
+    if (pedido.estado !== "pendiente_pago") {
+      return new Response("OK", { status: 200, headers: corsHeaders }); // ya procesado
+    }
+    if (Math.round(tx.amount_in_cents / 100) !== pedido.monto) {
+      console.error("Monto no coincide para pedido de tienda:", pedidoId, tx.amount_in_cents, pedido.monto);
+      return new Response("OK", { status: 200, headers: corsHeaders });
+    }
+
+    const { error } = await supabase
+      .from("pedidos_club")
+      .update({ estado: "pagado", referencia_pago: tx.reference })
+      .eq("id", pedidoId).eq("estado", "pendiente_pago");
+    if (error) {
+      console.error("Error marcando pedido de tienda como pagado:", error);
+      return new Response("Error", { status: 500, headers: corsHeaders });
+    }
+    console.log(`Pedido de Tienda del Club ${pedidoId} marcado como pagado`);
+    return new Response("OK", { status: 200, headers: corsHeaders });
+  }
+
+  // Pago de membresía — referencia: ECDLG-<miembroId>-...
   if (parts.length < 3 || parts[0] !== "ECDLG") {
     return new Response("OK", { status: 200, headers: corsHeaders });
   }
@@ -54,8 +88,6 @@ Deno.serve(async (req: Request) => {
   const monto = tx.amount_in_cents;
   let plan = "basica";
   if (monto >= 2000000) plan = "premium";
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
   const fechaVencimiento = new Date();
   fechaVencimiento.setMonth(fechaVencimiento.getMonth() + 1);
