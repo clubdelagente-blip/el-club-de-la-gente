@@ -2107,10 +2107,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
         <div class="ad-field"><label>Precio miembro (COP)</label><input id="fp-descuento" type="text" inputmode="numeric" value="${p.precio_descuento?Number(p.precio_descuento).toLocaleString('es-CO'):''}" placeholder="Ej: 120.000"></div>
       </div>
       <div class="ad-field"><label>Costo del proveedor (COP) <span style="font-weight:400;opacity:.5">— opcional, solo para tu margen, no se le muestra al miembro</span></label><input id="fp-costo" type="text" inputmode="numeric" value="${p.costo_proveedor?Number(p.costo_proveedor).toLocaleString('es-CO'):''}" placeholder="Ej: 60.000"></div>
-      <div class="ad-field"><label>Fotos del producto <span style="font-weight:400;opacity:.5">— puedes elegir varias, la primera es la foto principal</span></label>
-        ${(p.imagenes && p.imagenes.length) ? `<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">${p.imagenes.map(u=>`<img src="${u}" style="height:60px;width:60px;object-fit:cover;border-radius:8px">`).join('')}</div>` : (p.imagen_url ? `<img src="${p.imagen_url}" style="height:60px;width:60px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:block">` : '')}
-        <input id="fp-img" type="file" accept="image/*" multiple>
-        <span style="font-size:11px;opacity:.5;display:block;margin-top:4px">${p.id ? 'Si eliges fotos nuevas, reemplazan a las actuales.' : ''}</span>
+      <div class="ad-field"><label>Fotos del producto <span style="font-weight:400;opacity:.5">— hasta 5, la primera es la foto principal</span></label>
+        <div id="fp-img-grid" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px"></div>
+        <input id="fp-img-input" type="file" accept="image/*" style="display:none">
       </div>
       <div class="ad-field"><label>Orden</label><input id="fp-orden" type="number" value="${p.orden||0}" min="0" style="width:100px"></div>
       <div class="ad-toolbar" style="margin:16px 0 0"><div class="ad-spacer"></div>
@@ -2124,15 +2123,35 @@ document.addEventListener('DOMContentLoaded',async()=>{
       formatearInputMoneda($('#fp-precio'));
       formatearInputMoneda($('#fp-descuento'));
       formatearInputMoneda($('#fp-costo'));
+
+      let imagenes = p.imagenes || (p.imagen_url ? [p.imagen_url] : []);
+      function renderImgGrid() {
+        const cont = $('#fp-img-grid');
+        if (!cont) return;
+        cont.innerHTML = imagenes.map((url, i) => `
+          <div style="position:relative;width:64px;height:64px">
+            <img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
+            <button type="button" data-rm-img="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer">×</button>
+          </div>`).join('') + (imagenes.length < 5 ? `
+          <button type="button" id="fp-img-add" style="width:64px;height:64px;border:2px dashed rgba(242,240,234,.25);border-radius:8px;background:none;cursor:pointer;font-size:24px;color:rgba(242,240,234,.4);line-height:1">+</button>` : '');
+        $('#fp-img-add')?.addEventListener('click', () => $('#fp-img-input')?.click());
+        cont.querySelectorAll('[data-rm-img]').forEach(b => b.addEventListener('click', () => {
+          imagenes.splice(+b.dataset.rmImg, 1);
+          renderImgGrid();
+        }));
+      }
+      renderImgGrid();
+      $('#fp-img-input')?.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+        try { imagenes.push(await subirImagen(file)); renderImgGrid(); }
+        catch (_) { toast('Error subiendo la foto'); }
+      });
+
       $('#fp-save')?.addEventListener('click', async () => {
         const nombre = $('#fp-nombre')?.value.trim(); if (!nombre) { toast('El nombre es obligatorio'); return; }
         const btn = $('#fp-save'); btn.disabled = true; btn.textContent = 'Guardando…';
-        let imagenes = p.imagenes || (p.imagen_url ? [p.imagen_url] : []);
-        const files = [...($('#fp-img')?.files || [])];
-        if (files.length) {
-          try { imagenes = await Promise.all(files.map(f => subirImagen(f))); }
-          catch (_) { toast('Error subiendo las fotos'); btn.disabled = false; return; }
-        }
         const payload = {
           nombre, descripcion: $('#fp-desc')?.value.trim()||null,
           categoria_id: $('#fp-cat')?.value || null,

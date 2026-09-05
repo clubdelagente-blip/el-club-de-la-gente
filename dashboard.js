@@ -538,32 +538,49 @@ async function abrirFormProducto(p = {}) {
     </div>
     <div class="cfg-campo"><label class="cfg-label">WhatsApp para atender pedidos</label><input class="cfg-input" id="pa-wa" type="tel" value="${p.whatsapp || ""}" placeholder="300 000 0000"></div>
     <div class="cfg-campo"><label class="cfg-label">Promoción válida hasta (opcional)</label><input class="cfg-input" id="pa-fecha" type="date" value="${p.fecha_fin || ""}"></div>
-    <div class="cfg-campo"><label class="cfg-label">Fotos del producto <span style="font-weight:400;opacity:.6">(puedes elegir varias, la primera es la principal)</span></label>
-      ${(p.imagenes && p.imagenes.length) ? `<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">${p.imagenes.map(u => `<img src="${u}" style="height:60px;width:60px;object-fit:cover;border-radius:8px">`).join("")}</div>` : (p.imagen_url ? `<img src="${p.imagen_url}" style="height:60px;width:60px;object-fit:cover;border-radius:8px;display:block;margin-bottom:8px">` : "")}
-      <input type="file" id="pa-img" accept="image/*" multiple>
-      ${p.id ? `<span style="font-size:11px;opacity:.6;display:block;margin-top:4px">Si eliges fotos nuevas, reemplazan a las actuales.</span>` : ""}
+    <div class="cfg-campo"><label class="cfg-label">Fotos del producto <span style="font-weight:400;opacity:.6">(hasta 5, la primera es la principal)</span></label>
+      <div id="pa-img-grid" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px"></div>
+      <input type="file" id="pa-img-input" accept="image/*" style="display:none">
     </div>
     <button class="btn btn--primario" id="pa-save" data-id="${p.id || ""}" style="margin-top:8px">${p.id ? "Guardar cambios" : "Agregar producto"} <i data-lucide="check" style="width:15px;height:15px"></i></button>
   `);
   formatearInputMoneda($("#pa-precio"));
   formatearInputMoneda($("#pa-descuento"));
+
+  let imagenes = p.imagenes || (p.imagen_url ? [p.imagen_url] : []);
+  function renderImgGrid() {
+    const cont = $("#pa-img-grid");
+    if (!cont) return;
+    cont.innerHTML = imagenes.map((url, i) => `
+      <div style="position:relative;width:64px;height:64px">
+        <img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
+        <button type="button" data-rm-img="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer">×</button>
+      </div>`).join("") + (imagenes.length < 5 ? `
+      <button type="button" id="pa-img-add" style="width:64px;height:64px;border:2px dashed #ccc;border-radius:8px;background:none;cursor:pointer;font-size:24px;color:#999;line-height:1">+</button>` : "");
+    $("#pa-img-add")?.addEventListener("click", () => $("#pa-img-input")?.click());
+    cont.querySelectorAll("[data-rm-img]").forEach(b => b.addEventListener("click", () => {
+      imagenes.splice(+b.dataset.rmImg, 1);
+      renderImgGrid();
+    }));
+  }
+  renderImgGrid();
+  $("#pa-img-input")?.addEventListener("change", async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const ext = file.name.split(".").pop();
+    const path = `producto-${_tiendaAliadoId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+    if (upErr) { toast("Error subiendo la foto"); return; }
+    imagenes.push(supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl);
+    renderImgGrid();
+  });
+
   $("#pa-save")?.addEventListener("click", async () => {
     const btn = $("#pa-save");
     const nombre = $("#pa-nombre")?.value.trim();
     if (!nombre) { toast("El nombre es obligatorio"); return; }
     btn.disabled = true; btn.textContent = "Guardando…";
-    let imagenes = p.imagenes || (p.imagen_url ? [p.imagen_url] : []);
-    const files = [...($("#pa-img")?.files || [])];
-    if (files.length) {
-      const subidas = [];
-      for (const file of files) {
-        const ext = file.name.split(".").pop();
-        const path = `producto-${_tiendaAliadoId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
-        if (!upErr) subidas.push(supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl);
-      }
-      if (subidas.length) imagenes = subidas;
-    }
     const id = btn.dataset.id;
     const payload = {
       aliado_id: _tiendaAliadoId,
