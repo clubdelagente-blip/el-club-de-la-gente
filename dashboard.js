@@ -1260,7 +1260,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("bienvenida-cerrar")?.addEventListener("click", () => cerrarModalTienda());
     }
 
-    const { data: perfData } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol, fecha_vencimiento").eq("id", userId).maybeSingle();
+    const { data: perfData } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol, fecha_vencimiento, categorias_interes").eq("id", userId).maybeSingle();
     const plan = perfData?.plan || null;
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
     if (plan) { localStorage.setItem("ecdlg_plan", plan); const sbPlanEl = document.getElementById("sb-plan-name"); if (sbPlanEl) sbPlanEl.textContent = PLAN_LABEL[plan] || plan; }
@@ -1281,6 +1281,15 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       if (sbRenuevaEl) sbRenuevaEl.textContent = "Sin membresía activa";
       if (ccRenuevaEl) ccRenuevaEl.textContent = "—";
+    }
+
+    // Categorías de interés reales (nada de datos de ejemplo)
+    const catsEl = document.getElementById("perfil-cats");
+    if (catsEl) {
+      const cats = perfData?.categorias_interes || [];
+      catsEl.innerHTML = cats.length
+        ? cats.map(c => `<span class="chip-int">${esc(c)}</span>`).join("")
+        : `<span style="font-size:12.5px;color:var(--tinta-suave, #888)">Aún no elegiste categorías — dale a "Actualizar" para escogerlas.</span>`;
     }
 
     // Segmentación del miembro nuevo: solo preguntamos lo que no sepamos ya
