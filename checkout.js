@@ -127,7 +127,9 @@ async function abrirWompi(plan, card) {
 
   checkout.open((result) => {
     const tx = result.transaction;
-    if (tx && tx.status === "APPROVED") {
+    // El widget a veces cierra en "PENDING" y la aprobación real llega
+    // un momento después por el webhook -- igual mandamos al perfil.
+    if (tx && (tx.status === "APPROVED" || tx.status === "PENDING")) {
       localStorage.setItem("ecdlg_plan", plan);
       location.href = "Perfil.html?activar=" + plan + "&nuevo=1";
     }
