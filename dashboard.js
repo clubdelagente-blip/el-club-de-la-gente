@@ -145,17 +145,33 @@ window.irPanel = irPanel;
    ============================================================ */
 let segBlock = 0;
 let SEG_TOTAL = 1; // se recalcula tras cargar las preguntas dinámicas (1 = solo el bloque fijo de identidad)
-let _preguntasSeg = []; // preguntas activas traídas de Supabase, ya agrupadas en bloques
-let _bloquesSeg = [];   // [{ titulo, preguntas: [...] }]
-let _catBlockIndex = 1; // índice del bloque que contiene la pregunta "categorías" (para el botón Actualizar)
-let _respuestasSegPrevias = {}; // respuestas ya guardadas del miembro, para no perderlas al reabrir solo un bloque
+let _preguntasSeg = []; // preguntas activas traídas de Supabase, una por página
+let _catBlockIndex = 1; // índice de la página que contiene la pregunta "categorías" (para el botón Actualizar)
+let _respuestasSegPrevias = {}; // respuestas ya guardadas del miembro, para no perderlas al reabrir en una página puntual
+
+// Una pregunta oculta (condicional que no se activó) no cuenta como página
+// real — se salta al avanzar/retroceder para no dejarle una pantalla vacía.
+function segSiguienteVisible(desde, dir) {
+  const bloques = $$(".seg-block");
+  let i = desde + dir;
+  while (i >= 0 && i < bloques.length) {
+    const q = bloques[i].querySelector(".seg-q");
+    if (!q || !q.hidden) return i;
+    i += dir;
+  }
+  return null;
+}
 
 function segMostrar(i) {
   segBlock = Math.max(0, Math.min(SEG_TOTAL - 1, i));
-  $$(".seg-block").forEach((b, k) => b.classList.toggle("is-active", k === segBlock));
-  $("#seg-bar").style.width = ((segBlock + 1) / SEG_TOTAL * 100) + "%";
+  const bloques = $$(".seg-block");
+  bloques.forEach((b, k) => b.classList.toggle("is-active", k === segBlock));
+  const visibles = bloques.filter(b => { const q = b.querySelector(".seg-q"); return !q || !q.hidden; });
+  const idxVisible = Math.max(0, visibles.indexOf(bloques[segBlock]));
+  $("#seg-bar").style.width = ((idxVisible + 1) / visibles.length * 100) + "%";
   $("#seg-prev").style.visibility = segBlock === 0 ? "hidden" : "visible";
-  $("#seg-next").textContent = segBlock === SEG_TOTAL - 1 ? "Finalizar" : "Continuar";
+  const esUltima = segSiguienteVisible(segBlock, 1) === null;
+  $("#seg-next").innerHTML = (esUltima ? "Finalizar" : "Siguiente") + ' <span class="ar">&rarr;</span>';
   $(".seg-overlay").scrollTo({ top: 0, behavior: "smooth" });
 }
 function abrirSeg(i = 0) {
@@ -170,9 +186,10 @@ function cerrarSeg() {
   localStorage.setItem("ecdlg_segmentado", "1");
 }
 
-// Trae las preguntas activas desde Admin → "Formulario de bienvenida" y arma los
-// bloques dinámicos dentro de #seg-dinamico. Idempotente: si ya se cargaron antes
-// en esta sesión (ej. al reabrir con "Actualizar"), no vuelve a pedirlas.
+// Trae las preguntas activas desde Admin → "Formulario de bienvenida" y arma
+// una página por pregunta dentro de #seg-dinamico (una sola pregunta a la vez,
+// para que no sea largo de responder). Idempotente: si ya se cargaron antes en
+// esta sesión (ej. al reabrir con "Actualizar"), no vuelve a pedirlas.
 async function cargarPreguntasSegmentacion() {
   const cont = $("#seg-dinamico");
   if (!cont) return;
@@ -180,27 +197,22 @@ async function cargarPreguntasSegmentacion() {
     const { data } = await supabase.from("preguntas_segmentacion").select("*").eq("activa", true).order("orden");
     _preguntasSeg = data || [];
   }
-  _bloquesSeg = [];
-  _preguntasSeg.forEach(p => {
-    let bloque = _bloquesSeg[_bloquesSeg.length - 1];
-    if (!bloque || bloque.titulo !== p.bloque) { bloque = { titulo: p.bloque, preguntas: [] }; _bloquesSeg.push(bloque); }
-    bloque.preguntas.push(p);
-  });
-  _catBlockIndex = 1 + Math.max(0, _bloquesSeg.findIndex(b => b.preguntas.some(p => p.guardar_como_categorias)));
+  _catBlockIndex = 1 + Math.max(0, _preguntasSeg.findIndex(p => p.guardar_como_categorias));
 
-  cont.innerHTML = _bloquesSeg.map((b, i) => `
+  cont.innerHTML = _preguntasSeg.map(p => {
+    return `
     <div class="seg-block">
-      <div class="seg-block__title">${String(i + 2).padStart(2, "0")} — ${esc(b.titulo)}</div>
-      ${b.preguntas.map(p => `
-        <div class="seg-q" data-pregunta-id="${p.id}" ${p.tipo === "multiple" ? 'data-multi="1"' : ""} ${p.obligatoria ? 'data-obligatoria="1"' : ""} ${p.guardar_como_categorias ? 'data-categorias="1"' : ""} ${p.pregunta_padre_id ? `data-padre-id="${p.pregunta_padre_id}" data-mostrar-si="${esc(p.mostrar_si_respuesta || "")}" hidden` : ""}>
-          <div class="seg-q__label">${esc(p.pregunta)}${p.obligatoria ? ' <span class="seg-q__hint">obligatoria</span>' : ""}${p.ayuda ? ` <span class="seg-q__hint">${esc(p.ayuda)}</span>` : ""}</div>
-          ${p.tipo === "texto"
-            ? `<input type="text" class="seg-input">`
-            : `<div class="seg-opts">${(p.opciones || []).map(o => `<button type="button" class="seg-opt">${esc(o)}</button>`).join("")}</div>`}
-        </div>`).join("")}
-    </div>`).join("");
+      <div class="seg-block__title">${esc(p.bloque)}</div>
+      <div class="seg-q" data-pregunta-id="${p.id}" ${p.tipo === "multiple" ? 'data-multi="1"' : ""} ${p.obligatoria ? 'data-obligatoria="1"' : ""} ${p.guardar_como_categorias ? 'data-categorias="1"' : ""} ${p.pregunta_padre_id ? `data-padre-id="${p.pregunta_padre_id}" data-mostrar-si="${esc(p.mostrar_si_respuesta || "")}" hidden` : ""}>
+        <div class="seg-q__label">${esc(p.pregunta)}${p.obligatoria ? ' <span class="seg-q__hint">obligatoria</span>' : ""}${p.ayuda ? ` <span class="seg-q__hint">${esc(p.ayuda)}</span>` : ""}</div>
+        ${p.tipo === "texto"
+          ? `<input type="text" class="seg-input">`
+          : `<div class="seg-opts">${(p.opciones || []).map(o => `<button type="button" class="seg-opt">${esc(o)}</button>`).join("")}</div>`}
+      </div>
+    </div>`;
+  }).join("");
 
-  SEG_TOTAL = 1 + _bloquesSeg.length;
+  SEG_TOTAL = 1 + _preguntasSeg.length;
 
   // Los botones de opción y la lógica de único/múltiple viven en el mismo
   // documento; se enlazan cada vez que se regenera el HTML dinámico.
@@ -1495,7 +1507,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (segBlock === SEG_TOTAL - 1) {
+    if (segSiguienteVisible(segBlock, 1) === null) {
       const nombre = $("#seg-nombre")?.value.trim();
       const apellido = $("#seg-apellido")?.value.trim();
       const fecha = $("#seg-fecha")?.value;
@@ -1545,10 +1557,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       cerrarSeg();
     } else {
-      segMostrar(segBlock + 1);
+      segMostrar(segSiguienteVisible(segBlock, 1));
     }
   });
-  $("#seg-prev").addEventListener("click", () => segMostrar(segBlock - 1));
+  $("#seg-prev").addEventListener("click", () => segMostrar(segSiguienteVisible(segBlock, -1) ?? 0));
   $("#seg-skip").addEventListener("click", cerrarSeg);
 
   // Modal de activación
