@@ -796,66 +796,11 @@
           <div class="seg-q__label">Tu WhatsApp <span class="seg-q__hint">para enviarte tu resumen mensual de ahorros</span></div>
           <input type="tel" class="seg-input" id="seg-whatsapp" placeholder="300 000 0000">
         </div>
-        <div class="seg-q">
-          <div class="seg-q__label">¿Cuál es tu género?</div>
-          <div class="seg-opts"><button class="seg-opt">Hombre</button><button class="seg-opt">Mujer</button><button class="seg-opt">Prefiero no decirlo</button></div>
-        </div>
-        <div class="seg-q">
-          <div class="seg-q__label">¿Cuál es tu ocupación principal?</div>
-          <div class="seg-opts"><button class="seg-opt">Empleado/a</button><button class="seg-opt">Independiente</button><button class="seg-opt">Emprendedor/a</button><button class="seg-opt">Estudiante</button><button class="seg-opt">Ama/o de casa</button><button class="seg-opt">Pensionado/a</button><button class="seg-opt">Otro</button></div>
-        </div>
-        <div class="seg-q">
-          <div class="seg-q__label">¿En qué barrio o zona de Fusagasugá vives? <span class="seg-q__hint">nos ayuda a mostrarte los aliados más cercanos</span></div>
-          <input type="text" class="seg-input" placeholder="Ej: Centro, Emilio Sierra, Pekín…">
-        </div>
       </div>
 
-      <!-- BLOQUE 2 -->
-      <div class="seg-block">
-        <div class="seg-block__title">02 — ¿Qué te interesa del Club?</div>
-        <div class="seg-q" data-multi="1">
-          <div class="seg-q__label">¿Por qué decidiste unirte? <span class="seg-q__hint">elige las que quieras</span></div>
-          <div class="seg-opts"><button class="seg-opt">Ahorrar en el día a día</button><button class="seg-opt">Educación financiera</button><button class="seg-opt">Apoyar programas sociales</button><button class="seg-opt">Me llamaron la atención los aliados</button><button class="seg-opt">Me lo recomendaron</button></div>
-        </div>
-        <div class="seg-q" data-multi="1">
-          <div class="seg-q__label">¿Qué categorías usarías más seguido?</div>
-          <div class="seg-opts"><button class="seg-opt">Bienestar y salud</button><button class="seg-opt">Odontología</button><button class="seg-opt">Cuidado personal</button><button class="seg-opt">Turismo</button><button class="seg-opt">Veterinaria</button><button class="seg-opt">Canasta familiar</button><button class="seg-opt">Comida rápida</button><button class="seg-opt">Ropa y moda</button><button class="seg-opt">Regalos</button><button class="seg-opt">Heladería</button></div>
-        </div>
-        <div class="seg-q">
-          <div class="seg-q__label">¿Con qué frecuencia usarías los descuentos?</div>
-          <div class="seg-opts"><button class="seg-opt">Todos los días</button><button class="seg-opt">Varias veces por semana</button><button class="seg-opt">Una vez por semana</button><button class="seg-opt">Algunas veces al mes</button></div>
-        </div>
-      </div>
-
-      <!-- BLOQUE 3 -->
-      <div class="seg-block">
-        <div class="seg-block__title">03 — Tu estilo de vida</div>
-        <div class="seg-q">
-          <div class="seg-q__label">¿Tienes mascotas?</div>
-          <div class="seg-opts"><button class="seg-opt">Sí, perro</button><button class="seg-opt">Sí, gato</button><button class="seg-opt">Sí, otra</button><button class="seg-opt">No tengo</button></div>
-        </div>
-        <div class="seg-q">
-          <div class="seg-q__label">¿Tienes hijos o personas a cargo?</div>
-          <div class="seg-opts"><button class="seg-opt">Sí</button><button class="seg-opt">No</button></div>
-        </div>
-        <div class="seg-q">
-          <div class="seg-q__label">¿Qué tan importante es para ti apoyar causas sociales?</div>
-          <div class="seg-opts"><button class="seg-opt">Es fundamental</button><button class="seg-opt">Me importa bastante</button><button class="seg-opt">Está bien, no es prioridad</button><button class="seg-opt">No lo considero mucho</button></div>
-        </div>
-      </div>
-
-      <!-- BLOQUE 4 -->
-      <div class="seg-block">
-        <div class="seg-block__title">04 — Comunicación</div>
-        <div class="seg-q">
-          <div class="seg-q__label">¿Cómo prefieres que te contactemos?</div>
-          <div class="seg-opts"><button class="seg-opt">Solo WhatsApp</button><button class="seg-opt">WhatsApp + correo</button><button class="seg-opt">Solo lo importante</button></div>
-        </div>
-        <div class="seg-q" data-multi="1">
-          <div class="seg-q__label">¿Qué contenido te gustaría recibir?</div>
-          <div class="seg-opts"><button class="seg-opt">Descuentos y promos</button><button class="seg-opt">Tips de ahorro</button><button class="seg-opt">Programas sociales</button><button class="seg-opt">Nuevos aliados</button><button class="seg-opt">Eventos del Club</button></div>
-        </div>
-      </div>
+      <!-- Bloques dinámicos: se llenan desde dashboard.js con las preguntas
+           configuradas en Admin → Formulario de bienvenida -->
+      <div id="seg-dinamico"></div>
 
       <div class="seg-actions">
         <button class="seg-skip" id="seg-prev"><i data-lucide="arrow-left" style="width:14px;height:14px;vertical-align:-2px"></i> Atrás</button>
@@ -1024,7 +969,7 @@
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://checkout.wompi.co/widget.js"></script>
-  <script type="module" src="dashboard.js?v=51"></script>
+  <script type="module" src="dashboard.js?v=52"></script>
   <script src="agente.js"></script>
 
   <template id="__bundler_thumbnail">

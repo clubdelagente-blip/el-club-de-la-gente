@@ -144,7 +144,12 @@ window.irPanel = irPanel;
    SEGMENTACIÓN
    ============================================================ */
 let segBlock = 0;
-const SEG_TOTAL = 4;
+let SEG_TOTAL = 1; // se recalcula tras cargar las preguntas dinámicas (1 = solo el bloque fijo de identidad)
+let _preguntasSeg = []; // preguntas activas traídas de Supabase, ya agrupadas en bloques
+let _bloquesSeg = [];   // [{ titulo, preguntas: [...] }]
+let _catBlockIndex = 1; // índice del bloque que contiene la pregunta "categorías" (para el botón Actualizar)
+let _respuestasSegPrevias = {}; // respuestas ya guardadas del miembro, para no perderlas al reabrir solo un bloque
+
 function segMostrar(i) {
   segBlock = Math.max(0, Math.min(SEG_TOTAL - 1, i));
   $$(".seg-block").forEach((b, k) => b.classList.toggle("is-active", k === segBlock));
@@ -163,6 +168,58 @@ function cerrarSeg() {
   $(".seg-overlay").classList.remove("is-open");
   document.body.style.overflow = "";
   localStorage.setItem("ecdlg_segmentado", "1");
+}
+
+// Trae las preguntas activas desde Admin → "Formulario de bienvenida" y arma los
+// bloques dinámicos dentro de #seg-dinamico. Idempotente: si ya se cargaron antes
+// en esta sesión (ej. al reabrir con "Actualizar"), no vuelve a pedirlas.
+async function cargarPreguntasSegmentacion() {
+  const cont = $("#seg-dinamico");
+  if (!cont) return;
+  if (!_preguntasSeg.length) {
+    const { data } = await supabase.from("preguntas_segmentacion").select("*").eq("activa", true).order("orden");
+    _preguntasSeg = data || [];
+  }
+  _bloquesSeg = [];
+  _preguntasSeg.forEach(p => {
+    let bloque = _bloquesSeg[_bloquesSeg.length - 1];
+    if (!bloque || bloque.titulo !== p.bloque) { bloque = { titulo: p.bloque, preguntas: [] }; _bloquesSeg.push(bloque); }
+    bloque.preguntas.push(p);
+  });
+  _catBlockIndex = 1 + Math.max(0, _bloquesSeg.findIndex(b => b.preguntas.some(p => p.guardar_como_categorias)));
+
+  cont.innerHTML = _bloquesSeg.map((b, i) => `
+    <div class="seg-block">
+      <div class="seg-block__title">${String(i + 2).padStart(2, "0")} — ${esc(b.titulo)}</div>
+      ${b.preguntas.map(p => `
+        <div class="seg-q" data-pregunta-id="${p.id}" ${p.tipo === "multiple" ? 'data-multi="1"' : ""} ${p.obligatoria ? 'data-obligatoria="1"' : ""} ${p.guardar_como_categorias ? 'data-categorias="1"' : ""}>
+          <div class="seg-q__label">${esc(p.pregunta)}${p.obligatoria ? ' <span class="seg-q__hint">obligatoria</span>' : ""}${p.ayuda ? ` <span class="seg-q__hint">${esc(p.ayuda)}</span>` : ""}</div>
+          ${p.tipo === "texto"
+            ? `<input type="text" class="seg-input">`
+            : `<div class="seg-opts">${(p.opciones || []).map(o => `<button type="button" class="seg-opt">${esc(o)}</button>`).join("")}</div>`}
+        </div>`).join("")}
+    </div>`).join("");
+
+  SEG_TOTAL = 1 + _bloquesSeg.length;
+
+  // Los botones de opción y la lógica de único/múltiple viven en el mismo
+  // documento; se enlazan cada vez que se regenera el HTML dinámico.
+  $$("#seg-dinamico .seg-q").forEach(q => {
+    const multi = q.dataset.multi === "1";
+    $$(".seg-opt", q).forEach(opt => opt.addEventListener("click", () => {
+      if (multi) opt.classList.toggle("is-on");
+      else $$(".seg-opt", q).forEach(o => o.classList.toggle("is-on", o === opt));
+    }));
+  });
+  if (window.lucide) lucide.createIcons();
+}
+
+// Punto de entrada único para abrir el formulario: asegura que los bloques
+// dinámicos ya estén cargados antes de mostrar cualquier paso.
+async function iniciarSegmentacion(perfil, irABloque = 0) {
+  await cargarPreguntasSegmentacion();
+  if (perfil) prepararCamposConocidos(perfil);
+  abrirSeg(irABloque === "categorias" ? _catBlockIndex : irABloque);
 }
 
 // Oculta y precarga del Bloque 1 solo lo que ya conocemos (registro manual o
@@ -1262,7 +1319,8 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("bienvenida-cerrar")?.addEventListener("click", () => cerrarModalTienda());
     }
 
-    const { data: perfData } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol, fecha_vencimiento, categorias_interes").eq("id", userId).maybeSingle();
+    const { data: perfData } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol, fecha_vencimiento, categorias_interes, respuestas_segmentacion").eq("id", userId).maybeSingle();
+    _respuestasSegPrevias = perfData?.respuestas_segmentacion || {};
     const plan = perfData?.plan || null;
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
     if (plan) { localStorage.setItem("ecdlg_plan", plan); const sbPlanEl = document.getElementById("sb-plan-name"); if (sbPlanEl) sbPlanEl.textContent = PLAN_LABEL[plan] || plan; }
@@ -1298,8 +1356,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // (registro manual trae nombre/fecha/whatsapp; Google solo trae nombre).
     const debeSegmentar = esNuevo && localStorage.getItem("ecdlg_segmentado") !== "1";
     if (debeSegmentar) {
-      prepararCamposConocidos({ ...perfData, nombre });
-      abrirSeg(0);
+      iniciarSegmentacion({ ...perfData, nombre });
     }
 
     // Fuente de verdad: nombre siempre desde Supabase, no localStorage
@@ -1403,18 +1460,21 @@ document.addEventListener("DOMContentLoaded", () => {
   // esperar a saber qué campos ya tenemos antes de mostrar el overlay)
 
   // Actualizar categorías desde el perfil → reabre la segmentación
-  $("#editar-cats")?.addEventListener("click", () => abrirSeg(1));
-
-  // Opciones (toggle single/multi)
-  $$(".seg-q").forEach(q => {
-    const multi = q.dataset.multi === "1";
-    $$(".seg-opt", q).forEach(opt => opt.addEventListener("click", () => {
-      if (multi) opt.classList.toggle("is-on");
-      else $$(".seg-opt", q).forEach(o => o.classList.toggle("is-on", o === opt));
-    }));
-  });
+  $("#editar-cats")?.addEventListener("click", () => iniciarSegmentacion(null, "categorias"));
 
   $("#seg-next").addEventListener("click", async () => {
+    // Validar obligatorias del bloque que se está viendo antes de avanzar
+    const bloqueActual = $$(".seg-block")[segBlock];
+    const sinResponder = $$(".seg-q[data-obligatoria='1']", bloqueActual).find(q => {
+      const input = q.querySelector(".seg-input");
+      return input ? !input.value.trim() : !$(".seg-opt.is-on", q);
+    });
+    if (sinResponder) {
+      toast("Esta pregunta es obligatoria");
+      sinResponder.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
     if (segBlock === SEG_TOTAL - 1) {
       const nombre = $("#seg-nombre")?.value.trim();
       const apellido = $("#seg-apellido")?.value.trim();
@@ -1422,48 +1482,46 @@ document.addEventListener("DOMContentLoaded", () => {
       const whatsapp = $("#seg-whatsapp")?.value.trim();
       const nombreCompleto = [nombre, apellido].filter(Boolean).join(" ");
 
-      // Leer selecciones del formulario
-      const getSelected = (idx) => {
-        const q = $$(".seg-q")[idx];
-        return q ? [...$$(".seg-opt.is-on", q)].map(b => b.textContent.trim()) : [];
-      };
-      const getSingle = (idx) => getSelected(idx)[0] || null;
-
-      const genero         = getSingle(4);
-      const ocupacion      = getSingle(5);
-      const barrio         = $$(".seg-q")[6]?.querySelector("input")?.value.trim() || null;
-      const categorias     = getSelected(8);
-      const tiene_mascotas = getSingle(10);
-      const tiene_hijos    = getSingle(11) === "Sí";
-      const impacto_social = getSingle(12);
-      const canal_preferido    = getSingle(13);
-      const contenido_preferido = getSelected(14);
+      // Leer las respuestas de todas las preguntas dinámicas por su id (no por
+      // posición, ya que el admin puede agregar/quitar/reordenar preguntas)
+      const respuestas = { ..._respuestasSegPrevias };
+      let categoriasParaEspejar = null;
+      $$("#seg-dinamico .seg-q[data-pregunta-id]").forEach(q => {
+        const id = q.dataset.preguntaId;
+        const input = q.querySelector(".seg-input");
+        if (input) {
+          const v = input.value.trim();
+          if (v) respuestas[id] = v;
+          return;
+        }
+        const sel = [...$$(".seg-opt.is-on", q)].map(b => b.textContent.trim());
+        if (!sel.length) return;
+        const valor = q.dataset.multi === "1" ? sel : sel[0];
+        respuestas[id] = valor;
+        if (q.dataset.categorias === "1") categoriasParaEspejar = sel;
+      });
 
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const updates = {};
+        const updates = { respuestas_segmentacion: respuestas };
         if (nombreCompleto) updates.nombre = nombreCompleto;
         if (fecha) updates.fecha_nacimiento = fecha;
         if (whatsapp) updates.whatsapp = whatsapp;
-        if (genero) updates.genero = genero;
-        if (ocupacion) updates.ocupacion = ocupacion;
-        if (barrio) updates.barrio = barrio;
-        if (categorias.length) updates.categorias_interes = categorias;
-        if (tiene_mascotas) updates.tiene_mascotas = tiene_mascotas;
-        updates.tiene_hijos = tiene_hijos;
-        if (impacto_social) updates.impacto_social = impacto_social;
-        if (canal_preferido) updates.canal_preferido = canal_preferido;
-        if (contenido_preferido.length) updates.contenido_preferido = contenido_preferido;
+        if (categoriasParaEspejar) updates.categorias_interes = categoriasParaEspejar;
 
-        if (Object.keys(updates).length) {
-          await supabase.from("perfiles").update(updates).eq("id", session.user.id);
-        }
+        await supabase.from("perfiles").update(updates).eq("id", session.user.id);
+
         const perfil = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
         if (nombreCompleto) { perfil.nombre = nombreCompleto; perfil.primerNombre = nombre; }
         if (fecha) perfil.fechaISO = fecha;
         if (whatsapp) perfil.whatsapp = whatsapp;
-        if (categorias.length) perfil.categorias = categorias;
+        if (categoriasParaEspejar) perfil.categorias = categoriasParaEspejar;
         localStorage.setItem("ecdlg_perfil", JSON.stringify(perfil));
+
+        const catsEl = document.getElementById("perfil-cats");
+        if (catsEl && categoriasParaEspejar) {
+          catsEl.innerHTML = categoriasParaEspejar.map(c => `<span class="chip-int">${esc(c)}</span>`).join("");
+        }
       }
       cerrarSeg();
     } else {
