@@ -1237,7 +1237,9 @@ document.addEventListener("DOMContentLoaded", () => {
     generarQR(userId);
 
     // Si viene de un pago aprobado, activar el plan en Supabase
-    const planActivar = new URLSearchParams(location.search).get("activar");
+    const paramsIniciales = new URLSearchParams(location.search);
+    const esNuevo = paramsIniciales.get("nuevo") === "1";
+    const planActivar = paramsIniciales.get("activar");
     if (planActivar && ["gratis", "basica", "premium", "vitalicia"].includes(planActivar)) {
       const { error: rpcErr } = await supabase.rpc("activar_plan", { nuevo_plan: planActivar });
       if (rpcErr) console.error("activar_plan error:", rpcErr);
@@ -1294,8 +1296,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Segmentación del miembro nuevo: solo preguntamos lo que no sepamos ya
     // (registro manual trae nombre/fecha/whatsapp; Google solo trae nombre).
-    const debeSegmentar = new URLSearchParams(location.search).get("nuevo") === "1"
-      && localStorage.getItem("ecdlg_segmentado") !== "1";
+    const debeSegmentar = esNuevo && localStorage.getItem("ecdlg_segmentado") !== "1";
     if (debeSegmentar) {
       prepararCamposConocidos({ ...perfData, nombre });
       abrirSeg(0);
