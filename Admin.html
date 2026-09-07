@@ -2301,8 +2301,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
   function htmlFormPregunta(p = {}) {
     const opcionesTxt = (p.opciones || []).join('\n');
     return `
-      <div class="ad-field"><label>Bloque *</label><input id="fp-bloque" type="text" value="${(p.bloque||'').replace(/"/g,'&quot;')}" placeholder="Ej: ¿Qué te interesa del Club?">
-        <div style="font-size:11px;color:rgba(26,26,24,.4);margin-top:4px">Escribe el mismo texto de un bloque ya existente para agrupar la pregunta ahí</div></div>
+      <div class="ad-field"><label>Bloque (opcional)</label><input id="fp-bloque" type="text" value="${(p.bloque||'').replace(/"/g,'&quot;')}" placeholder="Ej: ¿Qué te interesa del Club?">
+        <div style="font-size:11px;color:rgba(26,26,24,.4);margin-top:4px">Escribe el mismo texto de un bloque ya existente para agrupar la pregunta ahí. Si lo dejas vacío, queda en "General"</div></div>
       <div class="ad-field"><label>Pregunta *</label><input id="fp-pregunta" type="text" value="${(p.pregunta||'').replace(/"/g,'&quot;')}" placeholder="¿Qué quieres preguntarle al miembro?"></div>
       <div class="ad-field"><label>Texto de ayuda (opcional)</label><input id="fp-ayuda" type="text" value="${(p.ayuda||'').replace(/"/g,'&quot;')}" placeholder="Aparece chico, bajo la pregunta"></div>
       <div class="ad-field"><label>Tipo de respuesta *</label>
@@ -2358,7 +2358,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
         const pregunta = $("#fp-pregunta")?.value.trim();
         const bloque = $("#fp-bloque")?.value.trim();
         if (!pregunta) { toast("La pregunta es obligatoria"); return; }
-        if (!bloque) { toast("El bloque es obligatorio"); return; }
         const tipo = $("#fp-tipo")?.value;
         const opciones = ($("#fp-opciones")?.value || '').split('\n').map(s => s.trim()).filter(Boolean);
         if (tipo !== 'texto' && !opciones.length) { toast("Agrega al menos una opción"); return; }
@@ -2366,7 +2365,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
         if (padreId && !$("#fp-mostrarsi")?.value) { toast("Elige con qué respuesta se muestra"); return; }
         const btn = $("#fp-save"); btn.disabled = true; btn.textContent = "Guardando…";
         const payload = {
-          bloque, pregunta,
+          bloque: bloque || 'General', pregunta,
           ayuda: $("#fp-ayuda")?.value.trim() || null,
           tipo,
           opciones: tipo === 'texto' ? null : opciones,
