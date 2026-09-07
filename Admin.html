@@ -2377,8 +2377,16 @@ document.addEventListener('DOMContentLoaded',async()=>{
           orden: parseInt($("#fp-orden")?.value || 0),
         };
         const id = btn.dataset.id;
-        if (id) { await supabase.from('preguntas_segmentacion').update(payload).eq('id', id); toast("Pregunta actualizada ✓"); }
-        else { payload.activa = true; await supabase.from('preguntas_segmentacion').insert(payload); toast("Pregunta agregada ✓"); }
+        let error;
+        if (id) { ({ error } = await supabase.from('preguntas_segmentacion').update(payload).eq('id', id)); }
+        else { payload.activa = true; ({ error } = await supabase.from('preguntas_segmentacion').insert(payload)); }
+        if (error) {
+          console.error('Error guardando pregunta:', error);
+          toast('Error: ' + error.message);
+          btn.disabled = false; btn.textContent = id ? 'Guardar cambios' : 'Agregar pregunta';
+          return;
+        }
+        toast(id ? "Pregunta actualizada ✓" : "Pregunta agregada ✓");
         $("#ad-modal-ov").classList.remove("is-open");
         cargarPreguntasAdmin();
       });
