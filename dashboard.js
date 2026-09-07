@@ -192,7 +192,7 @@ async function cargarPreguntasSegmentacion() {
     <div class="seg-block">
       <div class="seg-block__title">${String(i + 2).padStart(2, "0")} — ${esc(b.titulo)}</div>
       ${b.preguntas.map(p => `
-        <div class="seg-q" data-pregunta-id="${p.id}" ${p.tipo === "multiple" ? 'data-multi="1"' : ""} ${p.obligatoria ? 'data-obligatoria="1"' : ""} ${p.guardar_como_categorias ? 'data-categorias="1"' : ""}>
+        <div class="seg-q" data-pregunta-id="${p.id}" ${p.tipo === "multiple" ? 'data-multi="1"' : ""} ${p.obligatoria ? 'data-obligatoria="1"' : ""} ${p.guardar_como_categorias ? 'data-categorias="1"' : ""} ${p.pregunta_padre_id ? `data-padre-id="${p.pregunta_padre_id}" data-mostrar-si="${esc(p.mostrar_si_respuesta || "")}" hidden` : ""}>
           <div class="seg-q__label">${esc(p.pregunta)}${p.obligatoria ? ' <span class="seg-q__hint">obligatoria</span>' : ""}${p.ayuda ? ` <span class="seg-q__hint">${esc(p.ayuda)}</span>` : ""}</div>
           ${p.tipo === "texto"
             ? `<input type="text" class="seg-input">`
@@ -209,9 +209,28 @@ async function cargarPreguntasSegmentacion() {
     $$(".seg-opt", q).forEach(opt => opt.addEventListener("click", () => {
       if (multi) opt.classList.toggle("is-on");
       else $$(".seg-opt", q).forEach(o => o.classList.toggle("is-on", o === opt));
+      actualizarCondicionalesSeg();
     }));
   });
+  actualizarCondicionalesSeg();
   if (window.lucide) lucide.createIcons();
+}
+
+// Muestra/oculta las preguntas que dependen de otra (ej. "¿Cuál producto de
+// belleza?" solo si "¿Te interesa belleza?" = Sí). Se llama cada vez que se
+// toca un botón de opción dentro del formulario dinámico.
+function actualizarCondicionalesSeg() {
+  $$("#seg-dinamico .seg-q[data-padre-id]").forEach(hijo => {
+    const padre = document.querySelector(`#seg-dinamico .seg-q[data-pregunta-id="${hijo.dataset.padreId}"]`);
+    const seleccion = padre ? [...$$(".seg-opt.is-on", padre)].map(b => b.textContent.trim()) : [];
+    const debeMostrar = seleccion.includes(hijo.dataset.mostrarSi);
+    if (debeMostrar === !hijo.hidden) return;
+    hijo.hidden = !debeMostrar;
+    if (!debeMostrar) {
+      $$(".seg-opt.is-on", hijo).forEach(o => o.classList.remove("is-on"));
+      const inp = hijo.querySelector(".seg-input"); if (inp) inp.value = "";
+    }
+  });
 }
 
 // Punto de entrada único para abrir el formulario: asegura que los bloques
@@ -1466,6 +1485,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Validar obligatorias del bloque que se está viendo antes de avanzar
     const bloqueActual = $$(".seg-block")[segBlock];
     const sinResponder = $$(".seg-q[data-obligatoria='1']", bloqueActual).find(q => {
+      if (q.hidden) return false;
       const input = q.querySelector(".seg-input");
       return input ? !input.value.trim() : !$(".seg-opt.is-on", q);
     });
