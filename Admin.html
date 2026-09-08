@@ -226,9 +226,16 @@ let _pedidosCom=[], _ingresosManuales=[], _categoriasIngreso=[], _contComisionMe
 // carga el admin (cargarCategoriasClub) — así las categorías del directorio de
 // aliados y las que elige el miembro son siempre las mismas.
 let CATS=['Restaurante / Cafetería','Salud y bienestar','Belleza y estética','Barbería','Odontología','Veterinaria','Ropa y accesorios','Supermercado / Tienda','Educación','Deporte y gym','Tecnología'];
+// { 'Salud': ['Odontología','Ópticas',...], ... } — las preguntas hijas de la
+// pregunta "categorías de interés" en el Formulario de bienvenida.
+let SUBCATS={};
 async function cargarCategoriasClub(){
-  const{data}=await supabase.from('preguntas_segmentacion').select('opciones').eq('guardar_como_categorias',true).limit(1);
-  if(data?.[0]?.opciones?.length)CATS=data[0].opciones;
+  const{data:master}=await supabase.from('preguntas_segmentacion').select('id,opciones').eq('guardar_como_categorias',true).limit(1);
+  if(!master?.[0])return;
+  if(master[0].opciones?.length)CATS=master[0].opciones;
+  const{data:hijos}=await supabase.from('preguntas_segmentacion').select('mostrar_si_respuesta,opciones').eq('pregunta_padre_id',master[0].id);
+  SUBCATS={};
+  (hijos||[]).forEach(h=>{ if(h.mostrar_si_respuesta&&h.opciones?.length)SUBCATS[h.mostrar_si_respuesta]=h.opciones; });
 }
 const PLANES_VIS=[{val:'gratis',lbl:'Gratis'},{val:'basica',lbl:'Básica'},{val:'premium',lbl:'Premium'}];
 
@@ -861,6 +868,11 @@ function htmlFormAliado(a={}){
       <button type="button" class="ad-btn" id="fa-cat-add">${ic("plus")} Agregar</button>
     </div>
     <input type="hidden" id="fa-cat" value="${(a.categoria||'').replace(/"/g,'&quot;')}"></div>
+  <div class="ad-field" id="fa-subcats-wrap" style="display:none">
+    <label>Subcategorías</label>
+    <div id="fa-subcats"></div>
+    <input type="hidden" id="fa-subcat" value="${(a.subcategorias||[]).join(', ').replace(/"/g,'&quot;')}">
+  </div>
   <div class="ad-field"><label>Visible para miembros con plan</label>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:2px" id="fa-planes-chips">${PLANES_VIS.map(p=>`<button type="button" class="fa-chip${(a.planes_visibles||['basica','premium']).includes(p.val)?' is-on':''}" data-plan-vis="${p.val}">${p.lbl}</button>`).join('')}</div>
     <input type="hidden" id="fa-planes" value="${(a.planes_visibles||['basica','premium']).join(',')}">
@@ -909,14 +921,38 @@ function actualizarCatHidden(){
   const personalizadas=[...document.querySelectorAll('#fa-chips-custom .fa-chip')].map(b=>b.dataset.cat);
   const h=$("#fa-cat");if(h)h.value=[...fijas,...personalizadas].join(', ');
 }
+function actualizarSubcatHidden(){
+  const sel=[...document.querySelectorAll('#fa-subcats [data-subcat].is-on')].map(b=>b.dataset.subcat);
+  const h=$("#fa-subcat");if(h)h.value=sel.join(', ');
+}
+// Muestra, por cada categoría marcada, sus subcategorías (si la pregunta de
+// esa categoría en el Formulario de bienvenida tiene una hija con opciones).
+function renderFaSubcats(){
+  const catsSel=[...document.querySelectorAll('#fa-chips .fa-chip.is-on')].map(b=>b.dataset.cat);
+  const wrap=$("#fa-subcats-wrap"),cont=$("#fa-subcats");
+  if(!wrap||!cont)return;
+  const actuales=($("#fa-subcat")?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const grupos=catsSel.filter(c=>SUBCATS[c]?.length);
+  if(!grupos.length){wrap.style.display='none';cont.innerHTML='';const h=$("#fa-subcat");if(h)h.value='';return;}
+  wrap.style.display='';
+  cont.innerHTML=grupos.map(cat=>`
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;color:rgba(26,26,24,.45);margin-bottom:4px">${cat}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${SUBCATS[cat].map(s=>`<button type="button" class="fa-chip${actuales.includes(s)?' is-on':''}" data-subcat="${s}" style="font-size:12px;padding:6px 12px">${s}</button>`).join('')}</div>
+    </div>`).join('');
+  cont.querySelectorAll('[data-subcat]').forEach(chip=>chip.addEventListener('click',()=>{chip.classList.toggle('is-on');actualizarSubcatHidden();}));
+  actualizarSubcatHidden();
+}
 function bindFormAliado(){
   setTimeout(()=>{
     document.querySelectorAll('#fa-chips .fa-chip').forEach(chip=>{
       chip.addEventListener('click',()=>{
         chip.classList.toggle('is-on');
         actualizarCatHidden();
+        renderFaSubcats();
       });
     });
+    renderFaSubcats();
     const bindChipPersonalizada=(chip)=>{
       chip.addEventListener('click',()=>{ chip.remove(); actualizarCatHidden(); });
     };
@@ -1015,7 +1051,8 @@ function bindFormAliado(){
       const file=$("#fa-img")?.files?.[0];
       if(file)try{imagen_url=await subirImagen(file);}catch(_){toast('Error al subir imagen');}
       const planesSel=$("#fa-planes")?.value.split(',').map(s=>s.trim()).filter(Boolean);
-      const payload={nombre,categoria:$("#fa-cat")?.value.trim()||null,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:$("#fa-wa")?.value.trim()||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
+      const subcategorias=($("#fa-subcat")?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
+      const payload={nombre,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:$("#fa-wa")?.value.trim()||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
       const id=btn.dataset.id;
       const{error}=id?await supabase.from('aliados').update(payload).eq('id',id):await supabase.from('aliados').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}
