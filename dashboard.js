@@ -1354,7 +1354,14 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("bienvenida-cerrar")?.addEventListener("click", () => cerrarModalTienda());
     }
 
-    const { data: perfData } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol, fecha_vencimiento, categorias_interes, respuestas_segmentacion, foto_url").eq("id", userId).maybeSingle();
+    const { data: perfData, error: perfError } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol, fecha_vencimiento, categorias_interes, respuestas_segmentacion, foto_url").eq("id", userId).maybeSingle();
+    if (perfError) {
+      // No mostrar "activa tu membresía" cuando en realidad es un error técnico
+      // (ej. una columna que falta) — sería engañoso, parecería que no pagó.
+      console.error("Error cargando perfil:", perfError);
+      toast("No pudimos cargar tu perfil. Recarga la página.");
+      return;
+    }
     _respuestasSegPrevias = perfData?.respuestas_segmentacion || {};
 
     // Foto de perfil: Supabase es la fuente de verdad (sincroniza entre dispositivos)
