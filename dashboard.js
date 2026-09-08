@@ -53,7 +53,7 @@ function leerPerfil() {
     mision: p.mision || null,
     num: m.num || "",
     codigo: m.codigo || p.codigo || p.whatsapp || "",
-    foto: localStorage.getItem("ecdlg_foto") || "",
+    foto: p.foto_url || "",
     desde: m.desde || "",
     negocio: p.negocio || "Tu negocio",
     rol, plan,
@@ -121,11 +121,15 @@ function aplicarFoto(dataUrl) {
   $$("[data-ini]").forEach(el => { el.innerHTML = `<img src="${dataUrl}" alt="Foto de perfil">`; });
   const quitar = $("#cfg-foto-quitar"); if (quitar) quitar.hidden = false;
 }
-function quitarFoto() {
-  localStorage.removeItem("ecdlg_foto");
+async function quitarFoto() {
+  const perfil = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
+  delete perfil.foto_url;
+  localStorage.setItem("ecdlg_perfil", JSON.stringify(perfil));
   const u = leerPerfil();
   $$("[data-ini]").forEach(el => { el.textContent = iniciales(u.nombre); });
   const quitar = $("#cfg-foto-quitar"); if (quitar) quitar.hidden = true;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) await supabase.from("perfiles").update({ foto_url: null }).eq("id", session.user.id);
 }
 
 /* ---------- Navegación de paneles ---------- */
@@ -1350,8 +1354,22 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("bienvenida-cerrar")?.addEventListener("click", () => cerrarModalTienda());
     }
 
-    const { data: perfData } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol, fecha_vencimiento, categorias_interes, respuestas_segmentacion").eq("id", userId).maybeSingle();
+    const { data: perfData } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol, fecha_vencimiento, categorias_interes, respuestas_segmentacion, foto_url").eq("id", userId).maybeSingle();
     _respuestasSegPrevias = perfData?.respuestas_segmentacion || {};
+
+    // Foto de perfil: Supabase es la fuente de verdad (sincroniza entre dispositivos)
+    {
+      const perfilCache = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
+      if (perfData?.foto_url) {
+        aplicarFoto(perfData.foto_url);
+        perfilCache.foto_url = perfData.foto_url;
+      } else if (perfilCache.foto_url) {
+        delete perfilCache.foto_url;
+        $$("[data-ini]").forEach(el => { el.textContent = iniciales(perfData?.nombre || ""); });
+        const quitar = $("#cfg-foto-quitar"); if (quitar) quitar.hidden = true;
+      }
+      localStorage.setItem("ecdlg_perfil", JSON.stringify(perfilCache));
+    }
     const plan = perfData?.plan || null;
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
     if (plan) { localStorage.setItem("ecdlg_plan", plan); const sbPlanEl = document.getElementById("sb-plan-name"); if (sbPlanEl) sbPlanEl.textContent = PLAN_LABEL[plan] || plan; }
@@ -1456,16 +1474,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---- Configuración ----
   $("#cfg-foto-btn")?.addEventListener("click", () => $("#cfg-foto-input").click());
-  $("#cfg-foto-input")?.addEventListener("change", (e) => {
+  $("#cfg-foto-input")?.addEventListener("change", async (e) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      localStorage.setItem("ecdlg_foto", reader.result);
-      aplicarFoto(reader.result);
-      toast("Foto de perfil actualizada");
-    };
-    reader.readAsDataURL(file);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = `perfil-${session.user.id}-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+    if (upErr) { toast("Error subiendo la foto"); return; }
+    const url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+    await supabase.from("perfiles").update({ foto_url: url }).eq("id", session.user.id);
+    aplicarFoto(url);
+    const perfil = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
+    perfil.foto_url = url;
+    localStorage.setItem("ecdlg_perfil", JSON.stringify(perfil));
+    toast("Foto de perfil actualizada");
   });
   $("#cfg-foto-quitar")?.addEventListener("click", () => { quitarFoto(); toast("Foto de perfil eliminada"); });
   $("#form-usuario")?.addEventListener("submit", (e) => {
