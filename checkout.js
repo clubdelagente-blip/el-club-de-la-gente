@@ -122,7 +122,7 @@ async function abrirWompi(plan, card) {
     reference,
     publicKey: "pub_test_yuvhTaT4Bg2JmPbJuxpeuodluZUX7HyE",
     signature: { integrity },
-    redirectUrl: `https://clubdelagente-blip.github.io/el-club-de-la-gente/Perfil.html?activar=${plan}&nuevo=1`,
+    redirectUrl: `https://elclubdelagente.com/Perfil.html?activar=${plan}&nuevo=1`,
   });
 
   checkout.open((result) => {
