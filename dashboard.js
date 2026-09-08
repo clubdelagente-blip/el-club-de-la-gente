@@ -1410,8 +1410,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Segmentación del miembro nuevo: solo preguntamos lo que no sepamos ya
     // (registro manual trae nombre/fecha/whatsapp; Google solo trae nombre).
-    const debeSegmentar = esNuevo && localStorage.getItem("ecdlg_segmentado") !== "1";
-    if (debeSegmentar) {
+    // Basta con "nuevo=1" en la URL (solo llega ahí justo tras registro/pago) —
+    // no depende de una marca en localStorage, que persiste entre cuentas
+    // distintas en el mismo navegador y podía bloquearlo indefinidamente.
+    if (esNuevo) {
       iniciarSegmentacion({ ...perfData, nombre });
     }
 
