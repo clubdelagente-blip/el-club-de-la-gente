@@ -200,7 +200,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: "https://clubdelagente-blip.github.io/el-club-de-la-gente/Registro.html",
+        redirectTo: "https://elclubdelagente.com/Registro.html",
         queryParams: emailHint ? { login_hint: emailHint } : {},
       }
     });
