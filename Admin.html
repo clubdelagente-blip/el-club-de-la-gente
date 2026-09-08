@@ -221,7 +221,15 @@ function clienteAislado(){
 let _aliados=[], _anuncios=[], _programas=[], _profesionales=[], _gastos=[], _categoriasGasto=[], _pagos=[], _contMes=null, _contGastosMes=[], _contPagosMes=[], _contConfig={iva_pct:19,ica_pct:0.92,fundadores_pct:40,renta_pct:35,comision_tienda_pct:10};
 let _pedidosCom=[], _ingresosManuales=[], _categoriasIngreso=[], _contComisionMes=[], _contIngManMes=[], _contFilasIngreso=[], _contFiltroIngreso=null;
 
-const CATS=['Restaurante / Cafetería','Salud y bienestar','Belleza y estética','Barbería','Odontología','Veterinaria','Ropa y accesorios','Supermercado / Tienda','Educación','Deporte y gym','Tecnología'];
+// Arranca con esta lista por defecto y se reemplaza por las opciones reales de
+// la pregunta "categorías de interés" del Formulario de bienvenida en cuanto
+// carga el admin (cargarCategoriasClub) — así las categorías del directorio de
+// aliados y las que elige el miembro son siempre las mismas.
+let CATS=['Restaurante / Cafetería','Salud y bienestar','Belleza y estética','Barbería','Odontología','Veterinaria','Ropa y accesorios','Supermercado / Tienda','Educación','Deporte y gym','Tecnología'];
+async function cargarCategoriasClub(){
+  const{data}=await supabase.from('preguntas_segmentacion').select('opciones').eq('guardar_como_categorias',true).limit(1);
+  if(data?.[0]?.opciones?.length)CATS=data[0].opciones;
+}
 const PLANES_VIS=[{val:'gratis',lbl:'Gratis'},{val:'basica',lbl:'Básica'},{val:'premium',lbl:'Premium'}];
 
 function toast(msg){const t=$("#ad-toast");if(!t)return;t.textContent=msg;t.classList.add("is-show");setTimeout(()=>t.classList.remove("is-show"),3000);}
@@ -1533,6 +1541,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     }
     if(window.lucide)lucide.createIcons();
     window._agInitRealtime?.();
+    cargarCategoriasClub();
   }
   function showLoginScreen(msg){
     if(loginScreen)loginScreen.style.display='flex';
