@@ -167,6 +167,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   $$("[data-role]").forEach(b => b.addEventListener("click", () => elegirRol(b.dataset.role)));
   $("#reg-back")?.addEventListener("click", resetRoles);
 
+  // Link directo desde el footer ("¿Quieres ser aliado?" / "¿Quieres ser profesional?")
+  // o desde "Únete gratis aquí" en la pantalla de éxito de aliado/profesional.
+  const rolParam = params.get("rol");
+  if (tabInicial === "registro" && ["aliado", "profesional", "miembro"].includes(rolParam)) {
+    elegirRol(rolParam);
+  }
+
   // Categorías aliado — selección múltiple
   $$(".cat-opt").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -537,6 +544,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     } catch (_) {}
 
+    // Avisar al Club por WhatsApp de la postulación nueva (no queda solo
+    // esperando a que alguien revise el panel de Admin)
+    fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to: "3024982733", body: `📋 Nueva postulación de PROFESIONAL\n\nNombre: ${nombre}\nÁrea: ${area}\nWhatsApp: ${wa}\nCorreo: ${email}\n\nRevísala en Admin → Profesionales.` }),
+    }).catch(() => {});
+
     setLoading(btn, false, "Registrarme como profesional →");
     localStorage.setItem("ecdlg_perfil", JSON.stringify({ nombre, primerNombre: nombre.split(" ")[0], rol: "profesional" }));
     irAExitoProfesional(nombre);
@@ -568,6 +583,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       mostrarError("Error al enviar. Intenta de nuevo.");
       return;
     }
+
+    // Avisar al Club por WhatsApp de la postulación nueva
+    fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to: "3024982733", body: `📋 Nueva postulación de ALIADO\n\nNegocio: ${negocio}\nCategoría: ${categoria || "—"}\nResponsable: ${nombre}\nWhatsApp: ${whatsapp}\n\nRevísala en Admin → Aliados → Postulaciones.` }),
+    }).catch(() => {});
 
     localStorage.setItem("ecdlg_rol", "aliado");
     localStorage.setItem("ecdlg_perfil", JSON.stringify({ nombre, primerNombre: nombre.split(" ")[0], negocio, rol: "aliado" }));
@@ -604,6 +626,7 @@ function irAExitoAliado(negocio, nombre) {
   $("#exito-msg").innerHTML = `Recibimos la postulación de <b>${negocio}</b>. Nuestro equipo revisará tu caso y, una vez aprobado, tendrás acceso a tu panel de aliado.`;
   $("#exito-wa-title").textContent = "Te contactaremos por WhatsApp";
   $("#exito-wa-msg").textContent = "En los próximos días un asesor del Club se comunicará contigo para coordinar los detalles de tu alianza.";
+  const social = $("#exito-social"); if (social) social.hidden = false;
   const cta = $("#exito-cta");
   cta.setAttribute("href", "Perfil.html?rol=aliado");
   cta.innerHTML = `Ver mi panel de aliado <span class="ar">&rarr;</span>`;
@@ -620,6 +643,7 @@ function irAExitoProfesional(nombre) {
   $("#exito-msg").innerHTML = `Tu cuenta ha sido creada. En cuanto nuestro equipo revise y apruebe tu perfil, aparecerás en el directorio de profesionales del Club.`;
   $("#exito-wa-title").textContent = "Mientras tanto, prepara tu perfil";
   $("#exito-wa-msg").textContent = "Puedes acceder ya a tu panel de profesional e ingresar tu foto, descripción y datos de contacto antes de que sea publicado.";
+  const social = $("#exito-social"); if (social) social.hidden = false;
   const cta = $("#exito-cta");
   cta.setAttribute("href", "Perfil.html");
   cta.innerHTML = `Ir a mi consultorio <span class="ar">&rarr;</span>`;
