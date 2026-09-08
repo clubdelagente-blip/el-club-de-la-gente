@@ -4,6 +4,8 @@
    (hereda tipografía de styles.css; define su propio tema oscuro)
    ============================================================ */
 
+.page-loader { background: #0A0A0A; }
+
 .admin {
   /* tema oscuro propio */
   --bg: #0A0A0A;

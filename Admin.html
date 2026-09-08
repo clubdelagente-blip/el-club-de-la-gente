@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=17">
-  <link rel="stylesheet" href="admin.css?v=3">
+  <link rel="stylesheet" href="styles.css?v=18">
+  <link rel="stylesheet" href="admin.css?v=4">
   <style>
     body { background: #0A0A0A; }
     /* Chips de categoría en modal */
@@ -64,6 +64,8 @@
   </style>
 </head>
 <body>
+  <div class="page-loader" id="page-loader"><img src="icon-club.png" alt=""></div>
+  <script>(function(){var l=document.getElementById('page-loader');function ocultar(){if(!l)return;l.classList.add('is-hidden');setTimeout(function(){l.remove();},400);}window.addEventListener('load',ocultar);setTimeout(ocultar,4000);})();</script>
 
   <!-- ============================================================
        PANTALLA DE LOGIN
@@ -193,7 +195,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=4"></script>
-  <script src="admin.js?v=16"></script>
+  <script src="admin.js?v=17"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -910,7 +912,7 @@ function htmlFormAliado(a={}){
     <span style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(26,26,24,.4)">Promociones de descuento</span>
     ${a.id?`<button type="button" class="ad-btn" id="fa-promo-nueva" style="font-size:12px">${ic("plus")} Agregar</button>`:''}
   </div>
-  <div id="fa-promos-list">${a.id?'<p style="font-size:12px;color:rgba(26,26,24,.4);text-align:center;padding:8px 0">Cargando…</p>':'<p style="font-size:12px;color:rgba(26,26,24,.4);padding:4px 0">Guarda el aliado primero para agregar promociones.</p>'}</div>
+  <div id="fa-promos-list">${a.id?'<p style="text-align:center;padding:8px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></p>':'<p style="font-size:12px;color:rgba(26,26,24,.4);padding:4px 0">Guarda el aliado primero para agregar promociones.</p>'}</div>
   <div id="fa-promo-form-wrap" style="display:none;margin-top:12px;padding:16px;background:rgba(26,26,24,.03);border-radius:10px;border:1px solid rgba(26,26,24,.09)"></div>
   <div class="ad-toolbar" style="margin:16px 0 0"><div class="ad-spacer"></div>
     <button class="ad-btn" id="fa-cancel">Cancelar</button>
@@ -1173,7 +1175,7 @@ let _planes=[];
 window.renderPlanes=async function(){
   $("#p-planes").innerHTML=`<div class="ad-table-wrap"><table class="ad-table">
     <thead><tr><th>Plan</th><th>Precio</th><th>Recomendado</th><th style="text-align:right">Acción</th></tr></thead>
-    <tbody id="pl-body"><tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+    <tbody id="pl-body"><tr><td colspan="4" style="text-align:center;padding:30px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
   </table></div>`;
   const{data}=await supabase.from('planes').select('*').order('orden');
   _planes=data||[];
@@ -1614,15 +1616,15 @@ document.addEventListener('DOMContentLoaded',async()=>{
   /* ---- FIN AUTENTICACIÓN ---- */
 
   window.renderAliados=function(){
-    $("#p-aliados").innerHTML=`<div class="ad-toolbar"><div class="ad-search-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="a-search" placeholder="Buscar aliado…" autocomplete="off"></div><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="a-add"><i data-lucide="plus"></i> Agregar aliado</button></div><div class="ad-table-wrap"><table class="ad-table"><thead><tr><th>Establecimiento</th><th>Categoría</th><th>Descuento</th><th>WhatsApp</th><th style="text-align:right">Estado</th></tr></thead><tbody id="a-body"><tr><td colspan="5" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody></table></div>`;
+    $("#p-aliados").innerHTML=`<div class="ad-toolbar"><div class="ad-search-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="a-search" placeholder="Buscar aliado…" autocomplete="off"></div><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="a-add"><i data-lucide="plus"></i> Agregar aliado</button></div><div class="ad-table-wrap"><table class="ad-table"><thead><tr><th>Establecimiento</th><th>Categoría</th><th>Descuento</th><th>WhatsApp</th><th style="text-align:right">Estado</th></tr></thead><tbody id="a-body"><tr><td colspan="5" style="text-align:center;padding:30px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody></table></div>`;
     cargarAliados();cargarPostulaciones();
   };
   window.abrirAgregarAliado=function(){abrirModal('Agregar aliado','Se publicará en el directorio',htmlFormAliado());bindFormAliado();};
-  window.renderContenido=function(){$("#p-contenido").innerHTML=`<div style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Cargando…</div>`;cargarAnuncios();};
-  window.renderProgramas=function(){$("#p-programas").innerHTML=`<div style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Cargando…</div>`;cargarProgramas();};
-  window.renderProfesionales=function(){$("#p-profesionales").innerHTML=`<div style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Cargando…</div>`;cargarProfesionales();};
+  window.renderContenido=function(){$("#p-contenido").innerHTML=`<div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>`;cargarAnuncios();};
+  window.renderProgramas=function(){$("#p-programas").innerHTML=`<div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>`;cargarProgramas();};
+  window.renderProfesionales=function(){$("#p-profesionales").innerHTML=`<div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>`;cargarProfesionales();};
   window.abrirAgregarProfesional=function(){abrirModal('Agregar profesional','Se publicará en el directorio',htmlFormProf());bindFormProf();};
-  window.renderContabilidad=function(){$("#p-contabilidad").innerHTML=`<div style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Cargando…</div>`;cargarContabilidad();};
+  window.renderContabilidad=function(){$("#p-contabilidad").innerHTML=`<div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>`;cargarContabilidad();};
 
   /* ---- CONTABILIDAD ---- */
   const COPc=(n)=>'$'+Number(n||0).toLocaleString('es-CO');
@@ -2336,7 +2338,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       <div class="ad-table-wrap">
         <table class="ad-table">
           <thead><tr><th>Pregunta</th><th>Tipo</th><th>Obligatoria</th><th>Orden</th><th>Estado</th><th style="text-align:right">Acciones</th></tr></thead>
-          <tbody id="preguntas-body"><tr><td colspan="6" style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+          <tbody id="preguntas-body"><tr><td colspan="6" style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
         </table>
       </div>`;
     if (window.lucide) lucide.createIcons();

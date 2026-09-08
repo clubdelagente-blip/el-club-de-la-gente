@@ -38,7 +38,7 @@ const PANELES = {
    RENDER: DASHBOARD
    ============================================================ */
 function renderDashboard() {
-  $("#p-dashboard").innerHTML = `<div style="text-align:center;padding:60px 20px;color:rgba(242,240,234,.3)">Cargando…</div>`;
+  $("#p-dashboard").innerHTML = `<div style="text-align:center;padding:60px 20px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>`;
   window.cargarDashboardReal?.();
 }
 function metric(icon, num, lbl, sub, chip, dir) {
@@ -85,7 +85,7 @@ function renderMarcas() {
     <div class="ad-table-wrap">
       <table class="ad-table">
         <thead><tr><th>Marca</th><th>Link de afiliado</th><th>Orden</th><th style="text-align:right">Estado</th></tr></thead>
-        <tbody id="marcas-body"><tr><td colspan="4" style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+        <tbody id="marcas-body"><tr><td colspan="4" style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
       </table>
     </div>`;
   if (window.lucide) lucide.createIcons();
@@ -113,7 +113,7 @@ function renderTienda() {
         <div class="ad-table-wrap">
           <table class="ad-table">
             <thead><tr><th>Nombre</th><th style="text-align:right">Estado</th></tr></thead>
-            <tbody id="cats-body"><tr><td colspan="2" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+            <tbody id="cats-body"><tr><td colspan="2" style="text-align:center;padding:30px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -122,7 +122,7 @@ function renderTienda() {
         <div class="ad-table-wrap">
           <table class="ad-table">
             <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Precio miembro</th><th style="text-align:right">Estado</th></tr></thead>
-            <tbody id="prods-body"><tr><td colspan="5" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+            <tbody id="prods-body"><tr><td colspan="5" style="text-align:center;padding:30px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -136,7 +136,7 @@ function renderTienda() {
       <div class="ad-table-wrap">
         <table class="ad-table">
           <thead><tr><th>Producto</th><th>Miembro</th><th>Envío</th><th>Monto</th><th>Estado</th><th style="text-align:right">Acción</th></tr></thead>
-          <tbody id="pc-body"><tr><td colspan="6" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+          <tbody id="pc-body"><tr><td colspan="6" style="text-align:center;padding:30px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -146,7 +146,7 @@ function renderTienda() {
         <div class="ad-table-wrap">
           <table class="ad-table">
             <thead><tr><th>Producto</th><th>Tienda</th><th>Precio</th><th style="text-align:right">Acción</th></tr></thead>
-            <tbody id="prodal-pend-body"><tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+            <tbody id="prodal-pend-body"><tr><td colspan="4" style="text-align:center;padding:30px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -155,7 +155,7 @@ function renderTienda() {
         <div class="ad-table-wrap">
           <table class="ad-table">
             <thead><tr><th>Tienda</th><th>Aliado</th><th>Productos</th><th>Pedidos</th><th>Ventas confirmadas</th><th style="text-align:right">Comisión a cobrar</th></tr></thead>
-            <tbody id="tiendas-aliados-body"><tr><td colspan="6" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+            <tbody id="tiendas-aliados-body"><tr><td colspan="6" style="text-align:center;padding:30px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -335,7 +335,7 @@ function renderAgente() {
             <input id="ag-search" placeholder="Buscar conversación…" autocomplete="off">
           </div>
         </div>
-        <ul class="ag-convs" id="ag-convs"><li style="padding:30px;text-align:center;color:var(--txt-40);font-size:13px">Cargando…</li></ul>
+        <ul class="ag-convs" id="ag-convs"><li style="padding:30px;text-align:center"><span class="brand-loader"><img src="icon-club.png" alt=""></span></li></ul>
       </div>
       <div class="ag-thread" id="ag-thread"></div>
     </div>`;

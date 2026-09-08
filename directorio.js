@@ -148,7 +148,7 @@ async function openSheet(aliadoId) {
   const a = ALIADOS.find(x => x.id === aliadoId);
   if (!a) return;
   aliadoActual = a;
-  sheetInner.innerHTML = `<p style="text-align:center;padding:60px 0;color:#999">Cargando promociones…</p>`;
+  sheetInner.innerHTML = `<p style="text-align:center;padding:60px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></p>`;
   overlay.classList.add("is-open");
   sheet.classList.add("is-open");
   document.body.style.overflow = "hidden";

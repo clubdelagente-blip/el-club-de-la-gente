@@ -423,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="ad-table-wrap">
         <table class="ad-table">
           <thead><tr><th>Establecimiento</th><th>Categoría</th><th>Descuento</th><th>WhatsApp</th><th style="text-align:right">Estado</th></tr></thead>
-          <tbody id="a-body"><tr><td colspan="5" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Cargando…</td></tr></tbody>
+          <tbody id="a-body"><tr><td colspan="5" style="text-align:center;padding:30px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
         </table>
       </div>`;
     cargarAliados();
@@ -437,19 +437,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Sobreescribir renderContenido para mostrar anuncios reales
   window.renderContenido = function() {
-    $("#p-contenido").innerHTML = `<div style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Cargando…</div>`;
+    $("#p-contenido").innerHTML = `<div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>`;
     cargarAnuncios();
   };
 
   // Sobreescribir renderProgramas para mostrar programas reales
   window.renderProgramas = function() {
-    $("#p-programas").innerHTML = `<div style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Cargando…</div>`;
+    $("#p-programas").innerHTML = `<div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>`;
     cargarProgramas();
   };
 
   // Sobreescribir renderProfesionales para conectar con Supabase
   window.renderProfesionales = function() {
-    $("#p-profesionales").innerHTML = `<div style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">Cargando…</div>`;
+    $("#p-profesionales").innerHTML = `<div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>`;
     cargarProfesionales();
   };
 

@@ -14,7 +14,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=17">
+  <link rel="stylesheet" href="styles.css?v=18">
   <style>
     #marcas-carrusel-landing { margin-top: var(--nav-h); }
     .hero { padding-top: 0; }
@@ -27,6 +27,8 @@
   </style>
 </head>
 <body>
+  <div class="page-loader" id="page-loader"><img src="icon-club.png" alt=""></div>
+  <script>(function(){var l=document.getElementById('page-loader');function ocultar(){if(!l)return;l.classList.add('is-hidden');setTimeout(function(){l.remove();},400);}window.addEventListener('load',ocultar);setTimeout(ocultar,4000);})();</script>
 
   <div class="grain" aria-hidden="true"></div>
 

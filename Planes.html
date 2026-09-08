@@ -14,10 +14,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=17">
+  <link rel="stylesheet" href="styles.css?v=18">
   <link rel="stylesheet" href="estilos.css?v=1">
 </head>
 <body class="checkout-body">
+  <div class="page-loader" id="page-loader"><img src="icon-club.png" alt=""></div>
+  <script>(function(){var l=document.getElementById('page-loader');function ocultar(){if(!l)return;l.classList.add('is-hidden');setTimeout(function(){l.remove();},400);}window.addEventListener('load',ocultar);setTimeout(ocultar,4000);})();</script>
 
   <div class="checkout-grain" aria-hidden="true"></div>
 
@@ -54,7 +56,7 @@
       </div>
 
       <div class="plan-grid" id="plan-grid">
-        <p style="grid-column:1/-1;text-align:center;padding:40px 0;color:var(--tinta-45)">Cargando planes…</p>
+        <p style="grid-column:1/-1;text-align:center;padding:40px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></p>
       </div>
     </section>
 

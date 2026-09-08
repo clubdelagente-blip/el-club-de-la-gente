@@ -14,12 +14,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=17">
+  <link rel="stylesheet" href="styles.css?v=18">
   <link rel="stylesheet" href="estilos.css?v=1">
   <link rel="stylesheet" href="dashboard.css?v=1">
   <link rel="stylesheet" href="agente.css">
 </head>
 <body class="dash-body">
+  <div class="page-loader" id="page-loader"><img src="icon-club.png" alt=""></div>
+  <script>(function(){var l=document.getElementById('page-loader');function ocultar(){if(!l)return;l.classList.add('is-hidden');setTimeout(function(){l.remove();},400);}window.addEventListener('load',ocultar);setTimeout(ocultar,4000);})();</script>
 
   <div class="dash" id="dash">
     <div class="dash-backdrop" id="dash-backdrop"></div>
@@ -315,7 +317,7 @@
           </div>
           <div id="tienda-cats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px"></div>
           <div id="tienda-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
-            <div style="text-align:center;padding:60px 20px;color:var(--tinta-suave);grid-column:1/-1">Cargando productos…</div>
+            <div style="text-align:center;padding:60px 20px;grid-column:1/-1"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
           </div>
 
           <div id="mis-pedidos-club-wrap" style="display:none;margin-top:36px">
@@ -527,7 +529,7 @@
                 <span class="card__link" style="cursor:default" id="negocio-chart-year">—</span>
               </div>
               <div class="neg-chart" id="negocio-chart">
-                <p style="font-size:12px;color:var(--tinta-40);padding:8px 0">Cargando…</p>
+                <p style="padding:8px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></p>
               </div>
             </div>
 
@@ -554,7 +556,7 @@
             </div>
             <table class="tabla">
               <thead><tr><th>Cliente</th><th>Fecha</th><th>Descuento</th><th>Compra</th><th>Ahorro al cliente</th></tr></thead>
-              <tbody><tr><td colspan="5" style="text-align:center;color:var(--tinta-40);padding:16px">Cargando…</td></tr></tbody>
+              <tbody><tr><td colspan="5" style="text-align:center;padding:16px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
             </table>
           </div>
           </div>
@@ -598,7 +600,7 @@
                 <div class="card__head">
                   <span class="card__title">Pedidos recibidos</span>
                 </div>
-                <div id="tienda-pedidos-list" style="padding:8px 0;font-size:13px;color:var(--tinta-40)">Cargando…</div>
+                <div id="tienda-pedidos-list" style="padding:8px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
               </div>
 
               <div class="card" style="margin-bottom:20px">
@@ -606,7 +608,7 @@
                   <span class="card__title">Tus productos</span>
                   <button class="card__link" id="btn-agregar-producto" type="button" style="cursor:pointer;border:none;background:none;font:inherit">+ Agregar producto</button>
                 </div>
-                <div id="tienda-productos-list" style="padding:8px 0;font-size:13px;color:var(--tinta-40)">Cargando…</div>
+                <div id="tienda-productos-list" style="padding:8px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
               </div>
 
               <details class="card">
