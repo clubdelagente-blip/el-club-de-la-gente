@@ -462,7 +462,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!email) return;
     setLoading(btn, true, "Enviar enlace →");
     await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://clubdelagente-blip.github.io/el-club-de-la-gente/Registro.html",
+      redirectTo: "https://elclubdelagente.com/Registro.html",
     });
     setLoading(btn, false, "Enviar enlace →");
     // Mostramos éxito siempre (Supabase no revela si el email existe o no)
