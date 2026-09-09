@@ -556,6 +556,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    let profGuardado = false;
     try {
       if (data.user) {
         // Documentos de verificación (cédula, licencia, SOAT, certificados...)
@@ -565,10 +566,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
           const path = `profesional-doc-${data.user.id}-${Date.now()}-${i}.${ext}`;
           const { error: upErr } = await supabase.storage.from("contenido").upload(path, file);
-          if (!upErr) documentos.push(supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl);
+          if (upErr) console.error("Error subiendo documento:", upErr);
+          else documentos.push(supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl);
         }
 
-        await supabase.from("profesionales").insert({
+        const { error: insErr } = await supabase.from("profesionales").insert({
           user_id: data.user.id,
           nombre,
           area,
@@ -577,14 +579,30 @@ document.addEventListener("DOMContentLoaded", async () => {
           documentos,
           activo: false,
         });
-        await supabase.from("perfiles").upsert({
-          id: data.user.id,
-          nombre,
-          whatsapp: wa,
-          rol: "profesional",
-        });
+        if (insErr) {
+          console.error("Error guardando postulación de profesional:", insErr);
+        } else {
+          profGuardado = true;
+          await supabase.from("perfiles").upsert({
+            id: data.user.id,
+            nombre,
+            whatsapp: wa,
+            rol: "profesional",
+          });
+        }
       }
-    } catch (_) {}
+    } catch (e) {
+      console.error("Error en registro profesional:", e);
+    }
+
+    setLoading(btn, false, "Registrarme como profesional →");
+
+    // No mostrar "postulación recibida" ni avisar al Club si en realidad no
+    // se guardó nada — sería engañoso y la postulación se perdería en silencio.
+    if (!profGuardado) {
+      mostrarError("Tu cuenta se creó, pero hubo un error guardando tu postulación. Escríbenos por WhatsApp para completarla.");
+      return;
+    }
 
     // Avisar al Club por WhatsApp de la postulación nueva (no queda solo
     // esperando a que alguien revise el panel de Admin)
@@ -594,7 +612,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       body: JSON.stringify({ to: "3024982733", body: `📋 Nueva postulación de PROFESIONAL\n\nNombre: ${nombre}\nÁrea: ${area}\nWhatsApp: ${wa}\nCorreo: ${email}\n\nRevísala en Admin → Profesionales.` }),
     }).catch(() => {});
 
-    setLoading(btn, false, "Registrarme como profesional →");
     localStorage.setItem("ecdlg_perfil", JSON.stringify({ nombre, primerNombre: nombre.split(" ")[0], rol: "profesional" }));
     irAExitoProfesional(nombre);
   });
