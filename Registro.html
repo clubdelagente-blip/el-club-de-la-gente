@@ -247,6 +247,8 @@
                   <option>Arquitectura y diseño</option>
                   <option>Entrenamiento personal</option>
                   <option>Educación y tutorías</option>
+                  <option>Uber de moto</option>
+                  <option>Uber de carro</option>
                   <option value="Otra">Otra especialidad</option>
                 </select>
                 <input type="text" id="prof-area-otra" placeholder="Describe tu especialidad" style="display:none;margin-top:8px;width:100%;padding:12px 14px;border:1.5px solid rgba(26,26,24,.18);border-radius:10px;font-size:14px">
@@ -266,6 +268,12 @@
               <div class="campo">
                 <label for="prof-pass">Contraseña</label>
                 <input type="password" id="prof-pass" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+              </div>
+              <div class="campo">
+                <label>Documentos de verificación</label>
+                <div id="prof-docs-grid" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:2px"></div>
+                <input type="file" id="prof-docs-input" accept="image/*,application/pdf" style="display:none">
+                <span class="auth-hint">Cédula, licencia de conducción, SOAT, certificados, tarjeta profesional, etc. — nos ayudan a validar tu información antes de aprobarte. Hasta 5 archivos.</span>
               </div>
               <label class="auth-check">
                 <input type="checkbox" id="prof-terminos" required>
@@ -353,7 +361,7 @@
   </main>
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <script type="module" src="auth.js?v=21"></script>
+  <script type="module" src="auth.js?v=22"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

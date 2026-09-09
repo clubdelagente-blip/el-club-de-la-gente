@@ -31,6 +31,27 @@ function calcularMision(fechaISO) {
   return n;
 }
 
+/* ---------- REGISTRO PROFESIONAL: documentos de verificación ---------- */
+// Grid de cuadraditos con "+" — el <input type=file multiple> nativo no
+// funcionaba de forma confiable (mismo problema que ya resolvimos para las
+// fotos de la Tienda del Club), así que se suben de a uno.
+let profDocs = [];
+function renderProfDocsGrid() {
+  const cont = $("#prof-docs-grid");
+  if (!cont) return;
+  cont.innerHTML = profDocs.map((f, i) => {
+    const esImg = f.type.startsWith("image/");
+    return `<div style="position:relative;width:64px;height:64px">
+      ${esImg
+        ? `<img src="${URL.createObjectURL(f)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;border:1px solid rgba(26,26,24,.15)">`
+        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#f5f4f0;border-radius:8px;border:1px solid rgba(26,26,24,.15);font-size:10px;text-align:center;padding:4px;overflow:hidden;word-break:break-word">${f.name}</div>`}
+      <button type="button" data-rm-doc="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer">&times;</button>
+    </div>`;
+  }).join("") + (profDocs.length < 5 ? `<button type="button" id="prof-docs-add" style="width:64px;height:64px;border:2px dashed #ccc;border-radius:8px;background:none;cursor:pointer;font-size:24px;color:#999;line-height:1">+</button>` : "");
+  $("#prof-docs-add")?.addEventListener("click", () => $("#prof-docs-input")?.click());
+  cont.querySelectorAll("[data-rm-doc]").forEach(b => b.addEventListener("click", () => { profDocs.splice(+b.dataset.rmDoc, 1); renderProfDocsGrid(); }));
+}
+
 /* ---------- NAVEGACIÓN DE VISTAS ---------- */
 function mostrarVista(id) {
   $$(".auth-view").forEach(v => v.classList.toggle("is-active", v.id === id));
@@ -61,6 +82,7 @@ function elegirRol(rol) {
   $("#form-registro").hidden    = rol !== "miembro";
   $("#form-aliado").hidden      = rol !== "aliado";
   $("#form-profesional").hidden = rol !== "profesional";
+  if (rol === "profesional") { profDocs = []; renderProfDocsGrid(); }
 
   // Google no aplica para aliado / profesional
   const gBtn = $(".btn-google[data-ctx='registro']");
@@ -166,6 +188,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Selección de rol
   $$("[data-role]").forEach(b => b.addEventListener("click", () => elegirRol(b.dataset.role)));
   $("#reg-back")?.addEventListener("click", resetRoles);
+
+  // Documentos de verificación del profesional
+  $("#prof-docs-input")?.addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || profDocs.length >= 5) return;
+    profDocs.push(file);
+    renderProfDocsGrid();
+  });
 
   // Link directo desde el footer ("¿Quieres ser aliado?" / "¿Quieres ser profesional?")
   // o desde "Únete gratis aquí" en la pantalla de éxito de aliado/profesional.
@@ -527,12 +558,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
       if (data.user) {
+        // Documentos de verificación (cédula, licencia, SOAT, certificados...)
+        const documentos = [];
+        for (let i = 0; i < profDocs.length; i++) {
+          const file = profDocs[i];
+          const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+          const path = `profesional-doc-${data.user.id}-${Date.now()}-${i}.${ext}`;
+          const { error: upErr } = await supabase.storage.from("contenido").upload(path, file);
+          if (!upErr) documentos.push(supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl);
+        }
+
         await supabase.from("profesionales").insert({
           user_id: data.user.id,
           nombre,
           area,
           descripcion: desc,
           whatsapp: wa,
+          documentos,
           activo: false,
         });
         await supabase.from("perfiles").upsert({
