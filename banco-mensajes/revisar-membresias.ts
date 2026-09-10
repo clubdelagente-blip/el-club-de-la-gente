@@ -5,6 +5,9 @@
 //    el plan a "sin_plan" -> eso activa la pantalla de ClubCard bloqueada
 //    que ya existe en Perfil.html, sin tocar nada más.
 // 2) A quien le vence en 3 días, le manda un recordatorio por WhatsApp.
+// 3) Aliados y profesionales cuyo contrato (fecha_fin) venció y no se
+//    renovó se desactivan solos del Directorio; al profesional además se
+//    le quita la membresía vitalicia que traía por estar afiliado.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -60,11 +63,56 @@ Deno.serve(async (_req: Request) => {
     }
   }
 
+  // 3a) Aliados cuyo contrato venció sin renovar
+  const { data: aliadosVencidos, error: errAliadosVenc } = await supabase
+    .from("aliados")
+    .select("id")
+    .eq("activo", true)
+    .not("fecha_fin", "is", null)
+    .lte("fecha_fin", hoy);
+
+  if (errAliadosVenc) console.error("Error buscando aliados vencidos:", errAliadosVenc);
+
+  if (aliadosVencidos?.length) {
+    const { error: errDesactAliados } = await supabase
+      .from("aliados")
+      .update({ activo: false })
+      .in("id", aliadosVencidos.map((a) => a.id));
+    if (errDesactAliados) console.error("Error desactivando aliados vencidos:", errDesactAliados);
+  }
+
+  // 3b) Profesionales cuyo contrato venció sin renovar — se desactivan y
+  // pierden la membresía vitalicia ligada a estar afiliados
+  const { data: profVencidos, error: errProfVenc } = await supabase
+    .from("profesionales")
+    .select("id, user_id")
+    .eq("activo", true)
+    .not("fecha_fin", "is", null)
+    .lte("fecha_fin", hoy);
+
+  if (errProfVenc) console.error("Error buscando profesionales vencidos:", errProfVenc);
+
+  if (profVencidos?.length) {
+    const { error: errDesactProf } = await supabase
+      .from("profesionales")
+      .update({ activo: false, estado: "pendiente" })
+      .in("id", profVencidos.map((p) => p.id));
+    if (errDesactProf) console.error("Error desactivando profesionales vencidos:", errDesactProf);
+
+    const userIds = profVencidos.map((p) => p.user_id).filter(Boolean);
+    if (userIds.length) {
+      const { error: errQuitarPlan } = await supabase.from("perfiles").update({ plan: "sin_plan" }).in("id", userIds);
+      if (errQuitarPlan) console.error("Error quitando vitalicia a profesionales vencidos:", errQuitarPlan);
+    }
+  }
+
   return new Response(
     JSON.stringify({
       ok: true,
       bajados: vencidos?.length || 0,
       recordatorios_enviados: recordatoriosEnviados,
+      aliados_desactivados: aliadosVencidos?.length || 0,
+      profesionales_desactivados: profVencidos?.length || 0,
     }),
     { headers: { "Content-Type": "application/json" } },
   );

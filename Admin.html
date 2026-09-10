@@ -801,12 +801,21 @@ window.actualizarAgCountReal=async function(){
 };
 
 /* ---- ALIADOS ---- */
+function diasRestantesHtml(fechaFin){
+  if(!fechaFin)return'';
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const fin=new Date(fechaFin+'T00:00:00');
+  const dias=Math.round((fin-hoy)/86400000);
+  const color=dias<0?'#c0392b':dias<=7?'#f59e0b':'#6fdc8c';
+  const txt=dias<0?`Vencido hace ${Math.abs(dias)}d`:dias===0?'Vence hoy':`${dias}d restantes`;
+  return`<br><span style="font-size:10px;color:${color}">${txt}</span>`;
+}
 function renderTablaAliados(list){
   const tbody=$("#a-body");if(!tbody)return;
   if(!list.length){tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">${_aliados.length?'Sin resultados':'Aún no hay aliados →'}</td></tr>`;return;}
   tbody.innerHTML=list.map(a=>`<tr>
     <td><div class="ad-cell-user">${a.imagen_url?`<img src="${a.imagen_url}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0">`:`<span class="ad-av">${(a.nombre||'?')[0]}</span>`}<div class="ad-cell-user__name">${a.nombre}</div></div></td>
-    <td><span class="ad-table__num">${a.categoria||'—'}</span><br><span style="font-size:10px;color:rgba(242,240,234,.35)">${PLANES_VIS.filter(p=>(a.planes_visibles||['basica','premium']).includes(p.val)).map(p=>p.lbl).join(' · ')||'Sin plan asignado'}</span></td>
+    <td><span class="ad-table__num">${a.categoria||'—'}</span><br><span style="font-size:10px;color:rgba(242,240,234,.35)">${PLANES_VIS.filter(p=>(a.planes_visibles||['basica','premium']).includes(p.val)).map(p=>p.lbl).join(' · ')||'Sin plan asignado'}</span>${diasRestantesHtml(a.fecha_fin)}</td>
     <td><span class="ad-num-strong verde">${a.descuento||'—'}</span></td>
     <td>${a.whatsapp||'—'}</td>
     <td style="text-align:right"><div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
@@ -896,6 +905,18 @@ function htmlFormAliado(a={}){
   <div class="ad-field"><label>Foto del establecimiento</label>
     ${a.imagen_url?`<img src="${a.imagen_url}" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:10px">`:''}
     <input id="fa-img" type="file" accept="image/*"><input type="hidden" id="fa-img-url" value="${a.imagen_url||''}"></div>
+  <hr style="border:none;border-top:1px solid rgba(26,26,24,.12);margin:20px 0 14px">
+  <div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(26,26,24,.4);margin-bottom:10px">Vigencia y contrato — privado, solo Admin</div>
+  <div class="ad-field-2">
+    <div class="ad-field"><label>Fecha de inicio</label><input id="fa-fecha-inicio" type="date" value="${a.fecha_inicio||''}"></div>
+    <div class="ad-field"><label>Fecha de fin</label><input id="fa-fecha-fin" type="date" value="${a.fecha_fin||''}"></div>
+  </div>
+  <div class="ad-field"><label>Contrato firmado</label>
+    ${a.contrato_url?`<a href="${a.contrato_url}" target="_blank" rel="noopener" style="display:block;font-size:12px;color:#1a7a3c;margin-bottom:8px">${ic('file-text')} Ver contrato actual</a>`:''}
+    <input id="fa-contrato" type="file" accept="application/pdf,image/*">
+    <input type="hidden" id="fa-contrato-url" value="${a.contrato_url||''}">
+    <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Si no se renueva antes de la fecha de fin, el aliado se desactiva solo del Directorio.</span>
+  </div>
   ${a.id?`
   <hr style="border:none;border-top:1px solid rgba(26,26,24,.12);margin:20px 0 14px">
   <div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(26,26,24,.4);margin-bottom:10px">Cuenta de acceso</div>
@@ -1052,9 +1073,12 @@ function bindFormAliado(){
       let imagen_url=$("#fa-img-url")?.value||null;
       const file=$("#fa-img")?.files?.[0];
       if(file)try{imagen_url=await subirImagen(file);}catch(_){toast('Error al subir imagen');}
+      let contrato_url=$("#fa-contrato-url")?.value||null;
+      const contratoFile=$("#fa-contrato")?.files?.[0];
+      if(contratoFile)try{contrato_url=await subirImagen(contratoFile);}catch(_){toast('Error al subir el contrato');}
       const planesSel=$("#fa-planes")?.value.split(',').map(s=>s.trim()).filter(Boolean);
       const subcategorias=($("#fa-subcat")?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
-      const payload={nombre,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:$("#fa-wa")?.value.trim()||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
+      const payload={nombre,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:$("#fa-wa")?.value.trim()||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
       const id=btn.dataset.id;
       const{error}=id?await supabase.from('aliados').update(payload).eq('id',id):await supabase.from('aliados').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}
@@ -1326,7 +1350,7 @@ async function cargarProfesionales(){
     const waUrl=wa?`https://wa.me/57${wa}?text=${msg}`:'';
     return `<div style="display:flex;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
     ${p.imagen_url?`<img src="${p.imagen_url}" style="width:52px;height:52px;object-fit:cover;border-radius:50%;flex-shrink:0">`:`<span class="ad-av">${esc((p.nombre||'P')[0])}</span>`}
-    <div style="flex:1;min-width:0"><div style="font-weight:600;margin-bottom:2px">${esc(p.nombre)}</div><div style="font-size:12px;color:rgba(242,240,234,.4);margin-bottom:4px">${esc(p.area)} ${p.whatsapp?`· ${esc(p.whatsapp)}`:''}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${esc(p.descripcion)}</div>${(p.documentos||[]).length?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">${p.documentos.map((d,i)=>`<a href="${d}" target="_blank" rel="noopener" style="font-size:11px;color:#6fdc8c;text-decoration:underline">${ic('file-text')} Documento ${i+1}</a>`).join('')}</div>`:''}</div>
+    <div style="flex:1;min-width:0"><div style="font-weight:600;margin-bottom:2px">${esc(p.nombre)}</div><div style="font-size:12px;color:rgba(242,240,234,.4);margin-bottom:4px">${esc(p.area)} ${p.whatsapp?`· ${esc(p.whatsapp)}`:''}${diasRestantesHtml(p.fecha_fin)}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${esc(p.descripcion)}</div>${(p.documentos||[]).length?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">${p.documentos.map((d,i)=>`<a href="${d}" target="_blank" rel="noopener" style="font-size:11px;color:#6fdc8c;text-decoration:underline">${ic('file-text')} Documento ${i+1}</a>`).join('')}</div>`:''}${p.contrato_url?`<a href="${p.contrato_url}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;font-size:11px;color:#6fdc8c;text-decoration:underline">${ic('file-text')} Contrato firmado</a>`:''}</div>
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0">
       <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${col}22;color:${col};border:1px solid ${col}55">${lbl}</span>
       <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
@@ -1348,6 +1372,18 @@ function htmlFormProf(p={}){return `
   </div>
   <div class="ad-field"><label>Descripción / Servicios</label><textarea id="pf-desc" rows="3" placeholder="Describe los servicios y beneficios">${p.descripcion||''}</textarea></div>
   <div class="ad-field"><label>Foto de perfil (opcional)</label>${p.imagen_url?`<img src="${p.imagen_url}" style="width:72px;height:72px;object-fit:cover;border-radius:50%;margin-bottom:10px">`:''}<input id="pf-img" type="file" accept="image/*"><input type="hidden" id="pf-img-url" value="${p.imagen_url||''}"></div>
+  <hr style="border:none;border-top:1px solid rgba(26,26,24,.12);margin:20px 0 14px">
+  <div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(26,26,24,.4);margin-bottom:10px">Vigencia y contrato — privado, solo Admin</div>
+  <div class="ad-field-2">
+    <div class="ad-field"><label>Fecha de inicio</label><input id="pf-fecha-inicio" type="date" value="${p.fecha_inicio||''}"></div>
+    <div class="ad-field"><label>Fecha de fin</label><input id="pf-fecha-fin" type="date" value="${p.fecha_fin||''}"></div>
+  </div>
+  <div class="ad-field"><label>Contrato firmado</label>
+    ${p.contrato_url?`<a href="${p.contrato_url}" target="_blank" rel="noopener" style="display:block;font-size:12px;color:#1a7a3c;margin-bottom:8px">${ic('file-text')} Ver contrato actual</a>`:''}
+    <input id="pf-contrato" type="file" accept="application/pdf,image/*">
+    <input type="hidden" id="pf-contrato-url" value="${p.contrato_url||''}">
+    <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Si no se renueva antes de la fecha de fin, se desactiva solo del Directorio y pierde la membresía vitalicia.</span>
+  </div>
   <div class="ad-toolbar" style="margin:6px 0 0"><div class="ad-spacer"></div><button class="ad-btn" id="pf-cancel">Cancelar</button><button class="ad-btn ad-btn--verde" id="pf-save" data-id="${p.id||''}">${ic("check")} ${p.id?'Guardar cambios':'Agregar profesional'}</button></div>`;}
 function bindFormProf(){setTimeout(()=>{
   $("#pf-cancel")?.addEventListener('click',()=>window.cerrarModal?.());
@@ -1356,7 +1392,10 @@ function bindFormProf(){setTimeout(()=>{
     const nombre=$("#pf-nom")?.value.trim();if(!nombre){toast('El nombre es obligatorio');return;}
     btn.disabled=true;let imagen_url=$("#pf-img-url")?.value||null;
     const file=$("#pf-img")?.files?.[0];if(file)try{imagen_url=await subirImagen(file);}catch(_){}
-    const payload={nombre,area:$("#pf-area")?.value.trim()||null,whatsapp:$("#pf-wa")?.value.trim()||null,descripcion:$("#pf-desc")?.value.trim()||null,imagen_url,activo:true};
+    let contrato_url=$("#pf-contrato-url")?.value||null;
+    const contratoFile=$("#pf-contrato")?.files?.[0];
+    if(contratoFile)try{contrato_url=await subirImagen(contratoFile);}catch(_){toast('Error al subir el contrato');}
+    const payload={nombre,area:$("#pf-area")?.value.trim()||null,whatsapp:$("#pf-wa")?.value.trim()||null,descripcion:$("#pf-desc")?.value.trim()||null,imagen_url,fecha_inicio:$("#pf-fecha-inicio")?.value||null,fecha_fin:$("#pf-fecha-fin")?.value||null,contrato_url,activo:true};
     const id=btn.dataset.id;
     id?await supabase.from('profesionales').update(payload).eq('id',id):await supabase.from('profesionales').insert(payload);
     window.cerrarModal?.();cargarProfesionales();toast(id?'Profesional actualizado ✓':'Profesional agregado ✓');
