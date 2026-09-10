@@ -305,6 +305,21 @@ function renderConfig() {
     { n: "Modo mantenimiento de la web", d: "Muestra una página de 'volvemos pronto' a los visitantes", on: false },
   ];
   $("#p-config").innerHTML = `
+    <div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(242,240,234,.4);margin-bottom:10px">Servicio de transporte (Uber moto / carro)</div>
+    <div class="ad-set" style="margin-bottom:24px">
+      <div class="ad-set__row" style="flex-direction:column;align-items:stretch;gap:10px">
+        <div>
+          <label style="font-size:12px;color:rgba(242,240,234,.5);display:block;margin-bottom:5px">Link del grupo de WhatsApp — Moto</label>
+          <input id="cfg-grupo-moto" type="url" placeholder="https://chat.whatsapp.com/..." style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(242,240,234,.15);background:rgba(242,240,234,.04);color:#fff;font-size:13px">
+        </div>
+        <div>
+          <label style="font-size:12px;color:rgba(242,240,234,.5);display:block;margin-bottom:5px">Link del grupo de WhatsApp — Carro</label>
+          <input id="cfg-grupo-carro" type="url" placeholder="https://chat.whatsapp.com/..." style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(242,240,234,.15);background:rgba(242,240,234,.04);color:#fff;font-size:13px">
+        </div>
+        <span style="font-size:11px;color:rgba(242,240,234,.35)">El Agente de WhatsApp le comparte este link al miembro cuando pide un viaje. Si lo dejas vacío, el Agente le avisa que el servicio aún no está disponible.</span>
+        <button class="ad-btn ad-btn--verde" id="cfg-grupo-save" style="align-self:flex-start">${ic("check")} Guardar links</button>
+      </div>
+    </div>
     <div class="ad-set">
       ${items.map((it, i) => `
         <div class="ad-set__row">
@@ -313,6 +328,7 @@ function renderConfig() {
         </div>`).join("")}
     </div>
     <div class="ad-toolbar"><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="cfg-save">${ic("check")} Guardar cambios</button></div>`;
+  window.cargarConfigTransporte?.();
   if (window.lucide) lucide.createIcons();
 }
 

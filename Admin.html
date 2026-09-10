@@ -195,7 +195,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=4"></script>
-  <script src="admin.js?v=17"></script>
+  <script src="admin.js?v=18"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -239,6 +239,14 @@ async function cargarCategoriasClub(){
   SUBCATS={};
   (hijos||[]).forEach(h=>{ if(h.mostrar_si_respuesta&&h.opciones?.length)SUBCATS[h.mostrar_si_respuesta]=h.opciones; });
 }
+async function cargarConfigTransporte(){
+  const{data}=await supabase.from('configuracion').select('*').in('clave',['grupo_wa_moto','grupo_wa_carro']);
+  const map={};(data||[]).forEach(r=>map[r.clave]=r.valor);
+  const m=$("#cfg-grupo-moto");if(m)m.value=map.grupo_wa_moto||'';
+  const c=$("#cfg-grupo-carro");if(c)c.value=map.grupo_wa_carro||'';
+}
+window.cargarConfigTransporte=cargarConfigTransporte;
+
 const PLANES_VIS=[{val:'gratis',lbl:'Gratis'},{val:'basica',lbl:'Básica'},{val:'premium',lbl:'Premium'}];
 
 function toast(msg){const t=$("#ad-toast");if(!t)return;t.textContent=msg;t.classList.add("is-show");setTimeout(()=>t.classList.remove("is-show"),3000);}
@@ -2480,6 +2488,16 @@ document.addEventListener('DOMContentLoaded',async()=>{
   }
 
   document.addEventListener('click',async(e)=>{
+    if(e.target.closest('#cfg-grupo-save')){
+      const btn=e.target.closest('#cfg-grupo-save');
+      const moto=$("#cfg-grupo-moto")?.value.trim()||null;
+      const carro=$("#cfg-grupo-carro")?.value.trim()||null;
+      btn.disabled=true;
+      await supabase.from('configuracion').upsert([{clave:'grupo_wa_moto',valor:moto},{clave:'grupo_wa_carro',valor:carro}]);
+      btn.disabled=false;
+      toast('Links guardados ✓');
+      return;
+    }
     if(e.target.closest('#pr-add')){ abrirModal('Agregar pregunta','Aparecerá en el formulario "conócenos más"',htmlFormPregunta()); bindFormPregunta(); return; }
     const edPr=e.target.closest('[data-ed-preg]'); if(edPr){ const p=_preguntas.find(x=>x.id===edPr.dataset.edPreg); if(p){ abrirModal('Editar pregunta',p.pregunta,htmlFormPregunta(p)); bindFormPregunta(p); } return; }
     const togPr=e.target.closest('[data-tog-preg]'); if(togPr){ await supabase.from('preguntas_segmentacion').update({activa: togPr.dataset.activa!=='true'}).eq('id',togPr.dataset.togPreg); cargarPreguntasAdmin(); return; }

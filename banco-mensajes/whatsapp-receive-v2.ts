@@ -383,7 +383,7 @@ GUÍA POR SITUACIÓN:
 
 // ─── System prompt ───────────────────────────────────────────────────────────
 
-function buildSystemPrompt(perfil: Record<string, unknown>, numerologia: number, aliados: Record<string, unknown>[] = [], promos: Record<string, unknown>[] = []): string {
+function buildSystemPrompt(perfil: Record<string, unknown>, numerologia: number, aliados: Record<string, unknown>[] = [], promos: Record<string, unknown>[] = [], config: Record<string, string | null> = {}): string {
   const perfilNumerologico = getPerfilNumerologico(numerologia);
 
   const categorias = Array.isArray(perfil.categorias_interes)
@@ -422,6 +422,15 @@ PERFIL DEL MIEMBRO:
 - Canal preferido: ${perfil.canal_preferido || "whatsapp"}
 - Contenido preferido: ${perfil.contenido_preferido || "no especificado"}
 - Impacto social le importa: ${perfil.impacto_social ? "sí" : "no"}`);
+
+  const grupoMoto = config.grupo_wa_moto;
+  const grupoCarro = config.grupo_wa_carro;
+  base += `\n\nSERVICIO DE TRANSPORTE (moto/carro, gratis para todos los miembros):
+El Club tiene grupos de WhatsApp con conductores de confianza (moto y carro). Cuando el miembro diga que necesita un viaje, una moto, un carro o algo similar:
+1. Pregúntale el punto de recogida y el destino (si no los ha dado ya), así puede pegarlos directo en el grupo.
+2. Dale el link del grupo que corresponda:${grupoMoto ? `\n   - Moto: ${grupoMoto}` : "\n   - Moto: aún no disponible, dile que ese servicio está en preparación."}${grupoCarro ? `\n   - Carro: ${grupoCarro}` : "\n   - Carro: aún no disponible, dile que ese servicio está en preparación."}
+3. Explícale que debe entrar al grupo y postear ahí su solicitud (recogida y destino) — el primer conductor que le escriba se coordina directo con él. El pago es en efectivo, directo al conductor.
+NUNCA inventes un link si no está disponible arriba — dile la verdad, que ese servicio específico aún no está activo.`;
 
   if (aliados.length > 0) {
     const aliadosList = aliados.map((a) => {
@@ -527,13 +536,21 @@ Deno.serve(async (req: Request) => {
       .select("nombre, categoria, descuento, whatsapp, direccion");
     const aliados = aliadosData || [];
 
+    // Cargar configuración (ej. links de los grupos de conductores)
+    const { data: configData } = await supabase
+      .from("configuracion")
+      .select("clave, valor")
+      .in("clave", ["grupo_wa_moto", "grupo_wa_carro"]);
+    const config: Record<string, string | null> = {};
+    for (const c of configData || []) config[c.clave as string] = c.valor as string | null;
+
     // Calcular numerología
     let numerologia = 0;
     if (perfil.fecha_nacimiento) {
       numerologia = calcularNumerologia(perfil.fecha_nacimiento);
     }
 
-    const systemPrompt = buildSystemPrompt(perfil, numerologia, aliados);
+    const systemPrompt = buildSystemPrompt(perfil, numerologia, aliados, [], config);
 
     // Cargar historial de conversación (últimos 10 mensajes)
     const { data: historial } = await supabase
