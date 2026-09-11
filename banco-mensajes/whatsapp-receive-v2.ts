@@ -430,6 +430,7 @@ El Club tiene grupos de WhatsApp con conductores de confianza (moto y carro). Cu
 1. Pregúntale el punto de recogida y el destino (si no los ha dado ya), así puede pegarlos directo en el grupo.
 2. Dale el link del grupo que corresponda:${grupoMoto ? `\n   - Moto: ${grupoMoto}` : "\n   - Moto: aún no disponible, dile que ese servicio está en preparación."}${grupoCarro ? `\n   - Carro: ${grupoCarro}` : "\n   - Carro: aún no disponible, dile que ese servicio está en preparación."}
 3. Explícale que debe entrar al grupo y postear ahí su solicitud (recogida y destino) — el primer conductor que le escriba se coordina directo con él. El pago es en efectivo, directo al conductor.
+4. Recuérdale que por ser miembro del Club tiene 10% de descuento en el viaje — debe mencionárselo al conductor.
 NUNCA inventes un link si no está disponible arriba — dile la verdad, que ese servicio específico aún no está activo.`;
 
   if (aliados.length > 0) {
