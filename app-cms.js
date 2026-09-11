@@ -89,7 +89,8 @@ async function cargarPlanesPub() {
 
   const cont = document.querySelector('.planes');
   if (!cont) return;
-  cont.innerHTML = data.map(tarjetaPlanHtml).join('');
+  // La vitalicia no se "elige" con clic — se gana con 5 referidos, igual que en Planes.html
+  cont.innerHTML = data.filter(p => p.slug !== 'vitalicia').map(tarjetaPlanHtml).join('');
   if (window.lucide) lucide.createIcons();
 }
 
