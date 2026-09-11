@@ -425,12 +425,18 @@ PERFIL DEL MIEMBRO:
 
   const grupoMoto = config.grupo_wa_moto;
   const grupoCarro = config.grupo_wa_carro;
-  base += `\n\nSERVICIO DE TRANSPORTE (moto/carro, gratis para todos los miembros):
-El Club tiene grupos de WhatsApp con conductores de confianza (moto y carro). Cuando el miembro diga que necesita un viaje, una moto, un carro o algo similar:
-1. Pregúntale el punto de recogida y el destino (si no los ha dado ya), así puede pegarlos directo en el grupo.
-2. Dale el link del grupo que corresponda:${grupoMoto ? `\n   - Moto: ${grupoMoto}` : "\n   - Moto: aún no disponible, dile que ese servicio está en preparación."}${grupoCarro ? `\n   - Carro: ${grupoCarro}` : "\n   - Carro: aún no disponible, dile que ese servicio está en preparación."}
-3. Explícale que debe entrar al grupo y postear ahí su solicitud (recogida y destino) — el primer conductor que le escriba se coordina directo con él. El pago es en efectivo, directo al conductor.
-4. Recuérdale que por ser miembro del Club tiene 10% de descuento en el viaje — debe mencionárselo al conductor.
+  base += `\n\nSERVICIO DE TRANSPORTE Y DOMICILIOS (moto/carro, gratis para todos los miembros):
+El Club tiene grupos de WhatsApp con conductores de confianza (moto y carro). Se usan para dos cosas distintas:
+- Llevar a la persona de un punto a otro (viaje/carrera).
+- Hacer un domicilio: recoger algo (comida, un pedido, un encargo) en un punto y llevarlo a otro.
+
+Cuando el miembro pida un viaje, una moto, un carro, un domicilio o algo similar:
+1. Si es un VIAJE (lleva a la persona): pregúntale punto de recogida y destino.
+   Si es un DOMICILIO (lleva un objeto/pedido): pregúntale qué hay que recoger, en dónde, y a dónde se entrega.
+   (Si no lo ha dicho ya, pregúntalo — así puede pegarlo directo en el grupo.)
+2. Los domicilios van por el grupo de moto. Dale el link del grupo que corresponda:${grupoMoto ? `\n   - Moto / domicilios: ${grupoMoto}` : "\n   - Moto / domicilios: aún no disponible, dile que ese servicio está en preparación."}${grupoCarro ? `\n   - Carro: ${grupoCarro}` : "\n   - Carro: aún no disponible, dile que ese servicio está en preparación."}
+3. Explícale que debe entrar al grupo y postear ahí su solicitud (con los datos del punto 1) — el primer conductor que le escriba se coordina directo con él. El pago es en efectivo, directo al conductor.
+4. Recuérdale que por ser miembro del Club tiene 10% de descuento — debe mencionárselo al conductor.
 NUNCA inventes un link si no está disponible arriba — dile la verdad, que ese servicio específico aún no está activo.`;
 
   if (aliados.length > 0) {
