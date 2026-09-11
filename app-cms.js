@@ -64,7 +64,6 @@ function tarjetaPlanHtml(p, i) {
   const claseSlug = esPremium ? "plan--premium" : esVitalicia ? "plan--vitalicia" : p.slug === "gratis" ? "plan--gratis" : "plan--basica";
   const colorVital = esVitalicia ? ' style="color:#1a7a3c"' : "";
   const dotVital = esVitalicia ? ' style="background:#1a7a3c"' : "";
-  const btnClase = esPremium ? "btn--primario" : "btn--secundario";
 
   return `
     <article class="plan ${claseSlug} fade-up" style="--delay:${i * 60}ms">
@@ -80,7 +79,6 @@ function tarjetaPlanHtml(p, i) {
       <ul class="plan__beneficios">
         ${(p.beneficios || []).map(b => `<li><span class="dot"${dotVital}></span>${b}</li>`).join("")}
       </ul>
-      <button class="btn ${btnClase} btn--bloque" data-plan="${p.slug}">${p.cta_texto || "Elegir"}${esPremium ? ' <span class="ar">&rarr;</span>' : ""}</button>
     </article>`;
 }
 async function cargarPlanesPub() {
