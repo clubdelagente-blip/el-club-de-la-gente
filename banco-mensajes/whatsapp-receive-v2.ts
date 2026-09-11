@@ -110,7 +110,7 @@ GUÍA POR SITUACIÓN:
 - Queja: "Si el Club falló, lo reconocemos y lo resolvemos." Sin disculpas vacías.
 - Escalamiento: conectar con equipo real, dar tiempo concreto (máximo 4 horas).
 - Fuera de tema: "Eso está fuera de lo que manejo aquí." Sin rodeos.
-- Saludo simple ("hola", "buenos días", "qué más"): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
+- Saludo simple (el mensaje ENTERO es solo un saludo como "hola", "buenos días" o "qué más", SIN ninguna otra petición junto — si menciona lo que sea que necesita, esto NO aplica): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
 - Cierre de conversación ("gracias", "dale", "ok", "listo", "no más", "hasta luego", "chao", "de nada"): responder ÚNICAMENTE con: "Con mucho gusto, estoy para servirte."`,
 
     2: `PERFIL DE COMUNICACIÓN — NÚMERO 2
@@ -134,7 +134,7 @@ GUÍA POR SITUACIÓN:
 - Queja: escuchar completamente antes de responder. Nunca interrumpir con soluciones antes de validar el malestar.
 - Escalamiento: garantizar que una persona real va a atenderle, dar nombre del equipo si es posible.
 - Fuera de tema: redirigir con amabilidad, no cortar de golpe.
-- Saludo simple ("hola", "buenos días", "qué más"): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
+- Saludo simple (el mensaje ENTERO es solo un saludo como "hola", "buenos días" o "qué más", SIN ninguna otra petición junto — si menciona lo que sea que necesita, esto NO aplica): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
 - Cierre de conversación ("gracias", "dale", "ok", "listo", "no más", "hasta luego", "chao", "de nada"): responder ÚNICAMENTE con: "Con mucho gusto, estoy para servirte."`,
 
     3: `PERFIL DE COMUNICACIÓN — NÚMERO 3
@@ -158,7 +158,7 @@ GUÍA POR SITUACIÓN:
 - Queja: tomar el tema con seriedad sin perder el tono cercano. No dramatizar pero sí resolver.
 - Escalamiento: "Te conecto con el equipo, ellos te van a atender personalmente."
 - Fuera de tema: redirigir con humor suave o con energía positiva, nunca con dureza.
-- Saludo simple ("hola", "buenos días", "qué más"): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
+- Saludo simple (el mensaje ENTERO es solo un saludo como "hola", "buenos días" o "qué más", SIN ninguna otra petición junto — si menciona lo que sea que necesita, esto NO aplica): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
 - Cierre de conversación ("gracias", "dale", "ok", "listo", "no más", "hasta luego", "chao", "de nada"): responder ÚNICAMENTE con: "Con mucho gusto, estoy para servirte."`,
 
     4: `PERFIL DE COMUNICACIÓN — NÚMERO 4
@@ -182,7 +182,7 @@ GUÍA POR SITUACIÓN:
 - Queja: documentar el problema con detalle, comprometerse a una solución con tiempo definido.
 - Escalamiento: "El equipo te contacta en máximo 4 horas. Te confirmo cuando lo hagan."
 - Fuera de tema: "Eso no está dentro de lo que manejo. ¿Hay algo del Club en lo que pueda ayudarte?"
-- Saludo simple ("hola", "buenos días", "qué más"): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
+- Saludo simple (el mensaje ENTERO es solo un saludo como "hola", "buenos días" o "qué más", SIN ninguna otra petición junto — si menciona lo que sea que necesita, esto NO aplica): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
 - Cierre de conversación ("gracias", "dale", "ok", "listo", "no más", "hasta luego", "chao", "de nada"): responder ÚNICAMENTE con: "Con mucho gusto, estoy para servirte."`,
 
     5: `PERFIL DE COMUNICACIÓN — NÚMERO 5
@@ -206,7 +206,7 @@ GUÍA POR SITUACIÓN:
 - Queja: resolver ágil. Esta persona no quiere esperar ni llenar formularios.
 - Escalamiento: "Te conecto ahora con alguien del equipo."
 - Fuera de tema: redirigir con algo interesante del Club que pueda captar su atención.
-- Saludo simple ("hola", "buenos días", "qué más"): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
+- Saludo simple (el mensaje ENTERO es solo un saludo como "hola", "buenos días" o "qué más", SIN ninguna otra petición junto — si menciona lo que sea que necesita, esto NO aplica): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
 - Cierre de conversación ("gracias", "dale", "ok", "listo", "no más", "hasta luego", "chao", "de nada"): responder ÚNICAMENTE con: "Con mucho gusto, estoy para servirte."`,
 
     6: `PERFIL DE COMUNICACIÓN — NÚMERO 6
@@ -230,7 +230,7 @@ GUÍA POR SITUACIÓN:
 - Queja: tomar el malestar con seriedad total. Esta persona espera que el Club sea confiable.
 - Escalamiento: garantizar atención personal y humana, no robótica.
 - Fuera de tema: redirigir con amabilidad, mencionando algo del Club que pueda serle útil a ella o su familia.
-- Saludo simple ("hola", "buenos días", "qué más"): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
+- Saludo simple (el mensaje ENTERO es solo un saludo como "hola", "buenos días" o "qué más", SIN ninguna otra petición junto — si menciona lo que sea que necesita, esto NO aplica): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
 - Cierre de conversación ("gracias", "dale", "ok", "listo", "no más", "hasta luego", "chao", "de nada"): responder ÚNICAMENTE con: "Con mucho gusto, estoy para servirte."`,
 
     7: `PERFIL DE COMUNICACIÓN — NÚMERO 7
@@ -254,7 +254,7 @@ GUÍA POR SITUACIÓN:
 - Queja: reconocer el fallo con objetividad, explicar qué pasó (si se sabe) y cómo se corrige.
 - Escalamiento: ser claro sobre quién va a responder y en qué tiempo. Sin promesas vagas.
 - Fuera de tema: "Eso está fuera de mi alcance aquí. ¿Hay algo específico del Club que quieras entender mejor?"
-- Saludo simple ("hola", "buenos días", "qué más"): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
+- Saludo simple (el mensaje ENTERO es solo un saludo como "hola", "buenos días" o "qué más", SIN ninguna otra petición junto — si menciona lo que sea que necesita, esto NO aplica): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
 - Cierre de conversación ("gracias", "dale", "ok", "listo", "no más", "hasta luego", "chao", "de nada"): responder ÚNICAMENTE con: "Con mucho gusto, estoy para servirte."`,
 
     8: `PERFIL DE COMUNICACIÓN — NÚMERO 8
@@ -278,7 +278,7 @@ GUÍA POR SITUACIÓN:
 - Queja: reconocer el fallo directamente y dar solución concreta en tiempo definido.
 - Escalamiento: "Te contacta el equipo en menos de 4 horas. Si no, escríbenos de nuevo."
 - Fuera de tema: "Eso no está en mi área. ¿En qué puedo ayudarte con el Club?"
-- Saludo simple ("hola", "buenos días", "qué más"): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
+- Saludo simple (el mensaje ENTERO es solo un saludo como "hola", "buenos días" o "qué más", SIN ninguna otra petición junto — si menciona lo que sea que necesita, esto NO aplica): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
 - Cierre de conversación ("gracias", "dale", "ok", "listo", "no más", "hasta luego", "chao", "de nada"): responder ÚNICAMENTE con: "Con mucho gusto, estoy para servirte."`,
 
     9: `PERFIL DE COMUNICACIÓN — NÚMERO 9
@@ -302,7 +302,7 @@ GUÍA POR SITUACIÓN:
 - Queja: abordar con total seriedad porque esta persona espera coherencia entre valores y acciones.
 - Escalamiento: garantizar atención humana y empática, no proceso mecánico.
 - Fuera de tema: redirigir hacia el propósito del Club con calidez.
-- Saludo simple ("hola", "buenos días", "qué más"): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
+- Saludo simple (el mensaje ENTERO es solo un saludo como "hola", "buenos días" o "qué más", SIN ninguna otra petición junto — si menciona lo que sea que necesita, esto NO aplica): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
 - Cierre de conversación ("gracias", "dale", "ok", "listo", "no más", "hasta luego", "chao", "de nada"): responder ÚNICAMENTE con: "Con mucho gusto, estoy para servirte."`,
 
     11: `PERFIL DE COMUNICACIÓN — NÚMERO 11 (Número Maestro)
@@ -326,7 +326,7 @@ GUÍA POR SITUACIÓN:
 - Queja: escuchar sin interrumpir. Validar completamente antes de dar cualquier respuesta.
 - Escalamiento: "Te conecto con una persona real. El Club cuida cada relación."
 - Fuera de tema: redirigir con curiosidad genuina hacia algo del Club que pueda resonarle.
-- Saludo simple ("hola", "buenos días", "qué más"): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
+- Saludo simple (el mensaje ENTERO es solo un saludo como "hola", "buenos días" o "qué más", SIN ninguna otra petición junto — si menciona lo que sea que necesita, esto NO aplica): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
 - Cierre de conversación ("gracias", "dale", "ok", "listo", "no más", "hasta luego", "chao", "de nada"): responder ÚNICAMENTE con: "Con mucho gusto, estoy para servirte."`,
 
     22: `PERFIL DE COMUNICACIÓN — NÚMERO 22 (Número Maestro)
@@ -350,7 +350,7 @@ GUÍA POR SITUACIÓN:
 - Queja: tratarla como información valiosa para mejorar. Reconocer, documentar y resolver.
 - Escalamiento: "El equipo lo atiende en máximo 4 horas. El Club tiene procesos claros para esto."
 - Fuera de tema: "Eso está fuera del alcance del Club. ¿Hay algo en lo que pueda ayudarte dentro de él?"
-- Saludo simple ("hola", "buenos días", "qué más"): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
+- Saludo simple (el mensaje ENTERO es solo un saludo como "hola", "buenos días" o "qué más", SIN ninguna otra petición junto — si menciona lo que sea que necesita, esto NO aplica): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
 - Cierre de conversación ("gracias", "dale", "ok", "listo", "no más", "hasta luego", "chao", "de nada"): responder ÚNICAMENTE con: "Con mucho gusto, estoy para servirte."`,
 
     33: `PERFIL DE COMUNICACIÓN — NÚMERO 33 (Número Maestro)
@@ -374,7 +374,7 @@ GUÍA POR SITUACIÓN:
 - Queja: nunca minimizar. Validar completamente, reconocer el impacto y comprometerse con toda seriedad.
 - Escalamiento: garantizar que será atendida por una persona real que se preocupa genuinamente.
 - Fuera de tema: redirigir con calidez, ofreciendo lo que sí se puede hacer.
-- Saludo simple ("hola", "buenos días", "qué más"): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
+- Saludo simple (el mensaje ENTERO es solo un saludo como "hola", "buenos días" o "qué más", SIN ninguna otra petición junto — si menciona lo que sea que necesita, esto NO aplica): responder ÚNICAMENTE con esta frase exacta, sin cambiar nada: "[Nombre], ¿En qué puedo ayudarte hoy?"
 - Cierre de conversación ("gracias", "dale", "ok", "listo", "no más", "hasta luego", "chao", "de nada"): responder ÚNICAMENTE con: "Con mucho gusto, estoy para servirte."`,
   };
 
@@ -604,8 +604,11 @@ Deno.serve(async (req: Request) => {
       contenido: respuesta,
     });
 
-    // Devolver TwiML
-    const twiml = `<Response><Message>${respuesta}</Message></Response>`;
+    // Devolver TwiML — hay que escapar el texto, si no un "&" suelto (ej. en un
+    // link de un grupo de WhatsApp con varios parámetros) rompe el XML y Twilio
+    // no logra entregar el mensaje.
+    const escapeXml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const twiml = `<Response><Message>${escapeXml(respuesta)}</Message></Response>`;
     return new Response(twiml, {
       headers: { "Content-Type": "text/xml", ...corsHeaders },
     });
