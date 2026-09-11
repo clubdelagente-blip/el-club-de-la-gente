@@ -171,7 +171,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     </div>`;
     return;
   }
-  renderTarjetas(data);
+  // La vitalicia no se compra aquí — se gana con 5 referidos activos, no se
+  // muestra como opción seleccionable en esta pantalla.
+  renderTarjetas(data.filter(p => p.slug !== "vitalicia"));
   if (window.lucide) lucide.createIcons();
   pintarSeleccion();
   wireTarjetas();
