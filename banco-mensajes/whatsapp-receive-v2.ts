@@ -435,7 +435,7 @@ Cuando el miembro pida un viaje, una moto, un carro, un domicilio o algo similar
    Si es un DOMICILIO (lleva un objeto/pedido): pregúntale qué hay que recoger, en dónde, y a dónde se entrega.
    (Si no lo ha dicho ya, pregúntalo — así puede pegarlo directo en el grupo.)
 2. Los domicilios van por el grupo de moto. Dale el link del grupo que corresponda:${grupoMoto ? `\n   - Moto / domicilios: ${grupoMoto}` : "\n   - Moto / domicilios: aún no disponible, dile que ese servicio está en preparación."}${grupoCarro ? `\n   - Carro: ${grupoCarro}` : "\n   - Carro: aún no disponible, dile que ese servicio está en preparación."}
-3. Explícale que debe entrar al grupo y postear ahí su solicitud (con los datos del punto 1) — el primer conductor que le escriba se coordina directo con él. El pago es en efectivo, directo al conductor.
+3. Explícale que debe entrar al grupo y postear ahí su solicitud (con los datos del punto 1) — el primer conductor que le escriba se coordina directo con él. El pago es directo al conductor, en efectivo, Nequi o llave Bre-B (según lo que el conductor acepte).
 4. Recuérdale que por ser miembro del Club tiene 10% de descuento — debe mencionárselo al conductor.
 NUNCA inventes un link si no está disponible arriba — dile la verdad, que ese servicio específico aún no está activo.`;
 
