@@ -51,6 +51,7 @@
           <li><button class="sb-link" data-panel="perfil"><i data-lucide="user"></i> Mi perfil</button></li>
           <li><button class="sb-link" data-panel="clubcard"><i data-lucide="credit-card"></i> Mi ClubCard</button></li>
           <li><button class="sb-link" data-panel="tienda"><i data-lucide="package"></i> Tienda <span class="sb-link__badge">Gratis</span></button></li>
+          <li><button class="sb-link" data-panel="profesionales-club"><i data-lucide="briefcase-medical"></i> Profesionales <span class="sb-link__badge">Premium</span></button></li>
           <li><button class="sb-link" data-panel="descuentos"><i data-lucide="receipt"></i> Mis descuentos</button></li>
           <li><button class="sb-link" data-panel="agente"><i data-lucide="message-circle"></i> Mi Agente <span class="sb-link__badge">WhatsApp</span></button></li>
         </ul>
@@ -335,6 +336,25 @@
             </div>
             <div id="tienda-aliados-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px"></div>
           </div>
+        </section>
+
+        <!-- ============================================================
+             PANEL: PROFESIONALES (exclusivo Premium/Vitalicia)
+             ============================================================ -->
+        <section class="panel-view" data-panel="profesionales-club" data-screen-label="Profesionales">
+          <div class="dash-greet">
+            <h1>Profesionales del Club</h1>
+            <p>Conecta con profesionales de confianza en Fusagasugá y revisa sus servicios y tarifas.</p>
+          </div>
+
+          <div id="profes-club-bloqueado" style="display:none;text-align:center;padding:60px 20px;background:var(--crema-2,#f1ede3);border-radius:14px">
+            <i data-lucide="lock" style="width:32px;height:32px;color:var(--tinta-40,#888)"></i>
+            <p style="font-size:16px;font-weight:600;margin:14px 0 6px">Este beneficio es exclusivo Premium</p>
+            <p style="font-size:13px;color:var(--tinta-60,#666);max-width:360px;margin:0 auto 20px">Sube a Premium para ver el directorio completo de profesionales, sus servicios, tarifas y descuentos.</p>
+            <a href="Planes.html" class="btn btn--primario">Subir a Premium <span class="ar">&rarr;</span></a>
+          </div>
+
+          <div id="profes-club-grid" style="display:none;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px"></div>
         </section>
 
         <!-- ============================================================
@@ -701,6 +721,37 @@
             </div>
           </div>
 
+          <!-- Mis servicios -->
+          <div class="card" style="margin-bottom:20px">
+            <div class="card__head">
+              <span class="card__title">Mis servicios</span>
+              <span class="card__sub" style="font-size:12px;color:var(--tinta-40)">Solo lo ven los miembros Premium</span>
+            </div>
+            <div id="mis-servicios-list" style="padding:4px 0 8px"></div>
+            <div id="mis-servicios-form" style="display:none;padding:12px;background:var(--crema-2,#f8f6f1);border-radius:10px;margin-top:8px">
+              <div class="cfg-campo">
+                <label class="cfg-label">Nombre del servicio</label>
+                <input class="cfg-input" id="ms-nombre" type="text" placeholder="Ej: Consulta general">
+              </div>
+              <div style="display:flex;gap:12px">
+                <div class="cfg-campo" style="flex:1">
+                  <label class="cfg-label">Tarifa (COP)</label>
+                  <input class="cfg-input" id="ms-tarifa" type="number" placeholder="50000">
+                </div>
+                <div class="cfg-campo" style="flex:1">
+                  <label class="cfg-label">% Descuento para miembros</label>
+                  <input class="cfg-input" id="ms-descuento" type="text" placeholder="Ej: 20%">
+                </div>
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0 12px">
+                <input type="checkbox" id="ms-cortesia" style="width:auto"> Es una cortesía gratis
+              </label>
+              <button class="btn btn--primario" id="ms-guardar" style="font-size:13px">Guardar servicio</button>
+              <button class="btn btn--secundario" id="ms-cancelar" style="font-size:13px">Cancelar</button>
+            </div>
+            <button class="btn btn--secundario" id="ms-agregar" style="margin-top:8px">+ Agregar servicio</button>
+          </div>
+
           <!-- Stats -->
           <div class="stats">
             <div class="stat">
@@ -971,7 +1022,7 @@
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://checkout.wompi.co/widget.js"></script>
-  <script type="module" src="dashboard.js?v=61"></script>
+  <script type="module" src="dashboard.js?v=62"></script>
   <script src="agente.js"></script>
 
   <template id="__bundler_thumbnail">

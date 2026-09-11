@@ -1392,8 +1392,50 @@ function htmlFormProf(p={}){return `
     <input type="hidden" id="pf-contrato-url" value="${p.contrato_url||''}">
     <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Si no se renueva antes de la fecha de fin, se desactiva solo del Directorio y pierde la membresía vitalicia.</span>
   </div>
-  <div class="ad-toolbar" style="margin:6px 0 0"><div class="ad-spacer"></div><button class="ad-btn" id="pf-cancel">Cancelar</button><button class="ad-btn ad-btn--verde" id="pf-save" data-id="${p.id||''}">${ic("check")} ${p.id?'Guardar cambios':'Agregar profesional'}</button></div>`;}
-function bindFormProf(){setTimeout(()=>{
+  <hr style="border:none;border-top:1px solid rgba(26,26,24,.12);margin:20px 0 14px">
+  <div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(26,26,24,.4);margin-bottom:10px">Servicios (lo ven los miembros Premium)</div>
+  ${p.id?`
+    <div id="pf-servicios-list" style="margin-bottom:10px"></div>
+    <div id="pf-servicio-form" style="display:none;padding:12px;background:rgba(26,26,24,.03);border-radius:10px;margin-bottom:10px">
+      <div class="ad-field"><label>Nombre del servicio</label><input id="pfs-nombre" type="text" placeholder="Ej: Consulta general"></div>
+      <div class="ad-field-2">
+        <div class="ad-field"><label>Tarifa (COP)</label><input id="pfs-tarifa" type="number" placeholder="50000"></div>
+        <div class="ad-field"><label>% Descuento</label><input id="pfs-descuento" type="text" placeholder="Ej: 20%"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0 12px"><input type="checkbox" id="pfs-cortesia" style="width:auto"> Es cortesía gratis</label>
+      <div style="display:flex;gap:8px"><button class="ad-btn ad-btn--verde" id="pfs-guardar" style="font-size:12px">Guardar</button><button class="ad-btn" id="pfs-cancelar" style="font-size:12px">Cancelar</button></div>
+    </div>
+    <button type="button" class="ad-btn" id="pf-servicio-add" style="font-size:12px">${ic('plus')} Agregar servicio</button>
+  `:`<p style="font-size:12px;color:rgba(26,26,24,.4)">Guarda el profesional primero para agregarle servicios.</p>`}
+  <div class="ad-toolbar" style="margin:16px 0 0"><div class="ad-spacer"></div><button class="ad-btn" id="pf-cancel">Cancelar</button><button class="ad-btn ad-btn--verde" id="pf-save" data-id="${p.id||''}">${ic("check")} ${p.id?'Guardar cambios':'Agregar profesional'}</button></div>`;}
+async function cargarServiciosProfAdmin(profId){
+  const{data}=await supabase.from('servicios_profesional').select('*').eq('profesional_id',profId).order('orden');
+  const list=$("#pf-servicios-list");if(!list)return;
+  list.innerHTML=(data&&data.length)?data.map(s=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(26,26,24,.08)">
+      <div><div style="font-weight:600;font-size:13px">${esc(s.nombre)}</div><div style="font-size:11px;color:rgba(26,26,24,.5)">${s.es_cortesia?'Cortesía gratis':`$${(s.tarifa||0).toLocaleString('es-CO')}${s.descuento_pct?' · '+esc(s.descuento_pct)+' desc.':''}`}</div></div>
+      <div style="display:flex;gap:6px"><button type="button" class="ad-btn" data-ed-servprof="${s.id}" style="font-size:11px;padding:4px 8px">${ic('pencil')}</button><button type="button" class="ad-btn" data-rm-servprof="${s.id}" style="font-size:11px;padding:4px 8px">${ic('trash-2')}</button></div>
+    </div>`).join(''):`<p style="font-size:12px;color:rgba(26,26,24,.35)">Aún no tiene servicios.</p>`;
+  list.querySelectorAll('[data-ed-servprof]').forEach(b=>b.addEventListener('click',()=>{
+    const s=(data||[]).find(x=>x.id===b.dataset.edServprof);if(!s)return;
+    abrirFormServicioProfAdmin(s);
+  }));
+  list.querySelectorAll('[data-rm-servprof]').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('¿Eliminar este servicio?'))return;
+    await supabase.from('servicios_profesional').delete().eq('id',b.dataset.rmServprof);
+    cargarServiciosProfAdmin(profId);
+  }));
+  if(window.lucide)lucide.createIcons();
+}
+function abrirFormServicioProfAdmin(s={}){
+  const form=$("#pf-servicio-form");if(!form)return;
+  form.style.display='block';form.dataset.editId=s.id||'';
+  if($("#pfs-nombre"))$("#pfs-nombre").value=s.nombre||'';
+  if($("#pfs-tarifa"))$("#pfs-tarifa").value=s.tarifa||'';
+  if($("#pfs-descuento"))$("#pfs-descuento").value=s.descuento_pct||'';
+  if($("#pfs-cortesia"))$("#pfs-cortesia").checked=!!s.es_cortesia;
+}
+function bindFormProf(p={}){setTimeout(()=>{
   $("#pf-cancel")?.addEventListener('click',()=>window.cerrarModal?.());
   const btn=$("#pf-save");
   btn?.addEventListener('click',async()=>{
@@ -1407,7 +1449,23 @@ function bindFormProf(){setTimeout(()=>{
     const id=btn.dataset.id;
     id?await supabase.from('profesionales').update(payload).eq('id',id):await supabase.from('profesionales').insert(payload);
     window.cerrarModal?.();cargarProfesionales();toast(id?'Profesional actualizado ✓':'Profesional agregado ✓');
-  });if(window.lucide)lucide.createIcons();
+  });
+  if(p.id){
+    cargarServiciosProfAdmin(p.id);
+    $("#pf-servicio-add")?.addEventListener('click',()=>abrirFormServicioProfAdmin());
+    $("#pfs-cancelar")?.addEventListener('click',()=>{const f=$("#pf-servicio-form");if(f){f.style.display='none';f.dataset.editId='';}});
+    $("#pfs-guardar")?.addEventListener('click',async()=>{
+      const nombre=$("#pfs-nombre")?.value.trim();if(!nombre){toast('El nombre del servicio es obligatorio');return;}
+      const payload={profesional_id:p.id,nombre,tarifa:$("#pfs-tarifa")?.value?parseInt($("#pfs-tarifa").value):null,descuento_pct:$("#pfs-descuento")?.value.trim()||null,es_cortesia:!!$("#pfs-cortesia")?.checked};
+      const editId=$("#pf-servicio-form")?.dataset.editId;
+      if(editId)await supabase.from('servicios_profesional').update(payload).eq('id',editId);
+      else await supabase.from('servicios_profesional').insert(payload);
+      const f=$("#pf-servicio-form");if(f){f.style.display='none';f.dataset.editId='';}
+      cargarServiciosProfAdmin(p.id);
+      toast('Servicio guardado ✓');
+    });
+  }
+  if(window.lucide)lucide.createIcons();
 },80);}
 
 /* ---- PROMOCIONES ---- */
@@ -2533,7 +2591,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const desactivarProf=e.target.closest('[data-desactivar-prof]');if(desactivarProf){const pid=desactivarProf.dataset.desactivarProf;await supabase.from('profesionales').update({estado:'pendiente',activo:false}).eq('id',pid);const p=_profesionales.find(x=>x.id===pid);if(p?.user_id)await supabase.from('perfiles').update({plan:'sin_plan'}).eq('id',p.user_id);cargarProfesionales();toast('Profesional desactivado');return;}
     const aprobarPost=e.target.closest('[data-aprobar-post]');if(aprobarPost){const id=aprobarPost.dataset.aprobarPost;const waUrl=aprobarPost.dataset.waPost;const nombre=aprobarPost.dataset.nomPost;const categoria=aprobarPost.dataset.catPost;const whatsapp=aprobarPost.dataset.telPost;await supabase.from('aliados').insert({nombre,categoria,whatsapp,activo:false});await supabase.from('aliados_postulaciones').update({estado:'aprobado'}).eq('id',id);if(waUrl)window.open(waUrl,'_blank');window.renderAliados?.();toast('Aliado aprobado — notificando por WhatsApp…');return;}
     const rechazarPost=e.target.closest('[data-rechazar-post]');if(rechazarPost&&confirm('¿Rechazar esta postulación?')){await supabase.from('aliados_postulaciones').update({estado:'rechazado'}).eq('id',rechazarPost.dataset.rechazarPost);window.renderAliados?.();toast('Postulación rechazada');return;}
-    const edProf=e.target.closest('[data-ed-prof]');if(edProf){const p=_profesionales.find(x=>x.id===edProf.dataset.edProf);if(p){abrirModal('Editar profesional',p.nombre,htmlFormProf(p));bindFormProf();}return;}
+    const edProf=e.target.closest('[data-ed-prof]');if(edProf){const p=_profesionales.find(x=>x.id===edProf.dataset.edProf);if(p){abrirModal('Editar profesional',p.nombre,htmlFormProf(p));bindFormProf(p);}return;}
     const togProf=e.target.closest('[data-tog-prof]');if(togProf){const activo=togProf.dataset.activo==='true';const pid=togProf.dataset.togProf;await supabase.from('profesionales').update({activo:!activo}).eq('id',pid);const p=_profesionales.find(x=>x.id===pid);if(p?.user_id)await supabase.from('perfiles').update({plan:!activo?'vitalicia':'sin_plan'}).eq('id',p.user_id);cargarProfesionales();return;}
     const rmProf=e.target.closest('[data-rm-prof]');if(rmProf&&confirm('¿Eliminar este profesional?')){await supabase.from('profesionales').delete().eq('id',rmProf.dataset.rmProf);cargarProfesionales();toast('Profesional eliminado');return;}
     const promosAl=e.target.closest('[data-promos-aliado]');if(promosAl){cargarYMostrarPromociones(promosAl.dataset.promosAliado,promosAl.dataset.nomAliado);return;}

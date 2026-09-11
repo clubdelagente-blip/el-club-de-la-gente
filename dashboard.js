@@ -1301,6 +1301,71 @@ function abrirCheckoutProducto(p) {
   });
 }
 
+/* ---------- PROFESIONALES DEL CLUB (exclusivo Premium/Vitalicia) ---------- */
+async function cargarProfesionalesClub(plan) {
+  const bloqueadoEl = $("#profes-club-bloqueado");
+  const gridEl = $("#profes-club-grid");
+  if (!bloqueadoEl || !gridEl) return;
+
+  const esPremium = plan === "premium" || plan === "vitalicia";
+  if (!esPremium) {
+    bloqueadoEl.style.display = "block";
+    gridEl.style.display = "none";
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+  bloqueadoEl.style.display = "none";
+  gridEl.style.display = "grid";
+
+  const [{ data: profs }, { data: servicios }] = await Promise.all([
+    supabase.from("profesionales").select("*").eq("activo", true).order("created_at"),
+    supabase.from("servicios_profesional").select("*").order("orden"),
+  ]);
+
+  const serviciosPorProf = {};
+  (servicios || []).forEach(s => {
+    (serviciosPorProf[s.profesional_id] ||= []).push(s);
+  });
+
+  if (!profs?.length) {
+    gridEl.innerHTML = `<p style="grid-column:1/-1;text-align:center;padding:40px;color:var(--tinta-40)">Aún no hay profesionales activos.</p>`;
+    return;
+  }
+
+  gridEl.innerHTML = profs.map(p => `
+    <div class="card" style="text-align:center">
+      ${p.imagen_url ? `<img src="${p.imagen_url}" alt="${esc(p.nombre)}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin:0 auto 12px">` : `<div style="width:72px;height:72px;border-radius:50%;background:var(--verde-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px;font-weight:700;color:var(--verde)">${esc((p.nombre || "P")[0])}</div>`}
+      <div style="font-weight:600;font-size:15px;margin-bottom:4px">${esc(p.nombre)}</div>
+      <div style="font-size:13px;color:var(--tinta-60);margin-bottom:8px">${esc(p.area || "")}</div>
+      <p style="font-size:13px;color:var(--tinta-60);line-height:1.5;margin-bottom:14px">${esc(p.descripcion || "")}</p>
+      <button type="button" class="btn btn--primario" data-ver-servicios="${p.id}" style="font-size:13px">Mis servicios</button>
+    </div>`).join("");
+
+  gridEl.querySelectorAll("[data-ver-servicios]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const p = profs.find(x => x.id === btn.dataset.verServicios);
+      if (!p) return;
+      const susServicios = serviciosPorProf[p.id] || [];
+      const wa = (p.whatsapp || "").replace(/\D/g, "");
+      const waUrl = wa ? `https://wa.me/57${wa}?text=${encodeURIComponent(`Hola ${p.nombre}, soy miembro Premium de El Club de la Gente y me gustaría agendar una cita.`)}` : "";
+      abrirModalTienda(p.nombre, `
+        <div style="font-size:13px;color:var(--tinta-60);margin-bottom:16px">${esc(p.area || "")}</div>
+        ${susServicios.length ? susServicios.map(s => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--linea,#eee)">
+            <div>
+              <div style="font-weight:600;font-size:14px">${esc(s.nombre)}</div>
+              ${s.es_cortesia ? `<span style="font-size:11px;color:var(--verde);font-weight:600">Cortesía gratis</span>` : s.descuento_pct ? `<span style="font-size:11px;color:var(--verde);font-weight:600">${esc(s.descuento_pct)} de descuento</span>` : ""}
+            </div>
+            <div style="font-weight:600;font-size:14px">${s.es_cortesia ? "Gratis" : COP(s.tarifa)}</div>
+          </div>`).join("") : `<p style="font-size:13px;color:var(--tinta-40);padding:12px 0">Aún no ha cargado sus servicios.</p>`}
+        ${waUrl ? `<a href="${waUrl}" target="_blank" rel="noopener" class="btn btn--primario btn--bloque" style="margin-top:20px">Contactar por WhatsApp</a>` : ""}
+      `);
+    });
+  });
+
+  if (window.lucide) lucide.createIcons();
+}
+
 /* ---------- CARRUSEL MARCAS ---------- */
 async function cargarMarcasCarrusel() {
   const track = document.getElementById("marcas-track-dash");
@@ -1453,6 +1518,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     cargarReferidos(userId);
     cargarMarcasCarrusel();
+    cargarProfesionalesClub(plan);
   });
 
   // Respaldo del QR: getSession() puede correr en carrera con la sesión
@@ -1679,4 +1745,74 @@ async function cargarPanelProfesional() {
     const msg = $("#prof-edit-msg");
     if (msg) { msg.style.display = "inline"; setTimeout(() => msg.style.display = "none", 3000); }
   });
+
+  // ---- Mis servicios ----
+  async function cargarMisServicios() {
+    const { data: servicios } = await supabase.from('servicios_profesional').select('*').eq('profesional_id', prof.id).order('orden');
+    const list = $("#mis-servicios-list");
+    if (!list) return;
+    if (!servicios?.length) {
+      list.innerHTML = `<p style="font-size:13px;color:var(--tinta-40);padding:8px 0">Aún no has agregado servicios.</p>`;
+    } else {
+      list.innerHTML = servicios.map(s => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--linea,#eee)">
+          <div>
+            <div style="font-weight:600;font-size:14px">${esc(s.nombre)}</div>
+            <div style="font-size:12px;color:var(--tinta-60)">${s.es_cortesia ? "Cortesía gratis" : `${COP(s.tarifa)}${s.descuento_pct ? " · " + esc(s.descuento_pct) + " desc." : ""}`}</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button type="button" class="btn btn--secundario" data-ed-serv="${s.id}" style="font-size:12px;padding:6px 10px">Editar</button>
+            <button type="button" class="btn btn--secundario" data-rm-serv="${s.id}" style="font-size:12px;padding:6px 10px">Eliminar</button>
+          </div>
+        </div>`).join("");
+      list.querySelectorAll("[data-ed-serv]").forEach(b => b.addEventListener("click", () => {
+        const s = servicios.find(x => x.id === b.dataset.edServ);
+        if (!s) return;
+        abrirFormServicio(s);
+      }));
+      list.querySelectorAll("[data-rm-serv]").forEach(b => b.addEventListener("click", async () => {
+        if (!confirm("¿Eliminar este servicio?")) return;
+        await supabase.from('servicios_profesional').delete().eq('id', b.dataset.rmServ);
+        cargarMisServicios();
+      }));
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function abrirFormServicio(s = {}) {
+    const form = $("#mis-servicios-form");
+    if (!form) return;
+    form.style.display = "block";
+    form.dataset.editId = s.id || "";
+    if ($("#ms-nombre")) $("#ms-nombre").value = s.nombre || "";
+    if ($("#ms-tarifa")) $("#ms-tarifa").value = s.tarifa || "";
+    if ($("#ms-descuento")) $("#ms-descuento").value = s.descuento_pct || "";
+    if ($("#ms-cortesia")) $("#ms-cortesia").checked = !!s.es_cortesia;
+  }
+  function cerrarFormServicio() {
+    const form = $("#mis-servicios-form");
+    if (form) { form.style.display = "none"; form.dataset.editId = ""; }
+  }
+
+  $("#ms-agregar")?.addEventListener("click", () => abrirFormServicio());
+  $("#ms-cancelar")?.addEventListener("click", cerrarFormServicio);
+  $("#ms-guardar")?.addEventListener("click", async () => {
+    const nombre = $("#ms-nombre")?.value.trim();
+    if (!nombre) { toast("El nombre del servicio es obligatorio"); return; }
+    const payload = {
+      profesional_id: prof.id,
+      nombre,
+      tarifa: $("#ms-tarifa")?.value ? parseInt($("#ms-tarifa").value) : null,
+      descuento_pct: $("#ms-descuento")?.value.trim() || null,
+      es_cortesia: !!$("#ms-cortesia")?.checked,
+    };
+    const editId = $("#mis-servicios-form")?.dataset.editId;
+    if (editId) await supabase.from('servicios_profesional').update(payload).eq('id', editId);
+    else await supabase.from('servicios_profesional').insert(payload);
+    cerrarFormServicio();
+    cargarMisServicios();
+    toast("Servicio guardado ✓");
+  });
+
+  cargarMisServicios();
 }
