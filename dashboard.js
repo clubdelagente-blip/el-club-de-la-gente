@@ -1396,13 +1396,18 @@ document.addEventListener("DOMContentLoaded", () => {
     _miembroId = userId;
     generarQR(userId);
 
-    // Si viene de un pago aprobado, activar el plan en Supabase
+    // Si viene de elegir un plan sin pago (gratis), se activa directo aquí.
+    // Los planes de pago (básica/premium) NO se activan desde el navegador —
+    // eso lo hace únicamente el webhook de Wompi ya verificado, por seguridad
+    // (activar_plan solo permite auto-activar "gratis").
     const paramsIniciales = new URLSearchParams(location.search);
     const esNuevo = paramsIniciales.get("nuevo") === "1";
     const planActivar = paramsIniciales.get("activar");
-    if (planActivar && ["gratis", "basica", "premium", "vitalicia"].includes(planActivar)) {
+    if (planActivar === "gratis") {
       const { error: rpcErr } = await supabase.rpc("activar_plan", { nuevo_plan: planActivar });
       if (rpcErr) console.error("activar_plan error:", rpcErr);
+    }
+    if (planActivar) {
       history.replaceState({}, "", location.pathname);
     }
 
