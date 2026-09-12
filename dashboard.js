@@ -2,8 +2,9 @@
    EL CLUB DE LA GENTE — Módulo 4 · Lógica de perfil/dashboard
    ============================================================ */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const SUPABASE_URL = "https://egwaedadpqfwnbfosiao.supabase.co";
 const supabase = createClient(
-  "https://egwaedadpqfwnbfosiao.supabase.co",
+  SUPABASE_URL,
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4"
 );
 
@@ -1543,6 +1544,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $$(".sb-link[data-panel]").forEach(l => l.addEventListener("click", () => {
     irPanel(l.dataset.panel);
     if (l.dataset.panel === 'tienda') cargarTienda();
+    if (l.dataset.panel === 'soporte') cargarSoporte();
   }));
 
   // Burger móvil
@@ -1823,4 +1825,112 @@ async function cargarPanelProfesional() {
   });
 
   cargarMisServicios();
+}
+
+/* ============================================================
+   SOPORTE TÉCNICO (chat de autoservicio del dashboard)
+   ============================================================ */
+let _sopInit = false;
+let _sopImagenPendiente = null;
+
+function sopBurbuja(rol, mensaje, imagenUrl, escalado) {
+  const esUsuario = rol === "usuario";
+  const img = imagenUrl ? `<img src="${esc(imagenUrl)}" alt="">` : "";
+  const texto = mensaje ? esc(mensaje).replace(/\n/g, "<br>") : "";
+  const tag = escalado ? `<span class="sop-esc-tag">${ic("check-circle")} Escalado al equipo</span>` : "";
+  return `<div class="ag-msg ${esUsuario ? "ag-msg--out" : "ag-msg--in"}">${img}${texto}</div>${tag}`;
+}
+
+async function cargarSoporte() {
+  if (_sopInit) return;
+  _sopInit = true;
+
+  const chat = $("#sop-chat");
+  const form = $("#sop-form");
+  const input = $("#sop-input");
+  const sendBtn = $("#sop-send");
+  const imgBtn = $("#sop-img-btn");
+  const imgInput = $("#sop-img-input");
+  const imgPreview = $("#sop-img-preview");
+  const imgPreviewSrc = $("#sop-img-preview-src");
+  const imgPreviewName = $("#sop-img-preview-name");
+  const imgRemove = $("#sop-img-remove");
+  if (!chat || !form) return;
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+
+  const { data: historial } = await supabase
+    .from("soporte_mensajes")
+    .select("rol, mensaje, imagen_url, escalado, created_at")
+    .eq("miembro_id", session.user.id)
+    .order("created_at", { ascending: true })
+    .limit(50);
+
+  if (historial && historial.length) {
+    chat.innerHTML = historial.map(m => sopBurbuja(m.rol, m.mensaje, m.imagen_url, m.escalado)).join("");
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  imgBtn?.addEventListener("click", () => imgInput.click());
+  imgInput?.addEventListener("change", async () => {
+    const file = imgInput.files?.[0];
+    imgInput.value = "";
+    if (!file) return;
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = `soporte-${session.user.id}-${Date.now()}.${ext}`;
+    sendBtn.disabled = true;
+    const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+    sendBtn.disabled = false;
+    if (upErr) { toast("Error subiendo la captura"); return; }
+    _sopImagenPendiente = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+    imgPreviewSrc.src = _sopImagenPendiente;
+    imgPreviewName.textContent = file.name;
+    imgPreview.style.display = "flex";
+  });
+  imgRemove?.addEventListener("click", () => {
+    _sopImagenPendiente = null;
+    imgPreview.style.display = "none";
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const mensaje = input.value.trim();
+    const imagenUrl = _sopImagenPendiente;
+    if (!mensaje && !imagenUrl) return;
+
+    $(".sop-empty")?.remove();
+    chat.insertAdjacentHTML("beforeend", sopBurbuja("usuario", mensaje, imagenUrl, false));
+    input.value = "";
+    _sopImagenPendiente = null;
+    imgPreview.style.display = "none";
+    sendBtn.disabled = true;
+
+    const typingId = "sop-typing-" + Date.now();
+    chat.insertAdjacentHTML("beforeend", `<div class="sop-typing" id="${typingId}"><span></span><span></span><span></span></div>`);
+    chat.scrollTop = chat.scrollHeight;
+
+    try {
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/soporte-chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ mensaje, imagen_url: imagenUrl }),
+      });
+      const data = await resp.json();
+      $("#" + typingId)?.remove();
+      chat.insertAdjacentHTML("beforeend", sopBurbuja("asistente", data.respuesta || "No pude responder, intenta de nuevo.", null, data.escalado));
+    } catch (err) {
+      $("#" + typingId)?.remove();
+      chat.insertAdjacentHTML("beforeend", sopBurbuja("asistente", "Tuvimos un problema de conexión. Intenta de nuevo.", null, false));
+    }
+    chat.scrollTop = chat.scrollHeight;
+    sendBtn.disabled = false;
+    if (window.lucide) lucide.createIcons();
+  });
+
+  input?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+  });
+
+  if (window.lucide) lucide.createIcons();
 }

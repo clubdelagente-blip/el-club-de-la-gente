@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=22">
   <link rel="stylesheet" href="estilos.css?v=5">
-  <link rel="stylesheet" href="dashboard.css?v=1">
+  <link rel="stylesheet" href="dashboard.css?v=2">
   <link rel="stylesheet" href="agente.css">
 </head>
 <body class="dash-body">
@@ -54,6 +54,7 @@
           <li><button class="sb-link" data-panel="profesionales-club"><i data-lucide="briefcase-medical"></i> Profesionales <span class="sb-link__badge">Premium</span></button></li>
           <li><button class="sb-link" data-panel="descuentos"><i data-lucide="receipt"></i> Mis descuentos</button></li>
           <li><button class="sb-link" data-panel="agente"><i data-lucide="message-circle"></i> Mi Agente <span class="sb-link__badge">WhatsApp</span></button></li>
+          <li><button class="sb-link" data-panel="soporte"><i data-lucide="life-buoy"></i> Soporte técnico</button></li>
         </ul>
       </div>
 
@@ -501,6 +502,36 @@
               </div>
 
             </div>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             PANEL: SOPORTE TÉCNICO
+             ============================================================ -->
+        <section class="panel-view" data-panel="soporte" data-screen-label="Soporte técnico">
+          <div class="dash-greet">
+            <h1>Soporte técnico</h1>
+            <p>Cuéntanos qué pasó. Si es algo que podemos resolver aquí mismo, te ayudamos al instante; si no, lo escalamos directo a nuestro equipo por WhatsApp.</p>
+          </div>
+
+          <div class="card sop-card">
+            <div id="sop-chat" class="sop-chat">
+              <div class="sop-empty">
+                <i data-lucide="life-buoy"></i>
+                <p>¿Tienes un problema con tu cuenta, tu pago o algo que no funciona como esperabas? Cuéntame qué pasó.</p>
+              </div>
+            </div>
+            <div id="sop-img-preview" class="sop-img-preview" style="display:none">
+              <img id="sop-img-preview-src" src="" alt="">
+              <span id="sop-img-preview-name"></span>
+              <button type="button" id="sop-img-remove"><i data-lucide="x"></i></button>
+            </div>
+            <form id="sop-form" class="sop-compose">
+              <input type="file" id="sop-img-input" accept="image/*" style="display:none">
+              <button type="button" id="sop-img-btn" class="sop-attach" title="Adjuntar captura de pantalla"><i data-lucide="paperclip"></i></button>
+              <textarea id="sop-input" rows="1" placeholder="Escribe tu problema…"></textarea>
+              <button type="submit" id="sop-send" class="sop-send"><i data-lucide="send-horizontal"></i></button>
+            </form>
           </div>
         </section>
 
@@ -1022,7 +1053,7 @@
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://checkout.wompi.co/widget.js"></script>
-  <script type="module" src="dashboard.js?v=64"></script>
+  <script type="module" src="dashboard.js?v=65"></script>
   <script src="agente.js"></script>
 
   <template id="__bundler_thumbnail">
