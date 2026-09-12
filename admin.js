@@ -305,6 +305,17 @@ function renderConfig() {
     { n: "Modo mantenimiento de la web", d: "Muestra una página de 'volvemos pronto' a los visitantes", on: false },
   ];
   $("#p-config").innerHTML = `
+    <div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(242,240,234,.4);margin-bottom:10px">Notificaciones del equipo</div>
+    <div class="ad-set" style="margin-bottom:24px">
+      <div class="ad-set__row" style="flex-direction:column;align-items:stretch;gap:10px">
+        <div>
+          <label style="font-size:12px;color:rgba(242,240,234,.5);display:block;margin-bottom:5px">WhatsApp para avisos del Agente (postulaciones, escalamientos a humano, etc.)</label>
+          <input id="cfg-num-admin" type="tel" placeholder="3001234567" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(242,240,234,.15);background:rgba(242,240,234,.04);color:#fff;font-size:13px">
+        </div>
+        <span style="font-size:11px;color:rgba(242,240,234,.35)">A este número le llegan los avisos automáticos (por ejemplo cuando el Agente de WhatsApp detecta que alguien necesita hablar con una persona real).</span>
+        <button class="ad-btn ad-btn--verde" id="cfg-num-save" style="align-self:flex-start">${ic("check")} Guardar número</button>
+      </div>
+    </div>
     <div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(242,240,234,.4);margin-bottom:10px">Servicio de transporte (Uber moto / carro)</div>
     <div class="ad-set" style="margin-bottom:24px">
       <div class="ad-set__row" style="flex-direction:column;align-items:stretch;gap:10px">

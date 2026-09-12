@@ -195,7 +195,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=4"></script>
-  <script src="admin.js?v=19"></script>
+  <script src="admin.js?v=20"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -240,10 +240,11 @@ async function cargarCategoriasClub(){
   (hijos||[]).forEach(h=>{ if(h.mostrar_si_respuesta&&h.opciones?.length)SUBCATS[h.mostrar_si_respuesta]=h.opciones; });
 }
 async function cargarConfigTransporte(){
-  const{data}=await supabase.from('configuracion').select('*').in('clave',['grupo_wa_moto','grupo_wa_carro']);
+  const{data}=await supabase.from('configuracion').select('*').in('clave',['grupo_wa_moto','grupo_wa_carro','numero_admin_notificaciones']);
   const map={};(data||[]).forEach(r=>map[r.clave]=r.valor);
   const m=$("#cfg-grupo-moto");if(m)m.value=map.grupo_wa_moto||'';
   const c=$("#cfg-grupo-carro");if(c)c.value=map.grupo_wa_carro||'';
+  const n=$("#cfg-num-admin");if(n)n.value=map.numero_admin_notificaciones||'';
 }
 window.cargarConfigTransporte=cargarConfigTransporte;
 
@@ -2546,6 +2547,15 @@ document.addEventListener('DOMContentLoaded',async()=>{
   }
 
   document.addEventListener('click',async(e)=>{
+    if(e.target.closest('#cfg-num-save')){
+      const btn=e.target.closest('#cfg-num-save');
+      const num=$("#cfg-num-admin")?.value.replace(/\D/g,'')||null;
+      btn.disabled=true;
+      await supabase.from('configuracion').upsert([{clave:'numero_admin_notificaciones',valor:num}]);
+      btn.disabled=false;
+      toast('Número guardado ✓');
+      return;
+    }
     if(e.target.closest('#cfg-grupo-save')){
       const btn=e.target.closest('#cfg-grupo-save');
       const moto=$("#cfg-grupo-moto")?.value.trim()||null;

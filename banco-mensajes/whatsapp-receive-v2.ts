@@ -483,7 +483,10 @@ NUNCA, bajo ninguna circunstancia:
 - Inventes testimonios, números de usuarios o resultados que no tengas confirmados en este prompt.
 - Presiones a alguien que claramente no quiere seguir.
 - Ocultes una condición importante para cerrar más rápido.
-- Hagas sentir culpable a la persona por no decidir.`;
+- Hagas sentir culpable a la persona por no decidir.
+
+ESCALAMIENTO A UNA PERSONA REAL:
+Si decides que esta conversación necesita atención humana (queja seria, algo que no puedes resolver, o el miembro te lo pide explícitamente), agrega la etiqueta [ESCALAR] al principio de tu respuesta, antes de cualquier otra cosa. Esa etiqueta es una señal interna — la persona nunca la ve, se quita automáticamente antes de enviarse. Ejemplo: "[ESCALAR]Entiendo, esto lo debe ver alguien del equipo directamente. Te contactan en las próximas horas."`;
 
   if (perfilNumerologico) {
     base += `\n\n${perfilNumerologico}`;
@@ -585,7 +588,7 @@ Deno.serve(async (req: Request) => {
     const { data: configData } = await supabase
       .from("configuracion")
       .select("clave, valor")
-      .in("clave", ["grupo_wa_moto", "grupo_wa_carro"]);
+      .in("clave", ["grupo_wa_moto", "grupo_wa_carro", "numero_admin_notificaciones"]);
     const config: Record<string, string | null> = {};
     for (const c of configData || []) config[c.clave as string] = c.valor as string | null;
 
@@ -637,8 +640,28 @@ Deno.serve(async (req: Request) => {
     });
 
     const groqData = await groqRes.json();
-    const raw = groqData?.choices?.[0]?.message?.content?.trim() ||
+    let raw = groqData?.choices?.[0]?.message?.content?.trim() ||
       "Un momento, estoy teniendo problemas para responder. Intenta de nuevo.";
+
+    // Escalamiento a una persona real: el modelo marca [ESCALAR] al inicio de
+    // su respuesta cuando decide que la conversación necesita atención
+    // humana. Se quita antes de enviarse y se avisa por WhatsApp al equipo.
+    if (/^\[ESCALAR\]/i.test(raw)) {
+      raw = raw.replace(/^\[ESCALAR\]\s*/i, "");
+      const numAdmin = config.numero_admin_notificaciones;
+      if (numAdmin) {
+        const nombreMiembro = perfil.nombre || "Un miembro";
+        fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: numAdmin,
+            body: `🔔 El Agente de WhatsApp escaló una conversación.\n\nMiembro: ${nombreMiembro}\nWhatsApp: ${whatsappLocal}\nÚltimo mensaje: "${messageBody}"\n\nRevísalo en Admin → Agente WhatsApp.`,
+          }),
+        }).catch(() => {});
+      }
+    }
+
     // Capitalizar letra después de ¿
     const respuesta = raw.replace(/¿([a-záéíóúüñ])/g, (_: string, l: string) => "¿" + l.toUpperCase());
 
