@@ -450,11 +450,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       nombre, primerNombre: nombre.split(" ")[0], fechaISO, whatsapp, mision, arquetipo
     }));
 
-    // Intentar guardar en Supabase (no bloquea el flujo si falla)
+    // Guardar el perfil en Supabase — si esto falla, la cuenta de Auth existe
+    // pero la persona queda sin fila en "perfiles" (sin plan, sin nada), un
+    // estado roto que antes pasaba desapercibido. Ahora se revisa el error.
+    let perfilGuardado = false;
     try {
       if (data.user) {
         const refPor = localStorage.getItem("ecdlg_ref") || null;
-        await supabase.from("perfiles").upsert({
+        const { error: perfError } = await supabase.from("perfiles").upsert({
           id: data.user.id,
           nombre,
           whatsapp,
@@ -464,9 +467,23 @@ document.addEventListener("DOMContentLoaded", async () => {
           mision: mision || null,
           referido_por: refPor,
         });
-        localStorage.removeItem("ecdlg_ref");
+        if (perfError) {
+          console.error("Error guardando perfil:", perfError);
+        } else {
+          perfilGuardado = true;
+          localStorage.removeItem("ecdlg_ref");
+        }
       }
-    } catch (_) {}
+    } catch (e) {
+      console.error("Error en registro:", e);
+    }
+
+    setLoading(btn, false, "Crear mi cuenta →");
+
+    if (!perfilGuardado) {
+      mostrarError("Tu cuenta se creó, pero hubo un error guardando tu perfil. Escríbenos por WhatsApp para completarlo.");
+      return;
+    }
 
     // Mensaje de bienvenida por WhatsApp (fire and forget)
     if (whatsapp) {
@@ -479,7 +496,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       }).catch(() => {});
     }
 
-    setLoading(btn, false, "Crear mi cuenta →");
     location.href = "Perfil.html?bienvenida=1";
   });
 
