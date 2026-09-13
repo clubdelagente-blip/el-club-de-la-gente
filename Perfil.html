@@ -189,6 +189,15 @@
             </div>
           </div>
 
+          <!-- Recomendados para ti (según categorías de interés, mascotas, hijos) -->
+          <div class="card" id="card-recomendados" style="margin-bottom:20px" hidden>
+            <div class="card__head" style="align-items:flex-start;flex-direction:column;gap:4px;margin-bottom:16px">
+              <span class="card__title">Aliados para ti</span>
+              <p id="recomendados-sub" style="font-size:12.5px;color:var(--tinta-60);text-transform:none;letter-spacing:normal;font-weight:400;margin:0">Cargando recomendaciones…</p>
+            </div>
+            <div class="aliados-strip" id="aliados-recomendados"></div>
+          </div>
+
           <!-- Carrusel de marcas Amazon -->
           <div class="marcas-carrusel" id="marcas-carrusel-dash" style="border-radius:14px;margin-bottom:20px" aria-label="Marcas Amazon aliadas">
             <div class="marcas-carrusel__track" id="marcas-track-dash"></div>
@@ -1100,7 +1109,7 @@
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://checkout.wompi.co/widget.js"></script>
-  <script type="module" src="dashboard.js?v=70"></script>
+  <script type="module" src="dashboard.js?v=71"></script>
   <script src="agente.js"></script>
 
   <template id="__bundler_thumbnail">

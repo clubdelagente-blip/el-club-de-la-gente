@@ -911,6 +911,71 @@ async function cargarOnboarding(userId, perfData) {
   });
 }
 
+/* ---------- Aliados recomendados (personalizado con el perfil real) ---------- */
+async function cargarAliadosRecomendados(perfData) {
+  const card = $("#card-recomendados");
+  const wrap = $("#aliados-recomendados");
+  if (!card || !wrap) return;
+
+  const { data: aliados, error } = await supabase
+    .from("aliados")
+    .select("id, nombre, categoria, descuento, whatsapp")
+    .eq("activo", true);
+  if (error || !aliados?.length) return;
+
+  const intereses = perfData?.categorias_interes || [];
+  const interesLower = intereses.map(i => (i || "").toLowerCase());
+  const tieneInteres = (re) => interesLower.some(i => re.test(i));
+  const mascotas = !!perfData?.tiene_mascotas;
+  const hijos = !!perfData?.tiene_hijos;
+
+  const FAMILIARES = ["Heladería", "Canasta familiar", "Regalos", "Fruver"];
+  const SALUD = ["Bienestar y salud", "Odontología", "Barbería"];
+  const COMIDA = ["Comida rápida", "Canasta familiar", "Heladería", "Fruver"];
+
+  function puntaje(a) {
+    const cat = a.categoria || "";
+    let s = 0;
+    if (intereses.includes(cat)) s += 3;
+    if (mascotas && cat === "Veterinaria") s += 2;
+    if (hijos && FAMILIARES.includes(cat)) s += 2;
+    if (tieneInteres(/salud|bienestar/) && SALUD.includes(cat)) s += 1;
+    if (tieneInteres(/turismo/) && cat === "Turismo") s += 1;
+    if (tieneInteres(/comida/) && COMIDA.includes(cat)) s += 1;
+    return s;
+  }
+
+  const top = aliados.map(a => ({ ...a, _s: puntaje(a) })).sort((x, y) => y._s - x._s).slice(0, 4);
+  const personalizado = top.some(a => a._s > 0);
+
+  const subEl = $("#recomendados-sub");
+  if (subEl) subEl.textContent = personalizado
+    ? "Elegidos según tus intereses y tu perfil."
+    : "Aliados destacados para empezar a ahorrar.";
+
+  const iconMap = { "Odontología": "smile", "Bienestar y salud": "heart-pulse", "Turismo": "mountain-snow",
+    "Veterinaria": "paw-print", "Canasta familiar": "shopping-basket", "Ropa personalizada": "shirt",
+    "Heladería": "ice-cream", "Comida rápida": "sandwich", "Barbería": "scissors" };
+  const getIcon = (cat) => iconMap[cat] || "store";
+
+  wrap.innerHTML = top.map(a => {
+    const pctLen = (a.descuento || "").length;
+    const href = a.whatsapp ? `https://wa.me/57${String(a.whatsapp).replace(/\D/g, "")}` : "Directorio.html";
+    return `
+    <a class="aliado-mini" href="${href}" target="_blank" rel="noopener">
+      <span class="aliado-mini__ic">${ic(getIcon(a.categoria))}</span>
+      <span>
+        <span class="aliado-mini__name">${esc(a.nombre)}</span><br>
+        <span class="aliado-mini__cat">${esc(a.categoria || "")}</span>
+      </span>
+      <span class="aliado-mini__pct" style="max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${pctLen > 6 ? "font-size:14px" : ""}">${esc(a.descuento || "")}</span>
+    </a>`;
+  }).join("");
+
+  card.hidden = false;
+  if (window.lucide) lucide.createIcons();
+}
+
 /* ---------- Links a Directorio con datos del miembro (mismo esquema que Verificar.html) ---------- */
 async function actualizarLinksAliados(userId, plan, whatsapp) {
   const limite = LIMITE_DESCUENTOS[plan] ?? 1;
@@ -1518,7 +1583,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("bienvenida-cerrar")?.addEventListener("click", () => cerrarModalTienda());
     }
 
-    const { data: perfData, error: perfError } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol, fecha_vencimiento, categorias_interes, respuestas_segmentacion, foto_url").eq("id", userId).maybeSingle();
+    const { data: perfData, error: perfError } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol, fecha_vencimiento, categorias_interes, respuestas_segmentacion, foto_url, tiene_mascotas, tiene_hijos").eq("id", userId).maybeSingle();
     if (perfError) {
       // No mostrar "activa tu membresía" cuando en realidad es un error técnico
       // (ej. una columna que falta) — sería engañoso, parecería que no pagó.
@@ -1603,6 +1668,7 @@ document.addEventListener("DOMContentLoaded", () => {
       inicializarBannerReferidos(userId);
       actualizarLinksAliados(userId, plan, perfData?.whatsapp);
       cargarOnboarding(userId, perfData);
+      cargarAliadosRecomendados(perfData);
     }
 
     // Rol aliado (cuenta real, no localStorage): "Mi negocio" conectado por aliado_id
