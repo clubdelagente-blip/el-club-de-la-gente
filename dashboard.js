@@ -821,6 +821,64 @@ async function cargarReferidos(userId) {
   }
 }
 
+/* ---------- Checklist de primeros pasos (Inicio) ---------- */
+async function cargarOnboarding(userId, perfData) {
+  const wrap = $("#onb-wrap");
+  if (!wrap) return;
+  if (localStorage.getItem("ecdlg_onb_cerrado_" + userId) === "1") return; // el miembro ya lo cerró
+
+  const pasoPerfil = Object.keys(perfData?.respuestas_segmentacion || {}).length > 0;
+  const whatsapp = (perfData?.whatsapp || "").replace(/\D/g, "");
+
+  const [{ count: descCount }, { count: refCount }, convRes] = await Promise.all([
+    supabase.from("descuentos").select("id", { count: "exact", head: true }).eq("miembro_id", userId),
+    supabase.from("perfiles").select("id", { count: "exact", head: true }).eq("referido_por", userId),
+    whatsapp
+      ? supabase.from("conversaciones").select("id", { count: "exact", head: true }).eq("whatsapp", whatsapp).eq("rol", "user")
+      : Promise.resolve({ count: 0 }),
+  ]);
+
+  const pasos = {
+    perfil: pasoPerfil,
+    clubcard: (descCount || 0) > 0,
+    agente: (convRes?.count || 0) > 0,
+    referidos: (refCount || 0) > 0,
+  };
+
+  const total = Object.keys(pasos).length;
+  const hechos = Object.values(pasos).filter(Boolean).length;
+  wrap.style.display = "";
+
+  if (hechos === total) {
+    $("#onb-card").hidden = true;
+    $("#onb-done").hidden = false;
+  } else {
+    $("#onb-card").hidden = false;
+    $("#onb-done").hidden = true;
+    $$(".onb-item").forEach(btn => btn.classList.toggle("is-done", !!pasos[btn.dataset.step]));
+    const RING_LEN = 113.1;
+    const ringFg = $("#onb-ring-fg");
+    if (ringFg) ringFg.style.strokeDashoffset = RING_LEN - (RING_LEN * hechos / total);
+    const ringN = $("#onb-ring-n");
+    if (ringN) ringN.textContent = hechos + "/" + total;
+  }
+  if (window.lucide) lucide.createIcons();
+
+  const cerrar = () => {
+    wrap.classList.add("is-hidden");
+    localStorage.setItem("ecdlg_onb_cerrado_" + userId, "1");
+  };
+  $("#onb-close-card")?.addEventListener("click", cerrar);
+  $("#onb-close-done")?.addEventListener("click", cerrar);
+  $("#onb-item-referidos")?.addEventListener("click", () => {
+    const card = $("#card-referidos");
+    if (!card) return;
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    card.classList.add("onb-highlight");
+    setTimeout(() => card.classList.remove("onb-highlight"), 1500);
+  });
+}
+
 /* ---------- Links a Directorio con datos del miembro (mismo esquema que Verificar.html) ---------- */
 async function actualizarLinksAliados(userId, plan, whatsapp) {
   const limite = LIMITE_DESCUENTOS[plan] ?? 1;
@@ -1512,6 +1570,7 @@ document.addEventListener("DOMContentLoaded", () => {
       cargarDescuentos(userId);
       inicializarBannerReferidos(userId);
       actualizarLinksAliados(userId, plan, perfData?.whatsapp);
+      cargarOnboarding(userId, perfData);
     }
 
     // Rol aliado (cuenta real, no localStorage): "Mi negocio" conectado por aliado_id

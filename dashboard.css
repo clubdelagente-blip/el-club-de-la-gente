@@ -313,3 +313,47 @@
 @media (max-width: 560px) {
   .sop-chat { min-height: 320px; max-height: 50vh; padding: 16px; }
 }
+
+/* ============================================================
+   PRIMEROS PASOS (checklist de bienvenida en Inicio)
+   ============================================================ */
+.onb-wrap { max-height: 600px; opacity: 1; overflow: hidden; transition: max-height .5s ease, opacity .4s ease, margin .5s ease; margin-bottom: 20px; }
+.onb-wrap.is-hidden { max-height: 0; opacity: 0; margin-bottom: 0; }
+.onb-card { padding: 20px 22px 8px; }
+.onb-card__head { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.onb-ring { position: relative; width: 44px; height: 44px; flex: none; }
+.onb-ring svg { width: 44px; height: 44px; transform: rotate(-90deg); }
+.onb-ring circle { fill: none; stroke-width: 4; }
+.ring-bg { stroke: var(--crema-2); }
+.ring-fg { stroke: var(--verde); stroke-linecap: round; transition: stroke-dashoffset .5s cubic-bezier(.4,0,.2,1); }
+.onb-ring__n { position: absolute; inset: 0; display: grid; place-items: center; font-size: 10.5px; font-weight: 700; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.onb-card__head-txt { flex: 1; min-width: 0; }
+.onb-card__head-txt .card__title { font-family: var(--display); font-weight: 600; font-size: 16.5px; text-transform: none; letter-spacing: normal; display: block; }
+.onb-card__head-txt p { font-size: 12px; color: var(--tinta-60); margin: 3px 0 0; line-height: 1.5; }
+.onb-card__close { flex: none; background: none; border: none; color: var(--tinta-45); cursor: pointer; display: flex; padding: 4px; }
+.onb-card__close i { width: 16px; height: 16px; }
+.onb-list { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--linea); }
+@media (max-width: 760px) { .onb-list { grid-template-columns: 1fr; } }
+.onb-item { display: flex; align-items: center; gap: 12px; padding: 14px 4px; border: none; background: none; cursor: pointer; text-align: left; font-family: var(--cuerpo); border-bottom: 1px solid var(--linea); width: 100%; }
+.onb-list > .onb-item:nth-child(odd) { border-right: 1px solid var(--linea); padding-right: 16px; }
+.onb-list > .onb-item:nth-child(even) { padding-left: 16px; }
+@media (max-width: 760px) { .onb-list > .onb-item:nth-child(odd) { border-right: none; padding-right: 4px; } }
+.onb-item__check { width: 22px; height: 22px; border-radius: 50%; border: 1.6px solid var(--linea-fuerte); flex: none; display: grid; place-items: center; transition: background .2s, border-color .2s; }
+.onb-item__check i { width: 12px; height: 12px; color: #fff; opacity: 0; transition: opacity .15s; stroke-width: 3; }
+.onb-item.is-done .onb-item__check { background: var(--verde); border-color: var(--verde); }
+.onb-item.is-done .onb-item__check i { opacity: 1; }
+.onb-item__txt { flex: 1; min-width: 0; }
+.onb-item__txt b { display: block; font-size: 12.5px; font-weight: 600; color: var(--tinta); }
+.onb-item.is-done .onb-item__txt b { color: var(--tinta-45); text-decoration: line-through; text-decoration-color: var(--linea-fuerte); text-decoration-thickness: 1.4px; }
+.onb-item__txt small { display: block; font-size: 11px; color: var(--tinta-45); margin-top: 2px; line-height: 1.4; }
+.onb-item__go { flex: none; display: flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 700; color: var(--verde); white-space: nowrap; }
+.onb-item__go i { width: 12px; height: 12px; }
+.onb-item.is-done .onb-item__go { display: none; }
+.onb-done { display: flex; align-items: center; gap: 12px; background: var(--crema); border: 1px solid var(--linea); border-radius: 14px; padding: 15px 18px; }
+.onb-done__check { width: 26px; height: 26px; border-radius: 50%; background: var(--verde); display: grid; place-items: center; flex: none; }
+.onb-done__check i { width: 14px; height: 14px; color: #fff; stroke-width: 3; }
+.onb-done__txt { flex: 1; font-size: 13px; font-weight: 600; color: var(--tinta); }
+.onb-done__close { background: none; border: none; color: var(--tinta-45); cursor: pointer; display: flex; flex: none; padding: 4px; }
+.onb-done__close i { width: 15px; height: 15px; }
+#card-referidos.onb-highlight { animation: onb-flash 1.4s ease; }
+@keyframes onb-flash { 0%, 100% { box-shadow: none; } 30% { box-shadow: 0 0 0 3px var(--verde-soft); } }

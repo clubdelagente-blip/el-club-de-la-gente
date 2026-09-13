@@ -16,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=22">
   <link rel="stylesheet" href="estilos.css?v=5">
-  <link rel="stylesheet" href="dashboard.css?v=3">
+  <link rel="stylesheet" href="dashboard.css?v=4">
   <link rel="stylesheet" href="agente.css">
 </head>
 <body class="dash-body">
@@ -108,6 +108,53 @@
           <div class="dash-greet">
             <h1 id="greet-name">Hola, Carlos.</h1>
             <p>Este mes ya estás aprovechando tu membresía. Esto es lo que llevas.</p>
+          </div>
+
+          <!-- Checklist de primeros pasos (se muestra/oculta por JS según datos reales) -->
+          <div class="onb-wrap" id="onb-wrap" style="display:none">
+            <div class="card onb-card" id="onb-card">
+              <div class="onb-card__head">
+                <div class="onb-ring">
+                  <svg viewBox="0 0 44 44">
+                    <circle class="ring-bg" cx="22" cy="22" r="18"></circle>
+                    <circle class="ring-fg" id="onb-ring-fg" cx="22" cy="22" r="18" stroke-dasharray="113.1" stroke-dashoffset="113.1"></circle>
+                  </svg>
+                  <span class="onb-ring__n" id="onb-ring-n">0/4</span>
+                </div>
+                <div class="onb-card__head-txt">
+                  <span class="card__title">Primeros pasos en el Club</span>
+                  <p>Termina esto y le sacas el jugo completo a tu membresía desde el día uno.</p>
+                </div>
+                <button type="button" class="onb-card__close" id="onb-close-card" title="No volver a mostrar"><i data-lucide="x"></i></button>
+              </div>
+              <div class="onb-list">
+                <button type="button" class="onb-item" data-step="perfil" data-goto-panel="perfil">
+                  <span class="onb-item__check"><i data-lucide="check"></i></span>
+                  <span class="onb-item__txt"><b>Completa tu perfil</b><small>Para personalizar tus recomendaciones</small></span>
+                  <span class="onb-item__go">Ir <i data-lucide="arrow-right"></i></span>
+                </button>
+                <button type="button" class="onb-item" data-step="clubcard" data-goto-panel="clubcard">
+                  <span class="onb-item__check"><i data-lucide="check"></i></span>
+                  <span class="onb-item__txt"><b>Muestra tu primer descuento</b><small>Lleva tu ClubCard a un aliado</small></span>
+                  <span class="onb-item__go">Ir <i data-lucide="arrow-right"></i></span>
+                </button>
+                <button type="button" class="onb-item" data-step="agente" data-goto-panel="agente">
+                  <span class="onb-item__check"><i data-lucide="check"></i></span>
+                  <span class="onb-item__txt"><b>Conecta tu Agente de WhatsApp</b><small>Recibe tus resúmenes por chat</small></span>
+                  <span class="onb-item__go">Ir <i data-lucide="arrow-right"></i></span>
+                </button>
+                <button type="button" class="onb-item" data-step="referidos" id="onb-item-referidos">
+                  <span class="onb-item__check"><i data-lucide="check"></i></span>
+                  <span class="onb-item__txt"><b>Invita a tu primer amigo</b><small>Comparte tu link y acércate a la vitalicia</small></span>
+                  <span class="onb-item__go">Ir <i data-lucide="arrow-right"></i></span>
+                </button>
+              </div>
+            </div>
+            <div class="onb-done" id="onb-done" hidden>
+              <span class="onb-done__check"><i data-lucide="check"></i></span>
+              <span class="onb-done__txt">Completaste tus primeros pasos en el Club 🎉</span>
+              <button type="button" class="onb-done__close" id="onb-close-done"><i data-lucide="x"></i></button>
+            </div>
           </div>
 
           <!-- Banner referidos para usuarios con plan activo (se muestra por JS) -->
@@ -1053,7 +1100,7 @@
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://checkout.wompi.co/widget.js"></script>
-  <script type="module" src="dashboard.js?v=66"></script>
+  <script type="module" src="dashboard.js?v=67"></script>
   <script src="agente.js"></script>
 
   <template id="__bundler_thumbnail">
