@@ -3,7 +3,6 @@
 // Recibe eventos de Wompi y activa la membresía del miembro
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createHmac } from "https://deno.land/std@0.177.0/node/crypto.ts";
 
 const WOMPI_SECRET = Deno.env.get("WOMPI_EVENTS_SECRET")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -25,15 +24,25 @@ Deno.serve(async (req: Request) => {
   }
 
   const body = await req.text();
+  const event = JSON.parse(body);
 
-  // Verificar firma de Wompi
-  const signature = req.headers.get("x-event-checksum") || "";
-  const hmac = createHmac("sha256", WOMPI_SECRET).update(body).digest("hex");
-  if (hmac !== signature) {
+  // Verificar firma de Wompi (metodo oficial: SHA-256 de los valores de
+  // signature.properties, en orden, + timestamp + secreto de eventos)
+  const sig = event?.signature;
+  if (!sig?.properties || !Array.isArray(sig.properties)) {
     return new Response("Unauthorized", { status: 401, headers: corsHeaders });
   }
-
-  const event = JSON.parse(body);
+  const getPath = (obj: any, path: string) =>
+    path.split(".").reduce((o, k) => (o == null ? undefined : o[k]), obj);
+  let concatenado = "";
+  for (const prop of sig.properties) concatenado += String(getPath(event.data, prop) ?? "");
+  concatenado += String(event.timestamp ?? "");
+  concatenado += WOMPI_SECRET;
+  const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(concatenado));
+  const checksumCalculado = Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  if (checksumCalculado !== sig.checksum) {
+    return new Response("Unauthorized", { status: 401, headers: corsHeaders });
+  }
 
   if (event?.event !== "transaction.updated") {
     return new Response("OK", { status: 200, headers: corsHeaders });
@@ -92,13 +101,15 @@ Deno.serve(async (req: Request) => {
   const fechaVencimiento = new Date();
   fechaVencimiento.setMonth(fechaVencimiento.getMonth() + 1);
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("perfiles")
     .update({
       plan,
       fecha_vencimiento: fechaVencimiento.toISOString().split("T")[0],
     })
-    .eq("id", miembroId);
+    .eq("id", miembroId)
+    .select("nombre, whatsapp")
+    .maybeSingle();
 
   if (error) {
     console.error("Error activando membresía:", error);
@@ -114,6 +125,25 @@ Deno.serve(async (req: Request) => {
     referencia: tx.reference,
   });
   if (pagoError) console.error("Error registrando pago:", pagoError);
+
+  // Confirmación de activación por WhatsApp — se espera (no fire-and-forget)
+  // porque esta función puede terminar apenas se devuelve la Response, lo que
+  // cortaría una petición pendiente sin terminar (mismo tipo de bug que hacía
+  // que el mensaje de bienvenida del registro nunca llegara).
+  if (updated?.whatsapp) {
+    const primerNombre = (updated.nombre || "").split(" ")[0] || "";
+    const planLabel = plan === "premium" ? "Premium" : "Básica";
+    const msgActivacion = `✅ ¡Tu membresía ${planLabel} ya está activa${primerNombre ? `, ${primerNombre}` : ""}!\n\nYa puedes mostrar tu ClubCard en cualquier aliado del Club para empezar a ahorrar.\n\nEl Club de la Gente`;
+    try {
+      await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: updated.whatsapp, body: msgActivacion }),
+      });
+    } catch (e) {
+      console.error("Error enviando confirmación de activación:", e);
+    }
+  }
 
   // Validar si el referidor alcanzó 5 referidos activos → vitalicia
   try {

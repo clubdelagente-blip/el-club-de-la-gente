@@ -485,7 +485,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // Mensaje de bienvenida por WhatsApp (fire and forget)
+    // Mensaje de bienvenida por WhatsApp (fire and forget, pero con keepalive:
+    // sin esto, el location.href de abajo navega antes de que el fetch alcance
+    // a salir y el navegador cancela la petición — el mensaje nunca llegaba).
     if (whatsapp) {
       const primerNombre = nombre.split(" ")[0];
       const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nYa eres parte de una comunidad que ahorra, aprende y apoya a Fusagasugá. 🎉\n\nDesde aquí recibirás confirmaciones de tus descuentos y novedades del Club.\n\nEl Club de la Gente`;
@@ -493,6 +495,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ to: whatsapp, body: msgBienvenida }),
+        keepalive: true,
       }).catch(() => {});
     }
 
