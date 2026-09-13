@@ -282,7 +282,7 @@ function prepararCamposConocidos(perfil) {
 }
 
 /* ---------- Descuentos reales ---------- */
-async function cargarDescuentos(userId) {
+async function cargarDescuentos(userId, whatsapp) {
   const { data, error } = await supabase
     .from("descuentos")
     .select("aliado_nombre, categoria, descuento_pct, compra, ahorro, created_at")
@@ -307,7 +307,39 @@ async function cargarDescuentos(userId) {
     }
   }
 
-  if (error || !data?.length) return;
+  if (error) return;
+
+  if (!data?.length) {
+    const dirHref = `Directorio.html?miembro=${userId}&wa=${encodeURIComponent(whatsapp || "")}&plan=${u.plan || "basica"}&usos=0`;
+    const elAhorroMes = document.getElementById("stat-ahorro-mes");
+    const elDescMes = document.getElementById("stat-descuentos-mes");
+    const elAliadosMes = document.getElementById("stat-aliados-mes");
+    const elAhorroTotal = document.getElementById("stat-ahorro-total");
+    if (elAhorroMes) elAhorroMes.textContent = fmtCOP(0);
+    if (elDescMes) elDescMes.textContent = "0";
+    if (elAliadosMes) elAliadosMes.textContent = "0";
+    if (elAhorroTotal) elAhorroTotal.textContent = fmtCOP(0);
+
+    const actEl = $("#actividad");
+    if (actEl) actEl.innerHTML = `
+      <li class="act-item act-item--empty" style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:28px 10px">
+        <span style="width:38px;height:38px;border-radius:50%;background:var(--verde-soft);color:var(--verde);display:grid;place-items:center">${ic("sparkles")}</span>
+        <span style="font-size:13px;line-height:1.5;max-width:260px;color:var(--tinta-45,#888)">Aún no has usado ningún descuento. Lleva tu ClubCard a un aliado y actívalo con el código QR.</span>
+        <a href="${dirHref}" style="font-size:12.5px;font-weight:700;color:var(--verde);display:inline-flex;align-items:center;gap:5px;text-decoration:none">Ver aliados cerca de ti ${ic("arrow-right")}</a>
+      </li>`;
+
+    const tablaEl = $("#tabla-body");
+    if (tablaEl) tablaEl.innerHTML = `
+      <tr><td colspan="5" style="text-align:center;padding:32px 16px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <span style="font-size:13px;color:var(--tinta-45,#888)">Todavía no tienes descuentos registrados.</span>
+          <a href="${dirHref}" style="font-size:12.5px;font-weight:700;color:var(--verde);text-decoration:none">Explora los aliados del Club →</a>
+        </div>
+      </td></tr>`;
+
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
 
   const iconMap = { "Odontología": "smile", "Bienestar y salud": "heart-pulse", "Turismo": "mountain-snow",
     "Veterinaria": "paw-print", "Canasta familiar": "shopping-basket", "Ropa personalizada": "shirt",
@@ -1567,7 +1599,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (bloqueado) {
       inicializarBloqueo();
     } else {
-      cargarDescuentos(userId);
+      cargarDescuentos(userId, perfData?.whatsapp);
       inicializarBannerReferidos(userId);
       actualizarLinksAliados(userId, plan, perfData?.whatsapp);
       cargarOnboarding(userId, perfData);
