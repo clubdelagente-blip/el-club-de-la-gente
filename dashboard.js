@@ -811,23 +811,24 @@ async function cargarPedidosAliado(aliadoId) {
 
 /* ---------- Referidos ---------- */
 async function cargarReferidos(userId) {
-  const linkEl = document.getElementById("ref-link");
   const barra = document.getElementById("ref-barra");
   const contador = document.getElementById("ref-contador");
   const msg = document.getElementById("ref-msg");
   const badge = document.getElementById("ref-badge");
   const copiarBtn = document.getElementById("ref-copiar");
 
-  if (!linkEl) return;
+  if (!barra) return;
 
   const base = "https://elclubdelagente.com/Registro.html";
   const link = `${base}?ref=${userId}`;
-  linkEl.value = link;
 
   copiarBtn?.addEventListener("click", () => {
     navigator.clipboard.writeText(link).then(() => {
-      copiarBtn.textContent = "¡Copiado!";
-      setTimeout(() => copiarBtn.textContent = "Copiar", 2000);
+      copiarBtn.innerHTML = "¡Copiado!";
+      setTimeout(() => {
+        copiarBtn.innerHTML = `<i data-lucide="link" style="width:14px;height:14px"></i> Copiar mi link`;
+        if (window.lucide) lucide.createIcons();
+      }, 2000);
     });
   });
 
@@ -845,7 +846,6 @@ async function cargarReferidos(userId) {
 
   if (total >= 5) {
     if (msg) msg.textContent = "🎉 ¡Membresía vitalicia activada! Gracias por crecer el Club.";
-    if (msg) msg.style.color = "#1a7a3c";
     if (badge) badge.hidden = false;
   } else {
     const faltan = 5 - total;
@@ -1030,24 +1030,6 @@ function inicializarBloqueo() {
   // Actualizar saludo
   const greetP = document.querySelector(".dash-greet p");
   if (greetP) greetP.textContent = "Activa tu membresía o invita 5 amigos para comenzar a disfrutar tus beneficios.";
-}
-
-/* ---------- BANNER REFERIDOS (plan activo) ---------- */
-function inicializarBannerReferidos(userId) {
-  const banner = document.getElementById("banner-referidos-activo");
-  if (!banner) return;
-  banner.style.display = "flex";
-  const link = `https://elclubdelagente.com/Registro.html?ref=${userId}`;
-  const btn = document.getElementById("bra-copiar");
-  if (btn) {
-    btn.addEventListener("click", () => {
-      navigator.clipboard.writeText(link).then(() => {
-        btn.textContent = "¡Copiado!";
-        setTimeout(() => { btn.innerHTML = `<i data-lucide="link" style="width:14px;height:14px"></i> Copiar mi link`; if (window.lucide) lucide.createIcons(); }, 2000);
-      });
-    });
-  }
-  if (window.lucide) lucide.createIcons();
 }
 
 /* ---------- TIENDA ---------- */
@@ -1665,7 +1647,6 @@ document.addEventListener("DOMContentLoaded", () => {
       inicializarBloqueo();
     } else {
       cargarDescuentos(userId, perfData?.whatsapp);
-      inicializarBannerReferidos(userId);
       actualizarLinksAliados(userId, plan, perfData?.whatsapp);
       cargarOnboarding(userId, perfData);
       cargarAliadosRecomendados(perfData);

@@ -158,14 +158,6 @@
           </div>
 
           <!-- Banner referidos para usuarios con plan activo (se muestra por JS) -->
-          <div id="banner-referidos-activo" style="display:none;align-items:center;gap:16px;background:linear-gradient(135deg,#0e4a23 0%,#1a7a3c 100%);color:#fff;padding:16px 20px;border-radius:14px;margin-bottom:20px">
-            <div style="flex:1">
-              <div style="font-size:14px;font-weight:700;margin-bottom:3px">¿Sabías que puedes usarlo gratis de por vida?</div>
-              <div style="font-size:12px;opacity:.85">Invita 5 amigos al Club y obtén tu membresía vitalicia sin pagar nada.</div>
-            </div>
-            <button id="bra-copiar" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:none;color:#fff;padding:9px 14px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0"><i data-lucide="link" style="width:14px;height:14px"></i> Copiar mi link</button>
-          </div>
-
           <div class="stats">
             <div class="stat">
               <div class="stat__top"><span class="stat__ic"><i data-lucide="piggy-bank"></i></span><span class="stat__trend"><i data-lucide="trending-up"></i> +18%</span></div>
@@ -248,23 +240,21 @@
           </div>
 
           <!-- Tarjeta referidos -->
-          <div class="card" style="margin-bottom:20px;" id="card-referidos">
-            <div class="card__head">
-              <span class="card__title">Membresía vitalicia gratis</span>
-              <span id="ref-badge" style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#1a7a3c;background:#e8f5ee;padding:3px 10px;border-radius:99px" hidden>¡ACTIVA!</span>
-            </div>
-            <p style="font-size:13px;color:#666;margin-bottom:16px;line-height:1.5">Refiere 5 amigos al Club. Mientras estén activos, tu membresía es <strong>vitalicia y gratuita</strong>.</p>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-              <div style="flex:1;height:8px;background:#ebebeb;border-radius:99px;overflow:hidden">
-                <div id="ref-barra" style="height:100%;background:#1a7a3c;border-radius:99px;transition:width .4s;width:0%"></div>
+          <div id="card-referidos" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;background:linear-gradient(135deg,#0e4a23 0%,#1a7a3c 100%);color:#fff;padding:20px 24px;border-radius:14px;margin-bottom:20px">
+            <div style="flex:1;min-width:220px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:3px;flex-wrap:wrap">
+                <span style="font-size:14px;font-weight:700">¿Sabías que puedes usarlo gratis de por vida?</span>
+                <span id="ref-badge" style="font-size:10.5px;font-weight:700;letter-spacing:.06em;background:rgba(255,255,255,.18);padding:2px 9px;border-radius:99px" hidden>¡ACTIVA!</span>
               </div>
-              <span id="ref-contador" style="font-size:13px;font-weight:700;white-space:nowrap;color:#0e0e0e">0 de 5</span>
+              <div id="ref-msg" style="font-size:12px;opacity:.85;margin-bottom:12px">Invita 5 amigos al Club y obtén tu membresía vitalicia sin pagar nada.</div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="flex:1;max-width:260px;height:7px;background:rgba(255,255,255,.22);border-radius:99px;overflow:hidden">
+                  <div id="ref-barra" style="height:100%;background:#fff;border-radius:99px;transition:width .4s;width:0%"></div>
+                </div>
+                <span id="ref-contador" style="font-size:12px;font-weight:700;white-space:nowrap">0 de 5</span>
+              </div>
             </div>
-            <p id="ref-msg" style="font-size:12px;color:#888;margin-bottom:16px">Aún te faltan 5 referidos activos.</p>
-            <div style="display:flex;gap:8px;align-items:center">
-              <input id="ref-link" readonly style="flex:1;padding:10px 12px;border:1px solid #ebebeb;border-radius:10px;font-size:12px;color:#555;background:#fafafa;outline:none" value="Cargando...">
-              <button id="ref-copiar" style="padding:10px 16px;background:#1a7a3c;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">Copiar</button>
-            </div>
+            <button id="ref-copiar" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:none;color:#fff;padding:9px 14px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0"><i data-lucide="link" style="width:14px;height:14px"></i> Copiar mi link</button>
           </div>
 
           <!-- Banner WhatsApp -->
@@ -1109,7 +1099,7 @@
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://checkout.wompi.co/widget.js"></script>
-  <script type="module" src="dashboard.js?v=72"></script>
+  <script type="module" src="dashboard.js?v=73"></script>
   <script src="agente.js"></script>
 
   <template id="__bundler_thumbnail">
