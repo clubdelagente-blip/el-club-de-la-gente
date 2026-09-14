@@ -103,16 +103,11 @@ function render() {
   const tablaEl = $("#tabla-body");
   if (tablaEl) tablaEl.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#888;padding:16px">Sin actividad aún</td></tr>`;
 
-  // Rol aliado ("Mi negocio") ya no se decide acá con localStorage — se
-  // resuelve con la sesión real de Supabase más abajo, en el callback de
-  // getSession(), donde se busca el aliado vinculado por user_id.
-
-  // Rol profesional: mostrar "Mi consultorio"
-  if (u.rol === "profesional") {
-    const li = $("#sb-profesional-li");
-    if (li) li.hidden = false;
-    cargarPanelProfesional();
-  }
+  // Rol aliado ("Mi negocio") y rol profesional ("Mi consultorio"/"Mis
+  // viajes") ya no se deciden acá con localStorage — se resuelven con la
+  // sesión real de Supabase más abajo, en el callback de getSession(), para
+  // no quedar mal si el caché del navegador tiene un rol viejo de otra
+  // cuenta probada antes en el mismo dispositivo.
 
   if (window.lucide) lucide.createIcons();
 }
@@ -1695,6 +1690,19 @@ document.addEventListener("DOMContentLoaded", () => {
         inicializarMiTienda(negocio);
       }
     }
+
+    // Rol profesional (cuenta real, no localStorage): si el caché del
+    // navegador quedó con un rol viejo (ej. se probó otra cuenta antes en
+    // el mismo dispositivo), esto corrige "Mi consultorio"/"Mis viajes" con
+    // el dato de verdad en vez de confiar solo en lo que quedó guardado.
+    const liProf = $("#sb-profesional-li");
+    if (perfData?.rol === "profesional") {
+      if (liProf) liProf.hidden = false;
+      cargarPanelProfesional();
+    } else if (liProf) {
+      liProf.hidden = true;
+    }
+
     cargarReferidos(userId);
     cargarMarcasCarrusel();
     cargarProfesionalesClub(plan);
