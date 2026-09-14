@@ -1588,6 +1588,25 @@ document.addEventListener("DOMContentLoaded", () => {
     _respuestasSegPrevias = perfData?.respuestas_segmentacion || {};
     _whatsappPrevio = perfData?.whatsapp || "";
 
+    // Plan Gratis recién activado: mandar de una vez sus beneficios por
+    // WhatsApp (mismo mensaje que usa el Agente cuando alguien en Gratis le
+    // escribe) — no hay que esperar a que la persona le escriba primero.
+    if (planActivar === "gratis" && !rpcErr && perfData?.whatsapp) {
+      const { data: cfgGratis } = await supabase
+        .from("configuracion")
+        .select("clave, valor")
+        .in("clave", ["grupo_wa_moto", "grupo_wa_carro"]);
+      const linkMoto = cfgGratis?.find(c => c.clave === "grupo_wa_moto")?.valor;
+      const linkCarro = cfgGratis?.find(c => c.clave === "grupo_wa_carro")?.valor;
+      const msgGratis = `👋 ¡Hola! Con tu plan Gratis ya tienes:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).${linkMoto ? `\n   • Moto y domicilios: ${linkMoto}` : ""}${linkCarro ? `\n   • Carro: ${linkCarro}` : ""}\n🛍️ Acceso ilimitado a la Tienda del Club.\n\nSi quieres acceder a promociones, sorteos, este mismo agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿\nhttps://elclubdelagente.com/Planes.html`;
+      fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: perfData.whatsapp, body: msgGratis }),
+        keepalive: true,
+      }).catch(() => {});
+    }
+
     // Foto de perfil: Supabase es la fuente de verdad (sincroniza entre dispositivos)
     {
       const perfilCache = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
