@@ -670,11 +670,16 @@ document.addEventListener("DOMContentLoaded", async () => {
           console.error("Error guardando postulación de profesional:", insErr);
         } else {
           profGuardado = true;
+          // Los profesionales (incluidos los conductores Uber) hacen parte
+          // del Club como aliados/socios, no como miembros que pagan una
+          // membresía -- quedan con acceso Premium mientras dure su
+          // vinculación, no bloqueados pidiéndoles que paguen.
           await supabase.from("perfiles").upsert({
             id: data.user.id,
             nombre,
             whatsapp: wa,
             rol: "profesional",
+            plan: "premium",
           });
         }
       }
