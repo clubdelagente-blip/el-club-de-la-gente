@@ -47,7 +47,7 @@
         <ul class="sb-nav">
           <li><button class="sb-link" data-panel="inicio"><i data-lucide="layout-dashboard"></i> Inicio</button></li>
           <li id="sb-negocio-li" hidden><button class="sb-link" data-panel="negocio"><i data-lucide="store"></i> Mi negocio <span class="sb-link__badge">Aliado</span></button></li>
-          <li id="sb-profesional-li" hidden><button class="sb-link" data-panel="profesional"><i data-lucide="briefcase-medical"></i> Mi consultorio <span class="sb-link__badge">Profesional</span></button></li>
+          <li id="sb-profesional-li" hidden><button class="sb-link" id="sb-profesional-btn" data-panel="profesional"><i data-lucide="briefcase-medical" id="sb-profesional-ic"></i> <span id="sb-profesional-txt">Mi consultorio</span> <span class="sb-link__badge" id="sb-profesional-badge">Profesional</span></button></li>
           <li><button class="sb-link" data-panel="perfil"><i data-lucide="user"></i> Mi perfil</button></li>
           <li><button class="sb-link" data-panel="clubcard"><i data-lucide="credit-card"></i> Mi ClubCard</button></li>
           <li><button class="sb-link" data-panel="tienda"><i data-lucide="package"></i> Tienda <span class="sb-link__badge">Gratis</span></button></li>
@@ -352,6 +352,7 @@
               </div>
             </div>
             <button class="btn btn--secundario cc-benefits-btn" id="cc-flip-toggle"><i data-lucide="qr-code" style="width:17px;height:17px"></i> Quiero acceder a mis beneficios</button>
+            <button class="btn btn--secundario cc-benefits-btn" id="cc-uber-toggle" style="margin-top:10px"><i data-lucide="car" style="width:17px;height:17px"></i> Aplicar descuento Uber</button>
           </div>
         </section>
 
@@ -845,6 +846,39 @@
         </section>
 
         <!-- ============================================================
+             PANEL: MIS VIAJES (conductores Uber moto/carro)
+             ============================================================ -->
+        <section class="panel-view" data-panel="conductor" data-screen-label="Mis viajes">
+          <div class="dash-greet">
+            <h1>Mis viajes</h1>
+            <p>Cada vez que aplicas el descuento del Club en un viaje, queda registrado aquí.</p>
+          </div>
+
+          <div class="stats" style="margin-bottom:20px">
+            <div class="stat">
+              <div class="stat__top"><span class="stat__ic"><i data-lucide="car"></i></span></div>
+              <div class="stat__num" id="cond-stat-viajes">—</div>
+              <div class="stat__lbl">Viajes este mes</div>
+            </div>
+            <div class="stat">
+              <div class="stat__top"><span class="stat__ic"><i data-lucide="piggy-bank"></i></span></div>
+              <div class="stat__num" id="cond-stat-dinero">—</div>
+              <div class="stat__lbl">Dinero hecho este mes</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card__head"><span class="card__title">Historial de viajes</span></div>
+            <table class="tabla">
+              <thead>
+                <tr><th>Tipo</th><th>Fecha</th><th>Monto</th></tr>
+              </thead>
+              <tbody id="cond-tabla-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ============================================================
              PANEL: CONFIGURACIÓN
              ============================================================ -->
         <section class="panel-view" data-panel="config" data-screen-label="Configuración">
@@ -1099,7 +1133,7 @@
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://checkout.wompi.co/widget.js"></script>
-  <script type="module" src="dashboard.js?v=79"></script>
+  <script type="module" src="dashboard.js?v=80"></script>
   <script src="agente.js"></script>
 
   <template id="__bundler_thumbnail">

@@ -1727,6 +1727,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // Flip de ClubCard
   $("#cc-flip-toggle")?.addEventListener("click", () => $("#cc-flip").classList.toggle("is-back"));
 
+  // Descuento Uber desde la ClubCard
+  $("#cc-uber-toggle")?.addEventListener("click", () => {
+    abrirModalTienda("Descuento Uber del Club", htmlPasoTipoUber());
+    $("#uber-tipo-row")?.querySelectorAll(".ag-seg-btn").forEach(btn => {
+      btn.addEventListener("click", () => abrirPasoMontoUber(btn.dataset.tipo, btn.textContent.trim()));
+    });
+    if (window.lucide) lucide.createIcons();
+  });
+
   // ---- Configuración ----
   $("#cfg-foto-btn")?.addEventListener("click", () => $("#cfg-foto-input").click());
   $("#cfg-foto-input")?.addEventListener("change", async (e) => {
@@ -1887,6 +1896,19 @@ async function cargarPanelProfesional() {
 
   if (!prof) return;
 
+  // Conductores Uber (moto/carro): no tiene sentido "Mi consultorio" (foto,
+  // descripción, servicios fijos) — en vez de eso, ven su historial de viajes.
+  if (prof.area === "Uber de moto" || prof.area === "Uber de carro") {
+    const btn = $("#sb-profesional-btn");
+    if (btn) btn.dataset.panel = "conductor";
+    const ic = $("#sb-profesional-ic"); if (ic) ic.setAttribute("data-lucide", "car");
+    const txt = $("#sb-profesional-txt"); if (txt) txt.textContent = "Mis viajes";
+    const badge = $("#sb-profesional-badge"); if (badge) badge.textContent = "Conductor";
+    if (window.lucide) lucide.createIcons();
+    cargarPanelConductor(prof);
+    return;
+  }
+
   // Vista previa
   const fotoEl = $("#prof-preview-foto");
   if (fotoEl) {
@@ -2009,6 +2031,165 @@ async function cargarPanelProfesional() {
   });
 
   cargarMisServicios();
+}
+
+/* ============================================================
+   MIS VIAJES (conductores Uber moto/carro)
+   ============================================================ */
+async function cargarPanelConductor(prof) {
+  const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0, 0, 0, 0);
+
+  const { data: viajes } = await supabase
+    .from("viajes_conductor")
+    .select("tipo, monto, created_at")
+    .eq("conductor_id", prof.id)
+    .order("created_at", { ascending: false });
+
+  const lista = viajes || [];
+  const viajesMes = lista.filter(v => new Date(v.created_at) >= inicioMes);
+  const dineroMes = viajesMes.reduce((s, v) => s + (v.monto || 0), 0);
+
+  const statViajes = $("#cond-stat-viajes"); if (statViajes) statViajes.textContent = viajesMes.length;
+  const statDinero = $("#cond-stat-dinero"); if (statDinero) statDinero.textContent = fmtCOP(dineroMes);
+
+  const TIPO_LBL = { carro: "Carro", moto: "Moto", domicilio: "Domicilio" };
+  const fmtF = iso => new Date(iso).toLocaleDateString("es-CO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+  const tbody = $("#cond-tabla-body");
+  if (tbody) {
+    tbody.innerHTML = lista.length
+      ? lista.slice(0, 30).map(v => `
+        <tr>
+          <td>${TIPO_LBL[v.tipo] || v.tipo}</td>
+          <td>${fmtF(v.created_at)}</td>
+          <td>${fmtCOP(v.monto)}</td>
+        </tr>`).join("")
+      : `<tr><td colspan="3" style="text-align:center;color:var(--tinta-45,#888);padding:16px">Aún no tienes viajes registrados.</td></tr>`;
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+/* ---------- Modal "Aplicar descuento Uber" (desde Mi ClubCard) ---------- */
+function htmlPasoTipoUber() {
+  return `
+    <p style="font-size:13.5px;color:var(--tinta-60);margin-bottom:16px">El conductor elige qué tipo de servicio prestó.</p>
+    <div class="ag-seg-row" style="flex-wrap:wrap;gap:10px" id="uber-tipo-row">
+      <button type="button" class="ag-seg-btn" data-tipo="carro">Carro</button>
+      <button type="button" class="ag-seg-btn" data-tipo="moto">Moto</button>
+      <button type="button" class="ag-seg-btn" data-tipo="domicilio">Domicilio</button>
+    </div>`;
+}
+function htmlPasoMontoUber(tipoLbl) {
+  return `
+    <p style="font-size:13.5px;color:var(--tinta-60);margin-bottom:16px"><b>${tipoLbl}</b> — el conductor ingresa su WhatsApp y el monto del viaje.</p>
+    <div class="cfg-campo">
+      <label class="cfg-label">WhatsApp del conductor</label>
+      <input class="cfg-input" id="uber-codigo" type="tel" placeholder="300 000 0000">
+    </div>
+    <div class="cfg-campo">
+      <label class="cfg-label">Monto del viaje (COP)</label>
+      <input class="cfg-input" id="uber-monto" type="text" inputmode="numeric" placeholder="15.000">
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;background:var(--crema-2,#f8f6f1);border-radius:10px;padding:12px 16px;margin:14px 0">
+      <span style="font-size:13px;color:var(--tinta-60)">Descuento (10%)</span>
+      <span id="uber-ahorro" style="font-weight:700;color:var(--verde)">$0</span>
+    </div>
+    <div id="uber-error" style="display:none;color:#b45309;font-size:13px;margin-bottom:10px"></div>
+    <button class="btn btn--primario btn--bloque" id="uber-aplicar">Aplicar descuento</button>`;
+}
+function htmlExitoUber(nombreConductor, ahorro) {
+  return `
+    <div style="text-align:center;padding:20px 0">
+      <i data-lucide="check-circle" style="width:40px;height:40px;color:var(--verde)"></i>
+      <p style="font-size:15px;font-weight:600;margin:14px 0 4px">¡Descuento aplicado!</p>
+      <p style="font-size:13.5px;color:var(--tinta-60)">Ahorraste ${fmtCOP(ahorro)} con ${esc(nombreConductor)}.</p>
+    </div>`;
+}
+
+function abrirPasoMontoUber(tipo, tipoLbl) {
+  const body = $("#modal-tienda-body");
+  if (body) body.innerHTML = htmlPasoMontoUber(tipoLbl);
+
+  formatearInputMoneda($("#uber-monto"));
+  const recalc = () => {
+    const monto = valorMoneda($("#uber-monto"));
+    const ahorro = Math.round(monto * 0.10);
+    const el = $("#uber-ahorro"); if (el) el.textContent = fmtCOP(ahorro);
+  };
+  $("#uber-monto")?.addEventListener("input", recalc);
+  recalc();
+
+  $("#uber-aplicar")?.addEventListener("click", async () => {
+    const errEl = $("#uber-error");
+    if (errEl) errEl.style.display = "none";
+    const codigo = ($("#uber-codigo")?.value || "").replace(/\D/g, "");
+    const monto = valorMoneda($("#uber-monto"));
+
+    if (!codigo || codigo.length < 7) {
+      if (errEl) { errEl.textContent = "Ingresa el WhatsApp del conductor."; errEl.style.display = "block"; }
+      return;
+    }
+    if (!monto) {
+      if (errEl) { errEl.textContent = "Ingresa el monto del viaje."; errEl.style.display = "block"; }
+      return;
+    }
+
+    const btn = $("#uber-aplicar");
+    if (btn) { btn.disabled = true; btn.textContent = "Aplicando..."; }
+
+    // Domicilios van por el mismo grupo de moto (misma regla que ya usa el
+    // Agente de WhatsApp para transporte).
+    const areaBuscada = tipo === "carro" ? "Uber de carro" : "Uber de moto";
+    const { data: conductor } = await supabase
+      .from("profesionales")
+      .select("id, nombre, whatsapp")
+      .eq("area", areaBuscada)
+      .eq("activo", true)
+      .ilike("whatsapp", `%${codigo}%`)
+      .maybeSingle();
+
+    if (!conductor) {
+      if (errEl) { errEl.textContent = "Ese número no está registrado como conductor del Club."; errEl.style.display = "block"; }
+      if (btn) { btn.disabled = false; btn.textContent = "Aplicar descuento"; }
+      return;
+    }
+
+    const ahorro = Math.round(monto * 0.10);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { error } = await supabase.from("viajes_conductor").insert({
+      conductor_id: conductor.id,
+      miembro_id: session.user.id,
+      tipo,
+      monto,
+      descuento_pct: 10,
+      ahorro,
+    });
+
+    if (error) {
+      console.error("viajes_conductor insert:", error);
+      if (errEl) { errEl.textContent = "No se pudo aplicar el descuento. Intenta de nuevo."; errEl.style.display = "block"; }
+      if (btn) { btn.disabled = false; btn.textContent = "Aplicar descuento"; }
+      return;
+    }
+
+    const bodyExito = $("#modal-tienda-body");
+    if (bodyExito) bodyExito.innerHTML = htmlExitoUber(conductor.nombre || "tu conductor", ahorro);
+    if (window.lucide) lucide.createIcons();
+
+    // Confirmación por WhatsApp al miembro (mismo patrón que directorio.js
+    // usa tras aplicar un descuento de aliado).
+    if (_whatsappPrevio) {
+      const TIPO_LBL = { carro: "carro", moto: "moto", domicilio: "domicilio" };
+      const msg = `✅ Aplicaste tu descuento del Club en un viaje de ${TIPO_LBL[tipo]}.\n\nMonto: ${fmtCOP(monto)}\nAhorraste: ${fmtCOP(ahorro)}\n\nEl Club de la Gente`;
+      fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: _whatsappPrevio, body: msg }),
+      }).catch(() => {});
+    }
+  });
 }
 
 /* ============================================================
