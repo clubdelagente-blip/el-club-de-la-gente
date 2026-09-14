@@ -578,6 +578,20 @@ Deno.serve(async (req: Request) => {
 
     const perfil = perfilData || {};
 
+    // Sin membresía activa: no se gasta Groq en esta conversación. Se
+    // responde siempre con la misma invitación (cualquier plan, incluido
+    // el gratis, desbloquea al agente personalizado) y se corta ahí --
+    // el límite de arriba ya protege contra que alguien lo sature.
+    const PLANES_CON_ACCESO = ["gratis", "basica", "premium", "vitalicia"];
+    if (!PLANES_CON_ACCESO.includes(perfil.plan as string)) {
+      const msgInvitacion = `👋 Este es el Agente de El Club de la Gente.\n\nPara conversar conmigo de forma personalizada — descuentos, aliados, tu ClubCard y más — necesitas ser miembro del Club.\n\nÚnete gratis o con cualquiera de nuestras membresías aquí: https://elclubdelagente.com/Planes.html\n\nEn cuanto actives tu cuenta, seguimos hablando 🌿`;
+      await supabase.from("conversaciones").insert({ whatsapp: whatsappLocal, rol: "user", contenido: messageBody });
+      await supabase.from("conversaciones").insert({ whatsapp: whatsappLocal, rol: "assistant", contenido: msgInvitacion });
+      const escapeXmlInv = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const twimlInv = `<Response><Message>${escapeXmlInv(msgInvitacion)}</Message></Response>`;
+      return new Response(twimlInv, { headers: { "Content-Type": "text/xml", ...corsHeaders } });
+    }
+
     // Cargar aliados
     const { data: aliadosData } = await supabase
       .from("aliados")
