@@ -148,7 +148,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }));
             location.href = "Perfil.html";
           } else {
-            // Usuario nuevo → crear perfil y mostrar dashboard bloqueado.
+            // Usuario nuevo → crear perfil, ya activado en plan Gratis.
             // Preferimos el nombre/fecha que la persona escribió en el
             // formulario (junto al botón de Google) sobre lo que trae Google,
             // ya que ahí puede escribirlo como aparece en su cédula.
@@ -163,7 +163,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const primerNombre = nombre.split(" ")[0];
 
             const { error: perfError } = await supabase.from("perfiles").insert({
-              id: user.id, nombre, whatsapp, fecha_nacimiento: fechaNacimiento, rol: "miembro", plan: "sin_plan",
+              id: user.id, nombre, whatsapp, fecha_nacimiento: fechaNacimiento, rol: "miembro", plan: "gratis",
             });
 
             if (!perfError) {
@@ -172,11 +172,18 @@ document.addEventListener("DOMContentLoaded", async () => {
               }));
             }
 
-            // Mensaje de bienvenida por WhatsApp — mismo mensaje que el
-            // registro manual, con keepalive porque location.href navega
-            // justo después (sin esto, el navegador cancela la petición).
+            // Mensaje de bienvenida por WhatsApp — el registro activa Gratis
+            // de una vez, así que va directo el mensaje con sus beneficios
+            // reales. Con keepalive porque location.href navega justo
+            // después (sin esto, el navegador cancela la petición).
             if (!perfError && whatsapp) {
-              const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nYa eres parte de una comunidad que ahorra, aprende y apoya a Fusagasugá. 🎉\n\nDesde aquí recibirás confirmaciones de tus descuentos y novedades del Club.\n\nEl Club de la Gente`;
+              const { data: cfgGratis } = await supabase
+                .from("configuracion")
+                .select("clave, valor")
+                .in("clave", ["grupo_wa_moto", "grupo_wa_carro"]);
+              const linkMoto = cfgGratis?.find(c => c.clave === "grupo_wa_moto")?.valor;
+              const linkCarro = cfgGratis?.find(c => c.clave === "grupo_wa_carro")?.valor;
+              const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nCon tu plan Gratis ya tienes:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).${linkMoto ? `\n   • Moto y domicilios: ${linkMoto}` : ""}${linkCarro ? `\n   • Carro: ${linkCarro}` : ""}\n🛍️ Acceso ilimitado a la Tienda del Club.\n\nSi quieres acceder a promociones, sorteos, un agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿\nhttps://elclubdelagente.com/Planes.html`;
               fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -516,7 +523,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           whatsapp,
           fecha_nacimiento: fechaISO || null,
           rol: "miembro",
-          plan: "sin_plan",
+          plan: "gratis",
           mision: mision || null,
           referido_por: refPor,
         });
@@ -538,12 +545,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // Mensaje de bienvenida por WhatsApp (fire and forget, pero con keepalive:
-    // sin esto, el location.href de abajo navega antes de que el fetch alcance
-    // a salir y el navegador cancela la petición — el mensaje nunca llegaba).
+    // Mensaje de bienvenida por WhatsApp — el registro activa Gratis de una
+    // vez, así que va directo el mensaje con sus beneficios reales (no el
+    // genérico). Con keepalive: sin esto, el location.href de abajo navega
+    // antes de que el fetch alcance a salir y el navegador cancela la
+    // petición — el mensaje nunca llegaba.
     if (whatsapp) {
       const primerNombre = nombre.split(" ")[0];
-      const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nYa eres parte de una comunidad que ahorra, aprende y apoya a Fusagasugá. 🎉\n\nDesde aquí recibirás confirmaciones de tus descuentos y novedades del Club.\n\nEl Club de la Gente`;
+      const { data: cfgGratis } = await supabase
+        .from("configuracion")
+        .select("clave, valor")
+        .in("clave", ["grupo_wa_moto", "grupo_wa_carro"]);
+      const linkMoto = cfgGratis?.find(c => c.clave === "grupo_wa_moto")?.valor;
+      const linkCarro = cfgGratis?.find(c => c.clave === "grupo_wa_carro")?.valor;
+      const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nCon tu plan Gratis ya tienes:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).${linkMoto ? `\n   • Moto y domicilios: ${linkMoto}` : ""}${linkCarro ? `\n   • Carro: ${linkCarro}` : ""}\n🛍️ Acceso ilimitado a la Tienda del Club.\n\nSi quieres acceder a promociones, sorteos, un agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿\nhttps://elclubdelagente.com/Planes.html`;
       fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
