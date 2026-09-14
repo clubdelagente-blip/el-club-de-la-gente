@@ -66,7 +66,7 @@ function iniciales(nombre) {
 }
 
 const PLAN_LABEL = { sin_plan: "Sin activar", gratis: "Gratis", basica: "Básica", premium: "Premium", vitalicia: "Vitalicia" };
-const LIMITE_DESCUENTOS = { gratis: 1, basica: 2, premium: Infinity, vitalicia: Infinity };
+const LIMITE_DESCUENTOS = { gratis: 0, basica: 2, premium: Infinity, vitalicia: Infinity };
 
 /* ---------- RENDER ---------- */
 function render() {
@@ -279,31 +279,70 @@ function prepararCamposConocidos(perfil) {
 
 /* ---------- Descuentos reales ---------- */
 async function cargarDescuentos(userId, whatsapp) {
-  const { data, error } = await supabase
-    .from("descuentos")
-    .select("aliado_nombre, categoria, descuento_pct, compra, ahorro, created_at")
-    .eq("miembro_id", userId)
-    .order("created_at", { ascending: false });
-  // Mostrar usos restantes según el límite de cada plan (premium/vitalicia = ilimitado)
   const u = leerPerfil();
+
+  const [{ data: aliadosData, error }, { data: tiendaData }, { data: uberData }, { data: profData }] = await Promise.all([
+    supabase.from("descuentos")
+      .select("aliado_nombre, categoria, descuento_pct, compra, ahorro, created_at")
+      .eq("miembro_id", userId).order("created_at", { ascending: false }),
+    supabase.from("pedidos_club")
+      .select("nombre_producto, monto, ahorro, created_at")
+      .eq("miembro_id", userId).not("estado", "in", "(pendiente_pago,cancelado)"),
+    supabase.from("viajes_conductor")
+      .select("tipo, monto, ahorro, created_at")
+      .eq("miembro_id", userId),
+    supabase.from("servicios_aplicados")
+      .select("nombre_servicio, tarifa, descuento_pct, es_cortesia, ahorro, created_at")
+      .eq("miembro_id", userId),
+  ]);
+
+  // El banner de "te quedan N descuentos" solo mide uso de aliados -- Tienda,
+  // Uber y Profesionales no cuentan contra ese límite mensual.
   const limite = LIMITE_DESCUENTOS[u.plan] ?? 2;
   if (limite !== Infinity) {
     const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
-    const usosMes = (data || []).filter(d => new Date(d.created_at) >= inicioMes).length;
+    const usosMes = (aliadosData || []).filter(d => new Date(d.created_at) >= inicioMes).length;
     const restantes = Math.max(0, limite - usosMes);
     const banner = document.getElementById("banner-usos");
     if (banner) {
-      banner.style.display = "flex";
-      banner.innerHTML = restantes > 0
-        ? `<span>${ic("ticket-percent")} Te quedan <b>${restantes} descuento${restantes !== 1 ? "s" : ""}</b> este mes · <a href="Planes.html" style="color:#1a7a3c;font-weight:700">Actualizar a Premium</a></span>`
-        : `<span style="color:#b45309">${ic("alert-triangle")} Llegaste al límite de ${limite} descuento${limite !== 1 ? "s" : ""} este mes · <a href="Planes.html" style="color:#b45309;font-weight:700">Actualizar a Premium</a></span>`;
-      banner.style.background = restantes > 0 ? "#e8f5ee" : "#fef3c7";
-      banner.style.color = restantes > 0 ? "#1a7a3c" : "#b45309";
+      if (limite === 0) {
+        banner.style.display = "flex";
+        banner.innerHTML = `<span>${ic("ticket-percent")} Los descuentos de aliados son exclusivos desde Básica · <a href="Planes.html" style="color:#1a7a3c;font-weight:700">Ver membresías</a></span>`;
+        banner.style.background = "#e8f5ee";
+        banner.style.color = "#1a7a3c";
+      } else {
+        banner.style.display = "flex";
+        banner.innerHTML = restantes > 0
+          ? `<span>${ic("ticket-percent")} Te quedan <b>${restantes} descuento${restantes !== 1 ? "s" : ""}</b> este mes · <a href="Planes.html" style="color:#1a7a3c;font-weight:700">Actualizar a Premium</a></span>`
+          : `<span style="color:#b45309">${ic("alert-triangle")} Llegaste al límite de ${limite} descuento${limite !== 1 ? "s" : ""} este mes · <a href="Planes.html" style="color:#b45309;font-weight:700">Actualizar a Premium</a></span>`;
+        banner.style.background = restantes > 0 ? "#e8f5ee" : "#fef3c7";
+        banner.style.color = restantes > 0 ? "#1a7a3c" : "#b45309";
+      }
       if (window.lucide) lucide.createIcons();
     }
   }
 
   if (error) return;
+
+  const TIPO_UBER_LBL = { carro: "Carro", moto: "Moto", domicilio: "Domicilio" };
+  const data = [
+    ...(aliadosData || []).map(d => ({
+      tipo: "aliado", nombre: d.aliado_nombre, categoria: d.categoria,
+      descuento_pct: d.descuento_pct, compra: d.compra, ahorro: d.ahorro || 0, created_at: d.created_at,
+    })),
+    ...(tiendaData || []).map(d => ({
+      tipo: "tienda", nombre: d.nombre_producto, categoria: "Tienda del Club",
+      descuento_pct: null, compra: d.monto, ahorro: d.ahorro || 0, created_at: d.created_at,
+    })),
+    ...(uberData || []).map(d => ({
+      tipo: "uber", nombre: `Uber ${TIPO_UBER_LBL[d.tipo] || d.tipo}`, categoria: "Transporte",
+      descuento_pct: "10%", compra: d.monto, ahorro: d.ahorro || 0, created_at: d.created_at,
+    })),
+    ...(profData || []).map(d => ({
+      tipo: "profesional", nombre: d.nombre_servicio, categoria: "Profesionales",
+      descuento_pct: d.es_cortesia ? "Cortesía" : d.descuento_pct, compra: d.tarifa, ahorro: d.ahorro || 0, created_at: d.created_at,
+    })),
+  ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   if (!data?.length) {
     const dirHref = `Directorio.html?miembro=${userId}&wa=${encodeURIComponent(whatsapp || "")}&plan=${u.plan || "basica"}&usos=0`;
@@ -340,7 +379,8 @@ async function cargarDescuentos(userId, whatsapp) {
   const iconMap = { "Odontología": "smile", "Bienestar y salud": "heart-pulse", "Turismo": "mountain-snow",
     "Veterinaria": "paw-print", "Canasta familiar": "shopping-basket", "Ropa personalizada": "shirt",
     "Heladería": "ice-cream", "Comida rápida": "sandwich", "Barbería": "scissors" };
-  const getIcon = (cat) => iconMap[cat] || "receipt";
+  const TIPO_ICON = { tienda: "shopping-bag", uber: "car", profesional: "briefcase-medical" };
+  const getIcon = (it) => TIPO_ICON[it.tipo] || iconMap[it.categoria] || "receipt";
   const fmtFecha = (iso) => new Date(iso).toLocaleDateString("es-CO", { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" });
 
   // Stats
@@ -348,7 +388,8 @@ async function cargarDescuentos(userId, whatsapp) {
   const dataMes = data.filter(d => new Date(d.created_at) >= inicioMes);
   const ahorroMes = dataMes.reduce((s, d) => s + (d.ahorro || 0), 0);
   const countMes = dataMes.length;
-  const aliadosMes = new Set(dataMes.map(d => d.aliado_nombre)).size;
+  // "Aliados visitados" solo cuenta aliados de verdad, no Tienda/Uber/Profesionales
+  const aliadosMes = new Set(dataMes.filter(d => d.tipo === "aliado").map(d => d.nombre)).size;
   const ahorroTotal = data.reduce((s, d) => s + (d.ahorro || 0), 0);
 
   const elAhorroMes = document.getElementById("stat-ahorro-mes");
@@ -364,10 +405,10 @@ async function cargarDescuentos(userId, whatsapp) {
   const actEl = $("#actividad");
   if (actEl) actEl.innerHTML = data.slice(0, 4).map(it => `
     <li class="act-item">
-      <span class="act-item__ic">${ic(getIcon(it.categoria))}</span>
+      <span class="act-item__ic">${ic(getIcon(it))}</span>
       <span class="act-item__body">
-        <span class="act-item__name">${it.aliado_nombre}</span>
-        <span class="act-item__meta">${fmtFecha(it.created_at)} · ${it.descuento_pct} de descuento</span>
+        <span class="act-item__name">${esc(it.nombre)}</span>
+        <span class="act-item__meta">${fmtFecha(it.created_at)}${it.descuento_pct ? ` · ${esc(String(it.descuento_pct))} de descuento` : ""}</span>
       </span>
       <span class="act-item__nums">
         <span class="act-item__ahorro">−${fmtCOP(it.ahorro)}</span>
@@ -379,10 +420,10 @@ async function cargarDescuentos(userId, whatsapp) {
   const tablaEl = $("#tabla-body");
   if (tablaEl) tablaEl.innerHTML = data.map(it => `
     <tr>
-      <td><span class="tabla__aliado"><span class="tabla__ic">${ic(getIcon(it.categoria))}</span>
-        <span><span class="tabla__name">${it.aliado_nombre}</span><br><span class="tabla__cat">${it.categoria || ""}</span></span></span></td>
+      <td><span class="tabla__aliado"><span class="tabla__ic">${ic(getIcon(it))}</span>
+        <span><span class="tabla__name">${esc(it.nombre)}</span><br><span class="tabla__cat">${esc(it.categoria || "")}</span></span></span></td>
       <td>${fmtFecha(it.created_at)}</td>
-      <td><span class="tag-pct">${it.descuento_pct}</span></td>
+      <td><span class="tag-pct">${it.descuento_pct ? esc(String(it.descuento_pct)) : "—"}</span></td>
       <td>${fmtCOP(it.compra)}</td>
       <td class="tabla__ahorro">−${fmtCOP(it.ahorro)}</td>
     </tr>`).join("");
@@ -1183,6 +1224,11 @@ function abrirCheckoutClub(p) {
 
     const { data: pedido, error } = await supabase.from("pedidos_club").insert({
       producto_id: p.id, miembro_id: miembroId, nombre_producto: p.nombre, monto: precio,
+      // Se guarda el precio normal y el ahorro tal como están AHORA, no se
+      // recalculan después uniendo con "productos" -- si el producto cambia
+      // de precio o se borra, el ahorro de este pedido no debe cambiar.
+      precio_normal: p.precio_normal ?? null,
+      ahorro: Math.max(0, (p.precio_normal ?? precio) - precio),
       envio_nombre: nombre, envio_direccion: direccion, envio_barrio: barrio || null, envio_telefono: telefono,
       estado: "pendiente_pago",
     }).select().single();

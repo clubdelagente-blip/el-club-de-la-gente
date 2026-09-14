@@ -38,9 +38,10 @@ const MIEMBRO_WA  = _p.get("wa") || "";
 const MIEMBRO_USOS = parseInt(_p.get("usos") || "0", 10);
 const PLAN_URL = _p.get("plan"); // viene de Verificar.html cuando un aliado escanea a un miembro
 
-const LIMITE_DESCUENTOS = { gratis: 1, basica: 2, premium: Infinity, vitalicia: Infinity };
+const LIMITE_DESCUENTOS = { gratis: 0, basica: 2, premium: Infinity, vitalicia: Infinity };
 let PLAN_ACTUAL = "gratis";
 let LIMITE_ALCANZADO = false;
+let SIN_ACCESO_ALIADOS = false; // Gratis: 0 descuentos de aliado, mensaje distinto a "llegaste al límite"
 
 /* Resuelve el plan real del visitante:
    1) ?plan= en la URL (un aliado viendo lo que le corresponde a un miembro escaneado)
@@ -257,7 +258,12 @@ function sheetAliado(a) {
           <div class="calc__cel-num" id="calc-ahorro">$0</div>
         </div>
       </div>
-      ${LIMITE_ALCANZADO
+      ${SIN_ACCESO_ALIADOS
+        ? `<div style="margin-top:16px;padding:16px;background:#fef3c7;border-radius:12px;text-align:center">
+            <div style="font-weight:700;color:#b45309;font-size:14px;margin-bottom:4px">⚠ Exclusivo desde el plan Básica</div>
+            <p style="font-size:12px;color:#92400e;line-height:1.4">El plan Gratis no incluye descuentos de aliados. Este miembro puede actualizar su membresía para desbloquearlos.</p>
+           </div>`
+        : LIMITE_ALCANZADO
         ? `<div style="margin-top:16px;padding:16px;background:#fef3c7;border-radius:12px;text-align:center">
             <div style="font-weight:700;color:#b45309;font-size:14px;margin-bottom:4px">⚠ Límite mensual alcanzado</div>
             <p style="font-size:12px;color:#92400e;line-height:1.4">Este miembro ya usó los descuentos disponibles de su plan este mes.</p>
@@ -453,6 +459,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   PLAN_ACTUAL = await resolverPlanVisitante();
   const limite = LIMITE_DESCUENTOS[PLAN_ACTUAL] ?? 1;
   LIMITE_ALCANZADO = !!(MIEMBRO_ID && limite !== Infinity && MIEMBRO_USOS >= limite);
+  SIN_ACCESO_ALIADOS = limite === 0;
 
   await cargarAliados();
   cargarDestacados();

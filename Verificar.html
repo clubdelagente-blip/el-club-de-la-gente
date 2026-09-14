@@ -182,7 +182,7 @@
     }
 
     const PLAN_NOMBRE = { gratis: "Gratis", basica: "Básica", premium: "Premium", vitalicia: "Vitalicia" };
-    const LIMITE_DESCUENTOS = { gratis: 1, basica: 2, premium: Infinity, vitalicia: Infinity };
+    const LIMITE_DESCUENTOS = { gratis: 0, basica: 2, premium: Infinity, vitalicia: Infinity };
 
     function renderOk(p, usos, limite, aliadoInfo, listaAliados) {
       const rolLabel = { miembro: "Miembro", aliado: "Aliado comercial", profesional: "Profesional" }[p.rol] || "Miembro";
@@ -202,36 +202,48 @@
         <hr class="divider">
         <a href="${dirUrl}" style="${btnStyle("#1a7a3c")}">Ver aliados y descuentos &rarr;</a>
         <button id="btn-uber" style="${btnStyle("#0e0e0e")}">🚗 Aplicar descuento Uber</button>
+        ${esPremium(p) ? `<button id="btn-prof" style="${btnStyle("#0e0e0e")}">💼 Aplicar servicio profesional</button>` : ""}
         ${!aliadoInfo ? selectorAliadoHtml(listaAliados) : ""}
       `;
       bindSelectorAliado(() => cargarYRenderizar());
       bindBtnUber(p);
+      bindBtnProfesional(p);
     }
 
     function renderLimite(p, limite, aliadoInfo, listaAliados) {
       const planNombre = PLAN_NOMBRE[p.plan] || "Básica";
       const wa = (p.whatsapp||"").replace(/\D/g,"");
       const numero = wa.startsWith("57") ? wa : "57"+wa;
-      const msg = `¡Hola ${p.nombre}! 👋 Llegaste al límite de ${limite} descuento${limite!==1?"s":""} del mes con tu membresía ${planNombre}.\n\n¿Quieres descuentos ilimitados? Actualiza a Premium por solo $20.000/mes y aprovecha el Club sin restricciones.\n\nEl Club de la Gente`;
+      const sinAcceso = limite === 0;
+      const estadoLbl = sinAcceso ? "Sin acceso a descuentos de aliados" : "Límite mensual alcanzado";
+      const estadoDetalle = sinAcceso ? "No incluido en Gratis" : `${limite} de ${limite} este mes`;
+      const parrafo = sinAcceso
+        ? "Los descuentos de aliados son exclusivos desde el plan Básica en adelante. El plan Gratis sí incluye Uber y la Tienda del Club."
+        : `Este miembro usó su${limite!==1?"s":""} ${limite} descuento${limite!==1?"s":""} del mes. No aplica más descuentos hasta el próximo mes.`;
+      const msg = sinAcceso
+        ? `¡Hola ${p.nombre}! 👋 Los descuentos de aliados son exclusivos desde el plan Básica.\n\nActualiza tu membresía y aprovecha el Club sin restricciones.\n\nEl Club de la Gente`
+        : `¡Hola ${p.nombre}! 👋 Llegaste al límite de ${limite} descuento${limite!==1?"s":""} del mes con tu membresía ${planNombre}.\n\n¿Quieres descuentos ilimitados? Actualiza a Premium por solo $20.000/mes y aprovecha el Club sin restricciones.\n\nEl Club de la Gente`;
       const waUrl = `https://wa.me/${numero}?text=${encodeURIComponent(msg)}`;
       card.innerHTML = `
         <div class="estado-ic estado-ic--lim">⚠</div>
-        <div class="estado-lbl estado-lbl--lim">Límite mensual alcanzado</div>
+        <div class="estado-lbl estado-lbl--lim">${estadoLbl}</div>
         <div class="miembro-nombre">${p.nombre}</div>
         <div class="miembro-tipo">Membresía ${planNombre} · El Club de la Gente</div>
         <hr class="divider">
-        <div class="detalle"><span class="detalle__lbl">Estado</span><span class="badge badge--lim"><span class="dot"></span> Límite ${limite}/${limite}</span></div>
-        <div class="detalle"><span class="detalle__lbl">Descuentos usados</span><span class="detalle__val">${limite} de ${limite} este mes</span></div>
+        <div class="detalle"><span class="detalle__lbl">Estado</span><span class="badge badge--lim"><span class="dot"></span> ${sinAcceso ? "No incluido" : `Límite ${limite}/${limite}`}</span></div>
+        <div class="detalle"><span class="detalle__lbl">Descuentos usados</span><span class="detalle__val">${estadoDetalle}</span></div>
         ${discountRow(aliadoInfo)}
         <hr class="divider">
-        <p style="font-size:13px;color:#888;margin-bottom:12px;line-height:1.5">Este miembro usó su${limite!==1?"s":""} ${limite} descuento${limite!==1?"s":""} del mes. No aplica más descuentos hasta el próximo mes.</p>
-        <a href="Planes.html" style="${btnStyle("#1a7a3c")}">Actualizar a Premium &rarr;</a>
+        <p style="font-size:13px;color:#888;margin-bottom:12px;line-height:1.5">${parrafo}</p>
+        <a href="Planes.html" style="${btnStyle("#1a7a3c")}">${sinAcceso ? "Ver membresías" : "Actualizar a Premium"} &rarr;</a>
         ${wa ? `<a href="${waUrl}" style="${btnStyle("#fef3c7","#b45309")}">Notificar al miembro por WhatsApp</a>` : ""}
         <button id="btn-uber" style="${btnStyle("#0e0e0e")}">🚗 Aplicar descuento Uber</button>
+        ${esPremium(p) ? `<button id="btn-prof" style="${btnStyle("#0e0e0e")}">💼 Aplicar servicio profesional</button>` : ""}
         ${!aliadoInfo ? selectorAliadoHtml(listaAliados) : ""}
       `;
       bindSelectorAliado(() => cargarYRenderizar());
       bindBtnUber(p);
+      bindBtnProfesional(p);
     }
 
     /* ---------- Descuento Uber (carro/moto/domicilio) ---------- */
@@ -363,6 +375,132 @@
             body: JSON.stringify({ to: p.whatsapp, body: msg }),
           }).catch(() => {});
         }
+      });
+    }
+
+    /* ---------- Descuento con un profesional (Premium/Vitalicia) ---------- */
+    function esPremium(p) { return p.plan === "premium" || p.plan === "vitalicia"; }
+    function fmtCOPProf(n) { return "$" + Number(n||0).toLocaleString("es-CO"); }
+
+    function htmlProfIdentidad() {
+      const waGuardado = localStorage.getItem("ecdlg_profesional_wa") || "";
+      return `
+        <div class="estado-ic" style="background:#fef3c7">💼</div>
+        <div class="estado-lbl" style="color:#b45309">Servicio con un profesional del Club</div>
+        <div class="miembro-nombre" style="font-size:20px">¿Cuál es tu WhatsApp?</div>
+        <p style="font-size:12px;color:#888;margin-bottom:16px">Profesional: se guarda en este celular para no pedírtelo cada vez.</p>
+        <input id="prof-wa" type="tel" value="${waGuardado}" placeholder="300 000 0000" style="width:100%;padding:12px 14px;border:1px solid #ebebeb;border-radius:10px;font-size:14px;margin-bottom:10px;text-align:center">
+        <p id="prof-error" class="error-msg" style="display:none;margin-bottom:10px;font-size:13px"></p>
+        <button id="prof-continuar" style="${btnStyle("#0e0e0e")}">Continuar</button>
+        <button id="prof-cancelar" style="${btnStyle("#f1ede3","#0e0e0e")}">Cancelar</button>
+      `;
+    }
+    function htmlProfServicios(nombreProf, servicios) {
+      const filas = servicios.map(s => {
+        const detalle = s.es_cortesia ? "Cortesía gratis" : (s.descuento_pct ? `${s.descuento_pct} de descuento` : "Sin descuento");
+        return `<button class="prof-serv-btn" data-id="${s.id}" style="${btnStyle("#f1ede3","#0e0e0e")}">
+          <div style="font-weight:700">${s.nombre}</div>
+          <div style="font-size:12px;opacity:.75">${detalle}${s.tarifa ? ` · ${fmtCOPProf(s.tarifa)}` : ""}</div>
+        </button>`;
+      }).join("");
+      return `
+        <div class="estado-ic" style="background:#fef3c7">💼</div>
+        <div class="miembro-nombre" style="font-size:20px">${nombreProf}</div>
+        <p style="font-size:12px;color:#888;margin-bottom:14px">¿Qué servicio se aplicó?</p>
+        <div style="display:flex;flex-direction:column;gap:8px">${filas}</div>
+      `;
+    }
+    function htmlProfExito(ahorro) {
+      return `
+        <div class="estado-ic estado-ic--ok">✓</div>
+        <div class="estado-lbl estado-lbl--ok">¡Descuento aplicado!</div>
+        <div class="miembro-nombre" style="font-size:24px">${fmtCOPProf(ahorro)}</div>
+        <p style="font-size:13px;color:#888;margin-top:10px">Ahorro registrado en la cuenta del miembro.</p>
+      `;
+    }
+
+    function bindBtnProfesional(p) {
+      document.getElementById("btn-prof")?.addEventListener("click", () => {
+        card.innerHTML = htmlProfIdentidad();
+        document.getElementById("prof-cancelar")?.addEventListener("click", () => cargarYRenderizar());
+        document.getElementById("prof-continuar")?.addEventListener("click", async () => {
+          const errEl = document.getElementById("prof-error");
+          const wa = (document.getElementById("prof-wa")?.value || "").replace(/\D/g, "");
+          if (wa.length < 7) {
+            if (errEl) { errEl.textContent = "Ingresa un WhatsApp válido."; errEl.style.display = "block"; }
+            return;
+          }
+          localStorage.setItem("ecdlg_profesional_wa", wa);
+
+          const { data: profesional } = await supabaseClient
+            .from("profesionales")
+            .select("id, nombre, whatsapp")
+            .eq("activo", true)
+            .ilike("whatsapp", `%${wa}%`)
+            .maybeSingle();
+
+          if (!profesional) {
+            if (errEl) { errEl.textContent = "Ese WhatsApp no está registrado como profesional del Club."; errEl.style.display = "block"; }
+            return;
+          }
+
+          const { data: servicios } = await supabaseClient
+            .from("servicios_profesional")
+            .select("id, nombre, tarifa, descuento_pct, es_cortesia")
+            .eq("profesional_id", profesional.id)
+            .order("orden");
+
+          if (!servicios || !servicios.length) {
+            card.innerHTML = `
+              <div class="estado-ic estado-ic--no">✗</div>
+              <div class="estado-lbl estado-lbl--no">Sin servicios cargados</div>
+              <p class="error-msg" style="margin-top:8px">Este profesional aún no tiene servicios cargados en el Club.</p>
+            `;
+            return;
+          }
+
+          card.innerHTML = htmlProfServicios(profesional.nombre, servicios);
+          document.querySelectorAll(".prof-serv-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              const servicio = servicios.find(s => s.id === btn.dataset.id);
+              if (!servicio) return;
+              btn.disabled = true;
+
+              const pct = parseInt(servicio.descuento_pct) || 0;
+              const ahorro = servicio.es_cortesia
+                ? (servicio.tarifa || 0)
+                : Math.round((servicio.tarifa || 0) * pct / 100);
+
+              const { error } = await supabaseClient.from("servicios_aplicados").insert({
+                profesional_id: profesional.id,
+                servicio_id: servicio.id,
+                miembro_id: id,
+                nombre_servicio: servicio.nombre,
+                tarifa: servicio.tarifa,
+                descuento_pct: servicio.descuento_pct,
+                es_cortesia: !!servicio.es_cortesia,
+                ahorro,
+              });
+
+              if (error) {
+                card.innerHTML = htmlProfServicios(profesional.nombre, servicios);
+                document.querySelectorAll(".prof-serv-btn").forEach(b2 => b2.addEventListener("click", () => {}));
+                return;
+              }
+
+              card.innerHTML = htmlProfExito(ahorro);
+
+              if (p.whatsapp) {
+                const msg = `✅ Aplicaste tu descuento del Club con ${profesional.nombre} (${servicio.nombre}).\n\nAhorraste: ${fmtCOPProf(ahorro)}\n\nEl Club de la Gente`;
+                fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ to: p.whatsapp, body: msg }),
+                }).catch(() => {});
+              }
+            });
+          });
+        });
       });
     }
 
