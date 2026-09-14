@@ -126,11 +126,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (event === "SIGNED_IN" && session) {
       const user = session.user;
       const proveedor = user.app_metadata?.provider;
-      const nombre = user.user_metadata?.full_name || user.email || "Miembro";
-      const primerNombre = nombre.split(" ")[0];
+      const nombreGoogle = user.user_metadata?.full_name || user.email || "Miembro";
+      const primerNombreGoogle = nombreGoogle.split(" ")[0];
 
       localStorage.setItem("ecdlg_perfil", JSON.stringify({
-        nombre, primerNombre, rol: "miembro", email: user.email,
+        nombre: nombreGoogle, primerNombre: primerNombreGoogle, rol: "miembro", email: user.email,
       }));
 
       // Solo manejar el redirect si viene de Google OAuth
@@ -144,16 +144,33 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Ya es miembro → ir al perfil
             const rol = perfilExistente.rol || "miembro";
             localStorage.setItem("ecdlg_perfil", JSON.stringify({
-              nombre, primerNombre, rol, email: user.email,
+              nombre: nombreGoogle, primerNombre: primerNombreGoogle, rol, email: user.email,
             }));
             location.href = "Perfil.html";
           } else {
-            // Usuario nuevo → crear perfil y mostrar dashboard bloqueado
+            // Usuario nuevo → crear perfil y mostrar dashboard bloqueado.
+            // Preferimos el nombre/fecha que la persona escribió en el
+            // formulario (junto al botón de Google) sobre lo que trae Google,
+            // ya que ahí puede escribirlo como aparece en su cédula.
             const whatsapp = localStorage.getItem("ecdlg_google_wa") || "";
+            const nombreForm = localStorage.getItem("ecdlg_google_nombre") || "";
+            const fechaNacimiento = localStorage.getItem("ecdlg_google_fecha") || null;
             localStorage.removeItem("ecdlg_google_wa");
+            localStorage.removeItem("ecdlg_google_nombre");
+            localStorage.removeItem("ecdlg_google_fecha");
+
+            const nombre = nombreForm || nombreGoogle;
+            const primerNombre = nombre.split(" ")[0];
+
             const { error: perfError } = await supabase.from("perfiles").insert({
-              id: user.id, nombre, whatsapp, rol: "miembro", plan: "sin_plan",
+              id: user.id, nombre, whatsapp, fecha_nacimiento: fechaNacimiento, rol: "miembro", plan: "sin_plan",
             });
+
+            if (!perfError) {
+              localStorage.setItem("ecdlg_perfil", JSON.stringify({
+                nombre, primerNombre, rol: "miembro", email: user.email,
+              }));
+            }
 
             // Mensaje de bienvenida por WhatsApp — mismo mensaje que el
             // registro manual, con keepalive porque location.href navega
@@ -251,15 +268,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Google auth
   $$(".btn-google").forEach(b => b.addEventListener("click", async () => {
     if (b.dataset.ctx === "registro") {
-      const wa = $("#reg-google-wa")?.value.trim();
-      if (!wa) {
-        mostrarError("Ingresa tu WhatsApp antes de continuar con Google.");
+      const nombre = $("#campo-nombre")?.value.trim();
+      const fecha = $("#campo-fecha")?.value;
+      const wa = $("#campo-wa")?.value.trim();
+      const terminos = $("#check-terminos")?.checked;
+      if (!nombre || !wa) {
+        mostrarError("Completa tu nombre y WhatsApp antes de continuar con Google.");
         return;
       }
-      // Se guarda para poder crear el perfil con el WhatsApp desde el
-      // primer momento -- Google no lo entrega, y así el mensaje de
-      // bienvenida no tiene que esperar a que se llene otro formulario.
+      if (!terminos) {
+        mostrarError("Debes aceptar los Términos y Condiciones para continuar.");
+        return;
+      }
+      // Se guarda para poder crear el perfil completo desde el primer
+      // momento -- Google no entrega WhatsApp ni fecha de nacimiento, y así
+      // el mensaje de bienvenida no tiene que esperar a otro formulario.
       localStorage.setItem("ecdlg_google_wa", wa);
+      localStorage.setItem("ecdlg_google_nombre", nombre);
+      if (fecha) localStorage.setItem("ecdlg_google_fecha", fecha);
     }
     const emailHint = $("#login-user")?.value.trim();
     const { error } = await supabase.auth.signInWithOAuth({
