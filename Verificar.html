@@ -201,9 +201,11 @@
         <div class="detalle"><span class="detalle__lbl">Verificado</span><span class="detalle__val">${new Date().toLocaleString("es-CO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span></div>
         <hr class="divider">
         <a href="${dirUrl}" style="${btnStyle("#1a7a3c")}">Ver aliados y descuentos &rarr;</a>
+        <button id="btn-uber" style="${btnStyle("#0e0e0e")}">🚗 Aplicar descuento Uber</button>
         ${!aliadoInfo ? selectorAliadoHtml(listaAliados) : ""}
       `;
       bindSelectorAliado(() => cargarYRenderizar());
+      bindBtnUber(p);
     }
 
     function renderLimite(p, limite, aliadoInfo, listaAliados) {
@@ -225,9 +227,143 @@
         <p style="font-size:13px;color:#888;margin-bottom:12px;line-height:1.5">Este miembro usó su${limite!==1?"s":""} ${limite} descuento${limite!==1?"s":""} del mes. No aplica más descuentos hasta el próximo mes.</p>
         <a href="Planes.html" style="${btnStyle("#1a7a3c")}">Actualizar a Premium &rarr;</a>
         ${wa ? `<a href="${waUrl}" style="${btnStyle("#fef3c7","#b45309")}">Notificar al miembro por WhatsApp</a>` : ""}
+        <button id="btn-uber" style="${btnStyle("#0e0e0e")}">🚗 Aplicar descuento Uber</button>
         ${!aliadoInfo ? selectorAliadoHtml(listaAliados) : ""}
       `;
       bindSelectorAliado(() => cargarYRenderizar());
+      bindBtnUber(p);
+    }
+
+    /* ---------- Descuento Uber (carro/moto/domicilio) ---------- */
+    function fmtCOPUber(n) { return "$" + Number(n||0).toLocaleString("es-CO"); }
+
+    function htmlUberIdentidad() {
+      const waGuardado = localStorage.getItem("ecdlg_conductor_wa") || "";
+      return `
+        <div class="estado-ic" style="background:#fef3c7">🚗</div>
+        <div class="estado-lbl" style="color:#b45309">Descuento Uber del Club</div>
+        <div class="miembro-nombre" style="font-size:20px">¿Cuál es tu WhatsApp?</div>
+        <p style="font-size:12px;color:#888;margin-bottom:16px">Conductor: se guarda en este celular para no pedírtelo cada vez.</p>
+        <input id="uber-wa" type="tel" value="${waGuardado}" placeholder="300 000 0000" style="width:100%;padding:12px 14px;border:1px solid #ebebeb;border-radius:10px;font-size:14px;margin-bottom:10px;text-align:center">
+        <p id="uber-error" class="error-msg" style="display:none;margin-bottom:10px;font-size:13px"></p>
+        <button id="uber-continuar" style="${btnStyle("#0e0e0e")}">Continuar</button>
+        <button id="uber-cancelar" style="${btnStyle("#f1ede3","#0e0e0e")}">Cancelar</button>
+      `;
+    }
+    function htmlUberTipo() {
+      return `
+        <div class="estado-ic" style="background:#fef3c7">🚗</div>
+        <div class="miembro-nombre" style="font-size:20px">¿Qué tipo de servicio?</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
+          <button class="uber-tipo-btn" data-tipo="carro" style="${btnStyle("#f1ede3","#0e0e0e")}">Carro</button>
+          <button class="uber-tipo-btn" data-tipo="moto" style="${btnStyle("#f1ede3","#0e0e0e")}">Moto</button>
+          <button class="uber-tipo-btn" data-tipo="domicilio" style="${btnStyle("#f1ede3","#0e0e0e")}">Domicilio</button>
+        </div>
+      `;
+    }
+    function htmlUberMonto(tipoLbl) {
+      return `
+        <div class="estado-ic" style="background:#fef3c7">🚗</div>
+        <div class="miembro-nombre" style="font-size:20px">${tipoLbl}</div>
+        <p style="font-size:12px;color:#888;margin-bottom:14px">Ingresa el monto del viaje.</p>
+        <input id="uber-monto" type="text" inputmode="numeric" placeholder="15.000" style="width:100%;padding:12px 14px;border:1px solid #ebebeb;border-radius:10px;font-size:14px;margin-bottom:12px;text-align:center">
+        <div class="detalle"><span class="detalle__lbl">Descuento (10%)</span><span class="detalle__val" id="uber-ahorro" style="color:var(--verde)">$0</span></div>
+        <p id="uber-error" class="error-msg" style="display:none;margin:10px 0;font-size:13px"></p>
+        <button id="uber-aplicar" style="${btnStyle("#1a7a3c")}">Aplicar descuento</button>
+      `;
+    }
+    function htmlUberExito(ahorro) {
+      return `
+        <div class="estado-ic estado-ic--ok">✓</div>
+        <div class="estado-lbl estado-lbl--ok">¡Descuento aplicado!</div>
+        <div class="miembro-nombre" style="font-size:24px">${fmtCOPUber(ahorro)}</div>
+        <p style="font-size:13px;color:#888;margin-top:10px">Ahorro registrado. Ya queda en tu historial de conductor.</p>
+      `;
+    }
+
+    function bindBtnUber(p) {
+      document.getElementById("btn-uber")?.addEventListener("click", () => {
+        card.innerHTML = htmlUberIdentidad();
+        document.getElementById("uber-cancelar")?.addEventListener("click", () => cargarYRenderizar());
+        document.getElementById("uber-continuar")?.addEventListener("click", async () => {
+          const errEl = document.getElementById("uber-error");
+          const wa = (document.getElementById("uber-wa")?.value || "").replace(/\D/g, "");
+          if (wa.length < 7) {
+            if (errEl) { errEl.textContent = "Ingresa un WhatsApp válido."; errEl.style.display = "block"; }
+            return;
+          }
+          localStorage.setItem("ecdlg_conductor_wa", wa);
+          card.innerHTML = htmlUberTipo();
+          document.querySelectorAll(".uber-tipo-btn").forEach(btn => {
+            btn.addEventListener("click", () => abrirUberMonto(btn.dataset.tipo, btn.textContent.trim(), wa, p));
+          });
+        });
+      });
+    }
+
+    function abrirUberMonto(tipo, tipoLbl, wa, p) {
+      card.innerHTML = htmlUberMonto(tipoLbl);
+      const montoInput = document.getElementById("uber-monto");
+      montoInput.addEventListener("input", () => {
+        const digits = montoInput.value.replace(/\D/g, "");
+        montoInput.value = digits ? Number(digits).toLocaleString("es-CO") : "";
+        const monto = parseInt(digits) || 0;
+        document.getElementById("uber-ahorro").textContent = fmtCOPUber(Math.round(monto * 0.10));
+      });
+
+      document.getElementById("uber-aplicar")?.addEventListener("click", async () => {
+        const errEl = document.getElementById("uber-error");
+        errEl.style.display = "none";
+        const monto = parseInt(montoInput.value.replace(/\D/g, "")) || 0;
+        if (!monto) { errEl.textContent = "Ingresa el monto del viaje."; errEl.style.display = "block"; return; }
+
+        const btn = document.getElementById("uber-aplicar");
+        btn.disabled = true; btn.textContent = "Aplicando...";
+
+        // Domicilios van por el mismo grupo de moto (misma regla que ya usa
+        // el Agente de WhatsApp para transporte).
+        const areaBuscada = tipo === "carro" ? "Uber de carro" : "Uber de moto";
+        const { data: conductor } = await supabaseClient
+          .from("profesionales")
+          .select("id, nombre")
+          .eq("area", areaBuscada)
+          .eq("activo", true)
+          .ilike("whatsapp", `%${wa}%`)
+          .maybeSingle();
+
+        if (!conductor) {
+          errEl.textContent = "Ese WhatsApp no está registrado como conductor del Club.";
+          errEl.style.display = "block";
+          btn.disabled = false; btn.textContent = "Aplicar descuento";
+          return;
+        }
+
+        const ahorro = Math.round(monto * 0.10);
+        const { error } = await supabaseClient.from("viajes_conductor").insert({
+          conductor_id: conductor.id,
+          miembro_id: id,
+          tipo, monto, descuento_pct: 10, ahorro,
+        });
+
+        if (error) {
+          errEl.textContent = "No se pudo aplicar el descuento. Intenta de nuevo.";
+          errEl.style.display = "block";
+          btn.disabled = false; btn.textContent = "Aplicar descuento";
+          return;
+        }
+
+        card.innerHTML = htmlUberExito(ahorro);
+
+        if (p.whatsapp) {
+          const TIPO_LBL = { carro: "carro", moto: "moto", domicilio: "domicilio" };
+          const msg = `✅ Aplicaste tu descuento del Club en un viaje de ${TIPO_LBL[tipo]}.\n\nMonto: ${fmtCOPUber(monto)}\nAhorraste: ${fmtCOPUber(ahorro)}\n\nEl Club de la Gente`;
+          fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ to: p.whatsapp, body: msg }),
+          }).catch(() => {});
+        }
+      });
     }
 
     function renderNo(msg) {
