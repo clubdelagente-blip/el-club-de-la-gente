@@ -130,19 +130,29 @@ Deno.serve(async (req: Request) => {
   // porque esta función puede terminar apenas se devuelve la Response, lo que
   // cortaría una petición pendiente sin terminar (mismo tipo de bug que hacía
   // que el mensaje de bienvenida del registro nunca llegara).
+  console.log(`updated tras activar membresía: ${JSON.stringify(updated)}`);
   if (updated?.whatsapp) {
     const primerNombre = (updated.nombre || "").split(" ")[0] || "";
     const planLabel = plan === "premium" ? "Premium" : "Básica";
     const msgActivacion = `✅ ¡Tu membresía ${planLabel} ya está activa${primerNombre ? `, ${primerNombre}` : ""}!\n\nYa puedes mostrar tu ClubCard en cualquier aliado del Club para empezar a ahorrar.\n\nEl Club de la Gente`;
     try {
-      await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
+      console.log(`Enviando confirmación de activación a ${updated.whatsapp}`);
+      const rEnvio = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ to: updated.whatsapp, body: msgActivacion }),
       });
+      const jsonEnvio = await rEnvio.json().catch(() => ({}));
+      if (!rEnvio.ok) {
+        console.error("whatsapp-send-3 rechazó la confirmación de activación:", rEnvio.status, JSON.stringify(jsonEnvio));
+      } else {
+        console.log("Confirmación de activación enviada:", JSON.stringify(jsonEnvio));
+      }
     } catch (e) {
       console.error("Error enviando confirmación de activación:", e);
     }
+  } else {
+    console.warn(`No se envía confirmación: falta whatsapp en el perfil actualizado (miembro ${miembroId})`);
   }
 
   // Validar si el referidor alcanzó 5 referidos activos → vitalicia
