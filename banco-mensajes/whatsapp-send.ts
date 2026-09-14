@@ -52,6 +52,7 @@ Deno.serve(async (req) => {
       return d.length >= 7 && (d.endsWith(numSinPrefijo) || numSinPrefijo.endsWith(d));
     });
     if (!conocido) {
+      console.warn(`Rechazado: ${numSinPrefijo} no existe en perfiles/aliados`);
       return new Response(JSON.stringify({ error: "Número no autorizado" }), { status: 403, headers: cors });
     }
 
@@ -70,10 +71,15 @@ Deno.serve(async (req) => {
     });
 
     const json = await r.json();
-    if (!r.ok) return new Response(JSON.stringify({ error: json.message }), { status: 400, headers: cors });
+    if (!r.ok) {
+      console.error(`Twilio rechazó el envío a ${destino}:`, JSON.stringify(json));
+      return new Response(JSON.stringify({ error: json.message }), { status: 400, headers: cors });
+    }
 
+    console.log(`Enviado a ${destino}, sid=${json.sid}`);
     return new Response(JSON.stringify({ ok: true, sid: json.sid }), { headers: { ...cors, "Content-Type": "application/json" } });
   } catch (e) {
+    console.error("Error inesperado en whatsapp-send:", e);
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: cors });
   }
 });
