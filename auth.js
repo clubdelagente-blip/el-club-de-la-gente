@@ -149,9 +149,25 @@ document.addEventListener("DOMContentLoaded", async () => {
             location.href = "Perfil.html";
           } else {
             // Usuario nuevo → crear perfil y mostrar dashboard bloqueado
-            await supabase.from("perfiles").insert({
-              id: user.id, nombre, whatsapp: "", rol: "miembro", plan: "sin_plan",
+            const whatsapp = localStorage.getItem("ecdlg_google_wa") || "";
+            localStorage.removeItem("ecdlg_google_wa");
+            const { error: perfError } = await supabase.from("perfiles").insert({
+              id: user.id, nombre, whatsapp, rol: "miembro", plan: "sin_plan",
             });
+
+            // Mensaje de bienvenida por WhatsApp — mismo mensaje que el
+            // registro manual, con keepalive porque location.href navega
+            // justo después (sin esto, el navegador cancela la petición).
+            if (!perfError && whatsapp) {
+              const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nYa eres parte de una comunidad que ahorra, aprende y apoya a Fusagasugá. 🎉\n\nDesde aquí recibirás confirmaciones de tus descuentos y novedades del Club.\n\nEl Club de la Gente`;
+              fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ to: whatsapp, body: msgBienvenida }),
+                keepalive: true,
+              }).catch(() => {});
+            }
+
             location.href = "Perfil.html?bienvenida=1";
           }
         } catch (_) {
@@ -234,6 +250,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Google auth
   $$(".btn-google").forEach(b => b.addEventListener("click", async () => {
+    if (b.dataset.ctx === "registro") {
+      const wa = $("#reg-google-wa")?.value.trim();
+      if (!wa) {
+        mostrarError("Ingresa tu WhatsApp antes de continuar con Google.");
+        return;
+      }
+      // Se guarda para poder crear el perfil con el WhatsApp desde el
+      // primer momento -- Google no lo entrega, y así el mensaje de
+      // bienvenida no tiene que esperar a que se llene otro formulario.
+      localStorage.setItem("ecdlg_google_wa", wa);
+    }
     const emailHint = $("#login-user")?.value.trim();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
