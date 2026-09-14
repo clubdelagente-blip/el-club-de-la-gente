@@ -153,6 +153,7 @@ let SEG_TOTAL = 1; // se recalcula tras cargar las preguntas dinámicas (1 = sol
 let _preguntasSeg = []; // preguntas activas traídas de Supabase, una por página
 let _catBlockIndex = 1; // índice de la página que contiene la pregunta "categorías" (para el botón Actualizar)
 let _respuestasSegPrevias = {}; // respuestas ya guardadas del miembro, para no perderlas al reabrir en una página puntual
+let _whatsappPrevio = ""; // whatsapp que ya tenía el perfil al abrir el formulario (para saber si este es el primero que damos)
 
 // Una pregunta oculta (condicional que no se activó) no cuenta como página
 // real — se salta al avanzar/retroceder para no dejarle una pantalla vacía.
@@ -1585,6 +1586,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     _respuestasSegPrevias = perfData?.respuestas_segmentacion || {};
+    _whatsappPrevio = perfData?.whatsapp || "";
 
     // Foto de perfil: Supabase es la fuente de verdad (sincroniza entre dispositivos)
     {
@@ -1808,6 +1810,20 @@ document.addEventListener("DOMContentLoaded", () => {
         if (whatsapp) perfil.whatsapp = whatsapp;
         if (categoriasParaEspejar) perfil.categorias = categoriasParaEspejar;
         localStorage.setItem("ecdlg_perfil", JSON.stringify(perfil));
+
+        // Mensaje de bienvenida por WhatsApp: solo si este es el primer momento
+        // en el que conocemos su número (ej. se registró con Google, que no pide
+        // WhatsApp al inicio) — si ya lo tenía desde el registro manual, ya lo
+        // recibió allá y no hay que duplicarlo.
+        if (!_whatsappPrevio && whatsapp) {
+          const primerNombre = perfil.primerNombre || nombre || "";
+          const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nYa eres parte de una comunidad que ahorra, aprende y apoya a Fusagasugá. 🎉\n\nDesde aquí recibirás confirmaciones de tus descuentos y novedades del Club.\n\nEl Club de la Gente`;
+          fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ to: whatsapp, body: msgBienvenida }),
+          }).catch(() => {});
+        }
 
         const catsEl = document.getElementById("perfil-cats");
         if (catsEl && categoriasParaEspejar) {
