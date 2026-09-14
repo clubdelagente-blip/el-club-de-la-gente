@@ -598,7 +598,7 @@ Deno.serve(async (req: Request) => {
         const linkMoto = cfgGate.grupo_wa_moto;
         const linkCarro = cfgGate.grupo_wa_carro;
 
-        msgGate = `👋 ¡Hola! Con tu plan Gratis ya tienes acceso a:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).${linkMoto ? `\n   • Moto y domicilios: ${linkMoto}` : ""}${linkCarro ? `\n   • Carro: ${linkCarro}` : ""}\n\nSi quieres hablar conmigo de forma personalizada — descuentos en aliados, tu ClubCard y más — puedes subir a Básica o Premium aquí: https://elclubdelagente.com/Planes.html`;
+        msgGate = `👋 ¡Hola! Con tu plan Gratis ya tienes:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).${linkMoto ? `\n   • Moto y domicilios: ${linkMoto}` : ""}${linkCarro ? `\n   • Carro: ${linkCarro}` : ""}\n🛍️ Acceso ilimitado a la Tienda del Club.\n🍲 Descuento en almuerzos caseros a domicilio.\n\nSi quieres acceder a promociones, sorteos, este mismo agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿\nhttps://elclubdelagente.com/Planes.html`;
       } else {
         msgGate = `👋 Este es el Agente de El Club de la Gente.\n\nPara conversar conmigo de forma personalizada — descuentos, aliados, tu ClubCard y más — necesitas ser miembro del Club.\n\nÚnete gratis o con cualquiera de nuestras membresías aquí: https://elclubdelagente.com/Planes.html\n\nEn cuanto actives tu cuenta, seguimos hablando 🌿`;
       }
