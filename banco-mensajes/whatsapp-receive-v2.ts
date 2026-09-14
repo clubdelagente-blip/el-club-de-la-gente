@@ -577,18 +577,36 @@ Deno.serve(async (req: Request) => {
     console.log("PERFIL_ERROR:", JSON.stringify(perfilError));
 
     const perfil = perfilData || {};
+    const planActual = (perfil.plan as string) || "";
 
-    // Sin membresía activa: no se gasta Groq en esta conversación. Se
-    // responde siempre con la misma invitación (cualquier plan, incluido
-    // el gratis, desbloquea al agente personalizado) y se corta ahí --
-    // el límite de arriba ya protege contra que alguien lo sature.
-    const PLANES_CON_ACCESO = ["gratis", "basica", "premium", "vitalicia"];
-    if (!PLANES_CON_ACCESO.includes(perfil.plan as string)) {
-      const msgInvitacion = `👋 Este es el Agente de El Club de la Gente.\n\nPara conversar conmigo de forma personalizada — descuentos, aliados, tu ClubCard y más — necesitas ser miembro del Club.\n\nÚnete gratis o con cualquiera de nuestras membresías aquí: https://elclubdelagente.com/Planes.html\n\nEn cuanto actives tu cuenta, seguimos hablando 🌿`;
+    // Solo básica/premium/vitalicia desbloquean el agente completo con IA
+    // (eso paga Groq). Gratis y sin membresía se responden con un mensaje
+    // fijo -- sin costo -- pero distinto entre sí: gratis sí tiene un
+    // beneficio real hoy (transporte con descuento) y se le informa
+    // directamente; quien no tiene plan solo recibe la invitación a unirse.
+    const PLANES_CON_AGENTE = ["basica", "premium", "vitalicia"];
+    if (!PLANES_CON_AGENTE.includes(planActual)) {
+      let msgGate: string;
+
+      if (planActual === "gratis") {
+        const { data: configGate } = await supabase
+          .from("configuracion")
+          .select("clave, valor")
+          .in("clave", ["grupo_wa_moto", "grupo_wa_carro"]);
+        const cfgGate: Record<string, string | null> = {};
+        for (const c of configGate || []) cfgGate[c.clave as string] = c.valor as string | null;
+        const linkMoto = cfgGate.grupo_wa_moto;
+        const linkCarro = cfgGate.grupo_wa_carro;
+
+        msgGate = `👋 ¡Hola! Con tu plan Gratis ya tienes acceso a:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).${linkMoto ? `\n   • Moto y domicilios: ${linkMoto}` : ""}${linkCarro ? `\n   • Carro: ${linkCarro}` : ""}\n\nSi quieres hablar conmigo de forma personalizada — descuentos en aliados, tu ClubCard y más — puedes subir a Básica o Premium aquí: https://elclubdelagente.com/Planes.html`;
+      } else {
+        msgGate = `👋 Este es el Agente de El Club de la Gente.\n\nPara conversar conmigo de forma personalizada — descuentos, aliados, tu ClubCard y más — necesitas ser miembro del Club.\n\nÚnete gratis o con cualquiera de nuestras membresías aquí: https://elclubdelagente.com/Planes.html\n\nEn cuanto actives tu cuenta, seguimos hablando 🌿`;
+      }
+
       await supabase.from("conversaciones").insert({ whatsapp: whatsappLocal, rol: "user", contenido: messageBody });
-      await supabase.from("conversaciones").insert({ whatsapp: whatsappLocal, rol: "assistant", contenido: msgInvitacion });
+      await supabase.from("conversaciones").insert({ whatsapp: whatsappLocal, rol: "assistant", contenido: msgGate });
       const escapeXmlInv = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      const twimlInv = `<Response><Message>${escapeXmlInv(msgInvitacion)}</Message></Response>`;
+      const twimlInv = `<Response><Message>${escapeXmlInv(msgGate)}</Message></Response>`;
       return new Response(twimlInv, { headers: { "Content-Type": "text/xml", ...corsHeaders } });
     }
 
