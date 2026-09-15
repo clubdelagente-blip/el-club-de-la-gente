@@ -185,13 +185,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             // reales. Con keepalive porque location.href navega justo
             // después (sin esto, el navegador cancela la petición).
             if (!perfError && whatsapp) {
-              const { data: cfgGratis } = await supabase
-                .from("configuracion")
-                .select("clave, valor")
-                .in("clave", ["grupo_wa_moto", "grupo_wa_carro"]);
-              const linkMoto = cfgGratis?.find(c => c.clave === "grupo_wa_moto")?.valor;
-              const linkCarro = cfgGratis?.find(c => c.clave === "grupo_wa_carro")?.valor;
-              const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nCon tu plan Gratis ya tienes:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).${linkMoto ? `\n   • Moto y domicilios: ${linkMoto}` : ""}${linkCarro ? `\n   • Carro: ${linkCarro}` : ""}\n🛍️ Acceso ilimitado a la Tienda del Club.\n\nSi quieres acceder a promociones, sorteos, un agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿\nhttps://elclubdelagente.com/Planes.html`;
+              const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nCon tu plan Gratis ya tienes:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).\n🛍️ Acceso ilimitado a la Tienda del Club.\n\nCuéntanos qué te interesa y te compartimos justo lo que necesitas:\nhttps://elclubdelagente.com/Bienvenida.html?id=${user.id}\n\nSi quieres acceder a promociones, sorteos, un agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿\nhttps://elclubdelagente.com/Planes.html`;
               fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -560,13 +554,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // petición — el mensaje nunca llegaba.
     if (whatsapp) {
       const primerNombre = nombre.split(" ")[0];
-      const { data: cfgGratis } = await supabase
-        .from("configuracion")
-        .select("clave, valor")
-        .in("clave", ["grupo_wa_moto", "grupo_wa_carro"]);
-      const linkMoto = cfgGratis?.find(c => c.clave === "grupo_wa_moto")?.valor;
-      const linkCarro = cfgGratis?.find(c => c.clave === "grupo_wa_carro")?.valor;
-      const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nCon tu plan Gratis ya tienes:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).${linkMoto ? `\n   • Moto y domicilios: ${linkMoto}` : ""}${linkCarro ? `\n   • Carro: ${linkCarro}` : ""}\n🛍️ Acceso ilimitado a la Tienda del Club.\n\nSi quieres acceder a promociones, sorteos, un agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿\nhttps://elclubdelagente.com/Planes.html`;
+      const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nCon tu plan Gratis ya tienes:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).\n🛍️ Acceso ilimitado a la Tienda del Club.\n\nCuéntanos qué te interesa y te compartimos justo lo que necesitas:\nhttps://elclubdelagente.com/Bienvenida.html?id=${data.user.id}\n\nSi quieres acceder a promociones, sorteos, un agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿\nhttps://elclubdelagente.com/Planes.html`;
       fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

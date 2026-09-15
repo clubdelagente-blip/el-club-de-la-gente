@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Club de la Gente — Bienvenida</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --verde: #1a7a3c;
+      --verde-claro: #e8f5ee;
+      --rojo: #c0392b;
+      --rojo-claro: #fdecea;
+      --crema: #f8f6f1;
+      --tinta: #0e0e0e;
+      --tinta-40: rgba(14,14,14,.4);
+      --display: 'Fraunces', Georgia, serif;
+      --sans: 'Inter', sans-serif;
+    }
+    body {
+      font-family: var(--sans);
+      background: var(--crema);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--tinta); margin-bottom: 40px; }
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 40px 32px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 2px 32px rgba(0,0,0,.07);
+    }
+    .estado-ic { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px; background: var(--verde-claro); }
+    .estado-ic--no { background: var(--rojo-claro); }
+    .paso-lbl { font-size: 11px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--verde); margin-bottom: 10px; }
+    .pregunta { font-family: var(--display); font-size: 24px; font-weight: 700; line-height: 1.2; margin-bottom: 8px; }
+    .pregunta-nota { font-size: 13px; color: var(--tinta-40); margin-bottom: 26px; line-height: 1.5; }
+    .opts { display: flex; flex-direction: column; gap: 10px; }
+    .opt-btn {
+      display: block; width: 100%; padding: 15px; border-radius: 12px; font-family: 'Inter', sans-serif;
+      font-size: 15px; font-weight: 700; letter-spacing: .02em; cursor: pointer; border: none;
+    }
+    .opt-btn--si { background: var(--verde); color: #fff; }
+    .opt-btn--no { background: #f1ede3; color: var(--tinta); }
+    .opt-btn:disabled { opacity: .6; cursor: default; }
+    .progreso { display: flex; gap: 6px; justify-content: center; margin-bottom: 24px; }
+    .progreso span { width: 26px; height: 4px; border-radius: 2px; background: #ebebeb; }
+    .progreso span.is-on { background: var(--verde); }
+    .progreso span.is-done { background: var(--verde-claro); }
+    .evento-titulo { font-family: var(--display); font-size: 26px; font-weight: 700; line-height: 1.2; margin-bottom: 10px; }
+    .evento-desc { font-size: 13.5px; color: var(--tinta-40); line-height: 1.55; }
+    .footer-note { margin-top: 24px; font-size: 11px; color: var(--tinta-40); line-height: 1.5; text-align: center; max-width: 360px; }
+    .loading, .error-msg { font-size: 14px; text-align: center; }
+    .error-msg { color: var(--rojo); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <a class="logo" href="El Club de la Gente.html">
+    <img src="logo-club.png" alt="El Club de la Gente" style="height:38px;width:auto;">
+  </a>
+
+  <div class="card" id="card">
+    <p class="loading">Cargando...</p>
+  </div>
+
+  <p class="footer-note" id="footer-note"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script>
+    const { createClient } = supabase;
+    const _supabase = createClient(
+      "https://egwaedadpqfwnbfosiao.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4"
+    );
+    (async () => {
+
+    const card = document.getElementById("card");
+    const footerNote = document.getElementById("footer-note");
+    const params = new URLSearchParams(location.search);
+    const miembroId = params.get("id");
+
+    function conTimeout(promesa, ms) {
+      return Promise.race([
+        promesa,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+      ]);
+    }
+
+    function renderError(msg) {
+      card.innerHTML = `
+        <div class="estado-ic estado-ic--no">✕</div>
+        <div class="pregunta">No pudimos continuar</div>
+        <p class="error-msg">${msg}</p>
+      `;
+    }
+
+    if (!miembroId) {
+      renderError("Este link está incompleto. Ábrelo directamente desde el mensaje de WhatsApp que te enviamos.");
+      return;
+    }
+
+    let miembro, linkMoto, linkCarro;
+    try {
+      const [{ data: m, error: errM }, { data: cfg }] = await conTimeout(
+        Promise.all([
+          _supabase.from("perfiles").select("id, nombre").eq("id", miembroId).maybeSingle(),
+          _supabase.from("configuracion").select("clave, valor").in("clave", ["grupo_wa_moto", "grupo_wa_carro"]),
+        ]),
+        8000
+      );
+      if (errM || !m) {
+        renderError("No encontramos tu registro como miembro. Escríbenos por WhatsApp si crees que es un error.");
+        return;
+      }
+      miembro = m;
+      linkMoto = cfg?.find(c => c.clave === "grupo_wa_moto")?.valor;
+      linkCarro = cfg?.find(c => c.clave === "grupo_wa_carro")?.valor;
+    } catch (_) {
+      renderError("No pudimos conectar en este momento. Intenta de nuevo en unos segundos.");
+      return;
+    }
+
+    const primerNombre = (miembro.nombre || "").trim().split(" ")[0] || "";
+
+    const respuestas = { uber_moto: null, uber_carro: null, interes_talleres: null, interes_voluntariado: null };
+
+    const PASOS = [
+      {
+        clave: "uber_moto",
+        pregunta: "¿Usarías Uber moto con el 10% de descuento del Club?",
+        nota: "Si dices que sí, te compartimos de una vez el grupo de WhatsApp.",
+        onSi: () => { if (linkMoto) window.open(linkMoto, "_blank"); },
+      },
+      {
+        clave: "uber_carro",
+        pregunta: "¿Usarías Uber carro con el 10% de descuento del Club?",
+        nota: "Si dices que sí, te compartimos de una vez el grupo de WhatsApp.",
+        onSi: () => { if (linkCarro) window.open(linkCarro, "_blank"); },
+      },
+      {
+        clave: "interes_talleres",
+        pregunta: "¿Te interesa recibir invitaciones personales a los talleres del Club?",
+        nota: "Charlas y talleres presenciales, gratis para todos los miembros.",
+      },
+      {
+        clave: "interes_voluntariado",
+        pregunta: "¿Te gustaría ser voluntario cuando se necesite, para obras sociales?",
+        nota: "Te contactamos solo cuando haya una jornada que encaje contigo.",
+      },
+    ];
+
+    let pasoActual = 0;
+
+    function progresoHtml() {
+      return `<div class="progreso">${PASOS.map((_, i) => `<span class="${i < pasoActual ? "is-done" : i === pasoActual ? "is-on" : ""}"></span>`).join("")}</div>`;
+    }
+
+    function renderPaso() {
+      const p = PASOS[pasoActual];
+      card.innerHTML = `
+        <div class="paso-lbl">Pregunta ${pasoActual + 1} de ${PASOS.length}</div>
+        ${progresoHtml()}
+        <div class="pregunta">${p.pregunta}</div>
+        <p class="pregunta-nota">${p.nota}</p>
+        <div class="opts">
+          <button class="opt-btn opt-btn--si" data-val="true">Sí</button>
+          <button class="opt-btn opt-btn--no" data-val="false">No</button>
+        </div>
+      `;
+      card.querySelectorAll(".opt-btn").forEach(btn => btn.addEventListener("click", () => responder(p, btn.dataset.val === "true")));
+    }
+
+    function responder(paso, valor) {
+      respuestas[paso.clave] = valor;
+      if (valor && paso.onSi) paso.onSi();
+      pasoActual++;
+      if (pasoActual < PASOS.length) {
+        renderPaso();
+      } else {
+        guardarYTerminar();
+      }
+    }
+
+    async function guardarYTerminar() {
+      card.innerHTML = `<p class="loading">Guardando tus respuestas...</p>`;
+      const { error } = await _supabase.rpc("guardar_bienvenida", {
+        p_miembro_id: miembroId,
+        p_uber_moto: !!respuestas.uber_moto,
+        p_uber_carro: !!respuestas.uber_carro,
+        p_interes_talleres: !!respuestas.interes_talleres,
+        p_interes_voluntariado: !!respuestas.interes_voluntariado,
+      });
+      if (error) {
+        renderError("No pudimos guardar tus respuestas. Intenta de nuevo o escríbenos por WhatsApp.");
+        return;
+      }
+      card.innerHTML = `
+        <div class="estado-ic">✓</div>
+        <div class="evento-titulo">¡Gracias${primerNombre ? ", " + primerNombre : ""}!</div>
+        <p class="evento-desc">Ya sabemos qué te interesa. Te vamos a escribir solo con lo que de verdad quieres recibir.</p>
+      `;
+    }
+
+    footerNote.textContent = "Puedes cambiar de opinión cuando quieras — solo escríbenos por WhatsApp.";
+    renderPaso();
+
+    })();
+  </script>
+</body>
+</html>
