@@ -61,16 +61,44 @@
     </section>
 
     <!-- ============================================================
-         VISTA 2 — ÉXITO POST-PAGO
+         VISTA 2 — PAGO MANUAL (Bre-B + comprobante)
          ============================================================ -->
-    <section class="checkout-view" id="view-exito" data-screen-label="Éxito pago">
+    <section class="checkout-view" id="view-pago" data-screen-label="Pago">
+      <div class="checkout-head">
+        <span class="checkout-eyebrow">03 — Confirma tu pago</span>
+        <h1 class="checkout-title">Transfiere y sube tu comprobante</h1>
+        <p class="checkout-sub" id="pago-sub">Vas a pagar tu membresía.</p>
+      </div>
+      <div style="max-width:440px;margin:0 auto">
+        <div style="background:#fff;border:1px solid #ebebeb;border-radius:14px;padding:20px;margin-bottom:16px">
+          <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Llave de pago del Club</label>
+          <div style="display:flex;gap:8px">
+            <input id="pago-llave" readonly style="flex:1;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px" value="Cargando…">
+            <button type="button" class="btn" id="pago-copiar" style="padding:0 16px;white-space:nowrap">Copiar</button>
+          </div>
+          <div style="text-align:center;font-weight:800;letter-spacing:.02em;font-size:13px;border:1px solid #ebebeb;border-radius:8px;padding:6px;margin-top:10px">Bre-B</div>
+          <p style="font-size:12px;color:#777;margin-top:10px">Transfiere <b id="pago-monto"></b> a esa llave antes de continuar.</p>
+        </div>
+        <div style="background:#fff;border:1px solid #ebebeb;border-radius:14px;padding:20px;margin-bottom:16px">
+          <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Comprobante de pago *</label>
+          <input type="file" id="pago-comprobante" accept="image/*">
+        </div>
+        <button class="btn btn--primario btn--bloque" id="pago-confirmar" style="width:100%">Confirmar pago</button>
+        <button type="button" id="pago-volver" style="display:block;margin:14px auto 0;background:none;border:none;color:#777;font-size:13px;cursor:pointer;text-decoration:underline">Volver a elegir plan</button>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         VISTA 3 — COMPROBANTE ENVIADO (pendiente de aprobación)
+         ============================================================ -->
+    <section class="checkout-view" id="view-pendiente" data-screen-label="Comprobante enviado">
       <div class="exito">
         <div class="exito__check">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
         </div>
-        <span class="exito__eyebrow">Pago confirmado</span>
-        <h1 class="exito__title">¡Ya eres parte del club!</h1>
-        <p class="exito__msg">Tu membresía está activa. Bienvenido a la familia de El Club de la Gente — desde hoy empiezas a ahorrar, aprender  y a apoyar tu comunidad.</p>
+        <span class="exito__eyebrow">Comprobante recibido</span>
+        <h1 class="exito__title">¡Ya casi eres parte del club!</h1>
+        <p class="exito__msg">Estamos confirmando tu pago. En cuanto lo aprobemos tu membresía se activa automáticamente y te llega la confirmación por WhatsApp.</p>
 
         <div class="wa-card">
           <div class="wa-card__ic"><i data-lucide="message-circle"></i></div>
@@ -80,15 +108,14 @@
           </div>
         </div>
 
-        <a class="btn btn--primario btn--bloque" href="Perfil.html?nuevo=1" style="max-width:460px;margin:0 auto;">Ver mi perfil <span class="ar">&rarr;</span></a>
+        <a class="btn btn--primario btn--bloque" href="Perfil.html" style="max-width:460px;margin:0 auto;">Ir a mi perfil <span class="ar">&rarr;</span></a>
       </div>
     </section>
 
   </div>
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <script src="https://checkout.wompi.co/widget.js"></script>
-  <script type="module" src="checkout.js?v=17"></script>
+  <script type="module" src="checkout.js?v=18"></script>
 
   <!-- ============================================================
        TWEAKS PANEL — solo para edición de diseño, nunca para visitantes.

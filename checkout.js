@@ -6,7 +6,7 @@ import { supabase } from './supabase.js';
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 
-const PLANES_SIN_PAGO = ["gratis", "vitalicia"]; // se activan solos, no pasan por Wompi
+const PLANES_SIN_PAGO = ["gratis", "vitalicia"]; // se activan solos, no piden comprobante de pago
 const fmt = new Intl.NumberFormat("es-CO");
 
 let PLANES = {}; // se llena desde Supabase → { slug: fila de la tabla "planes" }
@@ -15,6 +15,8 @@ let estado = {
   plan: localStorage.getItem("ecdlg_plan") || "premium",
   metodo: "tarjeta",
 };
+
+let estadoPago = { plan: null, precio: 0, planLabel: "", miembroId: null };
 
 /* ---------- Vistas ---------- */
 function setWizard(step) {
@@ -85,8 +87,13 @@ function pintarSeleccion() {
   });
 }
 
-/* ---------- Wompi: abre la pasarela directo desde la tarjeta del plan ---------- */
-async function abrirWompi(plan, card) {
+/* ---------- Pago manual (Bre-B): muestra la llave del Club y pide comprobante ---------- */
+async function cargarLlavePago() {
+  const { data } = await supabase.from("configuracion").select("valor").eq("clave", "club_llave_pago").maybeSingle();
+  return data?.valor || null;
+}
+
+async function abrirPagoManual(plan, card) {
   const p = PLANES[plan];
   const precio = Number(p?.precio);
   if (!p || !Number.isFinite(precio) || precio <= 0) {
@@ -106,34 +113,17 @@ async function abrirWompi(plan, card) {
     return;
   }
 
-  const amountInCents = precio * 100;
-  const reference = `ECDLG-${miembroId}-${Date.now()}-${Math.random().toString(36).substr(2,6).toUpperCase()}`;
-  const currency = "COP";
-
-  const cadena = `${reference}${amountInCents}${currency}test_integrity_aTSPYcCp7kbu6kNCp8q9Q7TEmXPXceoh`;
-  const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(cadena));
-  const integrity = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,"0")).join("");
-
+  estadoPago = { plan, precio, planLabel: p.tag || p.nombre || plan, miembroId };
   estadoEl.textContent = textoOriginal;
 
-  const checkout = new window.WidgetCheckout({
-    currency,
-    amountInCents,
-    reference,
-    publicKey: "pub_test_yuvhTaT4Bg2JmPbJuxpeuodluZUX7HyE",
-    signature: { integrity },
-    redirectUrl: `https://elclubdelagente.com/Perfil.html?activar=${plan}&nuevo=1`,
-  });
+  $("#pago-sub").textContent = `Vas a pagar tu membresía ${estadoPago.planLabel}.`;
+  $("#pago-monto").textContent = fmt.format(precio) + " COP";
+  $("#pago-llave").value = "Cargando…";
+  $("#pago-comprobante").value = "";
+  mostrar("view-pago", 3);
 
-  checkout.open((result) => {
-    const tx = result.transaction;
-    // El widget a veces cierra en "PENDING" y la aprobación real llega
-    // un momento después por el webhook -- igual mandamos al perfil.
-    if (tx && (tx.status === "APPROVED" || tx.status === "PENDING")) {
-      localStorage.setItem("ecdlg_plan", plan);
-      location.href = "Perfil.html?activar=" + plan + "&nuevo=1";
-    }
-  });
+  const llave = await cargarLlavePago();
+  $("#pago-llave").value = llave || "No configurada — escríbenos por WhatsApp";
 }
 
 function wireTarjetas() {
@@ -149,8 +139,55 @@ function wireTarjetas() {
         location.href = "Perfil.html?activar=" + plan + "&nuevo=1";
         return;
       }
-      abrirWompi(plan, card);
+      abrirPagoManual(plan, card);
     });
+  });
+}
+
+function wirePago() {
+  $("#pago-copiar")?.addEventListener("click", () => {
+    const btn = $("#pago-copiar");
+    navigator.clipboard.writeText($("#pago-llave")?.value || "").then(() => {
+      const orig = btn.textContent;
+      btn.textContent = "Copiada";
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    });
+  });
+  $("#pago-volver")?.addEventListener("click", () => mostrar("view-plan", 2));
+  $("#pago-confirmar")?.addEventListener("click", async () => {
+    const btn = $("#pago-confirmar");
+    const file = $("#pago-comprobante")?.files?.[0];
+    if (!file) { alert("Sube el comprobante de pago"); return; }
+    btn.disabled = true; btn.textContent = "Enviando…";
+
+    const ext = file.name.split(".").pop();
+    const path = `comprobante-membresia-${estadoPago.miembroId}-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+    if (upErr) { alert("Error subiendo el comprobante"); btn.disabled = false; btn.textContent = "Confirmar pago"; return; }
+    const comprobante_url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+
+    const { error } = await supabase.from("solicitudes_membresia").insert({
+      miembro_id: estadoPago.miembroId,
+      plan: estadoPago.plan,
+      monto: estadoPago.precio,
+      comprobante_url,
+    });
+    if (error) { alert("Error: " + error.message); btn.disabled = false; btn.textContent = "Confirmar pago"; return; }
+
+    localStorage.setItem("ecdlg_plan", estadoPago.plan);
+    btn.disabled = false; btn.textContent = "Confirmar pago";
+    mostrar("view-pendiente", 4);
+
+    // Avisar al equipo para que revise el comprobante — fire-and-forget.
+    supabase.from("configuracion").select("valor").eq("clave", "numero_admin_notificaciones").maybeSingle()
+      .then(({ data }) => {
+        if (!data?.valor) return;
+        fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ to: data.valor, body: `💳 Nueva solicitud de membresía ${estadoPago.planLabel} por ${fmt.format(estadoPago.precio)} COP. Revísala en Admin → Ventas.` }),
+        }).catch(() => {});
+      }).catch(() => {});
   });
 }
 
@@ -177,4 +214,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (window.lucide) lucide.createIcons();
   pintarSeleccion();
   wireTarjetas();
+  wirePago();
 });

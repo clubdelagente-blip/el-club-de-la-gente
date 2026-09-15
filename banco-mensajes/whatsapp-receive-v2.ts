@@ -402,7 +402,7 @@ CONOCIMIENTO DEL CLUB:
 - Plan Vitalicia: $0 · se obtiene con 5 referidos activos · descuentos ilimitados para siempre
 - Aliados en Fusagasugá: bienestar/salud, barbería, odontología, turismo, veterinaria, ropa personalizada, publicidad, comida rápida, fruver, regalos, heladería
 - QR: el miembro lo muestra al aliado para registrar el descuento, queda guardado en el historial
-- Renovación: por plataforma, Wompi, Nequi o Daviplata · activación en menos de 2 horas con comprobante
+- Renovación: transferencia a la llave Bre-B del Club + subir comprobante en https://elclubdelagente.com/Planes.html · el admin lo aprueba a mano, activación en menos de 2 horas en horario hábil
 - Referidos: enlace único por miembro · 5 referidos activos = membresía vitalicia gratis · Link de referido del miembro actual: https://elclubdelagente.com/Registro.html?ref=MIEMBRO_ID
 - Impacto social: parte de cada membresía apoya fundaciones de rescate animal, mercados comunitarios y emprendedores locales
 - Para escalar a humano: el equipo responde en máximo 4 horas en el mismo chat

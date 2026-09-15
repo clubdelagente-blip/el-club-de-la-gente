@@ -1165,7 +1165,7 @@ const ESTADO_PEDIDO_CLUB = {
   cancelado:        { c: "#c0392b", bg: "#fdecea", t: "Cancelado" },
 };
 
-/* ---------- Tienda del Club (checkout con Wompi + seguimiento de pedido) ---------- */
+/* ---------- Tienda del Club (checkout con pago manual Bre-B + seguimiento de pedido) ---------- */
 function abrirDetalleProductoClub(p) {
   const precio = p.precio_descuento ?? p.precio_normal ?? 0;
   const imgs = (p.imagenes && p.imagenes.length) ? p.imagenes : (p.imagen_url ? [p.imagen_url] : []);
@@ -1197,32 +1197,62 @@ function abrirDetalleProductoClub(p) {
   document.getElementById('tpg-comprar')?.addEventListener('click', () => abrirCheckoutClub(p));
 }
 
-function abrirCheckoutClub(p) {
+async function abrirCheckoutClub(p) {
   const precio = p.precio_descuento ?? p.precio_normal ?? 0;
+  const { data: cfgLlave } = await supabase.from("configuracion").select("valor").eq("clave", "club_llave_pago").maybeSingle();
+  const llave = cfgLlave?.valor || "";
   abrirModalTienda(`Comprar: ${esc(p.nombre)}`, `
     <p style="font-size:14px;margin-bottom:16px">Vas a pagar <b>${COP(precio)}</b>. El Club se encarga de pedirlo al proveedor y hacerte llegar el envío — verás el estado en "Mis pedidos".</p>
     <div class="cfg-campo"><label class="cfg-label">Nombre de quien recibe</label><input class="cfg-input" id="pcc-nombre" type="text"></div>
     <div class="cfg-campo"><label class="cfg-label">Dirección</label><input class="cfg-input" id="pcc-direccion" type="text"></div>
     <div class="cfg-campo"><label class="cfg-label">Barrio (opcional)</label><input class="cfg-input" id="pcc-barrio" type="text"></div>
     <div class="cfg-campo"><label class="cfg-label">Teléfono de contacto</label><input class="cfg-input" id="pcc-telefono" type="tel"></div>
-    <button class="btn btn--primario" id="pcc-pagar" style="margin-top:8px;width:100%">Pagar ${COP(precio)} con Wompi</button>
+    <div class="cfg-campo">
+      <label class="cfg-label">Llave de pago del Club</label>
+      <div style="display:flex;gap:8px">
+        <input class="cfg-input" id="pcc-llave" readonly value="${esc(llave) || 'No registrada — escríbenos por WhatsApp'}" style="flex:1">
+        ${llave ? `<button type="button" class="btn" id="pcc-copiar-llave" style="padding:0 16px;white-space:nowrap">${ic('copy')} Copiar</button>` : ''}
+      </div>
+      <span style="font-size:12px;color:#777;display:block;margin-top:4px">Transfiere ${COP(precio)} a esa llave antes de continuar.</span>
+      <div style="text-align:center;font-weight:800;letter-spacing:.02em;font-size:13px;color:#111;border:1px solid #ebebeb;border-radius:8px;padding:6px;margin-top:8px;background:#fff">Bre-B</div>
+    </div>
+    <div class="cfg-campo">
+      <label class="cfg-label">Comprobante de pago *</label>
+      <input type="file" id="pcc-comprobante" accept="image/*">
+    </div>
+    <button class="btn btn--primario" id="pcc-pagar" style="margin-top:8px;width:100%">Confirmar pedido</button>
   `);
+  $("#pcc-copiar-llave")?.addEventListener("click", () => {
+    const btn = $("#pcc-copiar-llave");
+    navigator.clipboard.writeText($("#pcc-llave")?.value || "").then(() => {
+      btn.innerHTML = `${ic('check')} Copiada`;
+      setTimeout(() => { btn.innerHTML = `${ic('copy')} Copiar`; if (window.lucide) lucide.createIcons(); }, 2000);
+      if (window.lucide) lucide.createIcons();
+    });
+  });
   $("#pcc-pagar")?.addEventListener("click", async () => {
     const btn = $("#pcc-pagar");
     const nombre = $("#pcc-nombre")?.value.trim();
     const direccion = $("#pcc-direccion")?.value.trim();
     const barrio = $("#pcc-barrio")?.value.trim();
     const telefono = $("#pcc-telefono")?.value.trim();
+    const file = $("#pcc-comprobante")?.files?.[0];
     if (!nombre || !direccion || !telefono) { toast("Completa nombre, dirección y teléfono"); return; }
+    if (!file) { toast("Sube el comprobante de pago"); return; }
     if (!precio) { toast("Este producto no tiene un precio válido"); return; }
-    if (!window.WidgetCheckout) { toast("No se pudo cargar la pasarela de pago, recarga la página"); return; }
-    btn.disabled = true; btn.textContent = "Un momento…";
+    btn.disabled = true; btn.textContent = "Enviando…";
 
     const { data: { session } } = await supabase.auth.getSession();
     const miembroId = session?.user?.id;
     if (!miembroId) { toast("Debes iniciar sesión"); btn.disabled = false; return; }
 
-    const { data: pedido, error } = await supabase.from("pedidos_club").insert({
+    const ext = file.name.split(".").pop();
+    const path = `comprobante-club-${miembroId}-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+    if (upErr) { toast("Error subiendo el comprobante"); btn.disabled = false; btn.textContent = "Confirmar pedido"; return; }
+    const comprobante_url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+
+    const { error } = await supabase.from("pedidos_club").insert({
       producto_id: p.id, miembro_id: miembroId, nombre_producto: p.nombre, monto: precio,
       // Se guarda el precio normal y el ahorro tal como están AHORA, no se
       // recalculan después uniendo con "productos" -- si el producto cambia
@@ -1230,28 +1260,24 @@ function abrirCheckoutClub(p) {
       precio_normal: p.precio_normal ?? null,
       ahorro: Math.max(0, (p.precio_normal ?? precio) - precio),
       envio_nombre: nombre, envio_direccion: direccion, envio_barrio: barrio || null, envio_telefono: telefono,
+      comprobante_url,
       estado: "pendiente_pago",
-    }).select().single();
-    if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Pagar " + COP(precio) + " con Wompi"; return; }
-
-    const amountInCents = precio * 100;
-    const reference = `ECDLGTIENDA-${pedido.id}-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-    const currency = "COP";
-    const cadena = `${reference}${amountInCents}${currency}test_integrity_aTSPYcCp7kbu6kNCp8q9Q7TEmXPXceoh`;
-    const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(cadena));
-    const integrity = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
-
-    const checkout = new window.WidgetCheckout({
-      currency, amountInCents, reference,
-      publicKey: "pub_test_yuvhTaT4Bg2JmPbJuxpeuodluZUX7HyE",
-      signature: { integrity },
-      redirectUrl: "https://elclubdelagente.com/Perfil.html",
     });
+    if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Confirmar pedido"; return; }
+
     cerrarModalTienda();
-    checkout.open(() => {
-      toast("Confirmando tu pago… en unos segundos verás el pedido en \"Mis pedidos\"");
-      setTimeout(cargarMisPedidosClub, 4000);
-    });
+    toast("Pedido enviado — te avisamos por WhatsApp en cuanto confirmemos tu pago");
+    setTimeout(cargarMisPedidosClub, 800);
+
+    supabase.from("configuracion").select("valor").eq("clave", "numero_admin_notificaciones").maybeSingle()
+      .then(({ data }) => {
+        if (!data?.valor) return;
+        fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ to: data.valor, body: `🛍️ Nuevo pedido de la Tienda del Club con comprobante pendiente\n\nProducto: ${p.nombre}\nMonto: ${COP(precio)}\n\nRevísalo en Admin → Ventas o Tienda del Club.` }),
+        }).catch(() => {});
+      }).catch(() => {});
   });
 }
 
@@ -1589,8 +1615,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Si viene de elegir un plan sin pago (gratis), se activa directo aquí.
     // Los planes de pago (básica/premium) NO se activan desde el navegador —
-    // eso lo hace únicamente el webhook de Wompi ya verificado, por seguridad
-    // (activar_plan solo permite auto-activar "gratis").
+    // eso lo hace únicamente la función aprobar-membresia cuando el admin
+    // aprueba el comprobante, por seguridad (activar_plan solo permite
+    // auto-activar "gratis").
     const paramsIniciales = new URLSearchParams(location.search);
     const esNuevo = paramsIniciales.get("nuevo") === "1";
     const planActivar = paramsIniciales.get("activar");
@@ -1665,7 +1692,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
     if (plan) { localStorage.setItem("ecdlg_plan", plan); const sbPlanEl = document.getElementById("sb-plan-name"); if (sbPlanEl) sbPlanEl.textContent = PLAN_LABEL[plan] || plan; }
 
-    // Fecha de renovación real (viene del pago aprobado por Wompi, no inventada)
+    // Fecha de renovación real (viene del pago aprobado por el admin, no inventada)
     const sbRenuevaEl = document.querySelector(".sb-plan__renueva");
     const ccRenuevaEl = document.querySelector(".cc-card-renueva");
     if (plan === "vitalicia") {

@@ -93,12 +93,6 @@ const ADM_PROGRAMAS = [
   },
 ];
 
-/* ---------- VENTAS (sin conectar a datos reales todavia) ---------- */
-const ADM_VENTAS_METRICAS = {
-  mes: 0, anterior: 0, proyeccion: 0, ticket: 0,
-};
-const ADM_TRANSACCIONES = [];
-
 /* ---------- SUSCRIPCIONES (sin conectar a datos reales todavia) ---------- */
 const ADM_SUSC_METRICAS = {
   activas: 0, vencen: 0, canceladas: 0, renovacion: "0%",

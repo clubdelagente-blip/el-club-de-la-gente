@@ -194,8 +194,8 @@
        ============================================================ -->
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
-  <script src="admin-data.js?v=4"></script>
-  <script src="admin.js?v=21"></script>
+  <script src="admin-data.js?v=5"></script>
+  <script src="admin.js?v=22"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -247,6 +247,81 @@ async function cargarConfigTransporte(){
   const n=$("#cfg-num-admin");if(n)n.value=map.numero_admin_notificaciones||'';
 }
 window.cargarConfigTransporte=cargarConfigTransporte;
+
+/* ---- VENTAS (pagos reales + solicitudes de membresía pendientes) ---- */
+let _ventasSolicitudes=[];
+async function cargarVentasReal(){
+  const hoy=new Date();
+  const enMes=(iso,ref)=>{const d=new Date(iso);return d.getFullYear()===ref.getFullYear()&&d.getMonth()===ref.getMonth();};
+  const mesAnt=new Date(hoy.getFullYear(),hoy.getMonth()-1,1);
+  const[{data:pagos},{data:solicitudes},{data:cfgLlave}]=await Promise.all([
+    supabase.from('pagos').select('id,monto,plan,referencia,created_at,perfiles(nombre)').order('created_at',{ascending:false}),
+    supabase.from('solicitudes_membresia').select('id,miembro_id,plan,monto,comprobante_url,estado,created_at,perfiles(nombre,whatsapp)').eq('estado','pendiente').order('created_at',{ascending:true}),
+    supabase.from('configuracion').select('valor').eq('clave','club_llave_pago').maybeSingle(),
+  ]);
+  const PG=pagos||[];
+  _ventasSolicitudes=solicitudes||[];
+  const ingresosMes=PG.filter(p=>enMes(p.created_at,hoy)).reduce((s,p)=>s+(p.monto||0),0);
+  const ingresosMesAnt=PG.filter(p=>enMes(p.created_at,mesAnt)).reduce((s,p)=>s+(p.monto||0),0);
+  const pagosMes=PG.filter(p=>enMes(p.created_at,hoy));
+  const ticket=pagosMes.length?Math.round(ingresosMes/pagosMes.length):0;
+  const proyeccion=ingresosMes*12;
+
+  $("#p-ventas").innerHTML=`
+    ${_ventasSolicitudes.length?`
+    <div class="ad-toolbar"><div class="ad-card__title">Solicitudes pendientes de aprobación</div><div class="ad-spacer"></div></div>
+    <div class="ad-table-wrap" style="margin-bottom:24px">
+      <table class="ad-table">
+        <thead><tr><th>Miembro</th><th>Plan</th><th>Monto</th><th>Comprobante</th><th style="text-align:right">Acciones</th></tr></thead>
+        <tbody>
+          ${_ventasSolicitudes.map(s=>`
+            <tr>
+              <td><div class="ad-cell-user"><span class="ad-av">${window.ini(s.perfiles?.nombre||'?')}</span><div><div class="ad-cell-user__name">${esc(s.perfiles?.nombre)||'—'}</div><div class="ad-table__num">${new Date(s.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}</div></div></div></td>
+              <td><span class="ad-pill ${s.plan}"><span class="d"></span>${window.planLbl(s.plan)}</span></td>
+              <td><span class="ad-num-strong">${COP(s.monto)}</span></td>
+              <td><a href="${esc(s.comprobante_url)}" target="_blank" style="color:#6fdc8c">Ver comprobante</a></td>
+              <td style="text-align:right"><div style="display:flex;gap:6px;justify-content:flex-end">
+                <button class="ad-btn ad-btn--verde" data-vt-aprobar="${s.id}">${ic('check')} Aprobar</button>
+                <button class="ad-btn" data-vt-rechazar="${s.id}">${ic('x')} Rechazar</button>
+              </div></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`:''}
+    <div class="ad-metrics">
+      ${window.metric('banknote',COP(ingresosMes),'Ingresos del mes','','','up').replace(/<span class="ad-metric__chip up">.*?<\/span>/,'')}
+      ${window.metric('calendar',COP(ingresosMesAnt),'Mes anterior','','','up').replace(/<span class="ad-metric__chip up">.*?<\/span>/,'')}
+      ${window.metric('trending-up',COP(proyeccion),'Proyección anual','','','up').replace(/<span class="ad-metric__chip up">.*?<\/span>/,'')}
+      ${window.metric('receipt',COP(ticket),'Ticket promedio','por pago este mes','','up').replace(/<span class="ad-metric__chip up">.*?<\/span>/,'')}
+    </div>
+    <div class="ad-toolbar"><div class="ad-card__title">Últimas transacciones</div><div class="ad-spacer"></div><button class="ad-btn" id="v-csv">${ic('download')} Exportar historial</button></div>
+    <div class="ad-table-wrap" style="margin-bottom:24px">
+      <table class="ad-table">
+        <thead><tr><th>Miembro</th><th>Plan</th><th>Fecha</th><th style="text-align:right">Valor</th></tr></thead>
+        <tbody>
+          ${PG.length?PG.map(t=>`
+            <tr>
+              <td><div class="ad-cell-user"><span class="ad-av">${window.ini(t.perfiles?.nombre||'?')}</span><div><div class="ad-cell-user__name">${esc(t.perfiles?.nombre)||'—'}</div><div class="ad-table__num">${esc(t.referencia)||''}</div></div></div></td>
+              <td><span class="ad-pill ${t.plan}"><span class="d"></span>${window.planLbl(t.plan)}</span></td>
+              <td><span class="ad-table__num">${new Date(t.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}</span></td>
+              <td style="text-align:right"><span class="ad-num-strong">${COP(t.monto)}</span></td>
+            </tr>`).join(''):`<tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Sin transacciones todavía</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(242,240,234,.4);margin-bottom:10px">Llave de pago del Club (Bre-B)</div>
+    <div class="ad-set">
+      <div class="ad-set__row" style="flex-direction:column;align-items:stretch;gap:10px">
+        <div>
+          <label style="font-size:12px;color:rgba(242,240,234,.5);display:block;margin-bottom:5px">Llave que ven los miembros al pagar una membresía o un producto de la Tienda del Club</label>
+          <input id="vt-llave" type="text" value="${esc(cfgLlave?.valor)||''}" placeholder="Ej: 3001234567" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(242,240,234,.15);background:rgba(242,240,234,.04);color:#fff;font-size:13px">
+        </div>
+        <button class="ad-btn ad-btn--verde" id="vt-llave-save" style="align-self:flex-start">${ic('check')} Guardar llave</button>
+      </div>
+    </div>`;
+  if(window.lucide)lucide.createIcons();
+}
+window.cargarVentasReal=cargarVentasReal;
 
 const PLANES_VIS=[{val:'gratis',lbl:'Gratis'},{val:'basica',lbl:'Básica'},{val:'premium',lbl:'Premium'}];
 
@@ -1784,9 +1859,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
 
     // Desglose de ingresos (IVA → ICA → fundadores → gastos → renta)
     const cfg=_contConfig;
-    // Wompi solo cobra su comision sobre lo que realmente procesa (pagos de membresia), no sobre comisiones ni ingresos manuales
-    const wompiFeeMes=_contPagosMes.reduce((s,p)=>s+((p.monto||0)*0.0265+700)*1.19,0);
-    const trasWompi=ingresosMes-wompiFeeMes;
+    // Los pagos ahora son transferencias manuales (Bre-B), sin comisión de pasarela.
+    const trasWompi=ingresosMes;
     const ivaValor=trasWompi-(trasWompi/(1+cfg.iva_pct/100));
     const trasIva=trasWompi-ivaValor;
     const icaValor=trasIva*(cfg.ica_pct/100);
@@ -1858,7 +1932,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
           <thead><tr><th>Concepto</th><th>Cálculo</th><th style="text-align:right">Valor</th><th style="text-align:right">Queda</th></tr></thead>
           <tbody>
             <tr><td>Ingresos del mes</td><td>—</td><td style="text-align:right">—</td><td style="text-align:right"><span class="ad-num-strong">${COPc(ingresosMes)}</span></td></tr>
-            <tr><td>(-) Wompi (2,65% + $700 fijo + IVA 19% sobre esa comisión)</td><td><span class="ad-table__num">Solo sobre pagos de membresía vía Wompi</span></td><td style="text-align:right">${COPc(wompiFeeMes)}</td><td style="text-align:right">${COPc(trasWompi)}</td></tr>
             <tr><td>(-) IVA (${cfg.iva_pct}%, incluido en el precio)</td><td><span class="ad-table__num">${COPc(trasWompi)} − (${COPc(trasWompi)} ÷ ${(1+cfg.iva_pct/100).toFixed(2)})</span></td><td style="text-align:right">${COPc(ivaValor)}</td><td style="text-align:right">${COPc(trasIva)}</td></tr>
             <tr><td>(-) ICA + Avisos y Tableros (≈${cfg.ica_pct}%)</td><td><span class="ad-table__num">${COPc(trasIva)} × ${cfg.ica_pct}%</span></td><td style="text-align:right">${COPc(icaValor)}</td><td style="text-align:right">${COPc(trasIca)}</td></tr>
             <tr><td>(-) Remuneración de los fundadores (${cfg.fundadores_pct}%)</td><td><span class="ad-table__num">${COPc(trasIca)} × ${cfg.fundadores_pct}%</span></td><td style="text-align:right">${COPc(fundadoresValor)}</td><td style="text-align:right">${COPc(trasFundadores)}</td></tr>
@@ -2159,6 +2232,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
           <td><span class="ad-num-strong">${COP(p.monto)}</span></td>
           <td><span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.c}22;color:${est.c};white-space:nowrap">${est.t}</span>${p.numero_guia?`<div style="font-size:11px;color:rgba(242,240,234,.4);margin-top:4px">Guía: ${esc(p.numero_guia)}</div>`:''}</td>
           <td style="text-align:right"><div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">
+            ${p.estado==='pendiente_pago'?`${p.comprobante_url?`<a class="ad-btn" href="${esc(p.comprobante_url)}" target="_blank">${ic('receipt')} Comprobante</a>`:''}<button class="ad-btn ad-btn--verde" data-pc-confirmar-pago="${p.id}">Confirmar pago</button>`:''}
             ${p.estado==='pagado'?`<button class="ad-btn ad-btn--verde" data-pc-avanzar="${p.id}" data-siguiente="pedido_proveedor">Pedir al proveedor</button>`:''}
             ${p.estado==='pedido_proveedor'?`<button class="ad-btn" data-pc-guia="${p.id}">${ic('truck')} Guía</button><button class="ad-btn ad-btn--verde" data-pc-avanzar="${p.id}" data-siguiente="en_transito">En tránsito</button>`:''}
             ${p.estado==='en_transito'?`<button class="ad-btn ad-btn--verde" data-pc-avanzar="${p.id}" data-siguiente="aduana">Aduana</button>`:''}
@@ -2170,6 +2244,12 @@ document.addEventListener('DOMContentLoaded',async()=>{
     document.querySelectorAll('[data-pc-filtro]').forEach(b=>b.classList.toggle('ad-btn--verde',b.dataset.pcFiltro===_pcFiltro));
     if(window.lucide)lucide.createIcons();
     document.querySelectorAll('[data-pc-filtro]').forEach(b=>b.addEventListener('click',()=>{_pcFiltro=b.dataset.pcFiltro;renderPedidosClubUI();}));
+    document.querySelectorAll('[data-pc-confirmar-pago]').forEach(b=>b.addEventListener('click',async()=>{
+      const{error}=await supabase.from('pedidos_club').update({estado:'pagado'}).eq('id',b.dataset.pcConfirmarPago);
+      if(error){toast('Error: '+error.message);return;}
+      toast('Pago confirmado ✓');
+      cargarPedidosClubAdmin();
+    }));
     document.querySelectorAll('[data-pc-avanzar]').forEach(b=>b.addEventListener('click',async()=>{
       const{error}=await supabase.from('pedidos_club').update({estado:b.dataset.siguiente}).eq('id',b.dataset.pcAvanzar);
       if(error){toast('Error: '+error.message);return;}
@@ -2560,6 +2640,56 @@ document.addEventListener('DOMContentLoaded',async()=>{
       await supabase.from('configuracion').upsert([{clave:'grupo_wa_moto',valor:moto},{clave:'grupo_wa_carro',valor:carro}]);
       btn.disabled=false;
       toast('Links guardados ✓');
+      return;
+    }
+    if(e.target.closest('[data-vt-aprobar]')){
+      const btn=e.target.closest('[data-vt-aprobar]');
+      const id=btn.dataset.vtAprobar;
+      if(!confirm('¿Aprobar este pago y activar la membresía?'))return;
+      btn.disabled=true;btn.textContent='Aprobando…';
+      try{
+        const r=await fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/aprobar-membresia',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({solicitud_id:id}),
+        });
+        const j=await r.json().catch(()=>({}));
+        if(!r.ok){toast('Error: '+(j.error||r.status));btn.disabled=false;btn.textContent='Aprobar';return;}
+        toast('Membresía activada ✓');
+        cargarVentasReal();
+      }catch(err){toast('Error de red: '+err.message);btn.disabled=false;btn.textContent='Aprobar';}
+      return;
+    }
+    if(e.target.closest('[data-vt-rechazar]')){
+      const btn=e.target.closest('[data-vt-rechazar]');
+      const id=btn.dataset.vtRechazar;
+      if(!confirm('¿Rechazar esta solicitud de pago?'))return;
+      const s=_ventasSolicitudes.find(x=>x.id===id);
+      btn.disabled=true;
+      const{error}=await supabase.from('solicitudes_membresia').update({estado:'rechazado'}).eq('id',id);
+      if(error){toast('Error: '+error.message);btn.disabled=false;return;}
+      if(s?.perfiles?.whatsapp){
+        fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({to:s.perfiles.whatsapp,body:'No pudimos confirmar tu comprobante de pago. Escríbenos por WhatsApp para resolverlo y activar tu membresía. — El Club de la Gente'}),
+        }).catch(()=>{});
+      }
+      toast('Solicitud rechazada');
+      cargarVentasReal();
+      return;
+    }
+    if(e.target.closest('#vt-llave-save')){
+      const btn=e.target.closest('#vt-llave-save');
+      const llave=$('#vt-llave')?.value.trim()||null;
+      btn.disabled=true;
+      await supabase.from('configuracion').upsert([{clave:'club_llave_pago',valor:llave}]);
+      btn.disabled=false;
+      toast('Llave guardada ✓');
+      return;
+    }
+    if(e.target.closest('#v-csv')){
+      const{data:pagosCsv}=await supabase.from('pagos').select('monto,plan,referencia,created_at,perfiles(nombre)').order('created_at',{ascending:false});
+      descargarCSV('ventas.csv',['Miembro','Plan','Referencia','Fecha','Monto'],
+        (pagosCsv||[]).map(p=>[p.perfiles?.nombre||'',p.plan,p.referencia||'',p.created_at,p.monto]));
       return;
     }
     if(e.target.closest('#pr-add')){ abrirModal('Agregar pregunta','Aparecerá en el formulario "conócenos más"',htmlFormPregunta()); bindFormPregunta(); return; }

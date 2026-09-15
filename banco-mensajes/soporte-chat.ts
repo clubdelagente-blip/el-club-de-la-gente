@@ -64,7 +64,7 @@ function buildSystemPrompt(perfil: Record<string, unknown>): string {
 CONOCIMIENTO DE LA PLATAFORMA:
 - Plan Básica ($10.000/mes): 2 descuentos por mes por cada aliado. Plan Premium ($20.000/mes): descuentos ilimitados, ClubCard personalizada, sorteos, acceso a "Profesionales". Plan Vitalicia ($0): se obtiene con 5 referidos activos, equivale a Premium para siempre.
 - El dashboard tiene estas secciones: Mi perfil, Mi ClubCard (código QR que se muestra al aliado para registrar el descuento), Tienda del Club (compras con envío), Profesionales (solo Premium/Vitalicia), Mis descuentos (historial), Mi Agente (el asistente de WhatsApp), Configuración.
-- Activación de pagos: se paga por la plataforma con Wompi, Nequi o Daviplata. La activación es automática y normalmente tarda unos minutos, hasta un máximo de 2 horas si fue por transferencia con comprobante.
+- Activación de pagos: el miembro transfiere a la llave Bre-B del Club y sube el comprobante desde Planes.html (o desde el checkout de la Tienda del Club). Un admin revisa el comprobante y aprueba el pago a mano — normalmente tarda minutos, hasta un máximo de 2 horas en horario hábil.
 - Referidos: cada miembro tiene un link único de referido (visible en su perfil); 5 referidos activos = membresía vitalicia gratis.
 
 PROBLEMAS COMUNES Y CÓMO RESOLVERLOS:
