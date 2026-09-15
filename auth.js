@@ -6,6 +6,14 @@ import { supabase } from './supabase.js';
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 
+// Número de WhatsApp donde llegan los avisos de postulaciones nuevas
+// (aliados/profesionales) -- se lee de "configuracion" para que cambiarlo
+// no implique buscar el número hardcodeado en varios archivos.
+async function numeroAdmin() {
+  const { data } = await supabase.from("configuracion").select("valor").eq("clave", "numero_admin_notificaciones").maybeSingle();
+  return data?.valor || "3043394870";
+}
+
 /* ---------- ARQUETIPOS (número de misión) ---------- */
 const ARQUETIPOS = {
   1:  { nombre: "El Líder",            tono: "directo y motivador" },
@@ -701,7 +709,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: "3024982733", body: `📋 Nueva postulación de PROFESIONAL\n\nNombre: ${nombre}\nÁrea: ${area}\nWhatsApp: ${wa}\nCorreo: ${email}\n\nRevísala en Admin → Profesionales.` }),
+      body: JSON.stringify({ to: await numeroAdmin(), body: `📋 Nueva postulación de PROFESIONAL\n\nNombre: ${nombre}\nÁrea: ${area}\nWhatsApp: ${wa}\nCorreo: ${email}\n\nRevísala en Admin → Profesionales.` }),
     }).catch(() => {});
 
     localStorage.setItem("ecdlg_perfil", JSON.stringify({ nombre, primerNombre: nombre.split(" ")[0], rol: "profesional" }));
@@ -739,7 +747,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: "3024982733", body: `📋 Nueva postulación de ALIADO\n\nNegocio: ${negocio}\nCategoría: ${categoria || "—"}\nResponsable: ${nombre}\nWhatsApp: ${whatsapp}\n\nRevísala en Admin → Aliados → Postulaciones.` }),
+      body: JSON.stringify({ to: await numeroAdmin(), body: `📋 Nueva postulación de ALIADO\n\nNegocio: ${negocio}\nCategoría: ${categoria || "—"}\nResponsable: ${nombre}\nWhatsApp: ${whatsapp}\n\nRevísala en Admin → Aliados → Postulaciones.` }),
     }).catch(() => {});
 
     localStorage.setItem("ecdlg_rol", "aliado");
