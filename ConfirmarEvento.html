@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Club de la Gente — Confirmar asistencia</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --verde: #1a7a3c;
+      --verde-claro: #e8f5ee;
+      --rojo: #c0392b;
+      --rojo-claro: #fdecea;
+      --crema: #f8f6f1;
+      --tinta: #0e0e0e;
+      --tinta-40: rgba(14,14,14,.4);
+      --display: 'Fraunces', Georgia, serif;
+      --sans: 'Inter', sans-serif;
+    }
+    body {
+      font-family: var(--sans);
+      background: var(--crema);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--tinta); margin-bottom: 40px; }
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 40px 32px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 2px 32px rgba(0,0,0,.07);
+    }
+    .card img.flyer { width: calc(100% + 64px); margin: -40px -32px 20px; display: block; max-height: 220px; object-fit: cover; border-radius: 20px 20px 0 0; }
+    .estado-ic { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px; }
+    .estado-ic--ok { background: var(--verde-claro); }
+    .estado-ic--no { background: var(--rojo-claro); }
+    .estado-lbl { font-size: 11px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 8px; }
+    .estado-lbl--ok { color: var(--verde); }
+    .estado-lbl--no { color: var(--rojo); }
+    .evento-titulo { font-family: var(--display); font-size: 28px; font-weight: 700; line-height: 1.15; margin-bottom: 8px; }
+    .evento-desc { font-size: 13.5px; color: var(--tinta-40); line-height: 1.55; margin-bottom: 20px; }
+    .divider { border: none; border-top: 1px solid #ebebeb; margin: 20px 0; }
+    .detalle { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+    .detalle__lbl { font-size: 12px; color: var(--tinta-40); }
+    .detalle__val { font-size: 13px; font-weight: 600; }
+    .btn-confirmar {
+      display: block; width: 100%; padding: 15px; background: var(--verde); color: #fff;
+      border: none; border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 15px;
+      font-weight: 700; letter-spacing: .02em; cursor: pointer; margin-top: 8px;
+    }
+    .btn-confirmar:disabled { opacity: .6; cursor: default; }
+    .footer-note { margin-top: 24px; font-size: 11px; color: var(--tinta-40); line-height: 1.5; text-align: center; max-width: 360px; }
+    .loading, .error-msg { font-size: 14px; text-align: center; }
+    .error-msg { color: var(--rojo); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <a class="logo" href="El Club de la Gente.html">
+    <img src="logo-club.png" alt="El Club de la Gente" style="height:38px;width:auto;">
+  </a>
+
+  <div class="card" id="card">
+    <p class="loading">Cargando el taller...</p>
+  </div>
+
+  <p class="footer-note" id="footer-note"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script>
+    const { createClient } = supabase;
+    const _supabase = createClient(
+      "https://egwaedadpqfwnbfosiao.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4"
+    );
+    (async () => {
+
+    const card = document.getElementById("card");
+    const footerNote = document.getElementById("footer-note");
+    const params = new URLSearchParams(location.search);
+    const eventoId = params.get("evento");
+    const miembroId = params.get("miembro");
+
+    function conTimeout(promesa, ms) {
+      return Promise.race([
+        promesa,
+        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+      ]);
+    }
+
+    function renderError(msg) {
+      card.innerHTML = `
+        <div class="estado-ic estado-ic--no">✕</div>
+        <div class="estado-lbl estado-lbl--no">No se pudo cargar</div>
+        <p class="error-msg">${msg}</p>
+      `;
+    }
+
+    if (!eventoId || !miembroId) {
+      renderError("Este link está incompleto. Ábrelo directamente desde el mensaje de WhatsApp que te enviamos.");
+      return;
+    }
+
+    let evento, miembro;
+    try {
+      const [{ data: e, error: errE }, { data: m, error: errM }] = await conTimeout(
+        Promise.all([
+          _supabase.from("eventos_educacion").select("*, facilitadores_educacion(nombre)").eq("id", eventoId).maybeSingle(),
+          _supabase.from("perfiles").select("id, nombre").eq("id", miembroId).maybeSingle(),
+        ]),
+        8000
+      );
+      if (errE || errM || !e || !m) {
+        renderError("No encontramos este taller o tu registro como miembro. Escríbenos por WhatsApp si crees que es un error.");
+        return;
+      }
+      evento = e; miembro = m;
+    } catch (_) {
+      renderError("No pudimos conectar en este momento. Intenta de nuevo en unos segundos.");
+      return;
+    }
+
+    const fechaFmt = new Date(evento.fecha + "T00:00:00").toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
+    function renderInvitacion() {
+      card.innerHTML = `
+        ${evento.imagen_url ? `<img src="${evento.imagen_url}" alt="${evento.titulo}" class="flyer">` : ""}
+        <div class="estado-lbl estado-lbl--ok">Taller de El Club de la Gente</div>
+        <div class="evento-titulo">${evento.titulo}</div>
+        ${evento.descripcion ? `<p class="evento-desc">${evento.descripcion}</p>` : ""}
+        <hr class="divider">
+        <div class="detalle"><span class="detalle__lbl">Fecha</span><span class="detalle__val">${fechaFmt}</span></div>
+        ${evento.lugar ? `<div class="detalle"><span class="detalle__lbl">Lugar</span><span class="detalle__val">${evento.lugar}</span></div>` : ""}
+        ${evento.facilitadores_educacion?.nombre ? `<div class="detalle"><span class="detalle__lbl">Dicta</span><span class="detalle__val">${evento.facilitadores_educacion.nombre}</span></div>` : ""}
+        <hr class="divider">
+        <button id="btn-confirmar" class="btn-confirmar">Confirmo que voy</button>
+      `;
+      document.getElementById("btn-confirmar")?.addEventListener("click", confirmar);
+    }
+
+    function renderExito() {
+      card.innerHTML = `
+        <div class="estado-ic estado-ic--ok">✓</div>
+        <div class="estado-lbl estado-lbl--ok">Asistencia confirmada</div>
+        <div class="evento-titulo" style="font-size:22px">${miembro.nombre}, te esperamos</div>
+        <p class="evento-desc">${evento.titulo} — ${fechaFmt}${evento.lugar ? " en " + evento.lugar : ""}.</p>
+      `;
+    }
+
+    async function confirmar() {
+      const btn = document.getElementById("btn-confirmar");
+      btn.disabled = true; btn.textContent = "Confirmando…";
+      const { error } = await _supabase.from("confirmaciones_evento").insert({ evento_id: eventoId, miembro_id: miembroId });
+      if (error && error.code !== "23505") {
+        renderError("No pudimos registrar tu confirmación. Intenta de nuevo o escríbenos por WhatsApp.");
+        return;
+      }
+      renderExito();
+    }
+
+    footerNote.textContent = "Si cambias de opinión, no pasa nada — solo escríbenos por WhatsApp.";
+    renderInvitacion();
+
+    })();
+  </script>
+</body>
+</html>

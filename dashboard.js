@@ -129,7 +129,7 @@ async function quitarFoto() {
 }
 
 /* ---------- Navegación de paneles ---------- */
-const TITULOS = { inicio: "Inicio", negocio: "Mi negocio", perfil: "Mi perfil", clubcard: "Mi ClubCard", tienda: "Tienda", descuentos: "Mis descuentos", agente: "Mi Agente", config: "Configuración" };
+const TITULOS = { inicio: "Inicio", negocio: "Mi negocio", perfil: "Mi perfil", clubcard: "Mi ClubCard", tienda: "Tienda", educacion: "Educación", descuentos: "Mis descuentos", agente: "Mi Agente", config: "Configuración" };
 function irPanel(panel) {
   $$(".panel-view").forEach(v => v.classList.toggle("is-active", v.dataset.panel === panel));
   $$(".sb-link[data-panel]").forEach(l => l.classList.toggle("is-active", l.dataset.panel === panel));
@@ -1075,6 +1075,75 @@ let _tiendaCargada = false;
 let _miembroId = null;
 let _comisionTiendaPct = 10;
 
+/* ---------- Educación (talleres presenciales, gratis para todos) ---------- */
+let _educacionCargada = false;
+async function cargarEducacion() {
+  if (_educacionCargada) return;
+  _educacionCargada = true;
+
+  const grid = document.getElementById('educacion-grid');
+  if (!grid) return;
+
+  const { data: eventos } = await supabase
+    .from('eventos_educacion')
+    .select('*, facilitadores_educacion(nombre, foto_url)')
+    .eq('activo', true)
+    .order('fecha', { ascending: false });
+
+  const lista = eventos || [];
+  if (!lista.length) {
+    grid.innerHTML = `
+      <div style="text-align:center;padding:48px 20px;grid-column:1/-1">
+        <span style="display:inline-flex;width:38px;height:38px;border-radius:50%;background:var(--verde-soft);color:var(--verde);align-items:center;justify-content:center;margin-bottom:14px">${ic("graduation-cap")}</span>
+        <p style="font-size:13px;color:var(--tinta-45,#888);max-width:320px;margin:0 auto;line-height:1.5">Todavía no hay talleres publicados. En cuanto programemos uno, lo verás aquí y te avisamos por WhatsApp.</p>
+      </div>`;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  const hoy = new Date().toISOString().slice(0, 10);
+  grid.innerHTML = lista.map(e => {
+    const esProximo = e.fecha >= hoy;
+    const fechaFmt = new Date(e.fecha + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+    return `
+    <div style="border:1px solid #ebebeb;border-radius:12px;overflow:hidden;background:#fff">
+      ${e.imagen_url ? `<img src="${esc(e.imagen_url)}" alt="${esc(e.titulo)}" style="width:100%;height:150px;object-fit:cover">` : ''}
+      <div style="padding:16px">
+        <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:${esProximo ? 'var(--verde-soft)' : '#f1ede3'};color:${esProximo ? 'var(--verde)' : '#888'}">${esProximo ? 'Próximo' : 'Pasado'} · ${fechaFmt}</span>
+        <div style="font-weight:700;font-size:15px;margin:10px 0 4px">${esc(e.titulo)}</div>
+        ${e.descripcion ? `<p style="font-size:13px;color:#666;line-height:1.5;margin-bottom:10px">${esc(e.descripcion)}</p>` : ''}
+        ${e.facilitadores_educacion?.nombre ? `<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#777;margin-bottom:12px">
+          ${e.facilitadores_educacion.foto_url ? `<img src="${esc(e.facilitadores_educacion.foto_url)}" style="width:22px;height:22px;border-radius:50%;object-fit:cover">` : ''}
+          Dictado por ${esc(e.facilitadores_educacion.nombre)}
+        </div>` : ''}
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${e.pdf_url ? `<a href="${esc(e.pdf_url)}" target="_blank" class="btn" style="font-size:12.5px;padding:8px 12px">${ic('download')} Descargar PDF</a>` : ''}
+          ${e.link_grabacion ? `<a href="${esc(e.link_grabacion)}" target="_blank" class="btn" style="font-size:12.5px;padding:8px 12px">${ic('play')} Ver clase grabada</a>` : ''}
+          ${esProximo ? `<button class="btn btn--primario" data-confirmar-evento="${e.id}" style="font-size:12.5px;padding:8px 12px">Confirmar asistencia</button>` : ''}
+        </div>
+        <div data-confirmado-msg="${e.id}" style="display:none;font-size:12.5px;color:var(--verde);font-weight:600;margin-top:8px">✓ Ya confirmaste tu asistencia</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  if (window.lucide) lucide.createIcons();
+
+  grid.querySelectorAll('[data-confirmar-evento]').forEach(btn => btn.addEventListener('click', async () => {
+    const eventoId = btn.dataset.confirmarEvento;
+    btn.disabled = true; btn.textContent = 'Confirmando…';
+    const { error } = await supabase.from('confirmaciones_evento').insert({ evento_id: eventoId, miembro_id: _miembroId });
+    if (error && error.code !== '23505') {
+      toast('Error: ' + error.message);
+      btn.disabled = false; btn.textContent = 'Confirmar asistencia';
+      return;
+    }
+    btn.style.display = 'none';
+    const msg = grid.querySelector(`[data-confirmado-msg="${eventoId}"]`);
+    if (msg) msg.style.display = 'block';
+  }));
+}
+window.cargarEducacion = cargarEducacion;
+
 async function cargarTienda() {
   if (_tiendaCargada) return;
   _tiendaCargada = true;
@@ -1804,6 +1873,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $$(".sb-link[data-panel]").forEach(l => l.addEventListener("click", () => {
     irPanel(l.dataset.panel);
     if (l.dataset.panel === 'tienda') cargarTienda();
+    if (l.dataset.panel === 'educacion') cargarEducacion();
     if (l.dataset.panel === 'soporte') cargarSoporte();
   }));
 

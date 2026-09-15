@@ -115,6 +115,7 @@
         <button class="ad-link" data-panel="tienda"><i data-lucide="package"></i> Tienda</button>
         <button class="ad-link" data-panel="contenido"><i data-lucide="image"></i> Contenido</button>
         <button class="ad-link" data-panel="programas"><i data-lucide="heart-handshake"></i> Programas sociales</button>
+        <button class="ad-link" data-panel="educacion"><i data-lucide="graduation-cap"></i> Educación</button>
         <div class="ad-nav__lbl">Finanzas</div>
         <button class="ad-link" data-panel="ventas"><i data-lucide="banknote"></i> Ventas</button>
         <button class="ad-link" data-panel="suscripciones"><i data-lucide="repeat"></i> Suscripciones</button>
@@ -164,6 +165,7 @@
         <section class="ad-panel" id="p-tienda" data-screen-label="Admin · Tienda"></section>
         <section class="ad-panel" id="p-contenido" data-screen-label="Admin · Contenido"></section>
         <section class="ad-panel" id="p-programas" data-screen-label="Admin · Programas"></section>
+        <section class="ad-panel" id="p-educacion" data-screen-label="Admin · Educación"></section>
         <section class="ad-panel" id="p-ventas" data-screen-label="Admin · Ventas"></section>
         <section class="ad-panel" id="p-suscripciones" data-screen-label="Admin · Suscripciones"></section>
         <section class="ad-panel" id="p-contabilidad" data-screen-label="Admin · Contabilidad"></section>
@@ -195,7 +197,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=5"></script>
-  <script src="admin.js?v=22"></script>
+  <script src="admin.js?v=23"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -1417,6 +1419,122 @@ function bindFormProg(){setTimeout(()=>{
     window.cerrarModal?.();cargarProgramas();toast(id?'Programa actualizado ✓':'Programa creado ✓');
   });if(window.lucide)lucide.createIcons();
 },80);}
+
+/* ---- EDUCACIÓN: facilitadores y eventos ---- */
+let _eventosEdu=[], _facilitadoresEdu=[];
+async function cargarEventosEducacionAdmin(){
+  const[{data:eventos},{data:facilitadores},{data:confirmaciones}]=await Promise.all([
+    supabase.from('eventos_educacion').select('*,facilitadores_educacion(nombre)').order('fecha',{ascending:false}),
+    supabase.from('facilitadores_educacion').select('id,nombre'),
+    supabase.from('confirmaciones_evento').select('evento_id'),
+  ]);
+  _eventosEdu=eventos||[];_facilitadoresEdu=facilitadores||[];
+  const cont=$("#edutab-eventos");if(!cont)return;
+  const countConf=id=>(confirmaciones||[]).filter(c=>c.evento_id===id).length;
+  const lista=_eventosEdu.length?_eventosEdu.map(e=>`<div style="display:flex;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
+    ${e.imagen_url?`<img src="${e.imagen_url}" style="width:72px;height:72px;object-fit:cover;border-radius:6px;flex-shrink:0">`:`<span class="ad-av">${esc((e.titulo||'E')[0])}</span>`}
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:600;margin-bottom:4px">${esc(e.titulo)}</div>
+      <div style="font-size:13px;color:rgba(242,240,234,.5)">${new Date(e.fecha+'T00:00:00').toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})}${e.facilitadores_educacion?.nombre?' · '+esc(e.facilitadores_educacion.nombre):''}</div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;flex-wrap:wrap">
+      <button class="ad-btn" data-ver-conf="${e.id}">${ic('users')} ${countConf(e.id)} confirmados</button>
+      <span class="ad-pill ${e.activo?'activo':'inactivo'}" data-tog-evento="${e.id}" data-activo="${e.activo}" style="cursor:pointer"><span class="d"></span>${e.activo?'Activo':'Inactivo'}</span>
+      <button class="ad-btn" data-ed-evento="${e.id}">${ic("pencil")}</button><button class="ad-btn" data-rm-evento="${e.id}">${ic("trash-2")}</button>
+    </div></div>`).join(''):`<p style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">No hay eventos aún.</p>`;
+  cont.innerHTML=`<div class="ad-toolbar"><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="btn-evento-add">${ic("plus")} Nuevo evento</button></div>${lista}`;
+  if(window.lucide)lucide.createIcons();
+}
+window.cargarEventosEducacionAdmin=cargarEventosEducacionAdmin;
+
+async function cargarFacilitadoresAdmin(){
+  const{data}=await supabase.from('facilitadores_educacion').select('*').order('created_at',{ascending:false});
+  _facilitadoresEdu=data||[];
+  const cont=$("#edutab-facilitadores");if(!cont)return;
+  const lista=_facilitadoresEdu.length?_facilitadoresEdu.map(f=>`<div style="display:flex;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
+    ${f.foto_url?`<img src="${f.foto_url}" style="width:56px;height:56px;object-fit:cover;border-radius:50%;flex-shrink:0">`:`<span class="ad-av">${esc((f.nombre||'F')[0])}</span>`}
+    <div style="flex:1;min-width:0"><div style="font-weight:600;margin-bottom:4px">${esc(f.nombre)}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${esc(f.descripcion)||''}</div></div>
+    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+      <button class="ad-btn" data-ed-facil="${f.id}">${ic("pencil")}</button><button class="ad-btn" data-rm-facil="${f.id}">${ic("trash-2")}</button>
+    </div></div>`).join(''):`<p style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">No hay facilitadores aún.</p>`;
+  cont.innerHTML=`<div class="ad-toolbar"><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="btn-facil-add">${ic("plus")} Nuevo facilitador</button></div>${lista}`;
+  if(window.lucide)lucide.createIcons();
+}
+window.cargarFacilitadoresAdmin=cargarFacilitadoresAdmin;
+
+function htmlFormFacil(f={}){return `
+  <div class="ad-field"><label>Nombre *</label><input id="fac-nom" type="text" value="${(f.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Andrea Gómez"></div>
+  <div class="ad-field"><label>Descripción</label><textarea id="fac-desc" rows="3" placeholder="Breve bio del facilitador">${f.descripcion||''}</textarea></div>
+  <div class="ad-field"><label>Foto (opcional)</label>${f.foto_url?`<img src="${f.foto_url}" style="width:100px;height:100px;object-fit:cover;border-radius:50%;margin-bottom:10px">`:''}<input id="fac-img" type="file" accept="image/*"><input type="hidden" id="fac-img-url" value="${f.foto_url||''}"></div>
+  <div class="ad-toolbar" style="margin:6px 0 0"><div class="ad-spacer"></div><button class="ad-btn" id="fac-cancel">Cancelar</button><button class="ad-btn ad-btn--verde" id="fac-save" data-id="${f.id||''}">${ic("check")} ${f.id?'Guardar cambios':'Crear facilitador'}</button></div>`;}
+function bindFormFacil(){setTimeout(()=>{
+  $("#fac-cancel")?.addEventListener('click',()=>window.cerrarModal?.());
+  const btn=$("#fac-save");
+  btn?.addEventListener('click',async()=>{
+    const nombre=$("#fac-nom")?.value.trim();if(!nombre){toast('El nombre es obligatorio');return;}
+    btn.disabled=true;let foto_url=$("#fac-img-url")?.value||null;
+    const file=$("#fac-img")?.files?.[0];if(file)try{foto_url=await subirImagen(file);}catch(_){}
+    const payload={nombre,descripcion:$("#fac-desc")?.value.trim()||null,foto_url};const id=btn.dataset.id;
+    id?await supabase.from('facilitadores_educacion').update(payload).eq('id',id):await supabase.from('facilitadores_educacion').insert(payload);
+    window.cerrarModal?.();cargarFacilitadoresAdmin();toast(id?'Facilitador actualizado ✓':'Facilitador creado ✓');
+  });if(window.lucide)lucide.createIcons();
+},80);}
+
+function htmlFormEvento(e={}){
+  const opts=_facilitadoresEdu.map(f=>`<option value="${f.id}" ${e.facilitador_id===f.id?'selected':''}>${esc(f.nombre)}</option>`).join('');
+  return `
+  <div class="ad-field"><label>Título *</label><input id="ev-titulo" type="text" value="${(e.titulo||'').replace(/"/g,'&quot;')}" placeholder="Ej: Taller de liderazgo"></div>
+  <div class="ad-field"><label>Descripción</label><textarea id="ev-desc" rows="3" placeholder="De qué trata el taller">${e.descripcion||''}</textarea></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="ad-field"><label>Fecha *</label><input id="ev-fecha" type="date" value="${e.fecha||''}"></div>
+    <div class="ad-field"><label>Lugar</label><input id="ev-lugar" type="text" value="${(e.lugar||'').replace(/"/g,'&quot;')}" placeholder="Sede del Club"></div>
+  </div>
+  <div class="ad-field"><label>Facilitador</label><select id="ev-facil"><option value="">Sin asignar</option>${opts}</select></div>
+  <div class="ad-field"><label>Pieza publicitaria (opcional)</label>${e.imagen_url?`<img src="${e.imagen_url}" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;margin-bottom:10px">`:''}<input id="ev-img" type="file" accept="image/*"><input type="hidden" id="ev-img-url" value="${e.imagen_url||''}"></div>
+  <div class="ad-field"><label>PDF del material <span style="font-weight:400;opacity:.5">— se puede agregar después del taller</span></label><input id="ev-pdf" type="file" accept="application/pdf"><input type="hidden" id="ev-pdf-url" value="${e.pdf_url||''}">${e.pdf_url?`<a href="${e.pdf_url}" target="_blank" style="font-size:12px;color:#6fdc8c;display:block;margin-top:4px">Ver PDF actual</a>`:''}</div>
+  <div class="ad-field"><label>Link de la clase grabada (Meet/Zoom) <span style="font-weight:400;opacity:.5">— se agrega después</span></label><input id="ev-grabacion" type="url" value="${e.link_grabacion||''}" placeholder="https://..."></div>
+  <div class="ad-toolbar" style="margin:6px 0 0"><div class="ad-spacer"></div><button class="ad-btn" id="ev-cancel">Cancelar</button><button class="ad-btn ad-btn--verde" id="ev-save" data-id="${e.id||''}">${ic("check")} ${e.id?'Guardar cambios':'Crear evento'}</button></div>`;
+}
+function bindFormEvento(){setTimeout(()=>{
+  $("#ev-cancel")?.addEventListener('click',()=>window.cerrarModal?.());
+  const btn=$("#ev-save");
+  btn?.addEventListener('click',async()=>{
+    const titulo=$("#ev-titulo")?.value.trim();if(!titulo){toast('El título es obligatorio');return;}
+    const fecha=$("#ev-fecha")?.value;if(!fecha){toast('La fecha es obligatoria');return;}
+    btn.disabled=true;
+    let imagen_url=$("#ev-img-url")?.value||null;
+    const imgFile=$("#ev-img")?.files?.[0];if(imgFile)try{imagen_url=await subirImagen(imgFile);}catch(_){}
+    let pdf_url=$("#ev-pdf-url")?.value||null;
+    const pdfFile=$("#ev-pdf")?.files?.[0];if(pdfFile)try{pdf_url=await subirImagen(pdfFile);}catch(_){}
+    const payload={
+      titulo,descripcion:$("#ev-desc")?.value.trim()||null,fecha,
+      lugar:$("#ev-lugar")?.value.trim()||null,
+      facilitador_id:$("#ev-facil")?.value||null,
+      imagen_url,pdf_url,
+      link_grabacion:$("#ev-grabacion")?.value.trim()||null,
+    };
+    const id=btn.dataset.id;
+    id?await supabase.from('eventos_educacion').update(payload).eq('id',id):await supabase.from('eventos_educacion').insert(payload);
+    window.cerrarModal?.();cargarEventosEducacionAdmin();toast(id?'Evento actualizado ✓':'Evento creado ✓');
+  });if(window.lucide)lucide.createIcons();
+},80);}
+
+async function verConfirmadosEvento(eventoId,titulo){
+  const{data}=await supabase.from('confirmaciones_evento').select('created_at,perfiles(nombre,whatsapp)').eq('evento_id',eventoId).order('created_at',{ascending:false});
+  const confs=data||[];
+  abrirModal(titulo,'Miembros que confirmaron asistencia',
+    !confs.length
+      ?`<p style="color:rgba(242,240,234,.4);text-align:center;padding:20px 0">Nadie ha confirmado todavía</p>`
+      :`<div class="ad-table-wrap"><table class="ad-table">
+          <thead><tr><th>Miembro</th><th style="text-align:right">Confirmó</th></tr></thead>
+          <tbody>${confs.map(c=>`<tr>
+            <td>${esc(c.perfiles?.nombre)||'—'}${c.perfiles?.whatsapp?` · <a href="https://wa.me/57${esc(c.perfiles.whatsapp.replace(/\D/g,''))}" target="_blank" style="color:#6fdc8c">WhatsApp</a>`:''}</td>
+            <td style="text-align:right"><span class="ad-table__num">${new Date(c.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}</span></td>
+          </tr>`).join('')}</tbody>
+        </table></div>`
+  );
+}
+window.verConfirmadosEvento=verConfirmadosEvento;
 
 /* ---- PROFESIONALES ---- */
 async function cargarProfesionales(){
@@ -2721,6 +2839,16 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const edProg=e.target.closest('[data-ed-prog]');if(edProg){const p=_programas.find(x=>x.id===edProg.dataset.edProg);if(p){abrirModal('Editar programa',p.nombre,htmlFormProg(p));bindFormProg();}return;}
     const togProg=e.target.closest('[data-tog-prog]');if(togProg){const activo=togProg.dataset.activo==='true';await supabase.from('programas').update({activo:!activo}).eq('id',togProg.dataset.togProg);cargarProgramas();return;}
     const rmProg=e.target.closest('[data-rm-prog]');if(rmProg&&confirm('¿Eliminar este programa?')){await supabase.from('programas').delete().eq('id',rmProg.dataset.rmProg);cargarProgramas();toast('Programa eliminado');return;}
+
+    if(e.target.closest('#btn-evento-add')){abrirModal('Nuevo evento','Se publicará en Educación',htmlFormEvento());bindFormEvento();return;}
+    const edEvento=e.target.closest('[data-ed-evento]');if(edEvento){const ev=_eventosEdu.find(x=>x.id===edEvento.dataset.edEvento);if(ev){abrirModal('Editar evento',ev.titulo,htmlFormEvento(ev));bindFormEvento();}return;}
+    const togEvento=e.target.closest('[data-tog-evento]');if(togEvento){const activo=togEvento.dataset.activo==='true';await supabase.from('eventos_educacion').update({activo:!activo}).eq('id',togEvento.dataset.togEvento);cargarEventosEducacionAdmin();return;}
+    const rmEvento=e.target.closest('[data-rm-evento]');if(rmEvento&&confirm('¿Eliminar este evento?')){await supabase.from('eventos_educacion').delete().eq('id',rmEvento.dataset.rmEvento);cargarEventosEducacionAdmin();toast('Evento eliminado');return;}
+    const verConf=e.target.closest('[data-ver-conf]');if(verConf){const ev=_eventosEdu.find(x=>x.id===verConf.dataset.verConf);if(ev)verConfirmadosEvento(ev.id,ev.titulo);return;}
+
+    if(e.target.closest('#btn-facil-add')){abrirModal('Nuevo facilitador','Aparecerá asociado a sus talleres',htmlFormFacil());bindFormFacil();return;}
+    const edFacil=e.target.closest('[data-ed-facil]');if(edFacil){const f=_facilitadoresEdu.find(x=>x.id===edFacil.dataset.edFacil);if(f){abrirModal('Editar facilitador',f.nombre,htmlFormFacil(f));bindFormFacil();}return;}
+    const rmFacil=e.target.closest('[data-rm-facil]');if(rmFacil&&confirm('¿Eliminar este facilitador?')){await supabase.from('facilitadores_educacion').delete().eq('id',rmFacil.dataset.rmFacil);cargarFacilitadoresAdmin();toast('Facilitador eliminado');return;}
     if(e.target.closest('#btn-prof-add')){abrirModal('Agregar profesional','Se publicará en el directorio',htmlFormProf());bindFormProf();return;}
     const aprobarProf=e.target.closest('[data-aprobar-prof]');if(aprobarProf){const id=aprobarProf.dataset.aprobarProf;const waProf=aprobarProf.dataset.waProf;const nomProf=aprobarProf.dataset.nomProf||'';await supabase.from('profesionales').update({estado:'aprobado'}).eq('id',id);if(waProf){fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:waProf,body:`¡Hola ${nomProf}! 🎉 Tu perfil de profesional en El Club de la Gente fue aprobado.\n\nMuy pronto activamos tu cuenta y quedas visible en el directorio de Profesionales para nuestros miembros Premium.\n\n¡Bienvenido al Club!\nEl Club de la Gente`})}).catch(()=>{});}cargarProfesionales();toast('Profesional aprobado — WhatsApp enviado ✓');return;}
     const activarProf=e.target.closest('[data-activar-prof]');if(activarProf){const pid=activarProf.dataset.activarProf;await supabase.from('profesionales').update({estado:'activo',activo:true}).eq('id',pid);const p=_profesionales.find(x=>x.id===pid);if(p?.user_id)await supabase.from('perfiles').update({plan:'vitalicia'}).eq('id',p.user_id);cargarProfesionales();toast('Profesional activado ✓ — vitalicia mientras esté afiliado');return;}

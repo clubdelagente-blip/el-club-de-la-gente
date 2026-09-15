@@ -51,6 +51,7 @@
           <li><button class="sb-link" data-panel="perfil"><i data-lucide="user"></i> Mi perfil</button></li>
           <li><button class="sb-link" data-panel="clubcard"><i data-lucide="credit-card"></i> Mi ClubCard</button></li>
           <li><button class="sb-link" data-panel="tienda"><i data-lucide="package"></i> Tienda <span class="sb-link__badge">Gratis</span></button></li>
+          <li><button class="sb-link" data-panel="educacion"><i data-lucide="graduation-cap"></i> Educación <span class="sb-link__badge">Gratis</span></button></li>
           <li><button class="sb-link" data-panel="profesionales-club"><i data-lucide="briefcase-medical"></i> Profesionales <span class="sb-link__badge">Premium</span></button></li>
           <li><button class="sb-link" data-panel="descuentos"><i data-lucide="receipt"></i> Mis descuentos</button></li>
           <li><button class="sb-link" data-panel="agente"><i data-lucide="message-circle"></i> Mi Agente <span class="sb-link__badge">WhatsApp</span></button></li>
@@ -382,6 +383,19 @@
               <p>Productos vendidos directamente por los aliados del Club, con descuento para miembros.</p>
             </div>
             <div id="tienda-aliados-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px"></div>
+          </div>
+        </section>
+
+        <!-- ============================================================
+             PANEL: EDUCACIÓN (gratis para todos los planes)
+             ============================================================ -->
+        <section class="panel-view" data-panel="educacion" data-screen-label="Educación">
+          <div class="dash-greet">
+            <h1>Educación</h1>
+            <p>Talleres presenciales del Club, gratis para todos los miembros. Material y clases grabadas quedan aquí para siempre.</p>
+          </div>
+          <div id="educacion-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
+            <div style="text-align:center;padding:60px 20px;grid-column:1/-1"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
           </div>
         </section>
 
@@ -1131,7 +1145,7 @@
   </style>
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <script type="module" src="dashboard.js?v=86"></script>
+  <script type="module" src="dashboard.js?v=87"></script>
   <script src="agente.js"></script>
 
   <template id="__bundler_thumbnail">

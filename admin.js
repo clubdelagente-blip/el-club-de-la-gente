@@ -26,6 +26,7 @@ const PANELES = {
   tienda:       { t: "Tienda del Club", s: "Productos que vende el Club directamente, con envío gestionado" },
   contenido:    { t: "Contenido", s: "Imágenes, videos y publicaciones de la web" },
   programas:    { t: "Programas sociales", s: "Programas, fundaciones, eventos y voluntarios" },
+  educacion:    { t: "Educación", s: "Talleres presenciales gratuitos para todos los miembros" },
   ventas:       { t: "Ventas", s: "Historial de transacciones y proyecciones" },
   suscripciones:{ t: "Suscripciones", s: "Renovaciones y cobros automáticos" },
   contabilidad: { t: "Contabilidad", s: "Ingresos, gastos y balance del Club" },
@@ -233,6 +234,28 @@ function renderProgramas() {
 }
 
 /* ============================================================
+   RENDER: EDUCACIÓN
+   ============================================================ */
+function renderEducacion() {
+  $("#p-educacion").innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      <button class="ad-link" data-edutab="eventos" style="width:auto;display:inline-flex" data-is-tab>Eventos</button>
+      <button class="ad-link" data-edutab="facilitadores" style="width:auto;display:inline-flex" data-is-tab>Facilitadores</button>
+    </div>
+    <div id="edutab-eventos"><div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div></div>
+    <div id="edutab-facilitadores" style="display:none"><div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div></div>`;
+  if (window.lucide) lucide.createIcons();
+  window.cargarEventosEducacionAdmin?.();
+  $$("[data-edutab]").forEach(b => b.addEventListener("click", () => {
+    const tab = b.dataset.edutab;
+    $("#edutab-eventos").style.display = tab === "eventos" ? "" : "none";
+    $("#edutab-facilitadores").style.display = tab === "facilitadores" ? "" : "none";
+    if (tab === "facilitadores") window.cargarFacilitadoresAdmin?.();
+  }));
+}
+window.renderEducacion = renderEducacion;
+
+/* ============================================================
    RENDER: VENTAS
    ============================================================ */
 function renderVentas() {
@@ -423,7 +446,7 @@ function irPanel(panel) {
     // referencia sin prefijo a un nombre que todavia no existe en ningun lado
     // (ni local ni en window) lanza ReferenceError y rompe TODO irPanel -- incluidos
     // paneles que no tienen nada que ver, como pasó con Dashboard.
-    const fn = ({ dashboard: renderDashboard, miembros: renderMiembros, aliados: window.renderAliados, planes: window.renderPlanes, profesionales: window.renderProfesionales, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: renderProgramas, ventas: renderVentas, suscripciones: renderSuscripciones, contabilidad: window.renderContabilidad, config: renderConfig, agente: renderAgente, preguntas: window.renderPreguntas })[panel];
+    const fn = ({ dashboard: renderDashboard, miembros: renderMiembros, aliados: window.renderAliados, planes: window.renderPlanes, profesionales: window.renderProfesionales, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: renderProgramas, educacion: renderEducacion, ventas: renderVentas, suscripciones: renderSuscripciones, contabilidad: window.renderContabilidad, config: renderConfig, agente: renderAgente, preguntas: window.renderPreguntas })[panel];
     if (fn) { fn(); RENDERED[panel] = true; }
   }
   if (window.lucide) lucide.createIcons();
