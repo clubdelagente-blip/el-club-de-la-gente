@@ -62,7 +62,7 @@ Deno.serve(async (req: Request) => {
     const pedidoId = parts.slice(1, 6).join("-");
 
     const { data: pedido, error: pedidoErr } = await supabase
-      .from("pedidos_club").select("id, monto, estado").eq("id", pedidoId).maybeSingle();
+      .from("pedidos_club").select("id, monto, estado, nombre_producto, envio_nombre, envio_direccion, envio_barrio, envio_telefono").eq("id", pedidoId).maybeSingle();
     if (pedidoErr || !pedido) {
       console.error("Pedido de tienda no encontrado:", pedidoId, pedidoErr);
       return new Response("OK", { status: 200, headers: corsHeaders });
@@ -84,6 +84,27 @@ Deno.serve(async (req: Request) => {
       return new Response("Error", { status: 500, headers: corsHeaders });
     }
     console.log(`Pedido de Tienda del Club ${pedidoId} marcado como pagado`);
+
+    // Avisar al equipo para que gestione el pedido con el proveedor
+    // (fulfillment manual, no hay otra forma de que se enteren).
+    const { data: configPedido } = await supabase
+      .from("configuracion").select("valor").eq("clave", "numero_admin_notificaciones").maybeSingle();
+    const numAdminPedido = configPedido?.valor as string | undefined;
+    if (numAdminPedido) {
+      try {
+        await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: numAdminPedido,
+            body: `🛍️ Nuevo pedido pagado en la Tienda del Club\n\nProducto: ${pedido.nombre_producto}\nMonto: $${pedido.monto?.toLocaleString("es-CO")}\n\nEnvío a: ${pedido.envio_nombre}\nDirección: ${pedido.envio_direccion}${pedido.envio_barrio ? `, ${pedido.envio_barrio}` : ""}\nTeléfono: ${pedido.envio_telefono}\n\nGestiónalo en Admin → Tienda del Club → Pedidos.`,
+          }),
+        });
+      } catch (e) {
+        console.error("Error avisando pedido de tienda:", e);
+      }
+    }
+
     return new Response("OK", { status: 200, headers: corsHeaders });
   }
 
