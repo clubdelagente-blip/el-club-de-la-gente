@@ -2648,7 +2648,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       if(!confirm('¿Aprobar este pago y activar la membresía?'))return;
       btn.disabled=true;btn.textContent='Aprobando…';
       try{
-        const r=await fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/aprobar-membresia',{
+        const r=await fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/aprobar-membresias',{
           method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({solicitud_id:id}),
         });
