@@ -1689,6 +1689,11 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.setItem("ecdlg_perfil", JSON.stringify(perfilCache));
     }
     const plan = perfData?.plan || null;
+    // El plan que tenía la última vez que abrió el dashboard EN ESTE navegador
+    // -- se compara contra el de ahora para detectar una activación que pasó
+    // "por fuera" (el admin la aprobó en Ventas mientras la persona no estaba
+    // en la página, así que nunca hubo un redirect con "nuevo=1" que avisara).
+    const planAnterior = localStorage.getItem("ecdlg_plan");
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
     if (plan) { localStorage.setItem("ecdlg_plan", plan); const sbPlanEl = document.getElementById("sb-plan-name"); if (sbPlanEl) sbPlanEl.textContent = PLAN_LABEL[plan] || plan; }
 
@@ -1721,10 +1726,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Segmentación del miembro nuevo: solo preguntamos lo que no sepamos ya
     // (registro manual trae nombre/fecha/whatsapp; Google solo trae nombre).
-    // Basta con "nuevo=1" en la URL (solo llega ahí justo tras registro/pago) —
-    // no depende de una marca en localStorage, que persiste entre cuentas
-    // distintas en el mismo navegador y podía bloquearlo indefinidamente.
-    if (esNuevo) {
+    // Dos formas de detectarlo: "nuevo=1" en la URL (registro o plan gratis,
+    // que se activan al instante y sí redirigen con ese parámetro), o un plan
+    // pago que cambió desde la última vez que vimos a esta persona en este
+    // navegador (básica/premium aprobados a mano en Ventas, que no redirigen
+    // a nadie porque el admin los aprueba en otra sesión por completo).
+    const sinRespuestasAun = !Object.keys(perfData?.respuestas_segmentacion || {}).length;
+    const planReciénActivado = plan && plan !== planAnterior && ["basica", "premium", "vitalicia"].includes(plan) && sinRespuestasAun;
+    if (esNuevo || planReciénActivado) {
       iniciarSegmentacion({ ...perfData, nombre });
     }
 
