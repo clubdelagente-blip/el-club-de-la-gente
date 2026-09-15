@@ -35,7 +35,7 @@
   font-size: 13.5px; font-weight: 500; color: var(--tinta-60); cursor: pointer;
   transition: background .2s, color .2s; border: none; background: none; width: 100%; text-align: left; font-family: var(--cuerpo);
 }
-.sb-link i { width: 18px; height: 18px; flex: none; }
+.sb-link i, .sb-link svg { width: 18px !important; height: 18px !important; flex: none; }
 .sb-link:hover { background: var(--crema-2); color: var(--tinta); }
 .sb-link.is-active { background: var(--negro); color: var(--crema); }
 .sb-link__badge { margin-left: auto; font-size: 10px; font-weight: 700; background: var(--verde-soft); color: var(--verde); padding: 2px 8px; border-radius: 100px; }
