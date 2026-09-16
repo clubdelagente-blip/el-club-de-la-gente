@@ -224,7 +224,7 @@ function clienteAislado(){
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
 }
-let _aliados=[], _anuncios=[], _programas=[], _profesionales=[], _gastos=[], _categoriasGasto=[], _pagos=[], _contMes=null, _contGastosMes=[], _contPagosMes=[], _contConfig={iva_pct:19,ica_pct:0.92,fundadores_pct:40,renta_pct:35,comision_tienda_pct:10};
+let _aliados=[], _anuncios=[], _programas=[], _profesionales=[], _gastos=[], _categoriasGasto=[], _pagos=[], _contMes=null, _contGastosMes=[], _contPagosMes=[], _contConfig={iva_pct:19,ica_pct:0.92,fundador_pct:20,reserva_legal_pct:10,disponible_pct:10,renta_pct:35,comision_tienda_pct:10};
 let _pedidosCom=[], _ingresosManuales=[], _categoriasIngreso=[], _contComisionMes=[], _contIngManMes=[], _contFilasIngreso=[], _contFiltroIngreso=null;
 
 // Arranca con esta lista por defecto y se reemplaza por las opciones reales de
@@ -2032,9 +2032,13 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const trasIva=trasWompi-ivaValor;
     const icaValor=trasIva*(cfg.ica_pct/100);
     const trasIca=trasIva-icaValor;
-    const fundadoresValor=trasIca*(cfg.fundadores_pct/100);
-    const trasFundadores=trasIca-fundadoresValor;
-    const trasGastos=trasFundadores-gastosMes;
+    const fundadorValor=trasIca*(cfg.fundador_pct/100);
+    const trasFundador=trasIca-fundadorValor;
+    const reservaLegalValor=trasFundador*(cfg.reserva_legal_pct/100);
+    const trasReservaLegal=trasFundador-reservaLegalValor;
+    const disponibleValor=trasReservaLegal*(cfg.disponible_pct/100);
+    const trasDisponible=trasReservaLegal-disponibleValor;
+    const trasGastos=trasDisponible-gastosMes;
     const rentaValor=Math.max(0,trasGastos)*(cfg.renta_pct/100);
     const utilidadNeta=trasGastos-rentaValor;
 
@@ -2101,7 +2105,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
             <tr><td>Ingresos del mes</td><td>—</td><td style="text-align:right">—</td><td style="text-align:right"><span class="ad-num-strong">${COPc(ingresosMes)}</span></td></tr>
             <tr><td>(-) IVA (${cfg.iva_pct}%, incluido en el precio)</td><td><span class="ad-table__num">${COPc(trasWompi)} − (${COPc(trasWompi)} ÷ ${(1+cfg.iva_pct/100).toFixed(2)})</span></td><td style="text-align:right">${COPc(ivaValor)}</td><td style="text-align:right">${COPc(trasIva)}</td></tr>
             <tr><td>(-) ICA + Avisos y Tableros (≈${cfg.ica_pct}%)</td><td><span class="ad-table__num">${COPc(trasIva)} × ${cfg.ica_pct}%</span></td><td style="text-align:right">${COPc(icaValor)}</td><td style="text-align:right">${COPc(trasIca)}</td></tr>
-            <tr><td>(-) Remuneración de los fundadores (${cfg.fundadores_pct}%)</td><td><span class="ad-table__num">${COPc(trasIca)} × ${cfg.fundadores_pct}%</span></td><td style="text-align:right">${COPc(fundadoresValor)}</td><td style="text-align:right">${COPc(trasFundadores)}</td></tr>
+            <tr><td>(-) Remuneración del fundador (${cfg.fundador_pct}%)</td><td><span class="ad-table__num">${COPc(trasIca)} × ${cfg.fundador_pct}%</span></td><td style="text-align:right">${COPc(fundadorValor)}</td><td style="text-align:right">${COPc(trasFundador)}</td></tr>
+            <tr><td>(-) Reserva legal (${cfg.reserva_legal_pct}%)</td><td><span class="ad-table__num">${COPc(trasFundador)} × ${cfg.reserva_legal_pct}%</span></td><td style="text-align:right">${COPc(reservaLegalValor)}</td><td style="text-align:right">${COPc(trasReservaLegal)}</td></tr>
+            <tr><td>(-) Disponible para gastos operativos y ayudas sociales (${cfg.disponible_pct}%)</td><td><span class="ad-table__num">${COPc(trasReservaLegal)} × ${cfg.disponible_pct}%</span></td><td style="text-align:right">${COPc(disponibleValor)}</td><td style="text-align:right">${COPc(trasDisponible)}</td></tr>
             <tr><td>(-) Gastos operativos y sociales</td><td><span class="ad-table__num">Gastos reales del mes</span></td><td style="text-align:right">${COPc(gastosMes)}</td><td style="text-align:right">${COPc(trasGastos)}</td></tr>
             <tr><td>(-) Impuesto de Renta (${cfg.renta_pct}% sobre la utilidad)</td><td><span class="ad-table__num">${COPc(Math.max(0,trasGastos))} × ${cfg.renta_pct}%</span></td><td style="text-align:right">${COPc(rentaValor)}</td><td style="text-align:right">${COPc(utilidadNeta)}</td></tr>
             <tr><td colspan="3"><b>Disponible real / utilidad neta del Club</b></td><td style="text-align:right"><span class="ad-num-strong">≈ ${COPc(utilidadNeta)}</span></td></tr>
@@ -2115,7 +2121,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
       abrirModal('Editar porcentajes','Se aplican al desglose de ingresos',`
         <div class="ad-field"><label>IVA (%)</label><input id="cf-iva" type="number" step="0.01" value="${cfg.iva_pct}"></div>
         <div class="ad-field"><label>ICA + Avisos y Tableros (%)</label><input id="cf-ica" type="number" step="0.01" value="${cfg.ica_pct}"></div>
-        <div class="ad-field"><label>Remuneración de los fundadores (%)</label><input id="cf-fund" type="number" step="0.01" value="${cfg.fundadores_pct}"></div>
+        <div class="ad-field"><label>Remuneración del fundador (%)</label><input id="cf-fund" type="number" step="0.01" value="${cfg.fundador_pct}"></div>
+        <div class="ad-field"><label>Reserva legal (%)</label><input id="cf-reserva" type="number" step="0.01" value="${cfg.reserva_legal_pct}"></div>
+        <div class="ad-field"><label>Disponible para gastos operativos y ayudas sociales (%)</label><input id="cf-disp" type="number" step="0.01" value="${cfg.disponible_pct}"></div>
         <div class="ad-field"><label>Impuesto de Renta (%)</label><input id="cf-renta" type="number" step="0.01" value="${cfg.renta_pct}"></div>
         <div class="ad-toolbar" style="margin:16px 0 0"><div class="ad-spacer"></div>
           <button class="ad-btn" id="cf-cancel">Cancelar</button>
@@ -2128,7 +2136,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
           id:1,
           iva_pct:parseFloat($("#cf-iva")?.value)||0,
           ica_pct:parseFloat($("#cf-ica")?.value)||0,
-          fundadores_pct:parseFloat($("#cf-fund")?.value)||0,
+          fundador_pct:parseFloat($("#cf-fund")?.value)||0,
+          reserva_legal_pct:parseFloat($("#cf-reserva")?.value)||0,
+          disponible_pct:parseFloat($("#cf-disp")?.value)||0,
           renta_pct:parseFloat($("#cf-renta")?.value)||0,
         };
         const{error}=await supabase.from('config_contabilidad').upsert(payload);
