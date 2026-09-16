@@ -224,7 +224,7 @@ function clienteAislado(){
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
 }
-let _aliados=[], _anuncios=[], _programas=[], _profesionales=[], _gastos=[], _categoriasGasto=[], _pagos=[], _contMes=null, _contGastosMes=[], _contPagosMes=[], _contConfig={iva_pct:19,ica_pct:0.92,fundador_pct:20,reserva_legal_pct:10,disponible_pct:10,renta_pct:35,comision_tienda_pct:10};
+let _aliados=[], _anuncios=[], _programas=[], _profesionales=[], _gastos=[], _categoriasGasto=[], _pagos=[], _contMes=null, _contGastosMes=[], _contPagosMes=[], _contConfig={iva_pct:19,ica_pct:0.92,fundador_pct:20,reserva_legal_pct:10,disponible_pct:45,renta_pct:35,comision_tienda_pct:10};
 let _pedidosCom=[], _ingresosManuales=[], _categoriasIngreso=[], _contComisionMes=[], _contIngManMes=[], _contFilasIngreso=[], _contFiltroIngreso=null;
 
 // Arranca con esta lista por defecto y se reemplaza por las opciones reales de
@@ -2024,23 +2024,23 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const pctChip=(actual,anterior)=>{if(!anterior)return{chip:'—',dir:'up'};const pct=Math.round((actual-anterior)/anterior*100);return{chip:(pct>=0?'+':'')+pct+'%',dir:pct>=0?'up':'down'};};
     const chIng=pctChip(ingresosMes,ingresosMesAnt),chGas=pctChip(gastosMes,gastosMesAnt);
 
-    // Desglose de ingresos (IVA → ICA → fundadores → gastos → renta)
+    // Desglose de ingresos — cada porcentaje se calcula sobre el ingreso
+    // bruto del mes (no en cascada uno sobre el resultado del anterior),
+    // para que IVA+ICA+Fundador+Reserva+Disponible sumen ≈95% y lo que
+    // sobra (≈5%) sea la base real sobre la que se cobra Renta.
     const cfg=_contConfig;
-    // Los pagos ahora son transferencias manuales (Bre-B), sin comisión de pasarela.
-    const trasWompi=ingresosMes;
-    const ivaValor=trasWompi-(trasWompi/(1+cfg.iva_pct/100));
-    const trasIva=trasWompi-ivaValor;
-    const icaValor=trasIva*(cfg.ica_pct/100);
+    const ivaValor=ingresosMes*(cfg.iva_pct/100);
+    const trasIva=ingresosMes-ivaValor;
+    const icaValor=ingresosMes*(cfg.ica_pct/100);
     const trasIca=trasIva-icaValor;
-    const fundadorValor=trasIca*(cfg.fundador_pct/100);
+    const fundadorValor=ingresosMes*(cfg.fundador_pct/100);
     const trasFundador=trasIca-fundadorValor;
-    const reservaLegalValor=trasFundador*(cfg.reserva_legal_pct/100);
+    const reservaLegalValor=ingresosMes*(cfg.reserva_legal_pct/100);
     const trasReservaLegal=trasFundador-reservaLegalValor;
-    const disponibleValor=trasReservaLegal*(cfg.disponible_pct/100);
+    const disponibleValor=ingresosMes*(cfg.disponible_pct/100);
     const trasDisponible=trasReservaLegal-disponibleValor;
-    const trasGastos=trasDisponible-gastosMes;
-    const rentaValor=Math.max(0,trasGastos)*(cfg.renta_pct/100);
-    const utilidadNeta=trasGastos-rentaValor;
+    const rentaValor=Math.max(0,trasDisponible)*(cfg.renta_pct/100);
+    const utilidadNeta=trasDisponible-rentaValor;
 
     const ingresosAnio=totalIngresos(
       _pagos.filter(p=>new Date(p.created_at).getFullYear()===y),
@@ -2103,13 +2103,12 @@ document.addEventListener('DOMContentLoaded',async()=>{
           <thead><tr><th>Concepto</th><th>Cálculo</th><th style="text-align:right">Valor</th><th style="text-align:right">Queda</th></tr></thead>
           <tbody>
             <tr><td>Ingresos del mes</td><td>—</td><td style="text-align:right">—</td><td style="text-align:right"><span class="ad-num-strong">${COPc(ingresosMes)}</span></td></tr>
-            <tr><td>(-) IVA (${cfg.iva_pct}%, incluido en el precio)</td><td><span class="ad-table__num">${COPc(trasWompi)} − (${COPc(trasWompi)} ÷ ${(1+cfg.iva_pct/100).toFixed(2)})</span></td><td style="text-align:right">${COPc(ivaValor)}</td><td style="text-align:right">${COPc(trasIva)}</td></tr>
-            <tr><td>(-) ICA + Avisos y Tableros (≈${cfg.ica_pct}%)</td><td><span class="ad-table__num">${COPc(trasIva)} × ${cfg.ica_pct}%</span></td><td style="text-align:right">${COPc(icaValor)}</td><td style="text-align:right">${COPc(trasIca)}</td></tr>
-            <tr><td>(-) Remuneración del fundador (${cfg.fundador_pct}%)</td><td><span class="ad-table__num">${COPc(trasIca)} × ${cfg.fundador_pct}%</span></td><td style="text-align:right">${COPc(fundadorValor)}</td><td style="text-align:right">${COPc(trasFundador)}</td></tr>
-            <tr><td>(-) Reserva legal (${cfg.reserva_legal_pct}%)</td><td><span class="ad-table__num">${COPc(trasFundador)} × ${cfg.reserva_legal_pct}%</span></td><td style="text-align:right">${COPc(reservaLegalValor)}</td><td style="text-align:right">${COPc(trasReservaLegal)}</td></tr>
-            <tr><td>(-) Disponible para gastos operativos y ayudas sociales (${cfg.disponible_pct}%)</td><td><span class="ad-table__num">${COPc(trasReservaLegal)} × ${cfg.disponible_pct}%</span></td><td style="text-align:right">${COPc(disponibleValor)}</td><td style="text-align:right">${COPc(trasDisponible)}</td></tr>
-            <tr><td>(-) Gastos operativos y sociales</td><td><span class="ad-table__num">Gastos reales del mes</span></td><td style="text-align:right">${COPc(gastosMes)}</td><td style="text-align:right">${COPc(trasGastos)}</td></tr>
-            <tr><td>(-) Impuesto de Renta (${cfg.renta_pct}% sobre la utilidad)</td><td><span class="ad-table__num">${COPc(Math.max(0,trasGastos))} × ${cfg.renta_pct}%</span></td><td style="text-align:right">${COPc(rentaValor)}</td><td style="text-align:right">${COPc(utilidadNeta)}</td></tr>
+            <tr><td>(-) IVA (${cfg.iva_pct}%)</td><td><span class="ad-table__num">${COPc(ingresosMes)} × ${cfg.iva_pct}%</span></td><td style="text-align:right">${COPc(ivaValor)}</td><td style="text-align:right">${COPc(trasIva)}</td></tr>
+            <tr><td>(-) ICA + Avisos y Tableros (${cfg.ica_pct}%)</td><td><span class="ad-table__num">${COPc(ingresosMes)} × ${cfg.ica_pct}%</span></td><td style="text-align:right">${COPc(icaValor)}</td><td style="text-align:right">${COPc(trasIca)}</td></tr>
+            <tr><td>(-) Remuneración del fundador (${cfg.fundador_pct}%)</td><td><span class="ad-table__num">${COPc(ingresosMes)} × ${cfg.fundador_pct}%</span></td><td style="text-align:right">${COPc(fundadorValor)}</td><td style="text-align:right">${COPc(trasFundador)}</td></tr>
+            <tr><td>(-) Reserva legal (${cfg.reserva_legal_pct}%)</td><td><span class="ad-table__num">${COPc(ingresosMes)} × ${cfg.reserva_legal_pct}%</span></td><td style="text-align:right">${COPc(reservaLegalValor)}</td><td style="text-align:right">${COPc(trasReservaLegal)}</td></tr>
+            <tr><td>(-) Disponible para gastos operativos, inversión social y reinversión (${cfg.disponible_pct}%)</td><td><span class="ad-table__num">${COPc(ingresosMes)} × ${cfg.disponible_pct}%</span></td><td style="text-align:right">${COPc(disponibleValor)}</td><td style="text-align:right">${COPc(trasDisponible)}</td></tr>
+            <tr><td>(-) Impuesto de Renta (${cfg.renta_pct}% sobre el ≈${(100-cfg.iva_pct-cfg.ica_pct-cfg.fundador_pct-cfg.reserva_legal_pct-cfg.disponible_pct).toFixed(1)}% restante)</td><td><span class="ad-table__num">${COPc(Math.max(0,trasDisponible))} × ${cfg.renta_pct}%</span></td><td style="text-align:right">${COPc(rentaValor)}</td><td style="text-align:right">${COPc(utilidadNeta)}</td></tr>
             <tr><td colspan="3"><b>Disponible real / utilidad neta del Club</b></td><td style="text-align:right"><span class="ad-num-strong">≈ ${COPc(utilidadNeta)}</span></td></tr>
           </tbody>
         </table>
