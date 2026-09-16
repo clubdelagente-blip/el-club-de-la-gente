@@ -1729,7 +1729,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // WhatsApp (mismo mensaje que usa el Agente cuando alguien en Gratis le
     // escribe) — no hay que esperar a que la persona le escriba primero.
     if (planActivar === "gratis" && !rpcErr && perfData?.whatsapp) {
-      const msgGratis = `👋 ¡Hola! Con tu plan Gratis ya tienes:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).\n🛍️ Acceso ilimitado a la Tienda del Club.\n\nCuéntanos qué te interesa y te compartimos justo lo que necesitas:\nhttps://elclubdelagente.com/Bienvenida.html?id=${userId}\n\nSi quieres acceder a promociones, sorteos, este mismo agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿\nhttps://elclubdelagente.com/Planes.html`;
+      const msgGratis = `👋 ¡Hola! Con tu plan Gratis ya tienes:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).\n🛍️ Acceso ilimitado a la Tienda del Club.\n\nA continuación te invitamos a rellenar el siguiente formulario para validar tu membresía gratuita:\nhttps://elclubdelagente.com/Bienvenida.html?id=${userId}\n\nSi quieres acceder a promociones, sorteos, este mismo agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿`;
       fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
