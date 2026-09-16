@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=22">
-  <link rel="stylesheet" href="admin.css?v=4">
+  <link rel="stylesheet" href="admin.css?v=5">
   <style>
     body { background: #0A0A0A; }
     /* Chips de categoría en modal */
@@ -150,8 +150,10 @@
         </div>
         <div class="ad-top__right">
           <span class="ad-date"><i data-lucide="calendar-days"></i><span id="ad-date">—</span></span>
-          <button class="ad-iconbtn"><i data-lucide="search"></i></button>
-          <button class="ad-iconbtn"><i data-lucide="bell"></i><span class="dot"></span></button>
+          <div class="ad-notif" id="ad-notif-wrap" style="position:relative">
+            <button class="ad-iconbtn" id="ad-notif-btn"><i data-lucide="bell"></i><span class="ad-notif-badge" id="ad-notif-dot" hidden></span></button>
+            <div id="ad-notif-drop" style="display:none;position:absolute;top:calc(100% + 10px);right:0;width:320px;max-height:420px;overflow-y:auto;background:#161511;border:1px solid rgba(242,240,234,.12);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.4);z-index:50"></div>
+          </div>
         </div>
       </header>
 
@@ -249,6 +251,52 @@ async function cargarConfigTransporte(){
   const n=$("#cfg-num-admin");if(n)n.value=map.numero_admin_notificaciones||'';
 }
 window.cargarConfigTransporte=cargarConfigTransporte;
+
+/* ---- NOTIFICACIONES (campana): cuenta en vivo lo pendiente por resolver ---- */
+async function cargarNotificacionesAdmin(){
+  const[{data:solic},{data:postAl},{data:postProf},{data:pedClub},{data:pedTienda}]=await Promise.all([
+    supabase.from('solicitudes_membresia').select('id').eq('estado','pendiente'),
+    supabase.from('aliados_postulaciones').select('id').eq('estado','pendiente'),
+    supabase.from('profesionales').select('id').eq('estado','pendiente'),
+    supabase.from('pedidos_club').select('id').eq('estado','pendiente_pago'),
+    supabase.from('pedidos').select('id').eq('estado','pendiente'),
+  ]);
+  const items=[
+    {n:(solic||[]).length,ic:'credit-card',txt:'solicitud de membresía por revisar',txtp:'solicitudes de membresía por revisar',panel:'ventas'},
+    {n:(postAl||[]).length,ic:'store',txt:'postulación de aliado pendiente',txtp:'postulaciones de aliados pendientes',panel:'aliados'},
+    {n:(postProf||[]).length,ic:'briefcase-medical',txt:'postulación de profesional pendiente',txtp:'postulaciones de profesionales pendientes',panel:'profesionales'},
+    {n:(pedClub||[]).length,ic:'package',txt:'pago de la Tienda del Club por confirmar',txtp:'pagos de la Tienda del Club por confirmar',panel:'tienda'},
+    {n:(pedTienda||[]).length,ic:'shopping-bag',txt:'pedido de tienda de aliado pendiente',txtp:'pedidos de tiendas de aliados pendientes',panel:'tienda'},
+  ].filter(it=>it.n>0);
+  const total=items.reduce((s,it)=>s+it.n,0);
+  const dot=$('#ad-notif-dot');
+  if(dot){dot.hidden=total===0;dot.textContent=total>9?'9+':String(total)||'';}
+  const drop=$('#ad-notif-drop');
+  if(drop){
+    drop.innerHTML=`<div style="padding:14px 16px;border-bottom:1px solid rgba(242,240,234,.1);font-weight:700;font-size:13px">Pendientes por resolver</div>`+
+      (items.length?items.map(it=>`
+        <button class="ad-notif-item" data-notif-panel="${it.panel}" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;background:none;border:none;color:inherit;text-align:left;cursor:pointer;font-size:13px;border-bottom:1px solid rgba(242,240,234,.06)">
+          ${ic(it.ic)}<span>${it.n} ${it.n===1?it.txt:it.txtp}</span>
+        </button>`).join(''):`<div style="padding:24px 16px;text-align:center;color:rgba(242,240,234,.35);font-size:13px">No hay nada pendiente 🎉</div>`);
+    drop.querySelectorAll('[data-notif-panel]').forEach(b=>b.addEventListener('click',()=>{
+      drop.style.display='none';
+      window.irPanel?.(b.dataset.notifPanel);
+    }));
+    if(window.lucide)lucide.createIcons();
+  }
+}
+window.cargarNotificacionesAdmin=cargarNotificacionesAdmin;
+document.getElementById('ad-notif-btn')?.addEventListener('click',(e)=>{
+  e.stopPropagation();
+  const drop=$('#ad-notif-drop');if(!drop)return;
+  const abrir=drop.style.display==='none';
+  drop.style.display=abrir?'block':'none';
+  if(abrir)cargarNotificacionesAdmin();
+});
+document.addEventListener('click',(e)=>{
+  const wrap=$('#ad-notif-wrap');
+  if(wrap&&!wrap.contains(e.target)){const drop=$('#ad-notif-drop');if(drop)drop.style.display='none';}
+});
 
 /* ---- VENTAS (pagos reales + solicitudes de membresía pendientes) ---- */
 let _ventasSolicitudes=[];
@@ -1876,6 +1924,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     if(window.lucide)lucide.createIcons();
     window._agInitRealtime?.();
     cargarCategoriasClub();
+    cargarNotificacionesAdmin();
   }
   function showLoginScreen(msg){
     if(loginScreen)loginScreen.style.display='flex';
@@ -2785,6 +2834,13 @@ document.addEventListener('DOMContentLoaded',async()=>{
       btn.disabled=true;
       const{error}=await supabase.from('solicitudes_membresia').update({estado:'rechazado'}).eq('id',id);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}
+      if(s?.miembro_id){
+        await supabase.from('notificaciones_miembro').insert({
+          miembro_id:s.miembro_id,
+          titulo:'No pudimos confirmar tu pago',
+          cuerpo:'Escríbenos por WhatsApp para resolverlo y activar tu membresía.',
+        });
+      }
       if(s?.perfiles?.whatsapp){
         fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3',{
           method:'POST',headers:{'Content-Type':'application/json'},

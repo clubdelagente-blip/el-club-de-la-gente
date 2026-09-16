@@ -82,6 +82,8 @@
 .ad-iconbtn:hover { background: var(--surface-2); color: var(--txt); }
 .ad-iconbtn i { width: 17px; height: 17px; }
 .ad-iconbtn .dot { position: absolute; top: 8px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--verde-claro); border: 1.5px solid var(--bg); }
+.ad-notif-badge { position: absolute; top: -5px; right: -5px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: #e74c3c; color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--bg); }
+.ad-notif-item:hover { background: rgba(242,240,234,.05) !important; }
 
 .ad-burger { display: none; width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--txt); place-items: center; cursor: pointer; }
 

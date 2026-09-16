@@ -1078,6 +1078,43 @@ let _tiendaCargada = false;
 let _miembroId = null;
 let _comisionTiendaPct = 10;
 
+/* ---------- Notificaciones (campana del topbar) ---------- */
+async function cargarNotificacionesMiembro(userId) {
+  const { data } = await supabase.from("notificaciones_miembro").select("*").eq("miembro_id", userId).order("created_at", { ascending: false }).limit(20);
+  const lista = data || [];
+  const noLeidas = lista.filter(n => !n.leida).length;
+  const dot = document.getElementById("topbar-notif-dot");
+  if (dot) { dot.hidden = noLeidas === 0; dot.textContent = noLeidas > 9 ? "9+" : String(noLeidas || ""); }
+  const drop = document.getElementById("topbar-notif-drop");
+  if (drop) {
+    drop.innerHTML = `<div style="padding:14px 16px;border-bottom:1px solid #ebebeb;font-weight:700;font-size:13px">Notificaciones</div>` +
+      (lista.length ? lista.map(n => `
+        <div class="topbar-notif-item" style="padding:12px 16px;border-bottom:1px solid #f3f1ec;${n.leida ? "" : "background:#f7fbf8"}">
+          <div style="font-weight:700;font-size:13px;margin-bottom:2px">${esc(n.titulo)}</div>
+          ${n.cuerpo ? `<div style="font-size:12.5px;color:#777;line-height:1.4">${esc(n.cuerpo)}</div>` : ""}
+          <div style="font-size:11px;color:#999;margin-top:4px">${new Date(n.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</div>
+        </div>`).join("") : `<div style="padding:24px 16px;text-align:center;color:#999;font-size:13px">No tienes notificaciones todavía</div>`);
+  }
+}
+
+document.getElementById("topbar-notif-btn")?.addEventListener("click", async (e) => {
+  e.stopPropagation();
+  const drop = document.getElementById("topbar-notif-drop");
+  if (!drop) return;
+  const abrir = drop.style.display === "none";
+  drop.style.display = abrir ? "block" : "none";
+  if (abrir && _miembroId) {
+    await cargarNotificacionesMiembro(_miembroId);
+    await supabase.from("notificaciones_miembro").update({ leida: true }).eq("miembro_id", _miembroId).eq("leida", false);
+    const dot = document.getElementById("topbar-notif-dot");
+    if (dot) dot.hidden = true;
+  }
+});
+document.addEventListener("click", (e) => {
+  const wrap = document.getElementById("topbar-notif-wrap");
+  if (wrap && !wrap.contains(e.target)) { const drop = document.getElementById("topbar-notif-drop"); if (drop) drop.style.display = "none"; }
+});
+
 /* ---------- Educación (talleres presenciales, gratis para todos) ---------- */
 let _educacionCargada = false;
 async function cargarEducacion() {
@@ -1684,6 +1721,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const userId = session.user.id;
     _miembroId = userId;
     generarQR(userId);
+    cargarNotificacionesMiembro(userId);
 
     // Si viene de elegir un plan sin pago (gratis), se activa directo aquí.
     // Los planes de pago (básica/premium) NO se activan desde el navegador —

@@ -66,6 +66,13 @@ Deno.serve(async (req: Request) => {
     return new Response("Error", { status: 500 });
   }
 
+  const { error: notifErr } = await supabase.from("notificaciones_miembro").insert({
+    miembro_id: referidorId,
+    titulo: "¡Ganaste la membresía Vitalicia!",
+    cuerpo: "Por tus 5 referidos activos, tu membresía ya quedó en Vitalicia — descuentos ilimitados para siempre, sin ningún costo.",
+  });
+  if (notifErr) console.error("Error creando notificación de vitalicia:", notifErr);
+
   console.log(`Membresía vitalicia activada para ${referidorId}`);
 
   return new Response("Vitalicia activada", { status: 200 });

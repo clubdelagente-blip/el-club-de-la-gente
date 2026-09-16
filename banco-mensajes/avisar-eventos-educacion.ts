@@ -71,6 +71,16 @@ Deno.serve(async (_req: Request) => {
     resumenPorEvento[evento.id] = enviados;
     totalEnviados += enviados;
 
+    const notifRows = (miembros || []).filter((m) => m.whatsapp).map((m) => ({
+      miembro_id: m.id,
+      titulo: `Nuevo taller: ${evento.titulo}`,
+      cuerpo: `Mañana (${fechaFmt}) en El Club de la Gente${evento.lugar ? `, ${evento.lugar}` : ""}. Es gratis para todos los miembros.`,
+    }));
+    if (notifRows.length) {
+      const { error: notifErr } = await supabase.from("notificaciones_miembro").insert(notifRows);
+      if (notifErr) console.error("Error creando notificaciones del evento:", notifErr);
+    }
+
     const { error: errMarcar } = await supabase
       .from("eventos_educacion")
       .update({ aviso_enviado: true })

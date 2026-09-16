@@ -79,6 +79,14 @@ Deno.serve(async (req: Request) => {
     .eq("id", solicitud.id);
   if (estadoErr) console.error("Error marcando solicitud como aprobada:", estadoErr);
 
+  const planLabelNotif = solicitud.plan === "premium" ? "Premium" : "Básica";
+  const { error: notifErr } = await supabase.from("notificaciones_miembro").insert({
+    miembro_id: solicitud.miembro_id,
+    titulo: "Tu membresía ya está activa",
+    cuerpo: `Tu membresía ${planLabelNotif} quedó activa. Ya puedes mostrar tu ClubCard en cualquier aliado del Club para empezar a ahorrar.`,
+  });
+  if (notifErr) console.error("Error creando notificación de aprobación:", notifErr);
+
   // Confirmación de activación por WhatsApp — se espera (no fire-and-forget)
   // porque esta función puede terminar apenas se devuelve la Response.
   if (updated?.whatsapp) {
