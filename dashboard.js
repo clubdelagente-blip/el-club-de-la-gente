@@ -1691,7 +1691,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // aprueba el comprobante, por seguridad (activar_plan solo permite
     // auto-activar "gratis").
     const paramsIniciales = new URLSearchParams(location.search);
-    const esNuevo = paramsIniciales.get("nuevo") === "1";
+    // "bienvenida=1" es el parámetro real que usa el registro hoy (tanto
+    // manual como Google) desde que Gratis se activa directo sin pasar por
+    // Planes.html -- "nuevo=1" queda como el que sigue mandando el flujo de
+    // planes de pago vía ?activar=.
+    const esNuevo = paramsIniciales.get("nuevo") === "1" || paramsIniciales.get("bienvenida") === "1";
     const planActivar = paramsIniciales.get("activar");
     if (planActivar === "gratis") {
       const { error: rpcErr } = await supabase.rpc("activar_plan", { nuevo_plan: planActivar });
