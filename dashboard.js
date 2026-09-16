@@ -307,7 +307,10 @@ async function cargarDescuentos(userId, whatsapp) {
     if (banner) {
       if (limite === 0) {
         banner.style.display = "flex";
-        banner.innerHTML = `<span>${ic("ticket-percent")} Los descuentos de aliados son exclusivos desde Básica · <a href="Planes.html" style="color:#1a7a3c;font-weight:700">Ver membresías</a></span>`;
+        banner.innerHTML = `<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="display:inline-flex;align-items:center;gap:4px;background:#0f4423;color:#fff;font-weight:800;font-size:12.5px;padding:5px 11px;border-radius:20px;white-space:nowrap">🔥 Hasta 40% OFF</span>
+          <span>Solo para las primeras 50 personas — los descuentos de aliados son exclusivos desde Básica · <a href="Planes.html" style="color:#0f4423;font-weight:800;text-decoration:underline">Ver membresías →</a></span>
+        </span>`;
         banner.style.background = "#e8f5ee";
         banner.style.color = "#1a7a3c";
       } else {
