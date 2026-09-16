@@ -39,7 +39,12 @@ Deno.serve(async (req: Request) => {
 
   try {
   const { action, phone, code } = await req.json();
-  const digits = (phone ?? "").replace(/\D/g, "");
+  // Siempre en 10 dígitos sin el indicativo "57" -- si esto no coincide
+  // exactamente con lo que usó el registro para armar el correo interno
+  // (dígitos + "@clubdelagente.app"), generateLink crea una cuenta nueva y
+  // vacía en vez de resolver a la que ya existe.
+  let digits = (phone ?? "").replace(/\D/g, "");
+  if (digits.length > 10 && digits.startsWith("57")) digits = digits.slice(2);
 
   if (!digits || digits.length < 7) return json({ error: "Número inválido" }, 400);
 

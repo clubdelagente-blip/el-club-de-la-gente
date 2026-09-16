@@ -6,6 +6,16 @@ import { supabase } from './supabase.js';
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 
+// Deja siempre el número de celular en 10 dígitos, sin el indicativo "57"
+// -- si esto no fuera consistente entre el registro y el login, el correo
+// interno (dígitos + "@clubdelagente.app") no coincidiría y se crearía una
+// cuenta nueva y vacía cada vez que alguien lo escriba distinto.
+function normalizarWhatsapp(raw) {
+  let d = (raw || "").replace(/\D/g, "");
+  if (d.length > 10 && d.startsWith("57")) d = d.slice(2);
+  return d;
+}
+
 // Número de WhatsApp donde llegan los avisos de postulaciones nuevas
 // (aliados/profesionales) -- se lee de "configuracion" para que cambiarlo
 // no implique buscar el número hardcodeado en varios archivos.
@@ -292,7 +302,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Se guarda para poder crear el perfil completo desde el primer
       // momento -- Google no entrega WhatsApp ni fecha de nacimiento, y así
       // el mensaje de bienvenida no tiene que esperar a otro formulario.
-      localStorage.setItem("ecdlg_google_wa", wa);
+      localStorage.setItem("ecdlg_google_wa", normalizarWhatsapp(wa));
       localStorage.setItem("ecdlg_google_nombre", nombre);
       if (fecha) localStorage.setItem("ecdlg_google_fecha", fecha);
     }
@@ -322,7 +332,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     e.preventDefault();
     const btn = e.target.querySelector("button[type=submit]");
     const raw = $("#login-user").value.trim();
-    const digits = raw.replace(/\D/g, "");
+    const digits = normalizarWhatsapp(raw);
     if (digits.length < 7) { mostrarErrorLogin("Ingresa un número de WhatsApp válido."); return; }
     _loginPhone = digits;
 
@@ -477,7 +487,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const nombre = $("#campo-nombre").value.trim();
     const fechaISO = $("#campo-fecha").value;
     const whatsapp = $("#campo-wa").value.trim();
-    const waDigits = whatsapp.replace(/\D/g, "");
+    const waDigits = normalizarWhatsapp(whatsapp);
     const email = waDigits + "@clubdelagente.app";   // siempre solo dígitos
 
     if (!nombre || !whatsapp) { mostrarError("Completa todos los campos."); return; }
