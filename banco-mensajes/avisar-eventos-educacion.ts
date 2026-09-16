@@ -35,11 +35,14 @@ Deno.serve(async (_req: Request) => {
     return new Response(JSON.stringify({ ok: true, eventos: 0 }), { headers: { "Content-Type": "application/json" } });
   }
 
+  // Solo a quien dijo que sí en el formulario de Bienvenida -- no a todos
+  // los miembros activos, para no sentirse como spam a quien no le interesa.
   const { data: miembros, error: errMiembros } = await supabase
     .from("perfiles")
     .select("id, nombre, whatsapp")
     .in("plan", ["gratis", "basica", "premium", "vitalicia"])
-    .not("whatsapp", "is", null);
+    .not("whatsapp", "is", null)
+    .eq("interes_talleres", true);
 
   if (errMiembros) console.error("Error buscando miembros activos:", errMiembros);
 
