@@ -491,9 +491,17 @@ window.cargarDashboardReal=cargarDashboardReal;
 
 /* ---- MIEMBROS (datos reales) ---- */
 let _miembros=[];
+// Mismo cálculo y tabla que auth.js -- el bot arma su propio tono a partir
+// de este número recalculándolo en vivo (whatsapp-receive-v2.ts), así que
+// esto es solo para MOSTRARLE al admin qué arquetipo le tocó a cada quien.
+const ARQUETIPOS_ADMIN={
+  1:"El Líder",2:"El Diplomático",3:"El Creativo",4:"El Constructor",5:"El Aventurero",
+  6:"El Protector",7:"El Místico",8:"El Ejecutivo",9:"El Humanista",
+  11:"El Iluminado",22:"El Maestro Constructor",33:"El Maestro Sanador",
+};
 async function cargarMiembrosReal(tab,q){
   const[{data:perfiles},{data:descuentos}]=await Promise.all([
-    supabase.from('perfiles').select('id,nombre,whatsapp,plan,barrio,created_at').order('created_at',{ascending:false}),
+    supabase.from('perfiles').select('id,nombre,whatsapp,plan,barrio,mision,created_at').order('created_at',{ascending:false}),
     supabase.from('descuentos').select('miembro_id,ahorro'),
   ]);
   const ahorroPorMiembro={};
@@ -504,6 +512,7 @@ async function cargarMiembrosReal(tab,q){
     whatsapp:p.whatsapp||'',
     plan:p.plan||'sin_plan',
     barrio:p.barrio||'—',
+    mision:p.mision||null,
     fecha:new Date(p.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'}),
     fechaISO:p.created_at,
     estado:['gratis','basica','premium','vitalicia'].includes(p.plan)?'activo':'inactivo',
@@ -543,6 +552,7 @@ function abrirMiembroReal(id){
       <div class="ad-field"><label>Barrio</label><input value="${esc(u.barrio)}" readonly></div>
     </div>
     <div class="ad-field"><label>WhatsApp</label><input value="${esc(u.whatsapp)||'—'}" readonly></div>
+    <div class="ad-field"><label>Número de misión (tono con el que le habla el Agente)</label><input value="${u.mision?u.mision+' — '+(ARQUETIPOS_ADMIN[u.mision]||'—'):'Sin fecha de nacimiento registrada'}" readonly></div>
     <div class="ad-field"><label>Ahorro total acumulado</label><input value="${COP(u.ahorro)}" readonly></div>
     <div class="ad-toolbar" style="margin:6px 0 0">
       ${waDigits?`<a class="ad-btn ad-btn--wa" href="https://wa.me/57${waDigits}" target="_blank">${ic('message-circle')} Escribir por WhatsApp</a>`:''}
