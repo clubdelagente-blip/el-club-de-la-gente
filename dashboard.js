@@ -66,15 +66,6 @@ function iniciales(nombre) {
 }
 
 const PLAN_LABEL = { sin_plan: "Sin activar", gratis: "Gratis", basica: "Básica", premium: "Premium", vitalicia: "Vitalicia" };
-// Mismo cálculo y tabla que usa auth.js al registrarse -- el Agente de
-// WhatsApp arma su propio tono recalculando este número en vivo a partir
-// de la fecha de nacimiento (whatsapp-receive-v2.ts), así que esto es solo
-// para que el miembro vea qué arquetipo le tocó, no para calcular nada.
-const ARQUETIPOS = {
-  1: "El Líder", 2: "El Diplomático", 3: "El Creativo", 4: "El Constructor", 5: "El Aventurero",
-  6: "El Protector", 7: "El Místico", 8: "El Ejecutivo", 9: "El Humanista",
-  11: "El Iluminado", 22: "El Maestro Constructor", 33: "El Maestro Sanador",
-};
 const LIMITE_DESCUENTOS = { gratis: 0, basica: 2, premium: Infinity, vitalicia: Infinity };
 
 /* ---------- RENDER ---------- */
@@ -1768,7 +1759,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("bienvenida-cerrar")?.addEventListener("click", () => cerrarModalTienda());
     }
 
-    const { data: perfData, error: perfError } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol, fecha_vencimiento, categorias_interes, respuestas_segmentacion, foto_url, tiene_mascotas, tiene_hijos, mision").eq("id", userId).maybeSingle();
+    const { data: perfData, error: perfError } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol, fecha_vencimiento, categorias_interes, respuestas_segmentacion, foto_url, tiene_mascotas, tiene_hijos").eq("id", userId).maybeSingle();
     if (perfError) {
       // No mostrar "activa tu membresía" cuando en realidad es un error técnico
       // (ej. una columna que falta) — sería engañoso, parecería que no pagó.
@@ -1830,14 +1821,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       if (sbRenuevaEl) sbRenuevaEl.textContent = "Sin membresía activa";
       if (ccRenuevaEl) ccRenuevaEl.textContent = "—";
-    }
-
-    // Número de misión (mismo que usa el Agente de WhatsApp para su tono)
-    const misionEl = document.getElementById("perfil-mision");
-    if (misionEl) {
-      misionEl.textContent = perfData?.mision
-        ? `${perfData.mision} — ${ARQUETIPOS[perfData.mision] || "—"}`
-        : "Sin fecha de nacimiento registrada";
     }
 
     // Categorías de interés reales (nada de datos de ejemplo)
