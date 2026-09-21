@@ -85,8 +85,9 @@ function render() {
   // ClubCard (nuevo diseño)
   $$(".cc-card-name").forEach(el => el.textContent = u.nombre.toUpperCase());
   $$(".cc-card-codigo").forEach(el => el.textContent = u.codigo);
-  // Tema de la ClubCard según el plan: vitalicia y premium en dorado
-  // (vitalicia con más destello), básica en plata, gratis sin tema (default)
+  // Tema de la ClubCard según el plan: vitalicia y premium en el verde
+  // vivo de marca (vitalicia con más destello), básica en plata, gratis
+  // sin tema (default)
   $$(".ccv2").forEach(el => {
     el.classList.toggle("ccv2--premium", u.plan === "premium");
     el.classList.toggle("ccv2--vitalicia", u.plan === "vitalicia");
@@ -378,14 +379,14 @@ async function cargarDescuentos(userId, whatsapp) {
           <span>Solo para las primeras 50 personas — los descuentos de aliados son exclusivos desde Básica · <a href="Planes.html" style="color:#0f4423;font-weight:800;text-decoration:underline">Ver membresías →</a></span>
         </span>`;
         banner.style.background = "#e8f5ee";
-        banner.style.color = "#1a7a3c";
+        banner.style.color = "#095544";
       } else {
         banner.style.display = "flex";
         banner.innerHTML = restantes > 0
-          ? `<span>${ic("ticket-percent")} Te quedan <b>${restantes} descuento${restantes !== 1 ? "s" : ""}</b> este mes · <a href="Planes.html" style="color:#1a7a3c;font-weight:700">Actualizar a Premium</a></span>`
+          ? `<span>${ic("ticket-percent")} Te quedan <b>${restantes} descuento${restantes !== 1 ? "s" : ""}</b> este mes · <a href="Planes.html" style="color:#095544;font-weight:700">Actualizar a Premium</a></span>`
           : `<span style="color:#b45309">${ic("alert-triangle")} Llegaste al límite de ${limite} descuento${limite !== 1 ? "s" : ""} este mes · <a href="Planes.html" style="color:#b45309;font-weight:700">Actualizar a Premium</a></span>`;
         banner.style.background = restantes > 0 ? "#e8f5ee" : "#fef3c7";
-        banner.style.color = restantes > 0 ? "#1a7a3c" : "#b45309";
+        banner.style.color = restantes > 0 ? "#095544" : "#b45309";
       }
       if (window.lucide) lucide.createIcons();
     }
@@ -713,7 +714,7 @@ function inicializarMiTienda(negocio) {
 
 const ESTADO_PRODUCTO_ALIADO = {
   pendiente: { c: "#b45309", bg: "#fef3c7", t: "En revisión" },
-  aprobado:  { c: "#1a7a3c", bg: "#e8f5ee", t: "Publicado" },
+  aprobado:  { c: "#095544", bg: "#e8f5ee", t: "Publicado" },
   rechazado: { c: "#c0392b", bg: "#fdecea", t: "Rechazado" },
 };
 
@@ -893,8 +894,8 @@ async function abrirFormProducto(p = {}) {
 
 const ESTADO_PEDIDO = {
   pendiente:  { c: "#b45309", bg: "#fef3c7", t: "Pendiente de confirmar" },
-  confirmado: { c: "#1a7a3c", bg: "#e8f5ee", t: "Confirmado" },
-  entregado:  { c: "#1a7a3c", bg: "#e8f5ee", t: "Entregado" },
+  confirmado: { c: "#095544", bg: "#e8f5ee", t: "Confirmado" },
+  entregado:  { c: "#095544", bg: "#e8f5ee", t: "Entregado" },
   rechazado:  { c: "#c0392b", bg: "#fdecea", t: "Rechazado" },
 };
 
@@ -932,7 +933,7 @@ async function cargarPedidosAliado(aliadoId) {
         </div>
         <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};white-space:nowrap">${est.t}</span>
       </div>
-      ${p.comprobante_url ? `<a href="${esc(p.comprobante_url)}" target="_blank" style="font-size:12px;color:#1a7a3c;display:inline-block;margin-top:6px">Ver comprobante ↗</a>` : ""}
+      ${p.comprobante_url ? `<a href="${esc(p.comprobante_url)}" target="_blank" style="font-size:12px;color:#095544;display:inline-block;margin-top:6px">Ver comprobante ↗</a>` : ""}
       <div style="display:flex;gap:8px;margin-top:10px">
         ${p.estado === "pendiente" ? `
           <button data-confirmar-pedido="${p.id}" class="btn btn--primario" style="padding:8px 14px;font-size:12px">Confirmar pago</button>
@@ -1349,7 +1350,7 @@ async function cargarEducacion() {
     <div style="border:1px solid #ebebeb;border-radius:12px;overflow:hidden;background:#fff">
       ${e.imagen_url ? `<img src="${esc(e.imagen_url)}" alt="${esc(e.titulo)}" data-ampliar-flyer="${esc(e.imagen_url)}" style="width:100%;height:150px;object-fit:cover;cursor:zoom-in">` : ''}
       <div style="padding:16px">
-        <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:${esProximo ? 'var(--verde-soft)' : '#f1ede3'};color:${esProximo ? 'var(--verde)' : '#888'}">${esProximo ? 'Próximo' : 'Pasado'} · ${fechaFmt}</span>
+        <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:${esProximo ? 'var(--verde-soft)' : '#EAF3EF'};color:${esProximo ? 'var(--verde)' : '#888'}">${esProximo ? 'Próximo' : 'Pasado'} · ${fechaFmt}</span>
         <div style="font-weight:700;font-size:15px;margin:10px 0 4px">${esc(e.titulo)}</div>
         ${e.descripcion ? `<p style="font-size:13px;color:#666;line-height:1.5;margin-bottom:10px">${esc(e.descripcion)}</p>` : ''}
         ${e.facilitadores_educacion?.nombre ? `<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#777;margin-bottom:12px">
@@ -1489,7 +1490,7 @@ const ESTADO_PEDIDO_CLUB = {
   pedido_proveedor: { c: "#1d4ed8", bg: "#dbeafe", t: "Pedido al proveedor" },
   en_transito:      { c: "#7c3aed", bg: "#ede9fe", t: "En tránsito" },
   aduana:           { c: "#be185d", bg: "#fce7f3", t: "En aduana" },
-  entregado:        { c: "#1a7a3c", bg: "#e8f5ee", t: "Entregado" },
+  entregado:        { c: "#095544", bg: "#e8f5ee", t: "Entregado" },
   cancelado:        { c: "#c0392b", bg: "#fdecea", t: "Cancelado" },
 };
 
@@ -1743,13 +1744,13 @@ function abrirCheckoutProducto(p) {
       </select>
     </div>
     <div id="pc-envio-campos">
-      <p style="font-size:12px;color:#1a7a3c;font-weight:600;margin:-4px 0 12px">✓ El envío es completamente gratis</p>
+      <p style="font-size:12px;color:#095544;font-weight:600;margin:-4px 0 12px">✓ El envío es completamente gratis</p>
       <div class="cfg-campo"><label class="cfg-label">Nombre de quien recibe</label><input class="cfg-input" id="pc-nombre" type="text"></div>
       <div class="cfg-campo"><label class="cfg-label">Dirección</label><input class="cfg-input" id="pc-direccion" type="text"></div>
       <div class="cfg-campo"><label class="cfg-label">Teléfono de contacto</label><input class="cfg-input" id="pc-telefono" type="tel"></div>
     </div>
     <div id="pc-recoger-campos" style="display:none">
-      ${/^https?:\/\//i.test(p.aliados?.maps_url || '') ? `<a href="${esc(p.aliados.maps_url)}" target="_blank" rel="noopener" style="font-size:13px;color:#1a7a3c">Ver ubicación en Google Maps ↗</a>` : `<p style="font-size:13px;color:#777">El negocio no registró una ubicación.</p>`}
+      ${/^https?:\/\//i.test(p.aliados?.maps_url || '') ? `<a href="${esc(p.aliados.maps_url)}" target="_blank" rel="noopener" style="font-size:13px;color:#095544">Ver ubicación en Google Maps ↗</a>` : `<p style="font-size:13px;color:#777">El negocio no registró una ubicación.</p>`}
     </div>
     <div class="cfg-campo" style="margin-top:16px">
       <label class="cfg-label">Llave de pago del negocio</label>
@@ -2323,7 +2324,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const refCard = document.getElementById("card-referidos");
     if (refCard) {
       refCard.scrollIntoView({ behavior: "smooth", block: "center" });
-      refCard.style.outline = "3px solid #1a7a3c";
+      refCard.style.outline = "3px solid #095544";
       refCard.style.outlineOffset = "3px";
       setTimeout(() => { refCard.style.outline = ""; refCard.style.outlineOffset = ""; }, 2000);
     }

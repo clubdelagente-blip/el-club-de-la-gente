@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=22">
-  <link rel="stylesheet" href="admin.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=23">
+  <link rel="stylesheet" href="admin.css?v=6">
   <style>
     body { background: #0A0A0A; }
     /* Chips de categoría en modal */
@@ -17,8 +17,8 @@
       padding: 6px 14px; font-family: var(--cuerpo); font-size: 13px;
       color: rgba(26,26,24,.6); cursor: pointer; transition: all .15s;
     }
-    .fa-chip:hover { border-color: #1f9d3c; color: #1f9d3c; }
-    .fa-chip.is-on { background: #1f9d3c; border-color: #1f9d3c; color: #fff; font-weight: 600; }
+    .fa-chip:hover { border-color: #095544; color: #095544; }
+    .fa-chip.is-on { background: #095544; border-color: #095544; color: #fff; font-weight: 600; }
     /* Modal fondo blanco */
     .ad-modal {
       background: #fff !important;
@@ -48,7 +48,7 @@
     .ad-modal .ad-field input::placeholder,
     .ad-modal .ad-field textarea::placeholder { color: rgba(26,26,24,.3) !important; }
     .ad-modal .ad-field input:focus,
-    .ad-modal .ad-field textarea:focus { border-color: #1f9d3c !important; }
+    .ad-modal .ad-field textarea:focus { border-color: #095544 !important; }
     .ad-modal .ad-field input[type=file] {
       background: none !important;
       border: 1.5px dashed rgba(26,26,24,.2) !important;
@@ -56,11 +56,11 @@
     }
     .ad-modal .ad-btn { background: #f0eeea !important; border-color: rgba(26,26,24,.12) !important; color: #1a1a18 !important; }
     .ad-modal .ad-btn:hover { background: #e5e2dc !important; }
-    .ad-modal .ad-btn--verde { background: #1f9d3c !important; border-color: #1f9d3c !important; color: #fff !important; }
-    .ad-modal .ad-btn--verde:hover { background: #178a32 !important; }
+    .ad-modal .ad-btn--verde { background: #095544 !important; border-color: #095544 !important; color: #fff !important; }
+    .ad-modal .ad-btn--verde:hover { background: #17876D !important; }
     .ad-modal .ad-toolbar { border-top: 1px solid rgba(26,26,24,.1) !important; padding-top: 16px !important; margin-top: 4px !important; }
-    #login-screen input:focus { border-color: #1f9d3c !important; }
-    #login-btn:hover { background: #178a32 !important; }
+    #login-screen input:focus { border-color: #095544 !important; }
+    #login-btn:hover { background: #17876D !important; }
   </style>
 </head>
 <body>
@@ -75,19 +75,19 @@
       <div style="display:flex;align-items:center;justify-content:center;margin-bottom:40px">
         <img src="logo-club.png" alt="El Club de la Gente" style="height:52px;width:auto;filter:invert(1)">
       </div>
-      <div style="background:#131313;border:1px solid rgba(248,246,241,.09);border-radius:16px;padding:32px">
+      <div style="background:#131313;border:1px solid rgba(241, 247, 246,.09);border-radius:16px;padding:32px">
         <h2 style="font-family:'Fraunces',serif;font-size:26px;font-weight:600;color:#F2F0EA;margin-bottom:6px">Acceso Admin</h2>
         <p style="font-size:12px;color:rgba(242,240,234,.4);margin-bottom:28px">Ingresa tus credenciales para continuar</p>
         <div style="margin-bottom:16px">
           <label style="display:block;font-size:11px;font-weight:600;color:rgba(242,240,234,.4);margin-bottom:7px;letter-spacing:.06em">CORREO</label>
-          <input id="login-email" type="email" placeholder="tu@correo.com" autocomplete="email" style="width:100%;font-family:'Inter',sans-serif;font-size:13.5px;color:#F2F0EA;padding:12px 14px;border:1.5px solid rgba(248,246,241,.1);border-radius:8px;background:#0A0A0A;outline:none;transition:border-color .2s;box-sizing:border-box">
+          <input id="login-email" type="email" placeholder="tu@correo.com" autocomplete="email" style="width:100%;font-family:'Inter',sans-serif;font-size:13.5px;color:#F2F0EA;padding:12px 14px;border:1.5px solid rgba(241, 247, 246,.1);border-radius:8px;background:#0A0A0A;outline:none;transition:border-color .2s;box-sizing:border-box">
         </div>
         <div style="margin-bottom:24px">
           <label style="display:block;font-size:11px;font-weight:600;color:rgba(242,240,234,.4);margin-bottom:7px;letter-spacing:.06em">CONTRASEÑA</label>
-          <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password" style="width:100%;font-family:'Inter',sans-serif;font-size:13.5px;color:#F2F0EA;padding:12px 14px;border:1.5px solid rgba(248,246,241,.1);border-radius:8px;background:#0A0A0A;outline:none;transition:border-color .2s;box-sizing:border-box">
+          <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password" style="width:100%;font-family:'Inter',sans-serif;font-size:13.5px;color:#F2F0EA;padding:12px 14px;border:1.5px solid rgba(241, 247, 246,.1);border-radius:8px;background:#0A0A0A;outline:none;transition:border-color .2s;box-sizing:border-box">
         </div>
         <div id="login-error" style="display:none;font-size:12px;color:#e2685f;margin-bottom:16px;padding:10px 14px;background:rgba(226,104,95,.1);border-radius:8px;border:1px solid rgba(226,104,95,.2)"></div>
-        <button id="login-btn" style="width:100%;font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;color:#fff;background:#1f9d3c;border:none;border-radius:8px;padding:14px;cursor:pointer;transition:background .18s">Ingresar</button>
+        <button id="login-btn" style="width:100%;font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;color:#fff;background:#095544;border:none;border-radius:8px;padding:14px;cursor:pointer;transition:background .18s">Ingresar</button>
       </div>
     </div>
   </div>
@@ -131,7 +131,7 @@
         <div class="ad-side__admin">
           <span class="av" id="side-av">AG</span>
           <div style="flex:1;min-width:0"><div class="n" id="side-name">Admin · El Club</div><div class="r">Fusagasugá</div></div>
-          <button id="btn-logout" title="Cerrar sesión" style="width:32px;height:32px;border-radius:7px;border:1px solid rgba(248,246,241,.1);background:none;color:rgba(242,240,234,.4);display:grid;place-items:center;cursor:pointer;flex-shrink:0;transition:color .18s,border-color .18s" onmouseover="this.style.color='#e2685f';this.style.borderColor='rgba(226,104,95,.3)'" onmouseout="this.style.color='rgba(242,240,234,.4)';this.style.borderColor='rgba(248,246,241,.1)'"><i data-lucide="log-out"></i></button>
+          <button id="btn-logout" title="Cerrar sesión" style="width:32px;height:32px;border-radius:7px;border:1px solid rgba(241, 247, 246,.1);background:none;color:rgba(242,240,234,.4);display:grid;place-items:center;cursor:pointer;flex-shrink:0;transition:color .18s,border-color .18s" onmouseover="this.style.color='#e2685f';this.style.borderColor='rgba(226,104,95,.3)'" onmouseout="this.style.color='rgba(242,240,234,.4)';this.style.borderColor='rgba(241, 247, 246,.1)'"><i data-lucide="log-out"></i></button>
         </div>
       </div>
     </aside>
@@ -329,7 +329,7 @@ async function cargarVentasReal(){
               <td><div class="ad-cell-user"><span class="ad-av">${window.ini(s.perfiles?.nombre||'?')}</span><div><div class="ad-cell-user__name">${esc(s.perfiles?.nombre)||'—'}</div><div class="ad-table__num">${new Date(s.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}</div></div></div></td>
               <td><span class="ad-pill ${s.plan}"><span class="d"></span>${window.planLbl(s.plan)}</span></td>
               <td><span class="ad-num-strong">${COP(s.monto)}</span></td>
-              <td><a href="${esc(s.comprobante_url)}" target="_blank" style="color:#6fdc8c">Ver comprobante</a></td>
+              <td><a href="${esc(s.comprobante_url)}" target="_blank" style="color:#00DF81">Ver comprobante</a></td>
               <td style="text-align:right"><div style="display:flex;gap:6px;justify-content:flex-end">
                 <button class="ad-btn ad-btn--verde" data-vt-aprobar="${s.id}">${ic('check')} Aprobar</button>
                 <button class="ad-btn" data-vt-rechazar="${s.id}">${ic('x')} Rechazar</button>
@@ -781,14 +781,14 @@ function renderAgThreadReal(){
           <span style="font-size:13px;color:rgba(242,240,234,.75)">Grabando…</span>
           <span id="ag-rec-timer" style="font-size:13px;color:rgba(242,240,234,.5);font-variant-numeric:tabular-nums">0:00</span>
         </div>
-        <button id="ag-rec-send" type="button" style="width:44px;height:44px;border-radius:50%;background:#1a7a3c;color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none">${ic('send-horizontal')}</button>
+        <button id="ag-rec-send" type="button" style="width:44px;height:44px;border-radius:50%;background:#095544;color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none">${ic('send-horizontal')}</button>
       </div>`:`
       <div class="ag-compose__row" style="display:flex;align-items:flex-end;gap:10px">
         <input type="file" id="ag-attach-input" accept="image/*,video/*,audio/*" style="display:none">
         <button id="ag-attach-btn" type="button" style="width:44px;height:44px;border-radius:50%;background:rgba(242,240,234,.06);border:1px solid rgba(242,240,234,.18);color:#f2f0ea;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none">${ic('paperclip')}</button>
         <textarea class="ag-compose__in" id="ag-input" rows="1" placeholder="Escribe un mensaje para ${esc((c.nombre||'').split(' ')[0])}…" style="flex:1;font-size:13.5px;color:#f2f0ea;padding:12px 16px;border:1px solid rgba(242,240,234,.18);border-radius:22px;background:#0e0e0d;resize:none;max-height:120px;line-height:1.45"></textarea>
         <button id="ag-mic-btn" type="button" style="width:44px;height:44px;border-radius:50%;background:rgba(242,240,234,.06);border:1px solid rgba(242,240,234,.18);color:#f2f0ea;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none">${ic('mic')}</button>
-        <button class="ag-send" id="ag-send" style="width:44px;height:44px;border-radius:50%;background:#1a7a3c;color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none">${ic('send-horizontal')}</button>
+        <button class="ag-send" id="ag-send" style="width:44px;height:44px;border-radius:50%;background:#095544;color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none">${ic('send-horizontal')}</button>
       </div>`}
     </div>`;
   if(window.lucide)lucide.createIcons();
@@ -950,7 +950,7 @@ function diasRestantesHtml(fechaFin){
   const hoy=new Date();hoy.setHours(0,0,0,0);
   const fin=new Date(fechaFin+'T00:00:00');
   const dias=Math.round((fin-hoy)/86400000);
-  const color=dias<0?'#c0392b':dias<=7?'#f59e0b':'#6fdc8c';
+  const color=dias<0?'#c0392b':dias<=7?'#f59e0b':'#00DF81';
   const txt=dias<0?`Vencido hace ${Math.abs(dias)}d`:dias===0?'Vence hoy':`${dias}d restantes`;
   return`<br><span style="font-size:10px;color:${color}">${txt}</span>`;
 }
@@ -1054,7 +1054,7 @@ function htmlFormAliado(a={}){
     <div class="ad-field"><label>Fecha de fin</label><input id="fa-fecha-fin" type="date" value="${a.fecha_fin||''}"></div>
   </div>
   <div class="ad-field"><label>Contrato firmado</label>
-    ${a.contrato_url?`<a href="${a.contrato_url}" target="_blank" rel="noopener" style="display:block;font-size:12px;color:#1a7a3c;margin-bottom:8px">${ic('file-text')} Ver contrato actual</a>`:''}
+    ${a.contrato_url?`<a href="${a.contrato_url}" target="_blank" rel="noopener" style="display:block;font-size:12px;color:#095544;margin-bottom:8px">${ic('file-text')} Ver contrato actual</a>`:''}
     <input id="fa-contrato" type="file" accept="application/pdf,image/*">
     <input type="hidden" id="fa-contrato-url" value="${a.contrato_url||''}">
     <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Si no se renueva antes de la fecha de fin, el aliado se desactiva solo del Directorio.</span>
@@ -1063,7 +1063,7 @@ function htmlFormAliado(a={}){
   <hr style="border:none;border-top:1px solid rgba(26,26,24,.12);margin:20px 0 14px">
   <div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(26,26,24,.4);margin-bottom:10px">Cuenta de acceso</div>
   ${a.user_id?`
-    <p style="font-size:13px;color:#1a7a3c;background:rgba(31,157,60,.08);padding:10px 14px;border-radius:8px">✓ Ya tiene cuenta. Puede iniciar sesión con su email en Registro.html (pestaña "Inicia sesión" → "¿Eres profesional?").</p>
+    <p style="font-size:13px;color:#095544;background:rgba(9, 85, 68,.08);padding:10px 14px;border-radius:8px">✓ Ya tiene cuenta. Puede iniciar sesión con su email en Registro.html (pestaña "Inicia sesión" → "¿Eres profesional?").</p>
   `:`
     <div class="ad-field"><label>Email para su cuenta</label><input id="fa-cuenta-email" type="email" placeholder="negocio@correo.com"></div>
     <button type="button" class="ad-btn ad-btn--verde" id="fa-crear-cuenta" style="font-size:12px">${ic("key")} Crear cuenta de acceso</button>
@@ -1249,7 +1249,7 @@ async function cargarPromosInModal(aliadoId){
       ${p.foto_url?`<img src="${p.foto_url}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0">`:''}
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.descripcion}</div>
-        <div style="font-size:11px;color:rgba(26,26,24,.45)">${TIPO_LBL[p.tipo]||p.tipo} · ${ahorro} · <span style="color:${p.activa?'#1a7a3c':'#888'}">${p.activa?'Activa':'Inactiva'}</span></div>
+        <div style="font-size:11px;color:rgba(26,26,24,.45)">${TIPO_LBL[p.tipo]||p.tipo} · ${ahorro} · <span style="color:${p.activa?'#095544':'#888'}">${p.activa?'Activa':'Inactiva'}</span></div>
       </div>
       <button class="ad-btn ${p.en_carrusel?'ad-btn--verde':''}" data-carr-promo-in="${p.id}" data-carr="${p.en_carrusel}" style="font-size:11px;padding:4px 8px;flex-shrink:0" title="${p.en_carrusel?'Quitar del carrusel del landing':'Mostrar en el carrusel del landing (necesita foto)'}">${ic("image")}</button>
       <button class="ad-btn" data-ed-promo-in="${p.id}" style="font-size:11px;padding:4px 8px;flex-shrink:0">${ic("pencil")}</button>
@@ -1549,7 +1549,7 @@ function htmlFormEvento(e={}){
   </div>
   <div class="ad-field"><label>Facilitador</label><select id="ev-facil"><option value="">Sin asignar</option>${opts}</select></div>
   <div class="ad-field"><label>Pieza publicitaria (opcional)</label>${e.imagen_url?`<img src="${e.imagen_url}" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;margin-bottom:10px">`:''}<input id="ev-img" type="file" accept="image/*"><input type="hidden" id="ev-img-url" value="${e.imagen_url||''}"></div>
-  <div class="ad-field"><label>PDF del material <span style="font-weight:400;opacity:.5">— se puede agregar después del taller</span></label><input id="ev-pdf" type="file" accept="application/pdf"><input type="hidden" id="ev-pdf-url" value="${e.pdf_url||''}">${e.pdf_url?`<a href="${e.pdf_url}" target="_blank" style="font-size:12px;color:#6fdc8c;display:block;margin-top:4px">Ver PDF actual</a>`:''}</div>
+  <div class="ad-field"><label>PDF del material <span style="font-weight:400;opacity:.5">— se puede agregar después del taller</span></label><input id="ev-pdf" type="file" accept="application/pdf"><input type="hidden" id="ev-pdf-url" value="${e.pdf_url||''}">${e.pdf_url?`<a href="${e.pdf_url}" target="_blank" style="font-size:12px;color:#00DF81;display:block;margin-top:4px">Ver PDF actual</a>`:''}</div>
   <div class="ad-field"><label>Link de la clase grabada (Meet/Zoom) <span style="font-weight:400;opacity:.5">— se agrega después</span></label><input id="ev-grabacion" type="url" value="${e.link_grabacion||''}" placeholder="https://..."></div>
   <div class="ad-toolbar" style="margin:6px 0 0"><div class="ad-spacer"></div><button class="ad-btn" id="ev-cancel">Cancelar</button><button class="ad-btn ad-btn--verde" id="ev-save" data-id="${e.id||''}">${ic("check")} ${e.id?'Guardar cambios':'Crear evento'}</button></div>`;
 }
@@ -1586,7 +1586,7 @@ async function verConfirmadosEvento(eventoId,titulo){
       :`<div class="ad-table-wrap"><table class="ad-table">
           <thead><tr><th>Miembro</th><th style="text-align:right">Confirmó</th></tr></thead>
           <tbody>${confs.map(c=>`<tr>
-            <td>${esc(c.perfiles?.nombre)||'—'}${c.perfiles?.whatsapp?` · <a href="https://wa.me/57${esc(c.perfiles.whatsapp.replace(/\D/g,''))}" target="_blank" style="color:#6fdc8c">WhatsApp</a>`:''}</td>
+            <td>${esc(c.perfiles?.nombre)||'—'}${c.perfiles?.whatsapp?` · <a href="https://wa.me/57${esc(c.perfiles.whatsapp.replace(/\D/g,''))}" target="_blank" style="color:#00DF81">WhatsApp</a>`:''}</td>
             <td style="text-align:right"><span class="ad-table__num">${new Date(c.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}</span></td>
           </tr>`).join('')}</tbody>
         </table></div>`
@@ -1598,7 +1598,7 @@ window.verConfirmadosEvento=verConfirmadosEvento;
 async function cargarProfesionales(){
   const{data}=await supabase.from('profesionales').select('*').order('created_at',{ascending:false});
   _profesionales=data||[];const panel=$("#p-profesionales");if(!panel)return;
-  const EC={pendiente:'#f59e0b',aprobado:'#3b82f6',activo:'#1f9d3c'};
+  const EC={pendiente:'#f59e0b',aprobado:'#3b82f6',activo:'#095544'};
   const EL={pendiente:'Pendiente',aprobado:'Aprobado — pendiente de pago',activo:'Activo'};
   const lista=_profesionales.length?_profesionales.map(p=>{
     const est=p.estado||(p.activo?'activo':'pendiente');
@@ -1606,7 +1606,7 @@ async function cargarProfesionales(){
     const wa=(p.whatsapp||'').replace(/\D/g,'');
     return `<div style="display:flex;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
     ${p.imagen_url?`<img src="${p.imagen_url}" style="width:52px;height:52px;object-fit:cover;border-radius:50%;flex-shrink:0">`:`<span class="ad-av">${esc((p.nombre||'P')[0])}</span>`}
-    <div style="flex:1;min-width:0"><div style="font-weight:600;margin-bottom:2px">${esc(p.nombre)}</div><div style="font-size:12px;color:rgba(242,240,234,.4);margin-bottom:4px">${esc(p.area)} ${p.whatsapp?`· ${esc(p.whatsapp)}`:''}${diasRestantesHtml(p.fecha_fin)}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${esc(p.descripcion)}</div>${(p.documentos||[]).length?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">${p.documentos.map((d,i)=>`<a href="${d}" target="_blank" rel="noopener" style="font-size:11px;color:#6fdc8c;text-decoration:underline">${ic('file-text')} Documento ${i+1}</a>`).join('')}</div>`:''}${p.contrato_url?`<a href="${p.contrato_url}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;font-size:11px;color:#6fdc8c;text-decoration:underline">${ic('file-text')} Contrato firmado</a>`:''}</div>
+    <div style="flex:1;min-width:0"><div style="font-weight:600;margin-bottom:2px">${esc(p.nombre)}</div><div style="font-size:12px;color:rgba(242,240,234,.4);margin-bottom:4px">${esc(p.area)} ${p.whatsapp?`· ${esc(p.whatsapp)}`:''}${diasRestantesHtml(p.fecha_fin)}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${esc(p.descripcion)}</div>${(p.documentos||[]).length?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">${p.documentos.map((d,i)=>`<a href="${d}" target="_blank" rel="noopener" style="font-size:11px;color:#00DF81;text-decoration:underline">${ic('file-text')} Documento ${i+1}</a>`).join('')}</div>`:''}${p.contrato_url?`<a href="${p.contrato_url}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;font-size:11px;color:#00DF81;text-decoration:underline">${ic('file-text')} Contrato firmado</a>`:''}</div>
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0">
       <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${col}22;color:${col};border:1px solid ${col}55">${lbl}</span>
       <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
@@ -1635,7 +1635,7 @@ function htmlFormProf(p={}){return `
     <div class="ad-field"><label>Fecha de fin</label><input id="pf-fecha-fin" type="date" value="${p.fecha_fin||''}"></div>
   </div>
   <div class="ad-field"><label>Contrato firmado</label>
-    ${p.contrato_url?`<a href="${p.contrato_url}" target="_blank" rel="noopener" style="display:block;font-size:12px;color:#1a7a3c;margin-bottom:8px">${ic('file-text')} Ver contrato actual</a>`:''}
+    ${p.contrato_url?`<a href="${p.contrato_url}" target="_blank" rel="noopener" style="display:block;font-size:12px;color:#095544;margin-bottom:8px">${ic('file-text')} Ver contrato actual</a>`:''}
     <input id="pf-contrato" type="file" accept="application/pdf,image/*">
     <input type="hidden" id="pf-contrato-url" value="${p.contrato_url||''}">
     <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Si no se renueva antes de la fecha de fin, se desactiva solo del Directorio y pierde la membresía vitalicia.</span>
@@ -1734,7 +1734,7 @@ function htmlListaPromociones(promos,aliadoId,aliadoNombre){
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:2px">
           <span style="font-weight:600;font-size:14px">${p.descripcion}</span>
-          <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${p.activa?'rgba(31,157,60,.12)':'rgba(26,26,24,.08)'};color:${p.activa?'#1a7a3c':'#888'};font-weight:600">${p.activa?'Activa':'Inactiva'}</span>
+          <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:${p.activa?'rgba(9, 85, 68,.12)':'rgba(26,26,24,.08)'};color:${p.activa?'#095544':'#888'};font-weight:600">${p.activa?'Activa':'Inactiva'}</span>
         </div>
         <div style="font-size:12px;color:rgba(26,26,24,.5)">${TIPO_LBL[p.tipo]||p.tipo} · ${ahorro}</div>
         ${p.aplica_a&&p.aplica_a!=='toda_la_tienda'?`<div style="font-size:11px;color:rgba(26,26,24,.4);margin-top:2px">${p.producto_especifico||p.aplica_a}</div>`:''}
@@ -1804,7 +1804,7 @@ function htmlFormPromocion(p={},aliadoId){
       <div class="ad-field"><label>Precio normal ($) <span style="font-weight:400;color:rgba(26,26,24,.4)">(referencia)</span></label><input id="pr-precio-n-pct" type="number" min="0" value="${p.tipo==='porcentaje'?p.precio_normal||'':''}" placeholder="Ej: 50000"></div>
       <div class="ad-field"><label>Descuento (%)</label><input id="pr-pct" type="number" min="0" max="100" value="${pctVal}" placeholder="Ej: 20"></div>
     </div>
-    <div id="pr-ahorro-pct-prev" style="font-size:13px;color:#1a7a3c;font-weight:600;margin:-4px 0 8px;min-height:18px"></div>
+    <div id="pr-ahorro-pct-prev" style="font-size:13px;color:#095544;font-weight:600;margin:-4px 0 8px;min-height:18px"></div>
   </div>
   <div id="pr-calc-monto" style="display:${p.tipo==='monto_fijo'?'block':'none'}">
     <div class="ad-field"><label>Monto de descuento ($)</label><input id="pr-ahorro-fijo" type="number" min="0" value="${p.tipo==='monto_fijo'?p.ahorro_fijo||'':''}" placeholder="Ej: 5000"></div>
@@ -1814,7 +1814,7 @@ function htmlFormPromocion(p={},aliadoId){
       <div class="ad-field"><label>Precio normal ($)</label><input id="pr-precio-n" type="number" min="0" value="${p.tipo==='precio_especial'?p.precio_normal||'':''}" placeholder="Ej: 80000"></div>
       <div class="ad-field"><label>Precio con descuento ($)</label><input id="pr-precio-d" type="number" min="0" value="${p.tipo==='precio_especial'?p.precio_descuento||'':''}" placeholder="Ej: 60000"></div>
     </div>
-    <div id="pr-ahorro-prev" style="font-size:13px;color:#1a7a3c;font-weight:600;margin:-4px 0 8px;min-height:18px"></div>
+    <div id="pr-ahorro-prev" style="font-size:13px;color:#095544;font-weight:600;margin:-4px 0 8px;min-height:18px"></div>
   </div>
   <div id="pr-calc-regalo" style="display:${p.tipo==='regalo'?'block':'none'}">
     <div class="ad-field"><label>Valor del regalo ($) <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-regalo-val" type="number" min="0" value="${p.tipo==='regalo'?p.ahorro_fijo||'':''}" placeholder="Ej: 10000"></div>
@@ -1840,7 +1840,7 @@ function htmlFormPromocion(p={},aliadoId){
       ${p.foto_url?`<img src="${p.foto_url}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;margin-bottom:6px;display:block">`:''}<input id="pr-foto" type="file" accept="image/*"><input type="hidden" id="pr-foto-url" value="${p.foto_url||''}"></div>
   </div>
   <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:rgba(26,26,24,.6);margin-bottom:4px">
-    <input id="pr-activa" type="checkbox" style="width:16px;height:16px;accent-color:#1f9d3c" ${p.activa===false?'':'checked'}>
+    <input id="pr-activa" type="checkbox" style="width:16px;height:16px;accent-color:#095544" ${p.activa===false?'':'checked'}>
     Promoción activa
   </label>
   <div class="ad-toolbar" style="margin:12px 0 0"><div class="ad-spacer"></div>
@@ -2320,7 +2320,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
             </div></td>
             <td style="font-size:12px">${p.categorias_productos?.nombre || '—'}</td>
             <td style="font-size:13px;color:rgba(242,240,234,.5);text-decoration:line-through">${COP(p.precio_normal)}</td>
-            <td style="font-size:13px;font-weight:700;color:#6fdc8c">${COP(p.precio_descuento)}</td>
+            <td style="font-size:13px;font-weight:700;color:#00DF81">${COP(p.precio_descuento)}</td>
             <td style="text-align:right"><div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
               <span class="ad-pill ${p.activo?'activo':'inactivo'}" data-tog-prod="${p.id}" data-activo="${p.activo}" style="cursor:pointer"><span class="d"></span>${p.activo?'Activo':'Inactivo'}</span>
               <button class="ad-btn" data-ed-prod="${p.id}">${ic('pencil')}</button>
@@ -2396,7 +2396,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     pedido_proveedor:{c:'#60a5fa',t:'Pedido al proveedor'},
     en_transito:{c:'#a78bfa',t:'En tránsito'},
     aduana:{c:'#f472b6',t:'Aduana'},
-    entregado:{c:'#6fdc8c',t:'Entregado'},
+    entregado:{c:'#00DF81',t:'Entregado'},
     cancelado:{c:'#f87171',t:'Cancelado'},
   };
   async function cargarPedidosClubAdmin(){
@@ -2413,7 +2413,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
         const est=ESTADO_PEDIDO_CLUB[p.estado]||ESTADO_PEDIDO_CLUB.pendiente_pago;
         return `<tr>
           <td>${esc(p.nombre_producto)}</td>
-          <td style="font-size:12px">${esc(p.perfiles?.nombre)||'—'}${p.perfiles?.whatsapp?` · <a href="https://wa.me/57${esc(p.perfiles.whatsapp.replace(/\D/g,''))}" target="_blank" style="color:#6fdc8c">WhatsApp</a>`:''}</td>
+          <td style="font-size:12px">${esc(p.perfiles?.nombre)||'—'}${p.perfiles?.whatsapp?` · <a href="https://wa.me/57${esc(p.perfiles.whatsapp.replace(/\D/g,''))}" target="_blank" style="color:#00DF81">WhatsApp</a>`:''}</td>
           <td style="font-size:12px">${esc(p.envio_nombre)} · ${esc(p.envio_direccion)}${p.envio_barrio?', '+esc(p.envio_barrio):''}${p.envio_telefono?' · '+esc(p.envio_telefono):''}</td>
           <td><span class="ad-num-strong">${COP(p.monto)}</span></td>
           <td><span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.c}22;color:${est.c};white-space:nowrap">${est.t}</span>${p.numero_guia?`<div style="font-size:11px;color:rgba(242,240,234,.4);margin-top:4px">Guía: ${esc(p.numero_guia)}</div>`:''}</td>
@@ -2460,8 +2460,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
 
   const ESTADO_PEDIDO_ADMIN={
     pendiente:{c:'#fbbf24',t:'Pendiente'},
-    confirmado:{c:'#6fdc8c',t:'Confirmado'},
-    entregado:{c:'#6fdc8c',t:'Entregado'},
+    confirmado:{c:'#00DF81',t:'Confirmado'},
+    entregado:{c:'#00DF81',t:'Entregado'},
     rechazado:{c:'#f87171',t:'Rechazado'},
   };
   async function verDetalleTienda(aliadoId,nombreTienda){
@@ -2677,7 +2677,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       bloqueAnterior = p.bloque;
       const padre = p.pregunta_padre_id ? _preguntas.find(x => x.id === p.pregunta_padre_id) : null;
       return filaBloque + `<tr>
-        <td><div class="ad-cell-user__name">${padre ? '↳ ' : ''}${p.pregunta}${p.guardar_como_categorias ? ' <span style="font-size:10px;color:#6fdc8c">· categorías</span>' : ''}</div>${p.ayuda ? `<div style="font-size:11px;color:rgba(242,240,234,.35)">${p.ayuda}</div>` : ''}${padre ? `<div style="font-size:11px;color:rgba(242,240,234,.35)">Solo si "${padre.pregunta}" = ${p.mostrar_si_respuesta}</div>` : ''}</td>
+        <td><div class="ad-cell-user__name">${padre ? '↳ ' : ''}${p.pregunta}${p.guardar_como_categorias ? ' <span style="font-size:10px;color:#00DF81">· categorías</span>' : ''}</div>${p.ayuda ? `<div style="font-size:11px;color:rgba(242,240,234,.35)">${p.ayuda}</div>` : ''}${padre ? `<div style="font-size:11px;color:rgba(242,240,234,.35)">Solo si "${padre.pregunta}" = ${p.mostrar_si_respuesta}</div>` : ''}</td>
         <td>${TIPO_LBL[p.tipo] || p.tipo}</td>
         <td>${p.obligatoria ? ic('check') : '—'}</td>
         <td><div style="display:flex;align-items:center;gap:6px">
@@ -2959,7 +2959,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       <rect width="100" height="100" fill="#0A0A0A"/>
       <rect x="18" y="30" width="14" height="40" rx="2" fill="#2a2a28"/>
       <rect x="37" y="42" width="14" height="28" rx="2" fill="#2a2a28"/>
-      <rect x="56" y="22" width="14" height="48" rx="2" fill="#6fdc8c"/>
+      <rect x="56" y="22" width="14" height="48" rx="2" fill="#00DF81"/>
       <rect x="75" y="36" width="7" height="34" rx="2" fill="#2a2a28"/>
     </svg>
   </template>

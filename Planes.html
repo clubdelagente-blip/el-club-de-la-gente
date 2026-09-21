@@ -7,7 +7,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon-club.png" type="image/png">
   <link rel="apple-touch-icon" href="icon-club.png">
-  <meta name="theme-color" content="#008000">
+  <meta name="theme-color" content="#095544">
   <script>if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));</script>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=22">
-  <link rel="stylesheet" href="estilos.css?v=6">
+  <link rel="stylesheet" href="styles.css?v=23">
+  <link rel="stylesheet" href="estilos.css?v=7">
 </head>
 <body class="checkout-body">
   <div class="page-loader" id="page-loader"><img src="icon-club.png" alt=""></div>
@@ -116,7 +116,7 @@
   </div>
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <script type="module" src="checkout.js?v=18"></script>
+  <script type="module" src="checkout.js?v=19"></script>
 
   <!-- ============================================================
        TWEAKS PANEL — solo para edición de diseño, nunca para visitantes.
@@ -132,7 +132,7 @@
     <script type="text/babel" src="tweaks-panel.jsx"></script>
     <script type="text/babel">
       const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-        "accent": "#008000",
+        "accent": "#095544",
         "badgePos": "Centrado",
         "showRecomendado": true
       }/*EDITMODE-END*/;
@@ -165,7 +165,7 @@
               onChange={(v) => setTweak("badgePos", v)} />
             <TweakSection label="Marca" />
             <TweakColor label="Color de acento" value={t.accent}
-              options={["#008000", "#0E7C4B", "#1C7C8C", "#3B5BDB"]}
+              options={["#095544", "#0E7C4B", "#1C7C8C", "#3B5BDB"]}
               onChange={(v) => setTweak("accent", v)} />
           </TweaksPanel>
         );
@@ -221,10 +221,10 @@
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <rect width="100" height="100" fill="#F8F6F1"/>
+      <rect width="100" height="100" fill="#F1F7F6"/>
       <rect x="22" y="34" width="56" height="36" rx="5" fill="#1A1A1A"/>
       <rect x="29" y="44" width="13" height="9" rx="2" fill="#c9a44e"/>
-      <circle cx="68" cy="44" r="5" fill="none" stroke="#6fdc8c" stroke-width="1.4"/>
+      <circle cx="68" cy="44" r="5" fill="none" stroke="#00DF81" stroke-width="1.4"/>
     </svg>
   </template>
 

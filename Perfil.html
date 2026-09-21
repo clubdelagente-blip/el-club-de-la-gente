@@ -7,7 +7,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon-club.png" type="image/png">
   <link rel="apple-touch-icon" href="icon-club.png">
-  <meta name="theme-color" content="#008000">
+  <meta name="theme-color" content="#095544">
   <script>if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));</script>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,10 +15,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=22">
-  <link rel="stylesheet" href="estilos.css?v=6">
-  <link rel="stylesheet" href="dashboard.css?v=6">
-  <link rel="stylesheet" href="agente.css">
+  <link rel="stylesheet" href="styles.css?v=23">
+  <link rel="stylesheet" href="estilos.css?v=7">
+  <link rel="stylesheet" href="dashboard.css?v=7">
+  <link rel="stylesheet" href="agente.css?v=2">
 </head>
 <body class="dash-body">
   <div class="page-loader" id="page-loader"><img src="icon-club.png" alt=""></div>
@@ -244,7 +244,7 @@
           </div>
 
           <!-- Tarjeta referidos -->
-          <div id="card-referidos" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;background:linear-gradient(135deg,#0e4a23 0%,#1a7a3c 100%);color:#fff;padding:20px 24px;border-radius:14px;margin-bottom:20px">
+          <div id="card-referidos" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;background:linear-gradient(135deg,#0e4a23 0%,#095544 100%);color:#fff;padding:20px 24px;border-radius:14px;margin-bottom:20px">
             <div style="flex:1;min-width:220px">
               <div style="display:flex;align-items:center;gap:10px;margin-bottom:3px;flex-wrap:wrap">
                 <span style="font-size:14px;font-weight:700">¿Sabías que puedes usarlo gratis de por vida?</span>
@@ -411,7 +411,7 @@
             <p>Conecta con profesionales de confianza en Fusagasugá y revisa sus servicios y tarifas.</p>
           </div>
 
-          <div id="profes-club-bloqueado" style="display:none;text-align:center;padding:60px 20px;background:var(--crema-2,#f1ede3);border-radius:14px">
+          <div id="profes-club-bloqueado" style="display:none;text-align:center;padding:60px 20px;background:var(--crema-2,#EAF3EF);border-radius:14px">
             <i data-lucide="lock" style="width:32px;height:32px;color:var(--tinta-40,#888)"></i>
             <p style="font-size:16px;font-weight:600;margin:14px 0 6px">Este beneficio es exclusivo Premium</p>
             <p style="font-size:13px;color:var(--tinta-60,#666);max-width:360px;margin:0 auto 20px">Sube a Premium para ver el directorio completo de profesionales, sus servicios, tarifas y descuentos.</p>
@@ -471,9 +471,9 @@
                     <span class="ag-bar__back"><i data-lucide="chevron-left"></i></span>
                     <span class="ag-bar__avatar">
                       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="20" cy="20" r="18.5" stroke="#0E0E0E" stroke-width="1.6"/>
-                        <circle cx="20" cy="20" r="14" stroke="#008000" stroke-width="1.6"/>
-                        <text x="20" y="20" text-anchor="middle" dominant-baseline="central" font-family="Fraunces, serif" font-size="20" font-weight="700" fill="#0E0E0E">G</text>
+                        <circle cx="20" cy="20" r="18.5" stroke="#021B1A" stroke-width="1.6"/>
+                        <circle cx="20" cy="20" r="14" stroke="#095544" stroke-width="1.6"/>
+                        <text x="20" y="20" text-anchor="middle" dominant-baseline="central" font-family="Fraunces, serif" font-size="20" font-weight="700" fill="#021B1A">G</text>
                       </svg>
                     </span>
                     <span class="ag-bar__id">
@@ -833,7 +833,7 @@
               <span class="card__sub" style="font-size:12px;color:var(--tinta-40)">Solo lo ven los miembros Premium</span>
             </div>
             <div id="mis-servicios-list" style="padding:4px 0 8px"></div>
-            <div id="mis-servicios-form" style="display:none;padding:12px;background:var(--crema-2,#f8f6f1);border-radius:10px;margin-top:8px">
+            <div id="mis-servicios-form" style="display:none;padding:12px;background:var(--crema-2,#F1F7F6);border-radius:10px;margin-top:8px">
               <div class="cfg-campo">
                 <label class="cfg-label">Nombre del servicio</label>
                 <input class="cfg-input" id="ms-nombre" type="text" placeholder="Ej: Consulta general">
@@ -1039,7 +1039,7 @@
   <div class="activar-overlay" id="modal-tienda" style="display:none" role="dialog" aria-modal="true">
     <div class="activar-modal" id="modal-tienda-box" style="text-align:left;max-width:520px;max-height:85vh;overflow-y:auto;background:#fff">
       <button class="activar-modal__close" id="modal-tienda-close" aria-label="Cerrar">&times;</button>
-      <h2 class="activar-modal__title" id="modal-tienda-title" style="text-align:left;font-size:20px;color:#0e0e0e">—</h2>
+      <h2 class="activar-modal__title" id="modal-tienda-title" style="text-align:left;font-size:20px;color:#021B1A">—</h2>
       <div id="modal-tienda-body"></div>
     </div>
   </div>
@@ -1100,7 +1100,7 @@
     .activar-modal__icon svg { width: 28px; height: 28px; }
     .activar-modal__title {
       font-family: 'Fraunces', serif;
-      font-size: 24px; font-weight: 700; color: #0e0e0e; margin: 0 0 8px;
+      font-size: 24px; font-weight: 700; color: #021B1A; margin: 0 0 8px;
     }
     .activar-modal__sub { font-size: 14px; color: #666; line-height: 1.5; margin: 0 0 16px; }
     .activar-fomo {
@@ -1113,23 +1113,23 @@
       display: flex; align-items: center; gap: 14px; padding: 16px;
       border-radius: 14px; text-align: left; text-decoration: none;
       border: 2px solid #ebebeb; background: #fafafa;
-      cursor: pointer; color: #0e0e0e; width: 100%; font-family: inherit;
+      cursor: pointer; color: #021B1A; width: 100%; font-family: inherit;
     }
-    .activar-opt--pay { border-color: #1a7a3c; background: #f0faf4; }
+    .activar-opt--pay { border-color: #095544; background: #f0faf4; }
     .activar-opt > svg:first-of-type { flex-shrink: 0; width: 22px; height: 22px; }
     .activar-opt > svg:last-of-type { flex-shrink: 0; width: 18px; height: 18px; color: #aaa; margin-left: auto; }
     .activar-opt div { flex: 1; }
     .activar-opt strong { display: block; font-size: 14px; font-weight: 700; margin-bottom: 2px; }
     .activar-opt span { display: block; font-size: 12px; color: #777; }
-    .activar-opt--pay strong { color: #1a7a3c; }
+    .activar-opt--pay strong { color: #095544; }
 
     /* Campos de formulario (Mi tienda, Mi perfil, etc.) */
-    #modal-tienda-box { color: #0e0e0e; }
+    #modal-tienda-box { color: #021B1A; }
     .cfg-campo { margin-bottom: 14px; }
     .cfg-label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; }
     .cfg-input {
       width: 100%; padding: 10px 12px; border: 1px solid #ebebeb; border-radius: 10px;
-      font-family: 'Inter', sans-serif; font-size: 14px; background: #fff; color: #0e0e0e;
+      font-family: 'Inter', sans-serif; font-size: 14px; background: #fff; color: #021B1A;
       box-sizing: border-box;
     }
     textarea.cfg-input { resize: vertical; }
@@ -1140,7 +1140,7 @@
       background: transparent; color: #666; font-weight: 600; font-size: 13px;
       cursor: pointer; font-family: 'Inter', sans-serif;
     }
-    .neg-tab-btn.is-active { background: #e8f5ee; color: #1a7a3c; border-color: #e8f5ee; }
+    .neg-tab-btn.is-active { background: #e8f5ee; color: #095544; border-color: #e8f5ee; }
     @media (prefers-color-scheme: dark) {
       .neg-tab-btn { border-color: #3a3a3c; color: #9ca3af; }
       .neg-tab-btn.is-active { background: #0d3a1f; color: #4ade80; border-color: #0d3a1f; }
@@ -1153,21 +1153,21 @@
       .activar-modal__icon { background: #2c2c2e; color: #ccc; }
       .activar-modal__close { color: #6b7280; }
       .activar-opt { background: #2c2c2e; border-color: #3a3a3c; color: #f9fafb; }
-      .activar-opt--pay { background: #0d3a1f; border-color: #1a7a3c; }
+      .activar-opt--pay { background: #0d3a1f; border-color: #095544; }
       .activar-opt span { color: #9ca3af; }
     }
   </style>
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <script type="module" src="dashboard.js?v=96"></script>
+  <script type="module" src="dashboard.js?v=97"></script>
   <script type="module" src="agente.js?v=1"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <rect width="100" height="100" fill="#F1EDE3"/>
-      <rect x="14" y="20" width="26" height="60" rx="4" fill="#0E0E0E"/>
+      <rect width="100" height="100" fill="#EAF3EF"/>
+      <rect x="14" y="20" width="26" height="60" rx="4" fill="#021B1A"/>
       <rect x="48" y="30" width="38" height="22" rx="4" fill="#1A1A1A"/>
-      <circle cx="67" cy="64" r="6" fill="none" stroke="#008000" stroke-width="2"/>
+      <circle cx="67" cy="64" r="6" fill="none" stroke="#095544" stroke-width="2"/>
     </svg>
   </template>
 

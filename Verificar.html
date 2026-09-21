@@ -10,13 +10,13 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --verde: #1a7a3c;
-      --verde-claro: #e8f5ee;
+      --verde: #095544;
+      --verde-claro: #E3F7EE;
       --rojo: #c0392b;
       --rojo-claro: #fdecea;
-      --crema: #f8f6f1;
-      --tinta: #0e0e0e;
-      --tinta-40: rgba(14,14,14,.4);
+      --crema: #F1F7F6;
+      --tinta: #021B1A;
+      --tinta-40: rgba(2,27,26,.4);
       --display: 'Fraunces', Georgia, serif;
       --sans: 'Inter', sans-serif;
     }
@@ -167,7 +167,7 @@
           <option value="">Selecciona tu negocio…</option>
           ${opciones}
         </select>
-        <button id="btn-guardar-aliado" style="${btnStyle('#1a7a3c')}">Guardar</button>
+        <button id="btn-guardar-aliado" style="${btnStyle('#095544')}">Guardar</button>
       `;
     }
 
@@ -200,9 +200,9 @@
         ${discountRow(aliadoInfo)}
         <div class="detalle"><span class="detalle__lbl">Verificado</span><span class="detalle__val">${new Date().toLocaleString("es-CO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span></div>
         <hr class="divider">
-        <a href="${dirUrl}" style="${btnStyle("#1a7a3c")}">Ver aliados y descuentos &rarr;</a>
-        <button id="btn-uber" style="${btnStyle("#0e0e0e")}">🚗 Aplicar descuento Uber</button>
-        ${esPremium(p) ? `<button id="btn-prof" style="${btnStyle("#0e0e0e")}">💼 Aplicar servicio profesional</button>` : ""}
+        <a href="${dirUrl}" style="${btnStyle("#095544")}">Ver aliados y descuentos &rarr;</a>
+        <button id="btn-uber" style="${btnStyle("#021B1A")}">🚗 Aplicar descuento Uber</button>
+        ${esPremium(p) ? `<button id="btn-prof" style="${btnStyle("#021B1A")}">💼 Aplicar servicio profesional</button>` : ""}
         ${!aliadoInfo ? selectorAliadoHtml(listaAliados) : ""}
       `;
       bindSelectorAliado(() => cargarYRenderizar());
@@ -235,10 +235,10 @@
         ${discountRow(aliadoInfo)}
         <hr class="divider">
         <p style="font-size:13px;color:#888;margin-bottom:12px;line-height:1.5">${parrafo}</p>
-        <a href="Planes.html" style="${btnStyle("#1a7a3c")}">${sinAcceso ? "Ver membresías" : "Actualizar a Premium"} &rarr;</a>
+        <a href="Planes.html" style="${btnStyle("#095544")}">${sinAcceso ? "Ver membresías" : "Actualizar a Premium"} &rarr;</a>
         ${wa ? `<a href="${waUrl}" style="${btnStyle("#fef3c7","#b45309")}">Notificar al miembro por WhatsApp</a>` : ""}
-        <button id="btn-uber" style="${btnStyle("#0e0e0e")}">🚗 Aplicar descuento Uber</button>
-        ${esPremium(p) ? `<button id="btn-prof" style="${btnStyle("#0e0e0e")}">💼 Aplicar servicio profesional</button>` : ""}
+        <button id="btn-uber" style="${btnStyle("#021B1A")}">🚗 Aplicar descuento Uber</button>
+        ${esPremium(p) ? `<button id="btn-prof" style="${btnStyle("#021B1A")}">💼 Aplicar servicio profesional</button>` : ""}
         ${!aliadoInfo ? selectorAliadoHtml(listaAliados) : ""}
       `;
       bindSelectorAliado(() => cargarYRenderizar());
@@ -258,8 +258,8 @@
         <p style="font-size:12px;color:#888;margin-bottom:16px">Conductor: se guarda en este celular para no pedírtelo cada vez.</p>
         <input id="uber-wa" type="tel" value="${waGuardado}" placeholder="300 000 0000" style="width:100%;padding:12px 14px;border:1px solid #ebebeb;border-radius:10px;font-size:14px;margin-bottom:10px;text-align:center">
         <p id="uber-error" class="error-msg" style="display:none;margin-bottom:10px;font-size:13px"></p>
-        <button id="uber-continuar" style="${btnStyle("#0e0e0e")}">Continuar</button>
-        <button id="uber-cancelar" style="${btnStyle("#f1ede3","#0e0e0e")}">Cancelar</button>
+        <button id="uber-continuar" style="${btnStyle("#021B1A")}">Continuar</button>
+        <button id="uber-cancelar" style="${btnStyle("#EAF3EF","#021B1A")}">Cancelar</button>
       `;
     }
     function htmlUberTipo() {
@@ -267,9 +267,9 @@
         <div class="estado-ic" style="background:#fef3c7">🚗</div>
         <div class="miembro-nombre" style="font-size:20px">¿Qué tipo de servicio?</div>
         <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px">
-          <button class="uber-tipo-btn" data-tipo="carro" style="${btnStyle("#f1ede3","#0e0e0e")}">Carro</button>
-          <button class="uber-tipo-btn" data-tipo="moto" style="${btnStyle("#f1ede3","#0e0e0e")}">Moto</button>
-          <button class="uber-tipo-btn" data-tipo="domicilio" style="${btnStyle("#f1ede3","#0e0e0e")}">Domicilio</button>
+          <button class="uber-tipo-btn" data-tipo="carro" style="${btnStyle("#EAF3EF","#021B1A")}">Carro</button>
+          <button class="uber-tipo-btn" data-tipo="moto" style="${btnStyle("#EAF3EF","#021B1A")}">Moto</button>
+          <button class="uber-tipo-btn" data-tipo="domicilio" style="${btnStyle("#EAF3EF","#021B1A")}">Domicilio</button>
         </div>
       `;
     }
@@ -281,7 +281,7 @@
         <input id="uber-monto" type="text" inputmode="numeric" placeholder="15.000" style="width:100%;padding:12px 14px;border:1px solid #ebebeb;border-radius:10px;font-size:14px;margin-bottom:12px;text-align:center">
         <div class="detalle"><span class="detalle__lbl">Descuento (10%)</span><span class="detalle__val" id="uber-ahorro" style="color:var(--verde)">$0</span></div>
         <p id="uber-error" class="error-msg" style="display:none;margin:10px 0;font-size:13px"></p>
-        <button id="uber-aplicar" style="${btnStyle("#1a7a3c")}">Aplicar descuento</button>
+        <button id="uber-aplicar" style="${btnStyle("#095544")}">Aplicar descuento</button>
       `;
     }
     function htmlUberExito(ahorro) {
@@ -391,14 +391,14 @@
         <p style="font-size:12px;color:#888;margin-bottom:16px">Profesional: se guarda en este celular para no pedírtelo cada vez.</p>
         <input id="prof-wa" type="tel" value="${waGuardado}" placeholder="300 000 0000" style="width:100%;padding:12px 14px;border:1px solid #ebebeb;border-radius:10px;font-size:14px;margin-bottom:10px;text-align:center">
         <p id="prof-error" class="error-msg" style="display:none;margin-bottom:10px;font-size:13px"></p>
-        <button id="prof-continuar" style="${btnStyle("#0e0e0e")}">Continuar</button>
-        <button id="prof-cancelar" style="${btnStyle("#f1ede3","#0e0e0e")}">Cancelar</button>
+        <button id="prof-continuar" style="${btnStyle("#021B1A")}">Continuar</button>
+        <button id="prof-cancelar" style="${btnStyle("#EAF3EF","#021B1A")}">Cancelar</button>
       `;
     }
     function htmlProfServicios(nombreProf, servicios) {
       const filas = servicios.map(s => {
         const detalle = s.es_cortesia ? "Cortesía gratis" : (s.descuento_pct ? `${s.descuento_pct} de descuento` : "Sin descuento");
-        return `<button class="prof-serv-btn" data-id="${s.id}" style="${btnStyle("#f1ede3","#0e0e0e")}">
+        return `<button class="prof-serv-btn" data-id="${s.id}" style="${btnStyle("#EAF3EF","#021B1A")}">
           <div style="font-weight:700">${s.nombre}</div>
           <div style="font-size:12px;opacity:.75">${detalle}${s.tarifa ? ` · ${fmtCOPProf(s.tarifa)}` : ""}</div>
         </button>`;

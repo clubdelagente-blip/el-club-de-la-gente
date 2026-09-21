@@ -7,7 +7,7 @@
 /* ---------- HEADER DEL DIRECTORIO ---------- */
 .dir-top {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(248,246,241,0.82);
+  background: rgba(241, 247, 246,0.82);
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--linea);
 }
@@ -64,7 +64,7 @@
   position: relative; overflow: hidden; transition: background .3s, transform .35s, border-color .3s, box-shadow .35s;
 }
 .dir-card::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--verde); transform: scaleX(0); transform-origin: left; transition: transform .4s ease; }
-.dir-card:hover { background: #fff; transform: translateY(-4px); border-color: transparent; box-shadow: 0 24px 46px -28px rgba(14,14,14,.42); }
+.dir-card:hover { background: #fff; transform: translateY(-4px); border-color: transparent; box-shadow: 0 24px 46px -28px rgba(2, 27, 26,.42); }
 .dir-card:hover::before { transform: scaleX(1); }
 
 .dir-card__top { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
@@ -86,29 +86,29 @@
 
 /* ---------- CALCULADORA (dentro del sheet) ---------- */
 .calc { background: var(--negro); color: var(--crema-en-negro); border-radius: 12px; padding: 30px 30px 32px; margin: 8px 0 40px; position: relative; overflow: hidden; }
-.calc::after { content: "G"; position: absolute; right: -18px; bottom: -64px; font-family: var(--display); font-size: 200px; font-weight: 700; color: rgba(248,246,241,.04); line-height: 1; pointer-events: none; }
+.calc::after { content: "G"; position: absolute; right: -18px; bottom: -64px; font-family: var(--display); font-size: 200px; font-weight: 700; color: rgba(241, 247, 246,.04); line-height: 1; pointer-events: none; }
 .calc__lbl { font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--verde-claro); }
 .calc__title { font-family: var(--display); font-size: 28px; font-weight: 600; line-height: 1; margin: 8px 0 24px; }
 .calc__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; position: relative; z-index: 2; }
 .calc__field { display: flex; flex-direction: column; gap: 8px; }
-.calc__field label { font-size: 12px; font-weight: 600; color: rgba(248,246,241,.72); letter-spacing: .03em; }
+.calc__field label { font-size: 12px; font-weight: 600; color: rgba(241, 247, 246,.72); letter-spacing: .03em; }
 .calc__input-wrap { position: relative; }
-.calc__input-wrap .peso { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 15px; color: rgba(248,246,241,.55); pointer-events: none; }
+.calc__input-wrap .peso { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 15px; color: rgba(241, 247, 246,.55); pointer-events: none; }
 .calc input, .calc select {
   width: 100%; font-family: var(--cuerpo); font-size: 15.5px; font-weight: 500; color: var(--crema);
-  padding: 14px 16px; border: 1.5px solid var(--linea-clara); border-radius: 6px; background: rgba(248,246,241,.04);
+  padding: 14px 16px; border: 1.5px solid var(--linea-clara); border-radius: 6px; background: rgba(241, 247, 246,.04);
   transition: border-color .2s, box-shadow .2s;
 }
 .calc input { padding-left: 30px; }
-.calc input::placeholder { color: rgba(248,246,241,.4); }
-.calc input:focus, .calc select:focus { outline: none; border-color: var(--verde-claro); box-shadow: 0 0 0 3px rgba(111,220,140,.16); }
+.calc input::placeholder { color: rgba(241, 247, 246,.4); }
+.calc input:focus, .calc select:focus { outline: none; border-color: var(--verde-claro); box-shadow: 0 0 0 3px rgba(0, 223, 129,.16); }
 .calc select { appearance: none; -webkit-appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236fdc8c' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px; }
-.calc select option { color: #0E0E0E; }
+.calc select option { color: #021B1A; }
 
 .calc__result { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 22px; position: relative; z-index: 2; }
 .calc__cel { border: 1px solid var(--linea-clara); border-radius: 8px; padding: 18px 20px; }
 .calc__cel--ahorro { background: var(--verde); border-color: var(--verde); }
-.calc__cel small { display: block; font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(248,246,241,.6); margin-bottom: 8px; }
+.calc__cel small { display: block; font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: rgba(241, 247, 246,.6); margin-bottom: 8px; }
 .calc__cel--ahorro small { color: rgba(255,255,255,.82); }
 .calc__cel-num { font-family: var(--display); font-size: 40px; font-weight: 600; line-height: .9; color: var(--crema); }
 .calc__cel--ahorro .calc__cel-num { color: #fff; }
@@ -119,7 +119,7 @@
 .btn--wa:hover { background: var(--crema-2); border-color: var(--crema-2); }
 .btn--wa-ghost { background: transparent; color: var(--crema); border-color: var(--verde-claro); }
 .btn--wa-ghost:hover { background: var(--verde-claro); color: var(--negro); border-color: var(--verde-claro); }
-.calc__nota { font-size: 12px; color: rgba(248,246,241,.5); margin-top: 16px; position: relative; z-index: 2; }
+.calc__nota { font-size: 12px; color: rgba(241, 247, 246,.5); margin-top: 16px; position: relative; z-index: 2; }
 
 /* ---------- TICKER INFERIOR ---------- */
 .dir-ticker { background: var(--negro); overflow: hidden; padding: 24px 0; }
