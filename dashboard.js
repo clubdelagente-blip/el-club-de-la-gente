@@ -187,6 +187,57 @@ function cerrarSeg() {
   localStorage.setItem("ecdlg_segmentado", "1");
 }
 
+// Guarda en el navegador lo respondido hasta ahora en el cuestionario, para
+// que minimizar o recargar a mitad de camino no borre el progreso. Solo dura
+// mientras no se llega al final (cerrarSeg/el guardado real la limpia).
+function guardarBorradorSeg() {
+  const respuestas = { ..._respuestasSegPrevias };
+  $$("#seg-dinamico .seg-q[data-pregunta-id]").forEach(q => {
+    const id = q.dataset.preguntaId;
+    const input = q.querySelector(".seg-input");
+    if (input) {
+      const v = input.value.trim();
+      if (v) respuestas[id] = v;
+      return;
+    }
+    const sel = [...$$(".seg-opt.is-on", q)].map(b => b.textContent.trim());
+    if (sel.length) respuestas[id] = q.dataset.multi === "1" ? sel : sel[0];
+  });
+  try {
+    localStorage.setItem("ecdlg_seg_borrador", JSON.stringify({
+      bloque: segBlock,
+      respuestas,
+      nombre: $("#seg-nombre")?.value.trim() || "",
+      apellido: $("#seg-apellido")?.value.trim() || "",
+      fecha: $("#seg-fecha")?.value || "",
+      whatsapp: $("#seg-whatsapp")?.value.trim() || "",
+    }));
+  } catch {}
+}
+
+// Restaura un borrador previo (si existe) sobre los campos ya renderizados.
+function restaurarBorradorSeg() {
+  let borrador;
+  try { borrador = JSON.parse(localStorage.getItem("ecdlg_seg_borrador") || "null"); } catch { borrador = null; }
+  if (!borrador) return null;
+
+  if (borrador.nombre) { const el = $("#seg-nombre"); if (el) el.value = borrador.nombre; }
+  if (borrador.apellido) { const el = $("#seg-apellido"); if (el) el.value = borrador.apellido; }
+  if (borrador.fecha) { const el = $("#seg-fecha"); if (el) el.value = borrador.fecha; }
+  if (borrador.whatsapp) { const el = $("#seg-whatsapp"); if (el) el.value = borrador.whatsapp; }
+
+  $$("#seg-dinamico .seg-q[data-pregunta-id]").forEach(q => {
+    const v = borrador.respuestas?.[q.dataset.preguntaId];
+    if (v === undefined) return;
+    const input = q.querySelector(".seg-input");
+    if (input) { input.value = v; return; }
+    const valores = Array.isArray(v) ? v : [v];
+    $$(".seg-opt", q).forEach(o => o.classList.toggle("is-on", valores.includes(o.textContent.trim())));
+  });
+  actualizarCondicionalesSeg();
+  return borrador.bloque;
+}
+
 // Trae las preguntas activas desde Admin → "Formulario de bienvenida" y arma
 // una página por pregunta dentro de #seg-dinamico (una sola pregunta a la vez,
 // para que no sea largo de responder). Idempotente: si ya se cargaron antes en
@@ -223,7 +274,10 @@ async function cargarPreguntasSegmentacion() {
       if (multi) opt.classList.toggle("is-on");
       else $$(".seg-opt", q).forEach(o => o.classList.toggle("is-on", o === opt));
       actualizarCondicionalesSeg();
+      guardarBorradorSeg();
     }));
+    const inputTexto = q.querySelector(".seg-input");
+    inputTexto?.addEventListener("input", guardarBorradorSeg);
   });
   actualizarCondicionalesSeg();
   if (window.lucide) lucide.createIcons();
@@ -251,7 +305,14 @@ function actualizarCondicionalesSeg() {
 async function iniciarSegmentacion(perfil, irABloque = 0) {
   await cargarPreguntasSegmentacion();
   if (perfil) prepararCamposConocidos(perfil);
-  abrirSeg(irABloque === "categorias" ? _catBlockIndex : irABloque);
+  let bloqueInicial = irABloque === "categorias" ? _catBlockIndex : irABloque;
+  // Solo se restaura un borrador en la entrada normal (no cuando se pide
+  // explícitamente ir a "categorias" desde "Actualizar categorías").
+  if (irABloque === 0) {
+    const bloqueGuardado = restaurarBorradorSeg();
+    if (bloqueGuardado != null) bloqueInicial = bloqueGuardado;
+  }
+  abrirSeg(bloqueInicial);
 }
 
 // Oculta y precarga del Bloque 1 solo lo que ya conocemos (registro manual o
@@ -725,6 +786,46 @@ async function abrirFormProducto(p = {}) {
   formatearInputMoneda($("#pa-descuento"));
 
   let imagenes = p.imagenes || (p.imagen_url ? [p.imagen_url] : []);
+
+  // Borrador solo para productos nuevos (uno editándose ya tiene sus datos en
+  // la base) -- si se cierra el modal o la app antes de "Guardar", no se
+  // pierde lo escrito. Las fotos ya se suben a Storage al elegirlas, así que
+  // también se guarda su URL para no dejarlas huérfanas sin referenciar.
+  const esNuevoProducto = !p.id;
+  const BORRADOR_PRODUCTO_KEY = "ecdlg_producto_borrador";
+  function guardarBorradorProducto() {
+    if (!esNuevoProducto) return;
+    try {
+      localStorage.setItem(BORRADOR_PRODUCTO_KEY, JSON.stringify({
+        nombre: $("#pa-nombre")?.value || "",
+        desc: $("#pa-desc")?.value || "",
+        cat: $("#pa-cat")?.value || "",
+        precio: $("#pa-precio")?.value || "",
+        descuento: $("#pa-descuento")?.value || "",
+        wa: $("#pa-wa")?.value || "",
+        fecha: $("#pa-fecha")?.value || "",
+        imagenes,
+      }));
+    } catch {}
+  }
+  if (esNuevoProducto) {
+    let borrador;
+    try { borrador = JSON.parse(localStorage.getItem(BORRADOR_PRODUCTO_KEY) || "null"); } catch { borrador = null; }
+    if (borrador) {
+      if (borrador.nombre) $("#pa-nombre").value = borrador.nombre;
+      if (borrador.desc) $("#pa-desc").value = borrador.desc;
+      if (borrador.cat) $("#pa-cat").value = borrador.cat;
+      if (borrador.precio) $("#pa-precio").value = borrador.precio;
+      if (borrador.descuento) $("#pa-descuento").value = borrador.descuento;
+      if (borrador.wa) $("#pa-wa").value = borrador.wa;
+      if (borrador.fecha) $("#pa-fecha").value = borrador.fecha;
+      if (borrador.imagenes?.length) imagenes = borrador.imagenes;
+    }
+    ["pa-nombre", "pa-desc", "pa-cat", "pa-precio", "pa-descuento", "pa-wa", "pa-fecha"].forEach(id => {
+      $("#" + id)?.addEventListener("input", guardarBorradorProducto);
+      $("#" + id)?.addEventListener("change", guardarBorradorProducto);
+    });
+  }
   function renderImgGrid() {
     const cont = $("#pa-img-grid");
     if (!cont) return;
@@ -738,6 +839,7 @@ async function abrirFormProducto(p = {}) {
     cont.querySelectorAll("[data-rm-img]").forEach(b => b.addEventListener("click", () => {
       imagenes.splice(+b.dataset.rmImg, 1);
       renderImgGrid();
+      guardarBorradorProducto();
     }));
   }
   renderImgGrid();
@@ -751,6 +853,7 @@ async function abrirFormProducto(p = {}) {
     if (upErr) { toast("Error subiendo la foto"); return; }
     imagenes.push(supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl);
     renderImgGrid();
+    guardarBorradorProducto();
   });
 
   $("#pa-save")?.addEventListener("click", async () => {
@@ -776,6 +879,7 @@ async function abrirFormProducto(p = {}) {
       ? await supabase.from("productos_aliado").update(payload).eq("id", id)
       : await supabase.from("productos_aliado").insert(payload);
     if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = id ? "Guardar cambios" : "Agregar producto"; return; }
+    if (esNuevoProducto) { try { localStorage.removeItem(BORRADOR_PRODUCTO_KEY); } catch {} }
     cerrarModalTienda();
     toast(id ? "Producto actualizado — vuelve a quedar en revisión" : "Producto agregado — queda en revisión");
     cargarMisProductos(_tiendaAliadoId);
@@ -1711,6 +1815,19 @@ async function cargarMarcasCarrusel() {
   </div>`).join("");
 }
 
+// Banner de reintento cuando falla la carga inicial del dashboard (ej. se
+// perdió la conexión justo al recuperar el celular de segundo plano) — sin
+// esto, la persona se queda viendo los spinners internos girar para siempre.
+function mostrarErrorCargaDash() {
+  if (document.getElementById("dash-error-retry")) return;
+  const banner = document.createElement("div");
+  banner.id = "dash-error-retry";
+  banner.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:9999;background:#fdecea;color:#c0392b;padding:14px 20px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.1)";
+  banner.innerHTML = `<span>No pudimos cargar tu cuenta. Revisa tu conexión e intenta de nuevo.</span><button id="dash-error-retry-btn" style="background:#c0392b;color:#fff;border:none;padding:8px 16px;border-radius:20px;font-weight:700;cursor:pointer">Reintentar</button>`;
+  document.body.prepend(banner);
+  document.getElementById("dash-error-retry-btn").addEventListener("click", () => location.reload());
+}
+
 /* ---------- INIT ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   render();
@@ -1896,6 +2013,12 @@ document.addEventListener("DOMContentLoaded", () => {
     cargarReferidos(userId);
     cargarMarcasCarrusel();
     cargarProfesionalesClub(plan);
+  }).catch((err) => {
+    // Sin esto, un fallo aquí (típico al recuperar conexión en móvil tras
+    // minimizar) dejaba todo el contenido del dashboard colgado en silencio,
+    // con los .brand-loader internos girando para siempre.
+    console.error("Error cargando el dashboard:", err);
+    mostrarErrorCargaDash();
   });
 
   // Respaldo del QR: getSession() puede correr en carrera con la sesión
@@ -1972,6 +2095,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Actualizar categorías desde el perfil → reabre la segmentación
   $("#editar-cats")?.addEventListener("click", () => iniciarSegmentacion(null, "categorias"));
 
+  // Bloque fijo de identidad (nombre/apellido/fecha/whatsapp): estos campos no
+  // se regeneran dinámicamente, así que se enlazan una sola vez aquí.
+  ["seg-nombre", "seg-apellido", "seg-fecha", "seg-whatsapp"].forEach(id => {
+    $("#" + id)?.addEventListener("input", guardarBorradorSeg);
+  });
+
   $("#seg-next").addEventListener("click", async () => {
     // Validar obligatorias del bloque que se está viendo antes de avanzar
     const bloqueActual = $$(".seg-block")[segBlock];
@@ -1985,6 +2114,8 @@ document.addEventListener("DOMContentLoaded", () => {
       sinResponder.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+
+    guardarBorradorSeg();
 
     if (segSiguienteVisible(segBlock, 1) === null) {
       const nombre = $("#seg-nombre")?.value.trim();
@@ -2021,6 +2152,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (categoriasParaEspejar) updates.categorias_interes = categoriasParaEspejar;
 
         await supabase.from("perfiles").update(updates).eq("id", session.user.id);
+        try { localStorage.removeItem("ecdlg_seg_borrador"); } catch {}
 
         const perfil = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
         if (nombreCompleto) { perfil.nombre = nombreCompleto; perfil.primerNombre = nombre; }
@@ -2053,7 +2185,7 @@ document.addEventListener("DOMContentLoaded", () => {
       segMostrar(segSiguienteVisible(segBlock, 1));
     }
   });
-  $("#seg-prev").addEventListener("click", () => segMostrar(segSiguienteVisible(segBlock, -1) ?? 0));
+  $("#seg-prev").addEventListener("click", () => { guardarBorradorSeg(); segMostrar(segSiguienteVisible(segBlock, -1) ?? 0); });
   $("#seg-skip").addEventListener("click", cerrarSeg);
 
   // Modal de activación
