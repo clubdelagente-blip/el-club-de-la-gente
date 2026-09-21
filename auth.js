@@ -12,7 +12,7 @@ const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 // cuenta nueva y vacía cada vez que alguien lo escriba distinto.
 function normalizarWhatsapp(raw) {
   let d = (raw || "").replace(/\D/g, "");
-  if (d.length > 10 && d.startsWith("57")) d = d.slice(2);
+  while (d.length > 10 && d.startsWith("57")) d = d.slice(2);
   return d;
 }
 
@@ -490,7 +490,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const waDigits = normalizarWhatsapp(whatsapp);
     const email = waDigits + "@clubdelagente.app";   // siempre solo dígitos
 
-    if (!nombre || !whatsapp) { mostrarError("Completa todos los campos."); return; }
+    if (!nombre || !waDigits) { mostrarError("Completa todos los campos."); return; }
 
     setLoading(btn, true, "Crear mi cuenta →");
 
@@ -502,7 +502,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       email,
       password,
       options: {
-        data: { nombre, whatsapp, fecha_nacimiento: fechaISO, rol: "miembro" }
+        // Siempre el número ya normalizado (sin "57" duplicado) -- este es el
+        // valor que se guarda en "perfiles" y el que recibe cada WhatsApp que
+        // le mandemos, así que tiene que quedar limpio desde aquí.
+        data: { nombre, whatsapp: waDigits, fecha_nacimiento: fechaISO, rol: "miembro" }
       }
     });
 
@@ -519,7 +522,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Guardar en localStorage siempre
     localStorage.setItem("ecdlg_perfil", JSON.stringify({
-      nombre, primerNombre: nombre.split(" ")[0], fechaISO, whatsapp, mision, arquetipo
+      nombre, primerNombre: nombre.split(" ")[0], fechaISO, whatsapp: waDigits, mision, arquetipo
     }));
 
     // Guardar el perfil en Supabase — si esto falla, la cuenta de Auth existe
@@ -532,7 +535,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const { error: perfError } = await supabase.from("perfiles").upsert({
           id: data.user.id,
           nombre,
-          whatsapp,
+          whatsapp: waDigits,
           fecha_nacimiento: fechaISO || null,
           rol: "miembro",
           plan: "gratis",
@@ -562,13 +565,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     // genérico). Con keepalive: sin esto, el location.href de abajo navega
     // antes de que el fetch alcance a salir y el navegador cancela la
     // petición — el mensaje nunca llegaba.
-    if (whatsapp) {
+    if (waDigits) {
       const primerNombre = nombre.split(" ")[0];
       const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nCon tu plan Gratis ya tienes:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).\n🛍️ Acceso ilimitado a la Tienda del Club.\n\nA continuación te invitamos a rellenar el siguiente formulario para validar tu membresía gratuita:\nhttps://elclubdelagente.com/Bienvenida.html?id=${data.user.id}\n\nSi quieres acceder a promociones, sorteos, un agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿`;
       fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: whatsapp, body: msgBienvenida }),
+        body: JSON.stringify({ to: waDigits, body: msgBienvenida }),
         keepalive: true,
       }).catch(() => {});
     }
@@ -624,7 +627,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const areaBase = $("#prof-area").value;
     const area     = areaBase === "Otra" ? $("#prof-area-otra").value.trim() : areaBase;
     const desc     = $("#prof-desc").value.trim();
-    const wa       = $("#prof-wa").value.trim();
+    const wa       = normalizarWhatsapp($("#prof-wa").value.trim());
     const email    = $("#prof-email").value.trim();
     const pass     = $("#prof-pass").value;
 
@@ -721,7 +724,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const negocio = $("#al-negocio").value.trim();
     const categoria = $("#al-cat").value.trim();
     const nombre = $("#al-nombre").value.trim();
-    const whatsapp = $("#al-wa").value.trim();
+    const whatsapp = normalizarWhatsapp($("#al-wa").value.trim());
 
     if (!negocio || !nombre || !whatsapp) { mostrarError("Completa todos los campos."); return; }
 
