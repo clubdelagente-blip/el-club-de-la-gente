@@ -492,6 +492,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!nombre || !waDigits) { mostrarError("Completa todos los campos."); return; }
 
+    // Validación propia de la fecha -- el navegador ya bloquea con min/max
+    // (Registro.html:170) pero con su propio mensaje, en otro idioma o estilo
+    // según el navegador, sin pasar por mostrarError(). Esto da un mensaje
+    // consistente y en español si falta o está fuera de rango.
+    if (!fechaISO) { mostrarError("Ingresa tu fecha de nacimiento."); return; }
+    const FECHA_MIN = "1920-01-01", FECHA_MAX = "2012-12-31";
+    if (fechaISO < FECHA_MIN || fechaISO > FECHA_MAX) {
+      mostrarError("Ingresa una fecha de nacimiento válida (entre 1920 y 2012)."); return;
+    }
+
     setLoading(btn, true, "Crear mi cuenta →");
 
     const rnd = new Uint8Array(32);
