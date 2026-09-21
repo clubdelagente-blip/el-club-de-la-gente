@@ -1,9 +1,13 @@
 /* ============================================================
    EL CLUB DE LA GENTE — Módulo 7 · Agente de WhatsApp (lógica)
    Construye la vista previa del chat, los toggles de contenido
-   y las preferencias de comunicación. Persiste en localStorage.
+   y las preferencias de comunicación. Se guardan en Supabase
+   (tabla preferencias_notificacion) para que cada envío proactivo
+   del bot las respete de verdad -- localStorage queda solo como
+   caché instantánea mientras carga la real.
    Reutiliza helpers globales de dashboard.js ($, $$, ic, leerPerfil).
    ============================================================ */
+import { supabase } from './supabase.js';
 
 (function () {
   const NUM_WA = "573000000028"; // número demo del Club (wa.me)
@@ -26,9 +30,51 @@
       return { ...PREFS_DEFAULT, ...p, toggles: { ...PREFS_DEFAULT.toggles, ...(p.toggles || {}) } };
     } catch { return { ...PREFS_DEFAULT }; }
   }
-  function guardarPrefs(p) { localStorage.setItem("ecdlg_agente", JSON.stringify(p)); }
+  function guardarPrefsLocal(p) { try { localStorage.setItem("ecdlg_agente", JSON.stringify(p)); } catch {} }
 
   const prefs = leerPrefs();
+  let _miembroIdAgente = null;
+
+  // Guarda en Supabase (fuente real que consultan los envíos proactivos del
+  // bot) además de en localStorage (caché instantánea para el próximo
+  // render). Sin esto, "Mi Agente" solo cambiaba lo que veía la persona en
+  // su propio navegador -- ningún envío real llegaba a respetarlo.
+  function guardarPrefs(p) {
+    guardarPrefsLocal(p);
+    if (!_miembroIdAgente) return;
+    supabase.from("preferencias_notificacion").upsert({
+      miembro_id: _miembroIdAgente,
+      resumen: !!p.toggles.resumen,
+      descuentos: !!p.toggles.descuentos,
+      recomienda: !!p.toggles.recomienda,
+      social: !!p.toggles.social,
+      renueva: !!p.toggles.renueva,
+      frecuencia: p.frecuencia,
+      canal: p.canal,
+      updated_at: new Date().toISOString(),
+    }).then(({ error }) => { if (error) console.error("Error guardando preferencias:", error); });
+  }
+
+  // Trae las preferencias reales de Supabase (si ya existían) y las mezcla
+  // sobre las de localStorage -- así el navegador que las guardó por última
+  // vez sigue mandando, incluso si la persona entra desde otro dispositivo.
+  async function sincronizarPrefsReales() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return;
+    _miembroIdAgente = session.user.id;
+    const { data, error } = await supabase.from("preferencias_notificacion").select("*").eq("miembro_id", _miembroIdAgente).maybeSingle();
+    if (error || !data) return;
+    prefs.toggles.resumen = data.resumen;
+    prefs.toggles.descuentos = data.descuentos;
+    prefs.toggles.recomienda = data.recomienda;
+    prefs.toggles.social = data.social;
+    prefs.toggles.renueva = data.renueva;
+    prefs.frecuencia = data.frecuencia;
+    prefs.canal = data.canal;
+    guardarPrefsLocal(prefs);
+    renderToggles();
+    actualizarSegsVisual();
+  }
 
   /* ---------- conversación de muestra ---------- */
   function construirChat(u) {
@@ -89,11 +135,20 @@
   }
 
   /* ---------- segmentos (frecuencia / canal) ---------- */
+  // Solo pinta el estado is-on según prefs -- separado del enlazado de clic
+  // para poder llamarla de nuevo tras sincronizar con Supabase sin dejar
+  // listeners duplicados en los mismos botones.
+  function actualizarSegsVisual() {
+    $$(".ag-seg-row[data-seg]").forEach(row => {
+      const key = row.dataset.seg;
+      $$(".ag-seg-btn", row).forEach(b => b.classList.toggle("is-on", b.dataset.val === prefs[key]));
+    });
+  }
   function renderSegs() {
+    actualizarSegsVisual();
     $$(".ag-seg-row[data-seg]").forEach(row => {
       const key = row.dataset.seg;
       $$(".ag-seg-btn", row).forEach(b => {
-        b.classList.toggle("is-on", b.dataset.val === prefs[key]);
         b.addEventListener("click", () => {
           prefs[key] = b.dataset.val;
           $$(".ag-seg-btn", row).forEach(o => o.classList.toggle("is-on", o === b));
@@ -125,6 +180,7 @@
     renderToggles();
     renderSegs();
     if (window.lucide) lucide.createIcons();
+    sincronizarPrefsReales();
 
     const waMsg = encodeURIComponent("Hola, soy miembro del Club y quiero ver mis beneficios.");
     $("#ag-open-wa")?.addEventListener("click", () => window.open(`https://wa.me/${NUM_WA}?text=${waMsg}`, "_blank"));

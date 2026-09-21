@@ -37,7 +37,7 @@ Deno.serve(async (_req: Request) => {
 
   // Solo a quien dijo que sí en el formulario de Bienvenida -- no a todos
   // los miembros activos, para no sentirse como spam a quien no le interesa.
-  const { data: miembros, error: errMiembros } = await supabase
+  const { data: miembrosBase, error: errMiembros } = await supabase
     .from("perfiles")
     .select("id, nombre, whatsapp")
     .in("plan", ["gratis", "basica", "premium", "vitalicia"])
@@ -45,6 +45,21 @@ Deno.serve(async (_req: Request) => {
     .eq("interes_talleres", true);
 
   if (errMiembros) console.error("Error buscando miembros activos:", errMiembros);
+
+  // Además respeta la preferencia real de "Programas sociales y eventos" de
+  // Mi Agente -- sin fila en preferencias_notificacion se asume que sí
+  // quiere, solo se excluye a quien la desactivó explícitamente.
+  let miembros = miembrosBase || [];
+  const idsBase = miembros.map((m) => m.id);
+  if (idsBase.length) {
+    const { data: prefsSocial } = await supabase
+      .from("preferencias_notificacion")
+      .select("miembro_id")
+      .in("miembro_id", idsBase)
+      .eq("social", false);
+    const noQuierenSocial = new Set((prefsSocial || []).map((r) => r.miembro_id));
+    miembros = miembros.filter((m) => !noQuierenSocial.has(m.id));
+  }
 
   let totalEnviados = 0;
   const resumenPorEvento: Record<string, number> = {};

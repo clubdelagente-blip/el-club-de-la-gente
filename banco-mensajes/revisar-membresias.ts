@@ -40,15 +40,30 @@ Deno.serve(async (_req: Request) => {
   // 2) Recordatorio de WhatsApp a quien vence en 3 días
   const { data: porVencer, error: errPorVencer } = await supabase
     .from("perfiles")
-    .select("nombre, whatsapp")
+    .select("id, nombre, whatsapp")
     .not("plan", "in", "(gratis,vitalicia,sin_plan)")
     .eq("fecha_vencimiento", fecha3dias);
 
   if (errPorVencer) console.error("Error buscando por vencer:", errPorVencer);
 
+  // Respeta la preferencia real de "Recordatorio de renovación" de Mi
+  // Agente -- sin fila en preferencias_notificacion se asume que sí quiere
+  // (mismo default que trae esa pantalla), solo se excluye a quien la
+  // desactivó explícitamente.
+  const idsPorVencer = (porVencer || []).map((p) => p.id);
+  let noQuierenRenueva = new Set<string>();
+  if (idsPorVencer.length) {
+    const { data: prefsRenueva } = await supabase
+      .from("preferencias_notificacion")
+      .select("miembro_id")
+      .in("miembro_id", idsPorVencer)
+      .eq("renueva", false);
+    noQuierenRenueva = new Set((prefsRenueva || []).map((r) => r.miembro_id));
+  }
+
   let recordatoriosEnviados = 0;
   for (const p of porVencer || []) {
-    if (!p.whatsapp) continue;
+    if (!p.whatsapp || noQuierenRenueva.has(p.id)) continue;
     const primerNombre = (p.nombre || "").trim().split(" ")[0] || "";
     const msg = `¡Hola ${primerNombre}! 🌿 Tu membresía de El Club de la Gente vence en 3 días.\n\nRenueva a tiempo para no perder tus descuentos y beneficios. Entra a tu perfil para renovar:\nhttps://elclubdelagente.com/Perfil.html\n\nEl Club de la Gente`;
     try {
