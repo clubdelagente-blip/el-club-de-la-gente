@@ -85,8 +85,13 @@ function render() {
   // ClubCard (nuevo diseño)
   $$(".cc-card-name").forEach(el => el.textContent = u.nombre.toUpperCase());
   $$(".cc-card-codigo").forEach(el => el.textContent = u.codigo);
-  // Tema premium (dorado) o básico (plata)
-  $$(".ccv2").forEach(el => el.classList.toggle("ccv2--premium", u.plan === "premium"));
+  // Tema de la ClubCard según el plan: vitalicia y premium en dorado
+  // (vitalicia con más destello), básica en plata, gratis sin tema (default)
+  $$(".ccv2").forEach(el => {
+    el.classList.toggle("ccv2--premium", u.plan === "premium");
+    el.classList.toggle("ccv2--vitalicia", u.plan === "vitalicia");
+    el.classList.toggle("ccv2--basica", u.plan === "basica");
+  });
 
   // Perfil
   $("#perfil-name").textContent = u.nombre;
@@ -129,7 +134,7 @@ async function quitarFoto() {
 }
 
 /* ---------- Navegación de paneles ---------- */
-const TITULOS = { inicio: "Inicio", negocio: "Mi negocio", perfil: "Mi perfil", clubcard: "Mi ClubCard", tienda: "Tienda", educacion: "Educación", descuentos: "Mis descuentos", agente: "Mi Agente", config: "Configuración" };
+const TITULOS = { inicio: "Inicio", negocio: "Mi negocio", perfil: "Mi perfil", clubcard: "Mi ClubCard", tienda: "Tienda", educacion: "Educación", "profesionales-club": "Profesionales", programas: "Programas", descuentos: "Mis descuentos", agente: "Mi Agente", config: "Configuración" };
 function irPanel(panel) {
   $$(".panel-view").forEach(v => v.classList.toggle("is-active", v.dataset.panel === panel));
   $$(".sb-link[data-panel]").forEach(l => l.classList.toggle("is-active", l.dataset.panel === panel));
@@ -1209,7 +1214,14 @@ document.getElementById("topbar-notif-btn")?.addEventListener("click", async (e)
   drop.style.display = abrir ? "block" : "none";
   if (abrir && _miembroId) {
     await cargarNotificacionesMiembro(_miembroId);
-    await supabase.from("notificaciones_miembro").update({ leida: true }).eq("miembro_id", _miembroId).eq("leida", false);
+    const { error } = await supabase.from("notificaciones_miembro").update({ leida: true }).eq("miembro_id", _miembroId).eq("leida", false);
+    if (error) {
+      // Si el UPDATE falla (ej. la política RLS de esta tabla no quedó bien
+      // aplicada), el punto rojo debe seguir mostrándose -- en la base de
+      // datos sigue en leida:false, así que ocultarlo aquí sería mentir.
+      console.error("Error marcando notificaciones como leídas:", error);
+      return;
+    }
     const dot = document.getElementById("topbar-notif-dot");
     if (dot) dot.hidden = true;
   }
@@ -1221,6 +1233,90 @@ document.addEventListener("click", (e) => {
 
 /* ---------- Educación (talleres presenciales, gratis para todos) ---------- */
 let _educacionCargada = false;
+
+// Programas sociales que apoya el Club -- mismo contenido informativo que la
+// sección pública "Programas" de la landing (aún no hay tabla en Supabase
+// para esto, así que por ahora es contenido fijo, igual que allá).
+const PROGRAMAS_SOCIALES = [
+  {
+    nombre: "Patas que Rescatan",
+    icon: "paw-print",
+    descBreve: "Rescate, atención y adopción de animales en condición de calle en Fusagasugá y la región del Sumapaz.",
+    descCompleta: "Con cada membresía financiamos jornadas de rescate, esterilización y adopción responsable. El programa conecta refugios locales con familias que quieren darle un hogar a un animal y cubre atención veterinaria de urgencia.",
+    fundaciones: ["Fundación Huellas Fusa", "Refugio Sumapaz", "Red de Hogares de Paso"],
+  },
+  {
+    nombre: "Mesa Compartida",
+    icon: "utensils-crossed",
+    descBreve: "Entrega de mercados y apoyo alimentario a familias vulnerables de la región.",
+    descCompleta: "Un porcentaje de cada membresía se transforma en mercados para familias que más lo necesitan. Trabajamos con el banco de alimentos local para llegar a las veredas y barrios con mayor necesidad.",
+    fundaciones: ["Banco de Alimentos Fusa", "Parroquia Nuestra Señora", "Juntas de Acción Comunal"],
+  },
+  {
+    nombre: "Aprende y Crece",
+    icon: "graduation-cap",
+    descBreve: "Talleres gratuitos de educación financiera y emprendimiento para miembros y comunidad.",
+    descCompleta: "Creemos que ahorrar también es aprender. Ofrecemos talleres de finanzas personales, ahorro y emprendimiento dictados por aliados profesionales del Club, abiertos a toda la comunidad.",
+    fundaciones: ["Cámara de Comercio Fusagasugá", "SENA Regional", "Aliados profesionales del Club"],
+  },
+  {
+    nombre: "Manos a la Obra",
+    icon: "hammer",
+    descBreve: "Mejoramiento de vivienda y espacios comunitarios con voluntarios del Club.",
+    descCompleta: "Jornadas de pintura, arreglo y adecuación de hogares y espacios comunes para familias de escasos recursos. La fuerza del Club puesta al servicio de quienes más lo necesitan.",
+    fundaciones: ["Techo Colombia", "Voluntariado El Club de la Gente", "Alcaldía de Fusagasugá"],
+  },
+];
+let _programasCargados = false;
+function cargarProgramas() {
+  if (_programasCargados) return;
+  _programasCargados = true;
+  const grid = document.getElementById("programas-grid-dash");
+  if (!grid) return;
+  grid.innerHTML = PROGRAMAS_SOCIALES.map((p, i) => `
+    <div style="border:1px solid #ebebeb;border-radius:12px;padding:20px;background:#fff">
+      <span style="display:inline-flex;width:38px;height:38px;border-radius:50%;background:var(--verde-soft);color:var(--verde);align-items:center;justify-content:center;margin-bottom:12px">${ic(p.icon)}</span>
+      <div style="font-weight:700;font-size:15px;margin-bottom:6px">${esc(p.nombre)}</div>
+      <p style="font-size:13px;color:#666;line-height:1.5;margin-bottom:14px">${esc(p.descBreve)}</p>
+      <button type="button" class="btn btn--secundario" data-ver-programa="${i}" style="font-size:12.5px">Ver más y postularme como voluntario &rarr;</button>
+    </div>`).join("");
+  if (window.lucide) lucide.createIcons();
+  grid.querySelectorAll("[data-ver-programa]").forEach(btn => btn.addEventListener("click", () => {
+    const p = PROGRAMAS_SOCIALES[+btn.dataset.verPrograma];
+    if (!p) return;
+    abrirModalTienda(p.nombre, `
+      <p style="font-size:14px;line-height:1.6;margin-bottom:16px">${esc(p.descCompleta)}</p>
+      <div style="font-size:12.5px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Fundaciones y organizaciones apoyadas</div>
+      <ul style="font-size:13px;color:#555;line-height:1.9;margin-bottom:20px;padding-left:18px">
+        ${p.fundaciones.map(f => `<li>${esc(f)}</li>`).join("")}
+      </ul>
+      <div style="font-size:12.5px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Quiero ser voluntario</div>
+      <form id="form-voluntario">
+        <div class="cfg-campo"><label class="cfg-label">Motivo de participación</label><textarea class="cfg-input" id="vol-motivo" rows="3" required placeholder="Cuéntanos por qué te gustaría participar"></textarea></div>
+        <button type="submit" class="btn btn--primario" style="margin-top:6px">Quiero ser voluntario <i data-lucide="heart-handshake" style="width:15px;height:15px"></i></button>
+      </form>
+    `);
+    if (window.lucide) lucide.createIcons();
+    document.getElementById("form-voluntario")?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const btn2 = e.target.querySelector("button[type=submit]");
+      const u = leerPerfil();
+      const motivo = document.getElementById("vol-motivo")?.value.trim() || "";
+      supabase.from("configuracion").select("valor").eq("clave", "numero_admin_notificaciones").maybeSingle()
+        .then(({ data }) => {
+          if (!data?.valor) return;
+          fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ to: data.valor, body: `🙋 Postulación de voluntariado\n\nPrograma: ${p.nombre}\nMiembro: ${u.nombre || "—"}\nMotivo: ${motivo}` }),
+          }).catch(() => {});
+        }).catch(() => {});
+      btn2.disabled = true;
+      btn2.innerHTML = `${ic("check")} Enviado — te contactamos por WhatsApp`;
+      if (window.lucide) lucide.createIcons();
+    });
+  }));
+}
 async function cargarEducacion() {
   if (_educacionCargada) return;
   _educacionCargada = true;
@@ -1251,7 +1347,7 @@ async function cargarEducacion() {
     const fechaFmt = new Date(e.fecha + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
     return `
     <div style="border:1px solid #ebebeb;border-radius:12px;overflow:hidden;background:#fff">
-      ${e.imagen_url ? `<img src="${esc(e.imagen_url)}" alt="${esc(e.titulo)}" style="width:100%;height:150px;object-fit:cover">` : ''}
+      ${e.imagen_url ? `<img src="${esc(e.imagen_url)}" alt="${esc(e.titulo)}" data-ampliar-flyer="${esc(e.imagen_url)}" style="width:100%;height:150px;object-fit:cover;cursor:zoom-in">` : ''}
       <div style="padding:16px">
         <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:${esProximo ? 'var(--verde-soft)' : '#f1ede3'};color:${esProximo ? 'var(--verde)' : '#888'}">${esProximo ? 'Próximo' : 'Pasado'} · ${fechaFmt}</span>
         <div style="font-weight:700;font-size:15px;margin:10px 0 4px">${esc(e.titulo)}</div>
@@ -1285,8 +1381,27 @@ async function cargarEducacion() {
     const msg = grid.querySelector(`[data-confirmado-msg="${eventoId}"]`);
     if (msg) msg.style.display = 'block';
   }));
+
+  grid.querySelectorAll('[data-ampliar-flyer]').forEach(img => img.addEventListener('click', () => {
+    abrirLightbox(img.dataset.ampliarFlyer);
+  }));
 }
 window.cargarEducacion = cargarEducacion;
+
+// Modal simple para ver una imagen en grande (ej. el flyer de un taller).
+function abrirLightbox(url) {
+  let lb = document.getElementById('img-lightbox');
+  if (!lb) {
+    lb = document.createElement('div');
+    lb.id = 'img-lightbox';
+    lb.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:24px;cursor:zoom-out';
+    lb.innerHTML = `<img id="img-lightbox-img" style="max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.5)">`;
+    lb.addEventListener('click', () => { lb.style.display = 'none'; });
+    document.body.appendChild(lb);
+  }
+  document.getElementById('img-lightbox-img').src = url;
+  lb.style.display = 'flex';
+}
 
 async function cargarTienda() {
   if (_tiendaCargada) return;
@@ -1920,7 +2035,18 @@ document.addEventListener("DOMContentLoaded", () => {
     // en la página, así que nunca hubo un redirect con "nuevo=1" que avisara).
     const planAnterior = localStorage.getItem("ecdlg_plan");
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
-    if (plan) { localStorage.setItem("ecdlg_plan", plan); const sbPlanEl = document.getElementById("sb-plan-name"); if (sbPlanEl) sbPlanEl.textContent = PLAN_LABEL[plan] || plan; }
+    if (plan) {
+      localStorage.setItem("ecdlg_plan", plan);
+      const sbPlanEl = document.getElementById("sb-plan-name"); if (sbPlanEl) sbPlanEl.textContent = PLAN_LABEL[plan] || plan;
+      // Re-sincroniza el tema de la ClubCard con el plan real de Supabase --
+      // render() ya la pintó antes con el plan en caché (o "premium" como
+      // valor por defecto en el primerísimo login, antes de tener caché).
+      $$(".ccv2").forEach(el => {
+        el.classList.toggle("ccv2--premium", plan === "premium");
+        el.classList.toggle("ccv2--vitalicia", plan === "vitalicia");
+        el.classList.toggle("ccv2--basica", plan === "basica");
+      });
+    }
 
     // Fecha de renovación real (viene del pago aprobado por el admin, no inventada)
     const sbRenuevaEl = document.querySelector(".sb-plan__renueva");
@@ -2037,6 +2163,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (l.dataset.panel === 'tienda') cargarTienda();
     if (l.dataset.panel === 'educacion') cargarEducacion();
     if (l.dataset.panel === 'soporte') cargarSoporte();
+    if (l.dataset.panel === 'programas') cargarProgramas();
   }));
 
   // Burger móvil

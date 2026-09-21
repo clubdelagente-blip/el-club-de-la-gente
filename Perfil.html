@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=22">
-  <link rel="stylesheet" href="estilos.css?v=5">
+  <link rel="stylesheet" href="estilos.css?v=6">
   <link rel="stylesheet" href="dashboard.css?v=6">
   <link rel="stylesheet" href="agente.css">
 </head>
@@ -63,7 +63,7 @@
         <div class="sb-section__lbl">Explorar</div>
         <ul class="sb-nav">
           <li><a class="sb-link" href="Directorio.html"><i data-lucide="store"></i> Aliados</a></li>
-          <li><a class="sb-link" href="El Club de la Gente.html#programas"><i data-lucide="heart-handshake"></i> Programas</a></li>
+          <li><button class="sb-link" data-panel="programas"><i data-lucide="heart-handshake"></i> Programas</button></li>
           <li><a class="sb-link" href="El Club de la Gente.html"><i data-lucide="users"></i> Comunidad</a></li>
         </ul>
       </div>
@@ -364,7 +364,7 @@
         <section class="panel-view" data-panel="tienda" data-screen-label="Tienda del Club">
           <div class="dash-greet">
             <h1>Tienda del Club</h1>
-            <p>Productos seleccionados con descuento exclusivo para miembros.</p>
+            <p>Productos seleccionados con descuento exclusivo para miembros. Los vende y despacha directamente El Club de la Gente.</p>
           </div>
           <div id="tienda-cats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px"></div>
           <div id="tienda-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
@@ -382,7 +382,7 @@
           <div id="tienda-aliados-wrap" style="display:none;margin-top:36px">
             <div class="dash-greet">
               <h1 style="font-size:22px">Tienda de nuestros aliados</h1>
-              <p>Productos vendidos directamente por los aliados del Club, con descuento para miembros.</p>
+              <p>Productos que venden y despachan directamente los negocios aliados (no el Club), con descuento para miembros. El pedido y la entrega quedan a cargo de cada aliado.</p>
             </div>
             <div id="tienda-aliados-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px"></div>
           </div>
@@ -418,6 +418,17 @@
           </div>
 
           <div id="profes-club-grid" style="display:none;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px"></div>
+        </section>
+
+        <!-- ============================================================
+             PANEL: PROGRAMAS SOCIALES
+             ============================================================ -->
+        <section class="panel-view" data-panel="programas" data-screen-label="Programas">
+          <div class="dash-greet">
+            <h1>Programas sociales</h1>
+            <p>Cada peso que ahorras también construye comunidad. Conoce los programas que apoya el Club y postúlate como voluntario si es tu deseo.</p>
+          </div>
+          <div id="programas-grid-dash" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px"></div>
         </section>
 
         <!-- ============================================================
@@ -1147,7 +1158,7 @@
   </style>
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <script type="module" src="dashboard.js?v=95"></script>
+  <script type="module" src="dashboard.js?v=96"></script>
   <script src="agente.js"></script>
 
   <template id="__bundler_thumbnail">
