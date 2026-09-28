@@ -228,17 +228,42 @@
 .ccv2-renueva span { font-weight: 600; color: #F4F1EA; }
 
 /* ============================================================
-   CLUBCARD PREMIUM — letras y brillo en el verde vivo de marca,
-   fondo negro. El marco y el logo se quedan en blanco (sin teñir).
+   CLUBCARD GRATIS — verde vivo de marca. Marco y logo en blanco.
    ============================================================ */
-.ccv2--premium .ccv2-brand { color: rgba(0,223,129,.95); }
-.ccv2--premium .ccv2-codigo__lbl { color: rgba(0,223,129,.55); }
-.ccv2--premium .ccv2-codigo__val { color: #00DF81; }
-.ccv2--premium .ccv2-name { color: #3de89b; }
-.ccv2--premium .ccv2-renueva { color: rgba(0,223,129,.8); }
-.ccv2--premium .ccv2-renueva span { color: #00DF81; }
-.ccv2--premium .ccv2-card {
+.ccv2--gratis .ccv2-brand { color: rgba(0,223,129,.95); }
+.ccv2--gratis .ccv2-codigo__lbl { color: rgba(0,223,129,.55); }
+.ccv2--gratis .ccv2-codigo__val { color: #00DF81; }
+.ccv2--gratis .ccv2-name { color: #3de89b; }
+.ccv2--gratis .ccv2-renueva { color: rgba(0,223,129,.8); }
+.ccv2--gratis .ccv2-renueva span { color: #00DF81; }
+.ccv2--gratis .ccv2-card {
   box-shadow: 0 32px 64px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(0,223,129,.2), inset 0 0 60px rgba(0,223,129,.04);
+}
+
+/* ============================================================
+   CLUBCARD PREMIUM — dorada, fondo negro. Marco y logo en blanco.
+   ============================================================ */
+.ccv2--premium .ccv2-brand { color: rgba(232,200,122,.95); }
+.ccv2--premium .ccv2-codigo__lbl { color: rgba(232,200,122,.55); }
+.ccv2--premium .ccv2-codigo__val { color: #e8c87a; }
+.ccv2--premium .ccv2-name { color: #f0d98a; }
+.ccv2--premium .ccv2-renueva { color: rgba(232,200,122,.8); }
+.ccv2--premium .ccv2-renueva span { color: #e8c87a; }
+.ccv2--premium .ccv2-card {
+  box-shadow: 0 32px 64px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(201,164,78,.15), inset 0 0 60px rgba(201,164,78,.03);
+}
+
+/* ============================================================
+   CLUBCARD VITALICIA — azul turquesa. Marco y logo en blanco.
+   ============================================================ */
+.ccv2--vitalicia .ccv2-brand { color: rgba(30,217,217,.95); }
+.ccv2--vitalicia .ccv2-codigo__lbl { color: rgba(30,217,217,.6); }
+.ccv2--vitalicia .ccv2-codigo__val { color: #1ed9d9; }
+.ccv2--vitalicia .ccv2-name { color: #6ee6e6; }
+.ccv2--vitalicia .ccv2-renueva { color: rgba(30,217,217,.8); }
+.ccv2--vitalicia .ccv2-renueva span { color: #1ed9d9; }
+.ccv2--vitalicia .ccv2-card {
+  box-shadow: 0 32px 64px -30px rgba(0,0,0,.75), 0 0 0 1.5px rgba(30,217,217,.3), inset 0 0 80px rgba(30,217,217,.06);
 }
 
 /* Personalización en el éxito de checkout */

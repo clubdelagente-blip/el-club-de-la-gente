@@ -89,6 +89,7 @@ function render() {
   // vivo de marca (vitalicia con más destello), básica en plata, gratis
   // sin tema (default)
   $$(".ccv2").forEach(el => {
+    el.classList.toggle("ccv2--gratis", u.plan === "gratis");
     el.classList.toggle("ccv2--premium", u.plan === "premium");
     el.classList.toggle("ccv2--vitalicia", u.plan === "vitalicia");
     el.classList.toggle("ccv2--basica", u.plan === "basica");
@@ -2043,6 +2044,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // render() ya la pintó antes con el plan en caché (o "premium" como
       // valor por defecto en el primerísimo login, antes de tener caché).
       $$(".ccv2").forEach(el => {
+        el.classList.toggle("ccv2--gratis", plan === "gratis");
         el.classList.toggle("ccv2--premium", plan === "premium");
         el.classList.toggle("ccv2--vitalicia", plan === "vitalicia");
         el.classList.toggle("ccv2--basica", plan === "basica");
@@ -2174,8 +2176,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Atajos a ClubCard / perfil desde tarjetas
   $$("[data-goto-panel]").forEach(b => b.addEventListener("click", () => irPanel(b.dataset.gotoPanel)));
 
-  // Flip de ClubCard
+  // Flip de ClubCard -- también se voltea tocando la tarjeta misma, no
+  // solo con el botón "Quiero acceder a mis beneficios".
   $("#cc-flip-toggle")?.addEventListener("click", () => $("#cc-flip").classList.toggle("is-back"));
+  $("#cc-flip")?.addEventListener("click", () => $("#cc-flip").classList.toggle("is-back"));
 
   // ---- Configuración ----
   $("#cfg-foto-btn")?.addEventListener("click", () => $("#cfg-foto-input").click());
