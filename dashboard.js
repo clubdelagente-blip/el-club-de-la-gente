@@ -1246,11 +1246,16 @@ function inicializarBloqueo() {
   const bu = document.getElementById("banner-usos");
   if (bu) bu.style.display = "none";
 
-  // Actualizar sidebar
-  const sbPlan = document.getElementById("sb-plan-name");
-  if (sbPlan) sbPlan.textContent = "Sin activar";
-  const sbEstado = document.querySelector(".sb-plan__estado");
-  if (sbEstado) sbEstado.innerHTML = '<span class="dot" style="background:#e5890a"></span> Pendiente';
+  // Actualizar sidebar -- sin plan también cuenta como "no premium/vitalicia",
+  // así que se muestra la invitación a elegir/pagar un plan.
+  const elActivoB = document.getElementById("sb-plan-activo");
+  const elUpgradeB = document.getElementById("sb-plan-upgrade");
+  if (elActivoB) elActivoB.style.display = "none";
+  if (elUpgradeB) {
+    elUpgradeB.style.display = "block";
+    const nombreElB = document.getElementById("sb-plan-upgrade-name");
+    if (nombreElB) nombreElB.textContent = "Sin activar";
+  }
 
   // Actualizar saludo
   const greetP = document.querySelector(".dash-greet p");
@@ -2118,6 +2123,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (plan) {
       localStorage.setItem("ecdlg_plan", plan);
       const sbPlanEl = document.getElementById("sb-plan-name"); if (sbPlanEl) sbPlanEl.textContent = PLAN_LABEL[plan] || plan;
+
+      // Gratis/básica: en vez de la tarjeta "Plan activo", se muestra una
+      // invitación a subir de plan que lleva directo a pagar.
+      const esPlanTope = plan === "premium" || plan === "vitalicia";
+      const elActivo = document.getElementById("sb-plan-activo");
+      const elUpgrade = document.getElementById("sb-plan-upgrade");
+      if (elActivo) elActivo.style.display = esPlanTope ? "" : "none";
+      if (elUpgrade) {
+        elUpgrade.style.display = esPlanTope ? "none" : "block";
+        const nombreEl = document.getElementById("sb-plan-upgrade-name");
+        if (nombreEl) nombreEl.textContent = PLAN_LABEL[plan] || plan;
+      }
       // Re-sincroniza el tema de la ClubCard con el plan real de Supabase --
       // render() ya la pintó antes con el plan en caché (o "premium" como
       // valor por defecto en el primerísimo login, antes de tener caché).

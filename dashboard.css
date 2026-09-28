@@ -47,6 +47,8 @@
 .sb-plan__estado { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: rgba(241, 247, 246,.7); }
 .sb-plan__estado .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--verde-claro); }
 .sb-plan__renueva { font-size: 11px; color: rgba(241, 247, 246,.45); margin-top: 6px; }
+.sb-plan__cta { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--verde-claro); margin-top: 4px; }
+#sb-plan-upgrade:hover .sb-plan__cta { gap: 10px; transition: gap .2s; }
 
 .sb-bottom { margin-top: auto; padding: 10px 14px 18px; border-top: 1px solid var(--linea); }
 
