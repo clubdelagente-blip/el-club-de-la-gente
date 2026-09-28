@@ -249,10 +249,12 @@
   box-shadow: 0 32px 64px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(200,206,212,.22), inset 0 0 60px rgba(200,206,212,.05);
 }
 
-/* Sirocco #EAB749 (pedido puntual del usuario para Premium) */
+/* Sirocco #EAB749 (pedido puntual del usuario para Premium) -- se ve
+   directo en el punto más brillante del degradado, no oscurecido de
+   entrada, para que lea como dorado y no como marrón opaco. */
 .ccv2--premium .ccv2-card {
-  background: radial-gradient(120% 140% at 50% 0%, #695221 0%, #3a2e12 60%, #171207 100%);
-  box-shadow: 0 32px 64px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(234,183,73,.32), inset 0 0 60px rgba(234,183,73,.06);
+  background: radial-gradient(120% 140% at 50% 0%, #EAB749 0%, #52401a 55%, #1c1609 100%);
+  box-shadow: 0 32px 64px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(234,183,73,.4), inset 0 0 60px rgba(234,183,73,.08);
 }
 
 .ccv2--vitalicia .ccv2-card {
