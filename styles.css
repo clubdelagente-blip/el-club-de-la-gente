@@ -235,13 +235,12 @@ a { color: inherit; text-decoration: none; }
 /* ============================================================
    CARRUSEL DE MARCAS AMAZON
    ============================================================ */
-/* El scroll ya no es una animación CSS (@keyframes) -- en iPhone con Modo
-   de Bajo Consumo, iOS pausa animaciones continuas para ahorrar batería y
-   el carrusel se quedaba congelado. Ahora lo mueve carrusel-auto.js con
-   requestAnimationFrame sobre un scroll nativo; acá solo se oculta la
-   barra de scroll para que se vea igual que antes. */
-.marcas-carrusel { background: var(--crema-2); overflow-x: auto; overflow-y: hidden; padding: 20px 0; position: relative; scrollbar-width: none; -ms-overflow-style: none; }
-.marcas-carrusel::-webkit-scrollbar { display: none; }
+/* El movimiento ya no es una animación CSS (@keyframes) -- se quedaba
+   congelada en algunos celulares. Ahora carrusel-auto.js mueve el track
+   directo con transform: translateX por JS (requestAnimationFrame), así
+   que acá solo queda el recorte visual (overflow:hidden) y los degradados
+   de los bordes -- nada de scroll nativo. */
+.marcas-carrusel { background: var(--crema-2); overflow: hidden; padding: 20px 0; position: relative; }
 .marcas-carrusel::before, .marcas-carrusel::after { content: ""; position: absolute; top: 0; bottom: 0; width: 80px; z-index: 3; pointer-events: none; }
 .marcas-carrusel::before { left: 0; background: linear-gradient(to right, var(--crema-2), transparent); }
 .marcas-carrusel::after  { right: 0; background: linear-gradient(to left, var(--crema-2), transparent); }
