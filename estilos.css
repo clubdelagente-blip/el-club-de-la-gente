@@ -220,9 +220,9 @@
 .ccv2-name { font-size: clamp(9px, 2.4vw, 12px); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; flex: 1; min-width: 0; }
 
 /* REVERSO */
-.ccv2-back__in { position: absolute; inset: 0; padding: 10% 11%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5%; z-index: 2; }
+.ccv2-back__in { position: absolute; inset: 0; padding: 16% 15%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5%; z-index: 2; }
 .ccv2-orn-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; filter: invert(1) brightness(12) contrast(10); mix-blend-mode: screen; z-index: 1; pointer-events: none; }
-.ccv2-qr { width: clamp(128px, 34vw, 160px); aspect-ratio: 1; background: #fff; border-radius: 10px; padding: 10px; display: grid; place-items: center; box-shadow: 0 8px 20px -8px rgba(0,0,0,.4); }
+.ccv2-qr { width: clamp(64px, 16vw, 84px); aspect-ratio: 1; background: #fff; border-radius: 8px; padding: 6px; display: grid; place-items: center; box-shadow: 0 8px 20px -8px rgba(0,0,0,.4); }
 .ccv2-qr img { width: 100%; height: 100%; object-fit: contain; }
 .ccv2-renueva { font-size: clamp(11px, 2.8vw, 13px); color: rgba(244,241,234,.78); }
 .ccv2-renueva span { font-weight: 600; color: #F4F1EA; }
