@@ -391,7 +391,7 @@ async function cargarDescuentos(userId, whatsapp) {
       .eq("miembro_id", userId).not("estado", "in", "(pendiente_pago,cancelado)"),
     supabase.from("viajes_conductor")
       .select("tipo, monto, ahorro, created_at")
-      .eq("miembro_id", userId),
+      .eq("miembro_id", userId).eq("anulado", false),
     supabase.from("servicios_aplicados")
       .select("nombre_servicio, tarifa, descuento_pct, es_cortesia, ahorro, created_at")
       .eq("miembro_id", userId),
@@ -2450,7 +2450,10 @@ async function cargarPanelProfesional() {
 
   // Conductores Uber (moto/carro): no tiene sentido "Mi consultorio" (foto,
   // descripción, servicios fijos) — en vez de eso, ven su historial de viajes.
-  if (prof.area === "Uber de moto" || prof.area === "Uber de carro") {
+  // Se usa el booleano es_conductor (marcado desde Admin) en vez de comparar
+  // el texto libre de "área" -- ese texto se rompía con un typo o un
+  // espacio de más y dejaba al conductor sin acceso a su panel.
+  if (prof.es_conductor) {
     const btn = $("#sb-profesional-btn");
     if (btn) btn.dataset.panel = "conductor";
     const ic = $("#sb-profesional-ic"); if (ic) ic.setAttribute("data-lucide", "car");
@@ -2593,12 +2596,14 @@ async function cargarPanelConductor(prof) {
 
   const { data: viajes } = await supabase
     .from("viajes_conductor")
-    .select("tipo, monto, created_at")
+    .select("tipo, monto, created_at, anulado")
     .eq("conductor_id", prof.id)
     .order("created_at", { ascending: false });
 
   const lista = viajes || [];
-  const viajesMes = lista.filter(v => new Date(v.created_at) >= inicioMes);
+  // Un viaje anulado por Admin no cuenta en las estadísticas -- sí se sigue
+  // mostrando en el historial, marcado, para que quede claro qué pasó.
+  const viajesMes = lista.filter(v => !v.anulado && new Date(v.created_at) >= inicioMes);
   const dineroMes = viajesMes.reduce((s, v) => s + (v.monto || 0), 0);
 
   const statViajes = $("#cond-stat-viajes"); if (statViajes) statViajes.textContent = viajesMes.length;
@@ -2611,8 +2616,8 @@ async function cargarPanelConductor(prof) {
   if (tbody) {
     tbody.innerHTML = lista.length
       ? lista.slice(0, 30).map(v => `
-        <tr>
-          <td>${TIPO_LBL[v.tipo] || v.tipo}</td>
+        <tr${v.anulado ? ' style="opacity:.45;text-decoration:line-through"' : ''}>
+          <td>${TIPO_LBL[v.tipo] || v.tipo}${v.anulado ? ' <small>(anulado)</small>' : ''}</td>
           <td>${fmtF(v.created_at)}</td>
           <td>${fmtCOP(v.monto)}</td>
         </tr>`).join("")

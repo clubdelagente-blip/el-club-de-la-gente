@@ -22,6 +22,7 @@ const PANELES = {
   aliados:      { t: "Aliados", s: "Establecimientos, fotos y descuentos" },
   planes:       { t: "Planes", s: "Precios y beneficios de cada membresía" },
   profesionales:{ t: "Profesionales", s: "Asesores jurídicos, psicológicos y contables" },
+  viajes:       { t: "Viajes Uber", s: "Historial de viajes aplicados por conductores del Club — anular o corregir" },
   marcas:       { t: "Marcas", s: "Logos y links de afiliado que aparecen en el carrusel" },
   tienda:       { t: "Tienda del Club", s: "Productos que vende el Club directamente, con envío gestionado" },
   contenido:    { t: "Contenido", s: "Imágenes, videos y publicaciones de la web" },
@@ -446,7 +447,7 @@ function irPanel(panel) {
     // referencia sin prefijo a un nombre que todavia no existe en ningun lado
     // (ni local ni en window) lanza ReferenceError y rompe TODO irPanel -- incluidos
     // paneles que no tienen nada que ver, como pasó con Dashboard.
-    const fn = ({ dashboard: renderDashboard, miembros: renderMiembros, aliados: window.renderAliados, planes: window.renderPlanes, profesionales: window.renderProfesionales, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: renderProgramas, educacion: renderEducacion, ventas: renderVentas, suscripciones: renderSuscripciones, contabilidad: window.renderContabilidad, config: renderConfig, agente: renderAgente, preguntas: window.renderPreguntas })[panel];
+    const fn = ({ dashboard: renderDashboard, miembros: renderMiembros, aliados: window.renderAliados, planes: window.renderPlanes, profesionales: window.renderProfesionales, viajes: window.renderViajesUber, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: renderProgramas, educacion: renderEducacion, ventas: renderVentas, suscripciones: renderSuscripciones, contabilidad: window.renderContabilidad, config: renderConfig, agente: renderAgente, preguntas: window.renderPreguntas })[panel];
     if (fn) { fn(); RENDERED[panel] = true; }
   }
   if (window.lucide) lucide.createIcons();

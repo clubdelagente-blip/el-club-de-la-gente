@@ -111,6 +111,7 @@
         <button class="ad-link" data-panel="aliados"><i data-lucide="store"></i> Aliados</button>
         <button class="ad-link" data-panel="planes"><i data-lucide="dollar-sign"></i> Planes</button>
         <button class="ad-link" data-panel="profesionales"><i data-lucide="briefcase"></i> Profesionales</button>
+        <button class="ad-link" data-panel="viajes"><i data-lucide="car"></i> Viajes Uber</button>
         <button class="ad-link" data-panel="marcas"><i data-lucide="shopping-bag"></i> Marcas</button>
         <button class="ad-link" data-panel="tienda"><i data-lucide="package"></i> Tienda</button>
         <button class="ad-link" data-panel="contenido"><i data-lucide="image"></i> Contenido</button>
@@ -163,6 +164,7 @@
         <section class="ad-panel" id="p-aliados" data-screen-label="Admin · Aliados"></section>
         <section class="ad-panel" id="p-planes" data-screen-label="Admin · Planes"></section>
         <section class="ad-panel" id="p-profesionales" data-screen-label="Admin · Profesionales"></section>
+        <section class="ad-panel" id="p-viajes" data-screen-label="Admin · Viajes Uber"></section>
         <section class="ad-panel" id="p-marcas" data-screen-label="Admin · Marcas"></section>
         <section class="ad-panel" id="p-tienda" data-screen-label="Admin · Tienda"></section>
         <section class="ad-panel" id="p-contenido" data-screen-label="Admin · Contenido"></section>
@@ -199,7 +201,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=5"></script>
-  <script src="admin.js?v=23"></script>
+  <script src="admin.js?v=24"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -1606,7 +1608,7 @@ async function cargarProfesionales(){
     const wa=(p.whatsapp||'').replace(/\D/g,'');
     return `<div style="display:flex;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
     ${p.imagen_url?`<img src="${p.imagen_url}" style="width:52px;height:52px;object-fit:cover;border-radius:50%;flex-shrink:0">`:`<span class="ad-av">${esc((p.nombre||'P')[0])}</span>`}
-    <div style="flex:1;min-width:0"><div style="font-weight:600;margin-bottom:2px">${esc(p.nombre)}</div><div style="font-size:12px;color:rgba(242,240,234,.4);margin-bottom:4px">${esc(p.area)} ${p.whatsapp?`· ${esc(p.whatsapp)}`:''}${diasRestantesHtml(p.fecha_fin)}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${esc(p.descripcion)}</div>${(p.documentos||[]).length?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">${p.documentos.map((d,i)=>`<a href="${d}" target="_blank" rel="noopener" style="font-size:11px;color:#00DF81;text-decoration:underline">${ic('file-text')} Documento ${i+1}</a>`).join('')}</div>`:''}${p.contrato_url?`<a href="${p.contrato_url}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;font-size:11px;color:#00DF81;text-decoration:underline">${ic('file-text')} Contrato firmado</a>`:''}</div>
+    <div style="flex:1;min-width:0"><div style="font-weight:600;margin-bottom:2px">${esc(p.nombre)}${p.es_conductor?` <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#00DF8122;color:#00DF81;border:1px solid #00DF8155;vertical-align:middle">🚗 Conductor</span>`:''}</div><div style="font-size:12px;color:rgba(242,240,234,.4);margin-bottom:4px">${esc(p.area)} ${p.whatsapp?`· ${esc(p.whatsapp)}`:''}${diasRestantesHtml(p.fecha_fin)}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${esc(p.descripcion)}</div>${(p.documentos||[]).length?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">${p.documentos.map((d,i)=>`<a href="${d}" target="_blank" rel="noopener" style="font-size:11px;color:#00DF81;text-decoration:underline">${ic('file-text')} Documento ${i+1}</a>`).join('')}</div>`:''}${p.contrato_url?`<a href="${p.contrato_url}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;font-size:11px;color:#00DF81;text-decoration:underline">${ic('file-text')} Contrato firmado</a>`:''}</div>
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0">
       <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${col}22;color:${col};border:1px solid ${col}55">${lbl}</span>
       <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
@@ -1620,12 +1622,85 @@ async function cargarProfesionales(){
   panel.innerHTML=`<div class="ad-toolbar"><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="btn-prof-add">${ic("plus")} Agregar profesional</button></div>${lista}`;
   if(window.lucide)lucide.createIcons();
 }
+
+/* ---- VIAJES UBER (ecosistema de conductores) ---- */
+let _viajesConductor=[];
+async function cargarViajesUber(){
+  const{data}=await supabase.from('viajes_conductor')
+    .select('*, profesionales(nombre,whatsapp), perfiles(nombre)')
+    .order('created_at',{ascending:false}).limit(300);
+  _viajesConductor=data||[];
+  const panel=$("#p-viajes");if(!panel)return;
+  const TIPO_LBL={carro:'Carro',moto:'Moto',domicilio:'Domicilio'};
+  const activos=_viajesConductor.filter(v=>!v.anulado);
+  const totalAhorro=activos.reduce((s,v)=>s+(v.ahorro||0),0);
+  const totalMovido=activos.reduce((s,v)=>s+(v.monto||0),0);
+  const resumen=`<div class="ad-metrics" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+    ${metric('car',activos.length,'Viajes activos','Sin contar anulados','','')}
+    ${metric('banknote',COP(totalMovido),'Dinero movido','Suma de montos de viaje','','')}
+    ${metric('piggy-bank',COP(totalAhorro),'Ahorro entregado','A miembros, en descuentos Uber','','')}
+  </div>`;
+  const lista=_viajesConductor.length?_viajesConductor.map(v=>{
+    const anulado=!!v.anulado;
+    return `<div style="display:flex;gap:14px;padding:14px 16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:8px;${anulado?'opacity:.5':''}">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13px">${esc(v.profesionales?.nombre||'Conductor eliminado')} <span style="color:rgba(242,240,234,.35)">→</span> ${esc(v.perfiles?.nombre||'Miembro eliminado')}</div>
+        <div style="font-size:12px;color:rgba(242,240,234,.4);margin-top:2px">${TIPO_LBL[v.tipo]||esc(v.tipo)} · ${COP(v.monto)} · ahorro ${COP(v.ahorro)} · ${new Date(v.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+        ${anulado?`<div style="font-size:11px;color:#e2685f;margin-top:4px">${ic('ban')} Anulado${v.motivo_anulacion?': '+esc(v.motivo_anulacion):''}</div>`:''}
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;align-items:flex-start">
+        ${!anulado?`<button class="ad-btn" data-ed-viaje="${v.id}" title="Editar">${ic('pencil')}</button><button class="ad-btn" data-anular-viaje="${v.id}" title="Anular" style="color:#e2685f">${ic('ban')}</button>`:`<button class="ad-btn" data-reactivar-viaje="${v.id}" title="Reactivar">${ic('rotate-ccw')}</button>`}
+      </div>
+    </div>`;
+  }).join(''):`<p style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">No hay viajes registrados aún.</p>`;
+  panel.innerHTML=resumen+lista;
+  if(window.lucide)lucide.createIcons();
+  panel.querySelectorAll('[data-ed-viaje]').forEach(b=>b.addEventListener('click',()=>{
+    const v=_viajesConductor.find(x=>x.id===b.dataset.edViaje);if(v)abrirModalEditarViaje(v);
+  }));
+  panel.querySelectorAll('[data-anular-viaje]').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('¿Anular este viaje? Deja de contar en las estadísticas del conductor y del miembro.'))return;
+    const motivo=prompt('Motivo de la anulación (opcional):')||null;
+    await supabase.from('viajes_conductor').update({anulado:true,motivo_anulacion:motivo}).eq('id',b.dataset.anularViaje);
+    toast('Viaje anulado ✓');cargarViajesUber();
+  }));
+  panel.querySelectorAll('[data-reactivar-viaje]').forEach(b=>b.addEventListener('click',async()=>{
+    await supabase.from('viajes_conductor').update({anulado:false,motivo_anulacion:null}).eq('id',b.dataset.reactivarViaje);
+    toast('Viaje reactivado ✓');cargarViajesUber();
+  }));
+}
+function abrirModalEditarViaje(v){
+  abrirModal('Editar viaje',`${v.profesionales?.nombre||'Conductor'} → ${v.perfiles?.nombre||'Miembro'}`,`
+    <div class="ad-field"><label>Tipo</label>
+      <select id="viaje-tipo">
+        <option value="carro" ${v.tipo==='carro'?'selected':''}>Carro</option>
+        <option value="moto" ${v.tipo==='moto'?'selected':''}>Moto</option>
+        <option value="domicilio" ${v.tipo==='domicilio'?'selected':''}>Domicilio</option>
+      </select>
+    </div>
+    <div class="ad-field"><label>Monto del viaje (COP)</label><input id="viaje-monto" type="number" value="${v.monto||0}"></div>
+    <p style="font-size:11px;color:rgba(26,26,24,.4);margin-top:-6px">El ahorro (10%) se recalcula solo al guardar.</p>
+    <div class="ad-toolbar" style="margin-top:16px"><div class="ad-spacer"></div><button class="ad-btn" id="viaje-cancel">Cancelar</button><button class="ad-btn ad-btn--verde" id="viaje-save">${ic('check')} Guardar</button></div>
+  `);
+  setTimeout(()=>{
+    $("#viaje-cancel")?.addEventListener('click',()=>window.cerrarModal?.());
+    $("#viaje-save")?.addEventListener('click',async()=>{
+      const tipo=$("#viaje-tipo")?.value||v.tipo;
+      const monto=parseInt($("#viaje-monto")?.value)||0;
+      const ahorro=Math.round(monto*0.10);
+      await supabase.from('viajes_conductor').update({tipo,monto,ahorro}).eq('id',v.id);
+      window.cerrarModal?.();toast('Viaje actualizado ✓');cargarViajesUber();
+    });
+  },0);
+}
+
 function htmlFormProf(p={}){return `
   <div class="ad-field"><label>Nombre completo *</label><input id="pf-nom" type="text" value="${(p.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Dr. Carlos Pérez"></div>
   <div class="ad-field-2">
     <div class="ad-field"><label>Área / Especialidad</label><input id="pf-area" type="text" value="${(p.area||'').replace(/"/g,'&quot;')}" placeholder="Ej: Medicina general"></div>
     <div class="ad-field"><label>WhatsApp</label><input id="pf-wa" type="tel" value="${(p.whatsapp||'').replace(/"/g,'&quot;')}" placeholder="300 000 0000"></div>
   </div>
+  <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:2px 0 14px"><input type="checkbox" id="pf-es-conductor" style="width:auto" ${p.es_conductor?'checked':''}> Es conductor Uber (moto/carro) -- controla el descuento y el panel "Mis viajes", no depende del texto de arriba</label>
   <div class="ad-field"><label>Descripción / Servicios</label><textarea id="pf-desc" rows="3" placeholder="Describe los servicios y beneficios">${p.descripcion||''}</textarea></div>
   <div class="ad-field"><label>Foto de perfil (opcional)</label>${p.imagen_url?`<img src="${p.imagen_url}" style="width:72px;height:72px;object-fit:cover;border-radius:50%;margin-bottom:10px">`:''}<input id="pf-img" type="file" accept="image/*"><input type="hidden" id="pf-img-url" value="${p.imagen_url||''}"></div>
   <hr style="border:none;border-top:1px solid rgba(26,26,24,.12);margin:20px 0 14px">
@@ -1693,7 +1768,7 @@ function bindFormProf(p={}){setTimeout(()=>{
     let contrato_url=$("#pf-contrato-url")?.value||null;
     const contratoFile=$("#pf-contrato")?.files?.[0];
     if(contratoFile)try{contrato_url=await subirImagen(contratoFile);}catch(_){toast('Error al subir el contrato');}
-    const payload={nombre,area:$("#pf-area")?.value.trim()||null,whatsapp:$("#pf-wa")?.value.trim()||null,descripcion:$("#pf-desc")?.value.trim()||null,imagen_url,fecha_inicio:$("#pf-fecha-inicio")?.value||null,fecha_fin:$("#pf-fecha-fin")?.value||null,contrato_url,activo:true};
+    const payload={nombre,area:$("#pf-area")?.value.trim()||null,whatsapp:$("#pf-wa")?.value.trim()||null,es_conductor:!!$("#pf-es-conductor")?.checked,descripcion:$("#pf-desc")?.value.trim()||null,imagen_url,fecha_inicio:$("#pf-fecha-inicio")?.value||null,fecha_fin:$("#pf-fecha-fin")?.value||null,contrato_url,activo:true};
     const id=btn.dataset.id;
     id?await supabase.from('profesionales').update(payload).eq('id',id):await supabase.from('profesionales').insert(payload);
     window.cerrarModal?.();cargarProfesionales();toast(id?'Profesional actualizado ✓':'Profesional agregado ✓');
@@ -1978,6 +2053,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   window.renderProgramas=function(){$("#p-programas").innerHTML=`<div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>`;cargarProgramas();};
   window.renderProfesionales=function(){$("#p-profesionales").innerHTML=`<div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>`;cargarProfesionales();};
   window.abrirAgregarProfesional=function(){abrirModal('Agregar profesional','Se publicará en el directorio',htmlFormProf());bindFormProf();};
+  window.renderViajesUber=function(){$("#p-viajes").innerHTML=`<div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>`;cargarViajesUber();};
   window.renderContabilidad=function(){$("#p-contabilidad").innerHTML=`<div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>`;cargarContabilidad();};
 
   /* ---- CONTABILIDAD ---- */

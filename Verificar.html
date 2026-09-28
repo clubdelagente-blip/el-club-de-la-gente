@@ -299,7 +299,11 @@
         document.getElementById("uber-cancelar")?.addEventListener("click", () => cargarYRenderizar());
         document.getElementById("uber-continuar")?.addEventListener("click", async () => {
           const errEl = document.getElementById("uber-error");
-          const wa = (document.getElementById("uber-wa")?.value || "").replace(/\D/g, "");
+          // Mismo normalizado que usa el resto del sitio (auth.js) -- el
+          // "código" del conductor es su WhatsApp en 10 dígitos, sin el
+          // indicativo 57 aunque venga duplicado.
+          let wa = (document.getElementById("uber-wa")?.value || "").replace(/\D/g, "");
+          while (wa.length > 10 && wa.startsWith("57")) wa = wa.slice(2);
           if (wa.length < 7) {
             if (errEl) { errEl.textContent = "Ingresa un WhatsApp válido."; errEl.style.display = "block"; }
             return;
@@ -332,15 +336,17 @@
         const btn = document.getElementById("uber-aplicar");
         btn.disabled = true; btn.textContent = "Aplicando...";
 
-        // Domicilios van por el mismo grupo de moto (misma regla que ya usa
-        // el Agente de WhatsApp para transporte).
-        const areaBuscada = tipo === "carro" ? "Uber de carro" : "Uber de moto";
+        // Match exacto contra el WhatsApp ya normalizado del conductor (no
+        // ilike difuso -- ese "código" es su identificador real, igual que
+        // el que usan los miembros para iniciar sesión). Se busca por
+        // es_conductor en vez de comparar el texto libre de "área", que se
+        // rompe con un typo o un espacio de más.
         const { data: conductor } = await supabaseClient
           .from("profesionales")
           .select("id, nombre")
-          .eq("area", areaBuscada)
+          .eq("es_conductor", true)
           .eq("activo", true)
-          .ilike("whatsapp", `%${wa}%`)
+          .eq("whatsapp", wa)
           .maybeSingle();
 
         if (!conductor) {
