@@ -150,7 +150,10 @@ async function quitarFoto() {
 
 /* ---------- Navegación de paneles ---------- */
 const TITULOS = { inicio: "Inicio", negocio: "Mi negocio", perfil: "Mi perfil", clubcard: "Mi ClubCard", tienda: "Tienda", educacion: "Educación", "profesionales-club": "Profesionales", programas: "Programas", descuentos: "Mis descuentos", agente: "Mi Agente", config: "Configuración" };
-function irPanel(panel) {
+// Cambia el panel visible sin tocar el historial -- lo usa irPanel() (que sí
+// lo agrega) y el listener de popstate (para no crear una entrada nueva al
+// volver atrás, que crearía un loop).
+function mostrarPanel(panel) {
   $$(".panel-view").forEach(v => v.classList.toggle("is-active", v.dataset.panel === panel));
   $$(".sb-link[data-panel]").forEach(l => l.classList.toggle("is-active", l.dataset.panel === panel));
   $("#topbar-title").innerHTML = `Mi cuenta · <b>${TITULOS[panel] || ""}</b>`;
@@ -158,7 +161,24 @@ function irPanel(panel) {
   $(".dash-content").scrollTo?.({ top: 0 });
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
+
+// Navegación real entre paneles: agrega una entrada al historial del
+// navegador para que el botón/gesto de "atrás" (deslizar desde el borde)
+// regrese al panel anterior en vez de salir de toda la página.
+function irPanel(panel) {
+  if (history.state?.panel !== panel) {
+    history.pushState({ panel }, "", location.href);
+  }
+  mostrarPanel(panel);
+}
 window.irPanel = irPanel;
+
+// El gesto de swipe-desde-el-borde en sí vive en gesto-volver.js (compartido
+// con las demás páginas) -- acá solo hace falta escuchar popstate para que
+// ese history.back() muestre el panel correcto en vez de salir de la página.
+window.addEventListener("popstate", (e) => {
+  if (e.state?.panel) mostrarPanel(e.state.panel);
+});
 
 /* ============================================================
    SEGMENTACIÓN
@@ -2003,7 +2023,11 @@ function mostrarErrorCargaDash() {
 document.addEventListener("DOMContentLoaded", () => {
   render();
   const u = leerPerfil();
-  irPanel("inicio");
+  // La primera pantalla reemplaza el historial (no lo agrega) para que el
+  // gesto de "atrás" no deje a alguien atrapado en un "Inicio" fantasma
+  // antes de salir de la página.
+  history.replaceState({ panel: "inicio" }, "", location.href);
+  mostrarPanel("inicio");
   supabase.auth.getSession().then(async ({ data: { session } }) => {
     if (!session?.user?.id) { location.href = "Registro.html?modo=login"; return; }
     const userId = session.user.id;
