@@ -86,6 +86,30 @@
 .stat__num { font-family: var(--display); font-size: 40px; font-weight: 600; line-height: 1; margin: 18px 0 5px; }
 .stat__lbl { font-size: 12.5px; color: var(--tinta-60); }
 
+/* ---------- Hero de ahorro + stats mini (Inicio) ---------- */
+.hero-ahorro {
+  background: var(--negro); color: var(--crema); border-radius: 18px;
+  padding: 26px 26px 22px; margin-bottom: 14px; position: relative; overflow: hidden;
+}
+.hero-ahorro__lbl { font-size: 12.5px; font-weight: 600; color: rgba(241,247,246,.6); letter-spacing: .04em; }
+.hero-ahorro__num { font-family: var(--display); font-size: clamp(38px, 9vw, 50px); font-weight: 600; line-height: 1; margin-top: 8px; }
+.hero-ahorro__trend { display: inline-flex; align-items: center; gap: 6px; background: var(--verde-soft); color: var(--verde-claro); font-size: 12px; font-weight: 700; padding: 6px 13px; border-radius: 999px; margin-top: 14px; }
+.hero-ahorro__trend i { width: 14px !important; height: 14px !important; }
+
+.stats-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat-mini { background: var(--crema); border: 1px solid var(--linea); border-radius: 12px; padding: 14px; display: flex; align-items: center; gap: 10px; }
+.stat-mini__ic { width: 32px; height: 32px; border-radius: 8px; background: var(--verde-soft); color: var(--verde); display: grid; place-items: center; flex: none; }
+.stat-mini__ic i { width: 16px !important; height: 16px !important; }
+.stat-mini__num { font-family: var(--display); font-size: 18px; font-weight: 600; line-height: 1; }
+.stat-mini__lbl { font-size: 10.5px; color: var(--tinta-60); margin-top: 3px; line-height: 1.25; }
+@media (max-width: 560px) {
+  .stats-mini { gap: 8px; }
+  .stat-mini { padding: 10px 8px; flex-direction: column; align-items: flex-start; gap: 6px; }
+}
+
+.racha-dot { flex: 1; height: 8px; border-radius: 5px; background: var(--linea); }
+.racha-dot.is-on { background: var(--verde-claro); }
+
 /* ---------- Accesos rápidos (Inicio) ---------- */
 .qa-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
 .qa-grid .sb-link,
@@ -289,11 +313,13 @@
   .dash-backdrop { display: block; position: fixed; inset: 0; background: rgba(2, 27, 26,.4); z-index: 55; opacity: 0; pointer-events: none; transition: opacity .3s; }
   .dash.menu-open .dash-backdrop { opacity: 1; pointer-events: auto; }
   .wa-banner { flex-direction: column; align-items: flex-start; }
-  .bottom-tabbar { display: flex; }
   .dash-content { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 88px); }
 }
 
 /* ---------- Barra inferior (solo móvil) ---------- */
+/* Base: oculta por defecto (desktop). Esta regla debe ir ANTES del @media
+   que la muestra en móvil -- con la misma especificidad, la que aparece
+   después en el archivo gana, así que si quedara acá abajo nunca se vería. */
 .bottom-tabbar {
   display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
   background: var(--crema); border-top: 1px solid var(--linea);
@@ -306,6 +332,9 @@
 }
 .bottom-tabbar .sb-link.is-active { background: none; color: var(--verde); }
 .bottom-tabbar .sb-link:hover { background: var(--crema-2); }
+@media (max-width: 860px) {
+  .bottom-tabbar { display: flex; }
+}
 .topbar__burger { display: none; width: 40px; height: 40px; border-radius: 9px; border: 1px solid var(--linea); background: var(--crema); place-items: center; cursor: pointer; }
 .topbar__burger i { width: 20px; height: 20px; }
 @media (max-width: 860px) {

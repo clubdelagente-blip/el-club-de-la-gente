@@ -14,6 +14,19 @@ const ic = (n) => `<i data-lucide="${n}"></i>`;
 // agente.js es un script clásico (no módulo) que reutiliza estos helpers vía window
 window.$ = $; window.$$ = $$; window.ic = ic;
 const fmtCOP = (n) => "$" + new Intl.NumberFormat("es-CO").format(n);
+// Anima un número (formato COP) de 0 hasta el valor real -- el efecto de
+// "conteo" solo se ve una vez por carga, no engaña el dato final.
+function animarNumeroCOP(el, target) {
+  if (!el) return;
+  const dur = 1000, t0 = performance.now();
+  const ease = t => 1 - Math.pow(1 - t, 3);
+  const step = (now) => {
+    const p = Math.min((now - t0) / dur, 1);
+    el.textContent = fmtCOP(Math.round(target * ease(p)));
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
 // Escapa texto que viene de otros usuarios (nombre de producto del aliado,
 // datos de envio del miembro) antes de insertarlo en innerHTML.
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -463,14 +476,55 @@ async function cargarDescuentos(userId, whatsapp) {
   const aliadosMes = new Set(dataMes.filter(d => d.tipo === "aliado").map(d => d.nombre)).size;
   const ahorroTotal = data.reduce((s, d) => s + (d.ahorro || 0), 0);
 
+  // Mes anterior, para la variación real (nada de porcentajes inventados)
+  const inicioMesAnterior = new Date(inicioMes); inicioMesAnterior.setMonth(inicioMesAnterior.getMonth() - 1);
+  const ahorroMesAnterior = data
+    .filter(d => { const f = new Date(d.created_at); return f >= inicioMesAnterior && f < inicioMes; })
+    .reduce((s, d) => s + (d.ahorro || 0), 0);
+
   const elAhorroMes = document.getElementById("stat-ahorro-mes");
   const elDescMes = document.getElementById("stat-descuentos-mes");
   const elAliadosMes = document.getElementById("stat-aliados-mes");
   const elAhorroTotal = document.getElementById("stat-ahorro-total");
-  if (elAhorroMes) elAhorroMes.textContent = fmtCOP(ahorroMes);
+  if (elAhorroMes) animarNumeroCOP(elAhorroMes, ahorroMes);
   if (elDescMes) elDescMes.textContent = countMes;
   if (elAliadosMes) elAliadosMes.textContent = aliadosMes;
   if (elAhorroTotal) elAhorroTotal.textContent = fmtCOP(ahorroTotal);
+
+  const elTrend = document.getElementById("hero-ahorro-trend");
+  const elTrendTxt = document.getElementById("hero-ahorro-trend-txt");
+  if (elTrend && elTrendTxt) {
+    if (ahorroMesAnterior > 0) {
+      const variacion = Math.round(((ahorroMes - ahorroMesAnterior) / ahorroMesAnterior) * 100);
+      elTrendTxt.textContent = `${variacion >= 0 ? "+" : ""}${variacion}% vs. el mes pasado`;
+      elTrend.hidden = false;
+    } else {
+      elTrend.hidden = true;
+    }
+  }
+
+  // Racha: meses seguidos (hasta el actual) con al menos un descuento usado
+  const card = document.getElementById("card-racha");
+  const dotsEl = document.getElementById("racha-dots");
+  const txtEl = document.getElementById("racha-txt");
+  if (card && dotsEl && txtEl) {
+    const mesesConAhorro = new Set(data.map(d => { const f = new Date(d.created_at); return f.getFullYear() * 12 + f.getMonth(); }));
+    const claveMes = inicioMes.getFullYear() * 12 + inicioMes.getMonth();
+    let racha = 0;
+    for (let m = claveMes; mesesConAhorro.has(m); m--) racha++;
+    if (racha >= 2) {
+      card.hidden = false;
+      txtEl.textContent = `🔥 ${racha} meses seguidos ahorrando`;
+      const dots = [];
+      for (let i = 5; i >= 0; i--) {
+        const clave = claveMes - i;
+        dots.push(`<span class="racha-dot${mesesConAhorro.has(clave) ? " is-on" : ""}"></span>`);
+      }
+      dotsEl.innerHTML = dots.join("");
+    } else {
+      card.hidden = true;
+    }
+  }
 
   // Actividad reciente (dashboard)
   const actEl = $("#actividad");
