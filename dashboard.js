@@ -2258,6 +2258,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // solo con el botón "Quiero acceder a mis beneficios".
   $("#cc-flip-toggle")?.addEventListener("click", () => $("#cc-flip").classList.toggle("is-back"));
   $("#cc-flip")?.addEventListener("click", () => $("#cc-flip").classList.toggle("is-back"));
+  // Preview de la ClubCard en Inicio: se voltea igual, es su propia tarjeta
+  // (id distinto porque no puede repetirse "cc-flip" en la misma página).
+  $("#cc-flip-inicio")?.addEventListener("click", () => $("#cc-flip-inicio").classList.toggle("is-back"));
 
   // ---- Configuración ----
   $("#cfg-foto-btn")?.addEventListener("click", () => $("#cfg-foto-input").click());
