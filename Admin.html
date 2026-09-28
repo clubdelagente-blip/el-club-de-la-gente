@@ -1768,7 +1768,9 @@ function bindFormProf(p={}){setTimeout(()=>{
     let contrato_url=$("#pf-contrato-url")?.value||null;
     const contratoFile=$("#pf-contrato")?.files?.[0];
     if(contratoFile)try{contrato_url=await subirImagen(contratoFile);}catch(_){toast('Error al subir el contrato');}
-    const payload={nombre,area:$("#pf-area")?.value.trim()||null,whatsapp:$("#pf-wa")?.value.trim()||null,es_conductor:!!$("#pf-es-conductor")?.checked,descripcion:$("#pf-desc")?.value.trim()||null,imagen_url,fecha_inicio:$("#pf-fecha-inicio")?.value||null,fecha_fin:$("#pf-fecha-fin")?.value||null,contrato_url,activo:true};
+    let waProf=($("#pf-wa")?.value||"").replace(/\D/g,"");
+    while(waProf.length>10&&waProf.startsWith("57"))waProf=waProf.slice(2);
+    const payload={nombre,area:$("#pf-area")?.value.trim()||null,whatsapp:waProf||null,es_conductor:!!$("#pf-es-conductor")?.checked,descripcion:$("#pf-desc")?.value.trim()||null,imagen_url,fecha_inicio:$("#pf-fecha-inicio")?.value||null,fecha_fin:$("#pf-fecha-fin")?.value||null,contrato_url,activo:true};
     const id=btn.dataset.id;
     id?await supabase.from('profesionales').update(payload).eq('id',id):await supabase.from('profesionales').insert(payload);
     window.cerrarModal?.();cargarProfesionales();toast(id?'Profesional actualizado ✓':'Profesional agregado ✓');
