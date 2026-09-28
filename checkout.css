@@ -228,45 +228,22 @@
 .ccv2-renueva span { font-weight: 600; color: #F4F1EA; }
 
 /* ============================================================
-   CLUBCARD GRATIS — verde vivo de marca. Marco y logo en blanco.
+   Texto blanco/crema en las 4 (igual que la base), el color de cada
+   plan vive solo en el fondo -- ver la nota larga en estilos.css.
    ============================================================ */
-.ccv2--gratis .ccv2-brand { color: rgba(0,223,129,.95); }
-.ccv2--gratis .ccv2-codigo__lbl { color: rgba(0,223,129,.55); }
-.ccv2--gratis .ccv2-codigo__val { color: #00DF81; }
-.ccv2--gratis .ccv2-name { color: #3de89b; }
-.ccv2--gratis .ccv2-renueva { color: rgba(0,223,129,.8); }
-.ccv2--gratis .ccv2-renueva span { color: #00DF81; }
 .ccv2--gratis .ccv2-card {
-  background: radial-gradient(120% 140% at 50% 0%, #10331f 0%, #0a2015 60%, #051108 100%);
-  box-shadow: 0 32px 64px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(0,223,129,.2), inset 0 0 60px rgba(0,223,129,.04);
+  background: radial-gradient(120% 140% at 50% 0%, #164a2c 0%, #0c2e1b 60%, #05160d 100%);
+  box-shadow: 0 32px 64px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(0,223,129,.25), inset 0 0 60px rgba(0,223,129,.05);
 }
 
-/* ============================================================
-   CLUBCARD PREMIUM — dorada, fondo negro. Marco y logo en blanco.
-   ============================================================ */
-.ccv2--premium .ccv2-brand { color: rgba(232,200,122,.95); }
-.ccv2--premium .ccv2-codigo__lbl { color: rgba(232,200,122,.55); }
-.ccv2--premium .ccv2-codigo__val { color: #e8c87a; }
-.ccv2--premium .ccv2-name { color: #f0d98a; }
-.ccv2--premium .ccv2-renueva { color: rgba(232,200,122,.8); }
-.ccv2--premium .ccv2-renueva span { color: #e8c87a; }
 .ccv2--premium .ccv2-card {
-  background: radial-gradient(120% 140% at 50% 0%, #332912 0%, #1f1909 60%, #0f0c04 100%);
-  box-shadow: 0 32px 64px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(201,164,78,.15), inset 0 0 60px rgba(201,164,78,.03);
+  background: radial-gradient(120% 140% at 50% 0%, #5c4720 0%, #382b13 60%, #181207 100%);
+  box-shadow: 0 32px 64px -30px rgba(0,0,0,.75), 0 0 0 1px rgba(232,200,122,.3), inset 0 0 60px rgba(232,200,122,.05);
 }
 
-/* ============================================================
-   CLUBCARD VITALICIA — azul turquesa. Marco y logo en blanco.
-   ============================================================ */
-.ccv2--vitalicia .ccv2-brand { color: rgba(30,217,217,.95); }
-.ccv2--vitalicia .ccv2-codigo__lbl { color: rgba(30,217,217,.6); }
-.ccv2--vitalicia .ccv2-codigo__val { color: #1ed9d9; }
-.ccv2--vitalicia .ccv2-name { color: #6ee6e6; }
-.ccv2--vitalicia .ccv2-renueva { color: rgba(30,217,217,.8); }
-.ccv2--vitalicia .ccv2-renueva span { color: #1ed9d9; }
 .ccv2--vitalicia .ccv2-card {
-  background: radial-gradient(120% 140% at 50% 0%, #0e2e2e 0%, #081c1c 60%, #040f0f 100%);
-  box-shadow: 0 32px 64px -30px rgba(0,0,0,.75), 0 0 0 1.5px rgba(30,217,217,.3), inset 0 0 80px rgba(30,217,217,.06);
+  background: radial-gradient(120% 140% at 50% 0%, #135050 0%, #0b3131 60%, #051818 100%);
+  box-shadow: 0 32px 64px -30px rgba(0,0,0,.75), 0 0 0 1.5px rgba(30,217,217,.35), inset 0 0 80px rgba(30,217,217,.07);
 }
 
 /* Personalización en el éxito de checkout */
