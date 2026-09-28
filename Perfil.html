@@ -113,6 +113,40 @@
             <p>Este mes ya estás aprovechando tu membresía. Esto es lo que llevas.</p>
           </div>
 
+          <!-- ClubCard -->
+          <div class="dash-grid" style="grid-template-columns:1fr;max-width:460px;margin-left:auto;margin-right:auto">
+            <div class="card">
+              <div class="card__head">
+                <span class="card__title">Mi ClubCard</span>
+                <button class="card__link" data-goto-panel="clubcard">Ver y escanear <i data-lucide="arrow-right"></i></button>
+              </div>
+              <div class="ccv2" style="position:relative">
+                <div class="ccv2__flip">
+                  <div class="ccv2-card ccv2-card--front">
+                    <img src="marco-card.png" class="ccv2-frame-img" alt="">
+                    <div class="ccv2-front__in">
+                      <span class="ccv2-brand">CLUBCARD</span>
+                      <div class="ccv2-mid">
+                        <img src="logo-club.png" class="ccv2-logo-img" alt="El Club de la Gente">
+                      </div>
+                      <div class="ccv2-footer">
+                        <div class="ccv2-name cc-card-name">CARLOS ANDRÉS PÉREZ</div>
+                        <div class="ccv2-codigo">
+                          <span class="ccv2-codigo__lbl">Código:</span>
+                          <span class="ccv2-codigo__val cc-card-codigo">300 412 8890</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div id="cc-lock-inicio" class="cc-bloqueo" style="display:none">
+                  <i data-lucide="lock" style="width:28px;height:28px"></i>
+                  <p>Activa tu membresía<br>para usar tu ClubCard</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Accesos rápidos -->
           <div class="qa-grid">
             <button class="sb-link" data-panel="descuentos"><span class="qa-ic"><i data-lucide="receipt"></i></span>Descuentos</button>
@@ -125,25 +159,37 @@
             <a class="qa-btn" href="El Club de la Gente.html"><span class="qa-ic"><i data-lucide="users"></i></span>Comunidad</a>
           </div>
 
-          <div id="banner-usos" style="display:none;align-items:center;gap:8px;padding:12px 16px;border-radius:12px;font-size:13px;margin-bottom:20px;line-height:1.4"></div>
-
-          <!-- Tarjeta referidos -->
-          <div id="card-referidos" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;background:linear-gradient(135deg,#0e4a23 0%,#095544 100%);color:#fff;padding:20px 24px;border-radius:14px;margin-bottom:20px">
-            <div style="flex:1;min-width:220px">
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:3px;flex-wrap:wrap">
-                <span style="font-size:14px;font-weight:700">¿Sabías que puedes usarlo gratis de por vida?</span>
-                <span id="ref-badge" style="font-size:10.5px;font-weight:700;letter-spacing:.06em;background:rgba(255,255,255,.18);padding:2px 9px;border-radius:99px" hidden>¡ACTIVA!</span>
-              </div>
-              <div id="ref-msg" style="font-size:12px;opacity:.85;margin-bottom:12px">Invita 5 amigos al Club y obtén tu membresía vitalicia sin pagar nada.</div>
-              <div style="display:flex;align-items:center;gap:10px">
-                <div style="flex:1;max-width:260px;height:7px;background:rgba(255,255,255,.22);border-radius:99px;overflow:hidden">
-                  <div id="ref-barra" style="height:100%;background:#fff;border-radius:99px;transition:width .4s;width:0%"></div>
-                </div>
-                <span id="ref-contador" style="font-size:12px;font-weight:700;white-space:nowrap">0 de 5</span>
-              </div>
-            </div>
-            <button id="ref-copiar" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:none;color:#fff;padding:9px 14px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0"><i data-lucide="link" style="width:14px;height:14px"></i> Copiar mi link</button>
+          <!-- Ahorro total del mes -->
+          <div class="hero-ahorro">
+            <div class="hero-ahorro__lbl">Ahorro total del mes</div>
+            <div class="hero-ahorro__num" id="stat-ahorro-mes">—</div>
+            <div class="hero-ahorro__trend" id="hero-ahorro-trend" hidden><i data-lucide="trending-up"></i> <span id="hero-ahorro-trend-txt"></span></div>
           </div>
+
+          <div class="stats-mini">
+            <div class="stat-mini">
+              <span class="stat-mini__ic"><i data-lucide="ticket-percent"></i></span>
+              <div><div class="stat-mini__num" id="stat-descuentos-mes">—</div><div class="stat-mini__lbl">Descuentos este mes</div></div>
+            </div>
+            <div class="stat-mini">
+              <span class="stat-mini__ic"><i data-lucide="store"></i></span>
+              <div><div class="stat-mini__num" id="stat-aliados-mes">—</div><div class="stat-mini__lbl">Aliados visitados</div></div>
+            </div>
+            <div class="stat-mini">
+              <span class="stat-mini__ic"><i data-lucide="sparkles"></i></span>
+              <div><div class="stat-mini__num" id="stat-ahorro-total">—</div><div class="stat-mini__lbl">Ahorro acumulado</div></div>
+            </div>
+          </div>
+
+          <!-- Racha de meses seguidos ahorrando (se llena con datos reales, se oculta si aún no hay racha) -->
+          <div class="card" id="card-racha" style="margin-bottom:20px" hidden>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <span id="racha-txt" style="font-size:13px;font-weight:700"></span>
+            </div>
+            <div id="racha-dots" style="display:flex;gap:7px"></div>
+          </div>
+
+          <div id="banner-usos" style="display:none;align-items:center;gap:8px;padding:12px 16px;border-radius:12px;font-size:13px;margin-bottom:20px;line-height:1.4"></div>
 
           <!-- Checklist de primeros pasos (se muestra/oculta por JS según datos reales) -->
           <div class="onb-wrap" id="onb-wrap" style="display:none">
@@ -192,36 +238,6 @@
             </div>
           </div>
 
-          <!-- Banner referidos para usuarios con plan activo (se muestra por JS) -->
-          <div class="hero-ahorro">
-            <div class="hero-ahorro__lbl">Ahorro total del mes</div>
-            <div class="hero-ahorro__num" id="stat-ahorro-mes">—</div>
-            <div class="hero-ahorro__trend" id="hero-ahorro-trend" hidden><i data-lucide="trending-up"></i> <span id="hero-ahorro-trend-txt"></span></div>
-          </div>
-
-          <div class="stats-mini">
-            <div class="stat-mini">
-              <span class="stat-mini__ic"><i data-lucide="ticket-percent"></i></span>
-              <div><div class="stat-mini__num" id="stat-descuentos-mes">—</div><div class="stat-mini__lbl">Descuentos este mes</div></div>
-            </div>
-            <div class="stat-mini">
-              <span class="stat-mini__ic"><i data-lucide="store"></i></span>
-              <div><div class="stat-mini__num" id="stat-aliados-mes">—</div><div class="stat-mini__lbl">Aliados visitados</div></div>
-            </div>
-            <div class="stat-mini">
-              <span class="stat-mini__ic"><i data-lucide="sparkles"></i></span>
-              <div><div class="stat-mini__num" id="stat-ahorro-total">—</div><div class="stat-mini__lbl">Ahorro acumulado</div></div>
-            </div>
-          </div>
-
-          <!-- Racha de meses seguidos ahorrando (se llena con datos reales, se oculta si aún no hay racha) -->
-          <div class="card" id="card-racha" style="margin-bottom:20px" hidden>
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-              <span id="racha-txt" style="font-size:13px;font-weight:700"></span>
-            </div>
-            <div id="racha-dots" style="display:flex;gap:7px"></div>
-          </div>
-
           <!-- Recomendados para ti (según categorías de interés, mascotas, hijos) -->
           <div class="card" id="card-recomendados" style="margin-bottom:20px" hidden>
             <div class="card__head" style="align-items:flex-start;flex-direction:column;gap:4px;margin-bottom:16px">
@@ -236,57 +252,22 @@
             <div class="marcas-carrusel__track" id="marcas-track-dash"></div>
           </div>
 
-          <div class="dash-grid" style="grid-template-columns:1fr;max-width:460px;margin-left:auto;margin-right:auto">
-            <!-- ClubCard -->
-            <div class="card">
-              <div class="card__head">
-                <span class="card__title">Mi ClubCard</span>
-                <button class="card__link" data-goto-panel="clubcard">Ver y escanear <i data-lucide="arrow-right"></i></button>
+          <!-- Tarjeta referidos -->
+          <div id="card-referidos" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;background:linear-gradient(135deg,#0e4a23 0%,#095544 100%);color:#fff;padding:20px 24px;border-radius:14px;margin-bottom:20px">
+            <div style="flex:1;min-width:220px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:3px;flex-wrap:wrap">
+                <span style="font-size:14px;font-weight:700">¿Sabías que puedes usarlo gratis de por vida?</span>
+                <span id="ref-badge" style="font-size:10.5px;font-weight:700;letter-spacing:.06em;background:rgba(255,255,255,.18);padding:2px 9px;border-radius:99px" hidden>¡ACTIVA!</span>
               </div>
-              <div class="ccv2" style="position:relative">
-                <div class="ccv2__flip">
-                  <div class="ccv2-card ccv2-card--front">
-                    <img src="marco-card.png" class="ccv2-frame-img" alt="">
-                    <div class="ccv2-front__in">
-                      <span class="ccv2-brand">CLUBCARD</span>
-                      <div class="ccv2-mid">
-                        <img src="logo-club.png" class="ccv2-logo-img" alt="El Club de la Gente">
-                      </div>
-                      <div class="ccv2-footer">
-                        <div class="ccv2-name cc-card-name">CARLOS ANDRÉS PÉREZ</div>
-                        <div class="ccv2-codigo">
-                          <span class="ccv2-codigo__lbl">Código:</span>
-                          <span class="ccv2-codigo__val cc-card-codigo">300 412 8890</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+              <div id="ref-msg" style="font-size:12px;opacity:.85;margin-bottom:12px">Invita 5 amigos al Club y obtén tu membresía vitalicia sin pagar nada.</div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="flex:1;max-width:260px;height:7px;background:rgba(255,255,255,.22);border-radius:99px;overflow:hidden">
+                  <div id="ref-barra" style="height:100%;background:#fff;border-radius:99px;transition:width .4s;width:0%"></div>
                 </div>
-                <div id="cc-lock-inicio" class="cc-bloqueo" style="display:none">
-                  <i data-lucide="lock" style="width:28px;height:28px"></i>
-                  <p>Activa tu membresía<br>para usar tu ClubCard</p>
-                </div>
+                <span id="ref-contador" style="font-size:12px;font-weight:700;white-space:nowrap">0 de 5</span>
               </div>
             </div>
-
-          </div>
-
-          <!-- Actividad reciente -->
-          <div class="card" style="margin-bottom:20px;">
-            <div class="card__head">
-              <span class="card__title">Actividad reciente</span>
-              <button class="card__link" data-goto-panel="descuentos">Ver historial <i data-lucide="arrow-right"></i></button>
-            </div>
-            <ul class="actividad" id="actividad"></ul>
-          </div>
-
-          <!-- Banner WhatsApp -->
-          <div class="wa-banner">
-            <div class="wa-banner__txt">
-              <h3>Tu resumen llega por WhatsApp</h3>
-              <p>El 1 de julio recibirás un resumen de todo lo que ahorraste este mes directamente en tu WhatsApp, junto con tus aliados más cercanos.</p>
-            </div>
-            <a class="btn btn--primario" href="#"><i data-lucide="message-circle" style="width:18px;height:18px"></i> Ver en WhatsApp</a>
+            <button id="ref-copiar" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:none;color:#fff;padding:9px 14px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0"><i data-lucide="link" style="width:14px;height:14px"></i> Copiar mi link</button>
           </div>
         </section>
 
