@@ -1939,7 +1939,7 @@ async function cargarProfesionalesClub(plan) {
   gridEl.style.display = "grid";
 
   const [{ data: profs }, { data: servicios }] = await Promise.all([
-    supabase.from("profesionales").select("*").eq("activo", true).order("created_at"),
+    supabase.from("profesionales").select("*").eq("activo", true).eq("mostrar_premium", true).order("created_at"),
     supabase.from("servicios_profesional").select("*").order("orden"),
   ]);
 

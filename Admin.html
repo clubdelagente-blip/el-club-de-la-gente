@@ -1701,6 +1701,11 @@ function htmlFormProf(p={}){return `
     <div class="ad-field"><label>WhatsApp</label><input id="pf-wa" type="tel" value="${(p.whatsapp||'').replace(/"/g,'&quot;')}" placeholder="300 000 0000"></div>
   </div>
   <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:2px 0 14px"><input type="checkbox" id="pf-es-conductor" style="width:auto" ${p.es_conductor?'checked':''}> Es conductor Uber (moto/carro) -- controla el descuento y el panel "Mis viajes", no depende del texto de arriba</label>
+  <div style="background:rgba(26,26,24,.03);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+    <div style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:rgba(26,26,24,.4);margin-bottom:8px">¿Dónde se muestra?</div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px"><input type="checkbox" id="pf-mostrar-landing" style="width:auto" ${p.mostrar_landing?'checked':''}> Página principal (sección "Profesionales")</label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" id="pf-mostrar-premium" style="width:auto" ${p.mostrar_premium?'checked':''}> Panel Premium/Vitalicia del miembro logueado</label>
+  </div>
   <div class="ad-field"><label>Descripción / Servicios</label><textarea id="pf-desc" rows="3" placeholder="Describe los servicios y beneficios">${p.descripcion||''}</textarea></div>
   <div class="ad-field"><label>Foto de perfil (opcional)</label>${p.imagen_url?`<img src="${p.imagen_url}" style="width:72px;height:72px;object-fit:cover;border-radius:50%;margin-bottom:10px">`:''}<input id="pf-img" type="file" accept="image/*"><input type="hidden" id="pf-img-url" value="${p.imagen_url||''}"></div>
   <hr style="border:none;border-top:1px solid rgba(26,26,24,.12);margin:20px 0 14px">
@@ -1770,7 +1775,7 @@ function bindFormProf(p={}){setTimeout(()=>{
     if(contratoFile)try{contrato_url=await subirImagen(contratoFile);}catch(_){toast('Error al subir el contrato');}
     let waProf=($("#pf-wa")?.value||"").replace(/\D/g,"");
     while(waProf.length>10&&waProf.startsWith("57"))waProf=waProf.slice(2);
-    const payload={nombre,area:$("#pf-area")?.value.trim()||null,whatsapp:waProf||null,es_conductor:!!$("#pf-es-conductor")?.checked,descripcion:$("#pf-desc")?.value.trim()||null,imagen_url,fecha_inicio:$("#pf-fecha-inicio")?.value||null,fecha_fin:$("#pf-fecha-fin")?.value||null,contrato_url,activo:true};
+    const payload={nombre,area:$("#pf-area")?.value.trim()||null,whatsapp:waProf||null,es_conductor:!!$("#pf-es-conductor")?.checked,mostrar_landing:!!$("#pf-mostrar-landing")?.checked,mostrar_premium:!!$("#pf-mostrar-premium")?.checked,descripcion:$("#pf-desc")?.value.trim()||null,imagen_url,fecha_inicio:$("#pf-fecha-inicio")?.value||null,fecha_fin:$("#pf-fecha-fin")?.value||null,contrato_url,activo:true};
     const id=btn.dataset.id;
     id?await supabase.from('profesionales').update(payload).eq('id',id):await supabase.from('profesionales').insert(payload);
     window.cerrarModal?.();cargarProfesionales();toast(id?'Profesional actualizado ✓':'Profesional agregado ✓');

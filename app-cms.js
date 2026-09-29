@@ -122,6 +122,7 @@ async function cargarProfesionalesPub() {
     .from('profesionales')
     .select('*')
     .eq('activo', true)
+    .eq('mostrar_landing', true)
     .order('created_at', { ascending: true });
 
   if (error || !data?.length) return;
