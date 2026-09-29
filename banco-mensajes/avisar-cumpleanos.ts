@@ -18,8 +18,10 @@ const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 Deno.serve(async (_req: Request) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-  const hoy = new Date();
-  const mesDia = hoy.toISOString().slice(5, 10); // "MM-DD"
+  // Fecha en hora Colombia (UTC-5), no UTC -- si no, cerca de medianoche
+  // se corre el día de cumpleaños de todos.
+  const hoyCo = new Date(Date.now() - 5 * 60 * 60 * 1000);
+  const mesDia = `${String(hoyCo.getUTCMonth() + 1).padStart(2, "0")}-${String(hoyCo.getUTCDate()).padStart(2, "0")}`;
 
   const { data: candidatos, error: errCandidatos } = await supabase
     .from("perfiles")
