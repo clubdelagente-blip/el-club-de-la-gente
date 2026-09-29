@@ -533,7 +533,6 @@ function observeFade() {
 
 /* ---------- INIT ---------- */
 document.addEventListener("DOMContentLoaded", () => {
-  renderProfesionales();
   renderProgramas();
   if (window.lucide) lucide.createIcons();
 

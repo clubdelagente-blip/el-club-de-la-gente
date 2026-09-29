@@ -129,6 +129,8 @@ async function cargarProfesionalesPub() {
 
   const grid = document.querySelector('#profesionales-grid');
   if (!grid) return;
+  const seccion = document.querySelector('#profesionales');
+  if (seccion) seccion.style.display = '';
 
   grid.innerHTML = data.map((p, i) => `
     <div class="profe-card fade-up" style="--delay:${i * 60}ms">
