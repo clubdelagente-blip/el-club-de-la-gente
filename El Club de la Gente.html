@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=29">
+  <link rel="stylesheet" href="styles.css?v=30">
   <style>
     #marcas-carrusel-landing { margin-top: var(--nav-h); }
     .hero { padding-top: 0; }
@@ -55,16 +55,19 @@
         <span></span><span></span><span></span>
       </button>
     </div>
-
-    <div class="nav__mobile">
-      <a href="#aliados">Aliados</a>
-      <a href="#profesionales">Profesionales</a>
-      <a href="#programas">Programas</a>
-      <a href="#educacion">Educación</a>
-      <a href="#membresias">Membresías</a>
-      <a href="Login.html" class="nav__mobile-login">Iniciar sesión</a>
-    </div>
   </nav>
+
+  <!-- Fuera de <nav>: el backdrop-filter del nav (blur) puede "filtrarse" a
+       hijos de posición fija en Safari/iOS y volverlos translúcidos, así
+       que este panel vive como hermano, no como hijo. -->
+  <div class="nav__mobile" id="nav-mobile">
+    <a href="Login.html" class="nav__mobile-login">Iniciar sesión</a>
+    <a href="#aliados">Aliados</a>
+    <a href="#profesionales">Profesionales</a>
+    <a href="#programas">Programas</a>
+    <a href="#educacion">Educación</a>
+    <a href="#membresias">Membresías</a>
+  </div>
 
   <!-- ============================================================
        BANNER + CARRUSEL DE MARCAS AMAZON
@@ -329,7 +332,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=2"></script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
   <script type="module" src="app-cms.js?v=11"></script>
 
   <!-- ============================================================

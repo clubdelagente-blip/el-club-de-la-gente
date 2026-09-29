@@ -774,9 +774,16 @@ document.addEventListener("DOMContentLoaded", () => {
   onScroll();
   window.addEventListener("scroll", onScroll, { passive: true });
 
-  // Hamburguesa
-  $("#burger").addEventListener("click", () => nav.classList.toggle("is-open"));
-  $$(".nav__mobile a").forEach(a => a.addEventListener("click", () => nav.classList.remove("is-open")));
+  // Hamburguesa (el panel vive fuera de <nav>, se controla con su propia clase)
+  const navMobile = $("#nav-mobile");
+  $("#burger").addEventListener("click", () => {
+    nav.classList.toggle("is-open");
+    navMobile?.classList.toggle("is-open");
+  });
+  $$(".nav__mobile a").forEach(a => a.addEventListener("click", () => {
+    nav.classList.remove("is-open");
+    navMobile?.classList.remove("is-open");
+  }));
 
   // Delegación de clicks
   document.addEventListener("click", (e) => {
