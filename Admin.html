@@ -1314,7 +1314,7 @@ function bindFormPromocionInline(aliadoId,editId){
     const updPct=()=>{const n=parseInt($("#pr-precio-n-pct")?.value)||0;const pct=parseInt($("#pr-pct")?.value)||0;const el=$("#pr-ahorro-pct-prev");if(el)el.textContent=n&&pct?`Ahorro: $${Math.round(n*pct/100).toLocaleString('es-CO')} por visita`:'';};
     $("#pr-precio-n-pct")?.addEventListener('input',updPct);$("#pr-pct")?.addEventListener('input',updPct);updPct();
     document.querySelectorAll('#pr-dias-chips .fa-chip').forEach(chip=>chip.addEventListener('click',()=>chip.classList.toggle('is-on')));
-    renderFotosPromoPreview();
+    renderFotosPromoPreview();bindFotosPromoInput();
     $("#pr-cancel")?.addEventListener('click',()=>{const w=$("#fa-promo-form-wrap");if(w){w.style.display='none';w.innerHTML='';}});
     const btn=$("#pr-save");
     btn?.addEventListener('click',async()=>{
@@ -1329,11 +1329,6 @@ function bindFormPromocionInline(aliadoId,editId){
       else if(tipo==='regalo'){ahorro_fijo=parseInt($("#pr-regalo-val")?.value)||null;}
       const diasActivos=[...document.querySelectorAll('#pr-dias-chips .fa-chip.is-on')].map(b=>b.dataset.dia);
       let fotosUrls=[];try{fotosUrls=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){fotosUrls=[];}
-      const filesNuevos=[...($("#pr-foto")?.files||[])];
-      if(filesNuevos.length){
-        try{const nuevas=await Promise.all(filesNuevos.map(f=>subirImagen(f)));fotosUrls=[...fotosUrls,...nuevas];}
-        catch(_){toast('Error al subir alguna foto');}
-      }
       const foto_url=fotosUrls[0]||null;
       const payload={aliado_id:aliadoId,tipo,descripcion,
         aplica_a:$("#pr-aplica")?.value||'toda_la_tienda',
@@ -1891,16 +1886,33 @@ function renderFotosPromoPreview(){
   let urls=[];try{urls=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){urls=[];}
   const cont=$("#pr-fotos-preview");if(!cont)return;
   cont.innerHTML=urls.map((url,i)=>`
-    <div style="position:relative">
-      <img src="${url}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;display:block">
-      <button type="button" class="pr-foto-rm" data-idx="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;border:none;cursor:pointer;font-size:12px;line-height:1;padding:0">×</button>
-    </div>`).join('');
+    <div style="position:relative;width:64px;height:64px">
+      <img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
+      <button type="button" class="pr-foto-rm" data-idx="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer">×</button>
+    </div>`).join('')+(urls.length<5?`
+    <button type="button" id="pr-foto-add" style="width:64px;height:64px;border:2px dashed #ccc;border-radius:8px;background:none;cursor:pointer;font-size:24px;color:#999;line-height:1">+</button>`:'');
+  $("#pr-foto-add")?.addEventListener('click',()=>$("#pr-foto-input")?.click());
   cont.querySelectorAll('.pr-foto-rm').forEach(btn=>btn.addEventListener('click',()=>{
     let arr=[];try{arr=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){arr=[];}
     arr.splice(+btn.dataset.idx,1);
     const h=$("#pr-fotos-urls");if(h)h.value=JSON.stringify(arr);
     renderFotosPromoPreview();
   }));
+}
+function bindFotosPromoInput(){
+  const input=$("#pr-foto-input");
+  if(!input||input.dataset.bound)return;
+  input.dataset.bound='1';
+  input.addEventListener('change',async(e)=>{
+    const file=e.target.files?.[0];
+    e.target.value='';
+    if(!file)return;
+    let url;try{url=await subirImagen(file);}catch(_){toast('Error al subir la foto');return;}
+    let arr=[];try{arr=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){arr=[];}
+    arr.push(url);
+    const h=$("#pr-fotos-urls");if(h)h.value=JSON.stringify(arr);
+    renderFotosPromoPreview();
+  });
 }
 function htmlFormPromocion(p={},aliadoId){
   const DIAS=['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
@@ -1966,9 +1978,9 @@ function htmlFormPromocion(p={},aliadoId){
     <div class="ad-field"><label>Vigencia hasta <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-fecha-fin" type="date" value="${p.fecha_fin||''}"></div>
   </div>
   <div class="ad-field"><label>Compra mínima ($) <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-min" type="number" min="0" value="${p.monto_minimo||''}" placeholder="0" style="max-width:220px"></div>
-  <div class="ad-field"><label>Fotos <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional, puedes subir varias -- se muestran en carrusel)</span></label>
-    <div id="pr-fotos-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
-    <input id="pr-foto" type="file" accept="image/*" multiple>
+  <div class="ad-field"><label>Fotos <span style="font-weight:400;color:rgba(26,26,24,.4)">(hasta 5, la primera es la foto principal -- se muestran en carrusel)</span></label>
+    <div id="pr-fotos-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px"></div>
+    <input type="file" id="pr-foto-input" accept="image/*" style="display:none">
     <input type="hidden" id="pr-fotos-urls" value="${esc(JSON.stringify(p.fotos_urls||(p.foto_url?[p.foto_url]:[])))}">
   </div>
   <div style="background:rgba(234,183,73,.08);border:1px solid rgba(234,183,73,.3);border-radius:10px;padding:12px 14px;margin-bottom:10px">
@@ -2018,7 +2030,7 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
     $("#pr-pct")?.addEventListener('input',updPct);
     updPct();
     document.querySelectorAll('#pr-dias-chips .fa-chip').forEach(chip=>chip.addEventListener('click',()=>chip.classList.toggle('is-on')));
-    renderFotosPromoPreview();
+    renderFotosPromoPreview();bindFotosPromoInput();
     $("#pr-cancel")?.addEventListener('click',()=>{cargarYMostrarPromociones(aliadoId,aliadoNombre);});
     const btn=$("#pr-save");
     btn?.addEventListener('click',async()=>{
@@ -2043,11 +2055,6 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
       }
       const diasActivos=[...document.querySelectorAll('#pr-dias-chips .fa-chip.is-on')].map(b=>b.dataset.dia);
       let fotosUrls=[];try{fotosUrls=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){fotosUrls=[];}
-      const filesNuevos=[...($("#pr-foto")?.files||[])];
-      if(filesNuevos.length){
-        try{const nuevas=await Promise.all(filesNuevos.map(f=>subirImagen(f)));fotosUrls=[...fotosUrls,...nuevas];}
-        catch(_){toast('Error al subir alguna foto');}
-      }
       const foto_url=fotosUrls[0]||null;
       const payload={aliado_id:aliadoId,tipo,descripcion,
         aplica_a:$("#pr-aplica")?.value||'toda_la_tienda',
