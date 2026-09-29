@@ -175,9 +175,9 @@ async function cargarUltimoEventoEducativo() {
 
   const fechaFmt = new Date(evento.fecha + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
   cont.innerHTML = `
-    <div style="display:grid;grid-template-columns:${evento.imagen_url ? '1fr 1fr' : '1fr'};gap:32px;align-items:center;background:#fff;border:1px solid var(--linea,#ebebeb);border-radius:16px;overflow:hidden">
-      ${evento.imagen_url ? `<img src="${evento.imagen_url}" alt="${evento.titulo}" style="width:100%;height:100%;max-height:340px;object-fit:cover">` : ''}
-      <div style="padding:32px 32px 32px 0;${evento.imagen_url ? '' : 'padding-left:32px'}">
+    <div class="evento-edu-card${evento.imagen_url ? '' : ' evento-edu-card--sin-img'}">
+      ${evento.imagen_url ? `<img class="evento-edu-card__img" src="${evento.imagen_url}" alt="${evento.titulo}">` : ''}
+      <div class="evento-edu-card__body">
         <span style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;background:var(--verde-soft,#e8f5ee);color:var(--verde,#095544)">${esProximo ? 'Próximo taller' : 'Último taller realizado'} · ${fechaFmt}</span>
         <h3 style="font-family:var(--display);font-size:24px;font-weight:600;margin:14px 0 10px">${evento.titulo}</h3>
         ${evento.descripcion ? `<p style="font-size:14px;opacity:.7;line-height:1.6;margin-bottom:16px">${evento.descripcion}</p>` : ''}
