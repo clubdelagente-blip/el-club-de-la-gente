@@ -506,6 +506,78 @@ function sheetAliadoForm() {
   `;
 }
 
+/* ---------- DATOS: PREGUNTAS FRECUENTES ---------- */
+const FAQ = [
+  {
+    grupo: "Sobre el Club",
+    preguntas: [
+      { q: "¿Qué es El Club de la Gente?", a: "Es una empresa triple A (Ahorra, Aprende y Ayuda) nacida en Fusagasugá. Con una membresía mensual accedes a descuentos en negocios aliados, programas educativos y una red de personas que se apoyan para crecer. Juntos ahorramos más, juntos llegamos lejos." },
+      { q: "¿Qué significa que sea una empresa BIC?", a: "Somos una S.A.S. de Beneficio e Interés Colectivo. Eso quiere decir que, además de generar valor para nuestros miembros, tenemos compromisos con la comunidad: compramos a proveedores locales, apoyamos fundaciones de rescate animal, entregamos mercados a personas en condición de calle e impulsamos emprendimientos de la región." },
+      { q: "¿El Club es legal y está registrado?", a: "Sí. Somos EL CLUB DE LA GENTE S.A.S. BIC, NIT 902.064.432-5, registrados en la Cámara de Comercio desde mayo de 2026." },
+    ],
+  },
+  {
+    grupo: "Membresías y pagos",
+    preguntas: [
+      { q: "¿Qué planes hay y cuánto cuestan?", a: "Básica ($10.000/mes): acceso a la plataforma, todos los programas educativos, descuentos limitados con aliados y voluntariado social.<br><br>Premium ($20.000/mes): todo lo de la Básica, más descuentos ilimitados, ClubCard personalizada, sorteos y accesos exclusivos.<br><br>Por menos de lo que te cuesta un tinto al día, ya eres parte del club." },
+      { q: "¿Cómo me afilio?", a: "Entra con tu cuenta de Google o tu WhatsApp, completa tu perfil, elige tu plan y haz el pago. En cuanto se confirme, tu membresía queda activa y ya puedes usar tus beneficios." },
+      { q: "¿Cómo puedo pagar?", a: "Los pagos se procesan de forma segura a través de la llave Bre-B del Club. Una vez envíes el comprobante, se valida tu pago y se activa tu cuenta." },
+      { q: "¿El cobro es automático cada mes?", a: "No. La membresía se renueva mes a mes para que no pierdas tus beneficios. Siempre puedes ver tu próximo cobro en tu perfil, te llega un recordatorio por WhatsApp y decides voluntariamente si seguir o no." },
+      { q: "¿Puedo cancelar cuando quiera?", a: "Claro. No hay permanencia mínima, ni cláusulas raras, ni letra pequeña. Cancelas y no se te vuelve a cobrar." },
+      { q: "¿Puedo pasar de Básica a Premium (o al revés)?", a: "Sí, puedes cambiar de plan desde tu perfil." },
+      { q: "¿Qué pasa si no uso la membresía un mes?", a: "Los beneficios de ese mes son tuyos; no se acumulan para el siguiente. Por eso te animamos a aprovecharlos al máximo." },
+      { q: "¿Qué pasa si mi pago falla?", a: "Te avisaremos para que actualices tu medio de pago. Mientras el pago no se confirme, los beneficios quedan en pausa." },
+    ],
+  },
+  {
+    grupo: "Descuentos y aliados",
+    preguntas: [
+      { q: "¿Cómo uso mis descuentos?", a: "Busca el aliado en el directorio de la plataforma, ve al negocio y muestra tu ClubCard desde el celular. El aliado la valida y te aplica el descuento." },
+      { q: "¿Qué aliados hay?", a: "Ya tenemos aliados en bienestar y salud, estética, barbería, odontología, veterinaria, turismo, ropa personalizada, publicidad, comida rápida, fruver, tienda de regalos y heladería, y cada mes se suman más. En el directorio ves el detalle de cada uno y el beneficio que ofrece." },
+      { q: "¿Qué es la ClubCard?", a: "Es tu tarjeta digital personalizada de miembro (Premium, Básica o gratis). La llevas en el celular y te identifica ante los aliados." },
+      { q: "¿Qué significa \"descuentos limitados\" en la Básica?", a: "Tienes 2 usos al mes por cada aliado." },
+      { q: "¿Los descuentos sirven fuera de Fusagasugá?", a: "Por ahora la red de aliados está en Fusagasugá, y pronto llegaremos a más ciudades. Sin embargo, está la Tienda del Club, que opera desde cualquier parte de Colombia y es de acceso gratuito." },
+      { q: "Tengo un negocio, ¿cómo me vuelvo aliado?", a: "Escríbenos por WhatsApp al 304 339 4870. Ser aliado te da visibilidad, clientes nuevos y fieles y presencia en nuestra plataforma y redes, sin costo de vinculación, y te incluye membresía vitalicia." },
+    ],
+  },
+  {
+    grupo: "Educación y comunidad",
+    preguntas: [
+      { q: "¿Qué son los programas educativos?", a: "Son contenidos y talleres de educación financiera, desarrollo personal y profesional, pensados para que crezcas en todos los ámbitos posibles. Está incluido de manera gratuita." },
+      { q: "¿Cómo participo en el voluntariado?", a: "Te avisaremos de las actividades sociales (jornadas con fundaciones de perritos, entrega de mercados y apoyo a emprendedores) para que te sumes cuando quieras." },
+    ],
+  },
+  {
+    grupo: "Cuenta y soporte",
+    preguntas: [
+      { q: "¿Mis datos están seguros?", a: "Sí. Solo usamos tus datos para gestionar tu membresía y tus beneficios, conforme a la Ley 1581 de 2012 de protección de datos personales. Los pagos se hacen por transferencia Bre-B directamente a la cuenta del Club; nosotros no almacenamos ni pedimos datos de tarjetas." },
+      { q: "¿Cómo me comunico con ustedes?", a: "WhatsApp: 304 339 4870<br>Correo: clubdelagente@gmail.com" },
+    ],
+  },
+];
+
+/* Sheet — Preguntas frecuentes */
+function sheetFaq() {
+  return `
+    <div class="sheet__cat">Ayuda</div>
+    <h2 class="sheet__nombre">Preguntas frecuentes</h2>
+    ${FAQ.map(g => `
+      <div class="faq-grupo">
+        <div class="sheet__sub">${g.grupo}</div>
+        ${g.preguntas.map(item => `
+          <div class="faq-item">
+            <button type="button" class="faq-item__q">
+              <span>${item.q}</span>
+              <i data-lucide="chevron-down" class="faq-item__ic"></i>
+            </button>
+            <div class="faq-item__a"><p>${item.a}</p></div>
+          </div>
+        `).join("")}
+      </div>
+    `).join("")}
+  `;
+}
+
 /* ---------- TOAST ---------- */
 let toastT;
 function toast(msg, check = true) {
@@ -564,6 +636,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // Profesional
     const profe = e.target.closest("[data-profesional]");
     if (profe) { openSheet(sheetProfesional(+profe.dataset.profesional)); return; }
+
+    // Preguntas frecuentes
+    if (e.target.closest("[data-faq-btn]")) {
+      openSheet(sheetFaq());
+      sheetInner.querySelectorAll(".faq-item__q").forEach(btn => {
+        btn.addEventListener("click", () => btn.closest(".faq-item").classList.toggle("is-open"));
+      });
+      return;
+    }
 
     // Quiero ser aliado
     if (e.target.closest("[data-aliado-form]")) {
