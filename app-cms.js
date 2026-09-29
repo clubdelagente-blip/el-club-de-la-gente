@@ -59,25 +59,23 @@ async function cargarAliadosPub() {
 
 /* ---------- Planes (precios y beneficios editables desde Admin) ---------- */
 function tarjetaPlanHtml(p, i) {
-  const esVitalicia = p.slug === "vitalicia";
   const esPremium = p.slug === "premium";
+  const esVitalicia = p.slug === "vitalicia";
   const claseSlug = esPremium ? "plan--premium" : esVitalicia ? "plan--vitalicia" : p.slug === "gratis" ? "plan--gratis" : "plan--basica";
-  const colorVital = esVitalicia ? ' style="color:#095544"' : "";
-  const dotVital = esVitalicia ? ' style="background:#095544"' : "";
 
   return `
     <article class="plan ${claseSlug} fade-up" style="--delay:${i * 60}ms">
       ${p.recomendado ? `<span class="plan__badge-rec" id="badge-rec">Recomendado</span>` : ""}
-      <span class="plan__tag"${colorVital}>${p.tag}</span>
+      <span class="plan__tag">${p.tag}</span>
       ${p.ribbon_texto ? `<span style="display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:#095544;color:#fff;padding:7px 14px;border-radius:100px;margin-top:12px;">${p.ribbon_texto}</span>` : ""}
       ${(p.antes_texto || p.ahorra_texto) ? `<div class="plan__precio-row">
         ${p.antes_texto ? `<span class="plan__antes">${p.antes_texto}</span>` : ""}
         ${p.ahorra_texto ? `<span class="plan__ahorra">${p.ahorra_texto}</span>` : ""}
       </div>` : ""}
-      <div class="plan__precio"${colorVital}>${p.precio_texto}<small> ${p.precio_sufijo || ""}</small></div>
+      <div class="plan__precio">${p.precio_texto}<small> ${p.precio_sufijo || ""}</small></div>
       <div class="plan__ciclo">${p.ciclo_texto || ""}</div>
       <ul class="plan__beneficios">
-        ${(p.beneficios || []).map(b => `<li><span class="dot"${dotVital}></span>${b}</li>`).join("")}
+        ${(p.beneficios || []).map(b => `<li><span class="dot"></span>${b}</li>`).join("")}
       </ul>
     </article>`;
 }
