@@ -60,16 +60,28 @@
   display: flex; flex-direction: column; transition: transform .3s, box-shadow .3s, border-color .3s;
   border: 1.5px solid var(--linea-fuerte); background: transparent;
 }
-.plan-pick--premium { background: var(--negro); color: var(--crema-en-negro); border-color: var(--negro); overflow: hidden; }
-.plan-pick--premium::after { content: "G"; position: absolute; right: -26px; bottom: -64px; font-family: var(--display); font-size: 240px; font-weight: 700; color: rgba(241, 247, 246,0.04); line-height: 1; pointer-events: none; }
+/* Cada plan hereda el mismo color de fondo que su ClubCard (estilos.css)
+   -- así la tarjeta de precio y la ClubCard se ven como el mismo plan. */
+.plan-pick--gratis, .plan-pick--basica, .plan-pick--premium, .plan-pick--vitalicia {
+  color: var(--crema-en-negro); border-color: transparent; overflow: hidden;
+}
+.plan-pick--gratis::after, .plan-pick--basica::after, .plan-pick--premium::after, .plan-pick--vitalicia::after {
+  content: "G"; position: absolute; right: -26px; bottom: -64px; font-family: var(--display); font-size: 240px; font-weight: 700; color: rgba(241, 247, 246,0.04); line-height: 1; pointer-events: none;
+}
+.plan-pick--gratis { background: radial-gradient(120% 140% at 50% 0%, #164a2c 0%, #0c2e1b 60%, #05160d 100%); --acc: var(--verde-claro); --acc-soft: rgba(0,223,129,.14); }
+.plan-pick--basica { background: radial-gradient(120% 140% at 50% 0%, #454b4e 0%, #292d2f 60%, #121415 100%); --acc: #C8CED4; --acc-soft: rgba(200,206,212,.16); }
+.plan-pick--premium { background: radial-gradient(120% 140% at 50% 0%, #EAB749 0%, #8a6a28 55%, #4a3812 100%); --acc: #EAB749; --acc-soft: rgba(234,183,73,.16); }
+.plan-pick--vitalicia { background: radial-gradient(120% 140% at 50% 0%, #1a1a1a 0%, #0d0d0d 60%, #030303 100%); --acc: #EAB749; --acc-soft: rgba(234,183,73,.14); }
 .plan-pick.is-selected { border-color: var(--verde); box-shadow: 0 0 0 3px var(--verde-soft), 0 24px 48px -30px rgba(2, 27, 26,.45); }
-.plan-pick--premium.is-selected { box-shadow: 0 0 0 3px rgba(0, 223, 129,.35), 0 24px 48px -26px rgba(0,0,0,.6); }
+.plan-pick--gratis.is-selected, .plan-pick--basica.is-selected, .plan-pick--premium.is-selected, .plan-pick--vitalicia.is-selected {
+  border-color: transparent; box-shadow: 0 0 0 3px rgba(255,255,255,.2), 0 24px 48px -26px rgba(0,0,0,.6);
+}
 
 .plan-pick__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; position: relative; z-index: 2; margin-top: 26px; }
 .plan-pick__tag { font-size: 11.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--verde); }
-.plan-pick--premium .plan-pick__tag { color: var(--verde-claro); }
+.plan-pick--gratis .plan-pick__tag, .plan-pick--basica .plan-pick__tag, .plan-pick--premium .plan-pick__tag, .plan-pick--vitalicia .plan-pick__tag { color: var(--acc); }
 .radio { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--linea-fuerte); flex: none; display: grid; place-items: center; transition: border-color .25s; }
-.plan-pick--premium .radio { border-color: rgba(241, 247, 246,.4); }
+.plan-pick--gratis .radio, .plan-pick--basica .radio, .plan-pick--premium .radio, .plan-pick--vitalicia .radio { border-color: rgba(241, 247, 246,.4); }
 .radio::after { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--verde); transform: scale(0); transition: transform .25s; }
 .is-selected .radio { border-color: var(--verde); }
 .is-selected .radio::after { transform: scale(1); }
@@ -80,24 +92,24 @@
 
 .plan-pick__precio-row { display: flex; align-items: center; gap: 12px; margin: 22px 0 4px; flex-wrap: wrap; position: relative; z-index: 2; }
 .plan-pick__antes { font-size: 14px; text-decoration: line-through; color: var(--tinta-45); }
-.plan-pick--premium .plan-pick__antes { color: rgba(241, 247, 246,.42); }
+.plan-pick--gratis .plan-pick__antes, .plan-pick--basica .plan-pick__antes, .plan-pick--premium .plan-pick__antes, .plan-pick--vitalicia .plan-pick__antes { color: rgba(241, 247, 246,.42); }
 .plan-pick__ahorra { font-size: 11.5px; font-weight: 700; color: var(--verde); background: var(--verde-soft); padding: 5px 12px; border-radius: 100px; }
-.plan-pick--premium .plan-pick__ahorra { color: var(--verde-claro); background: rgba(0, 223, 129,.14); }
+.plan-pick--gratis .plan-pick__ahorra, .plan-pick--basica .plan-pick__ahorra, .plan-pick--premium .plan-pick__ahorra, .plan-pick--vitalicia .plan-pick__ahorra { color: var(--acc); background: var(--acc-soft); }
 .plan-pick__precio { font-family: var(--display); font-size: 72px; font-weight: 600; line-height: .9; position: relative; z-index: 2; }
 .plan-pick__precio small { font-size: 17px; font-family: var(--cuerpo); font-weight: 500; color: var(--tinta-60); }
-.plan-pick--premium .plan-pick__precio small { color: rgba(241, 247, 246,.55); }
+.plan-pick--gratis .plan-pick__precio small, .plan-pick--basica .plan-pick__precio small, .plan-pick--premium .plan-pick__precio small, .plan-pick--vitalicia .plan-pick__precio small { color: rgba(241, 247, 246,.55); }
 .plan-pick__ciclo { font-size: 13px; color: var(--tinta-60); margin: 10px 0 26px; position: relative; z-index: 2; }
-.plan-pick--premium .plan-pick__ciclo { color: rgba(241, 247, 246,.55); }
+.plan-pick--gratis .plan-pick__ciclo, .plan-pick--basica .plan-pick__ciclo, .plan-pick--premium .plan-pick__ciclo, .plan-pick--vitalicia .plan-pick__ciclo { color: rgba(241, 247, 246,.55); }
 
 .plan-pick__bens { list-style: none; display: flex; flex-direction: column; gap: 13px; margin-bottom: 28px; position: relative; z-index: 2; }
 .plan-pick__bens li { display: flex; align-items: flex-start; gap: 12px; font-size: 14px; }
 .plan-pick__bens .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--verde); margin-top: 7px; flex: none; }
-.plan-pick--premium .plan-pick__bens .dot { background: var(--verde-claro); }
-.plan-pick--premium .plan-pick__bens li { color: rgba(241, 247, 246,.82); }
+.plan-pick--gratis .plan-pick__bens .dot, .plan-pick--basica .plan-pick__bens .dot, .plan-pick--premium .plan-pick__bens .dot, .plan-pick--vitalicia .plan-pick__bens .dot { background: var(--acc); }
+.plan-pick--gratis .plan-pick__bens li, .plan-pick--basica .plan-pick__bens li, .plan-pick--premium .plan-pick__bens li, .plan-pick--vitalicia .plan-pick__bens li { color: rgba(241, 247, 246,.82); }
 
 .plan-pick__state { margin-top: auto; text-align: center; font-size: 13px; font-weight: 700; letter-spacing: .04em; padding: 13px; border-radius: 100px; position: relative; z-index: 2; transition: background .25s, color .25s; }
 .plan-pick .plan-pick__state { border: 1.5px solid var(--linea-fuerte); color: var(--tinta-60); }
-.plan-pick--premium .plan-pick__state { border-color: rgba(241, 247, 246,.3); color: rgba(241, 247, 246,.7); }
+.plan-pick--gratis .plan-pick__state, .plan-pick--basica .plan-pick__state, .plan-pick--premium .plan-pick__state, .plan-pick--vitalicia .plan-pick__state { border-color: rgba(241, 247, 246,.3); color: rgba(241, 247, 246,.7); }
 .plan-pick.is-selected .plan-pick__state { background: var(--verde); border-color: var(--verde); color: #fff; }
 
 .checkout-actions { display: flex; justify-content: center; margin-top: 40px; }

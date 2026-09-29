@@ -43,31 +43,28 @@ async function cargarPlanes() {
 
 function tarjetaHtml(p) {
   const esVitalicia = p.slug === "vitalicia";
-  const esPremium = p.slug === "premium";
-  const clase = esPremium ? " plan-pick--premium" : esVitalicia ? " plan-pick--vitalicia" : "";
-  const estiloCard = esVitalicia ? ' style="border:2px solid #095544;background:#f0faf4;position:relative;"' : "";
-  const colorVital = esVitalicia ? ' style="color:#095544"' : "";
-  const dotVital = esVitalicia ? ' style="background:#095544"' : "";
+  const clasesConColor = ["gratis", "basica", "premium", "vitalicia"];
+  const clase = clasesConColor.includes(p.slug) ? ` plan-pick--${p.slug}` : "";
 
   return `
-    <article class="plan-pick${clase}" data-plan="${p.slug}"${estiloCard}>
+    <article class="plan-pick${clase}" data-plan="${p.slug}">
       ${p.recomendado ? `<span class="plan-pick__badge-rec" id="badge-rec">Recomendado</span>` : ""}
       ${p.ribbon_texto ? `<div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#095544;color:#fff;font-size:10px;font-weight:700;letter-spacing:.12em;padding:4px 14px;border-radius:99px;white-space:nowrap">${p.ribbon_texto}</div>` : ""}
       ${p.urgencia_texto ? `<div style="font-size:11px;font-weight:700;color:#b45309;background:#fef3c7;border-radius:8px;padding:6px 10px;margin-bottom:12px;text-align:center">${p.urgencia_texto}</div>` : ""}
       <div class="plan-pick__head">
-        <span class="plan-pick__tag"${colorVital}>${p.tag}</span>
+        <span class="plan-pick__tag">${p.tag}</span>
         ${esVitalicia ? "" : '<span class="radio"></span>'}
       </div>
       ${(p.antes_texto || p.ahorra_texto) ? `<div class="plan-pick__precio-row">
         ${p.antes_texto ? `<span class="plan-pick__antes">${p.antes_texto}</span>` : ""}
         ${p.ahorra_texto ? `<span class="plan-pick__ahorra">${p.ahorra_texto}</span>` : ""}
       </div>` : ""}
-      <div class="plan-pick__precio"${colorVital}>${p.precio_texto}<small> ${p.precio_sufijo || ""}</small></div>
+      <div class="plan-pick__precio">${p.precio_texto}<small> ${p.precio_sufijo || ""}</small></div>
       <div class="plan-pick__ciclo">${p.ciclo_texto || ""}</div>
       <ul class="plan-pick__bens">
-        ${(p.beneficios || []).map(b => `<li><span class="dot"${dotVital}></span>${b}</li>`).join("")}
+        ${(p.beneficios || []).map(b => `<li><span class="dot"></span>${b}</li>`).join("")}
       </ul>
-      <div class="plan-pick__state"${esVitalicia ? ' style="color:#095544;border-color:#095544"' : ""}>${p.cta_texto || "Elegir"}</div>
+      <div class="plan-pick__state">${p.cta_texto || "Elegir"}</div>
     </article>`;
 }
 
