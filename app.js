@@ -631,6 +631,7 @@ const QUIENES_SOMOS = [
         <p>Su historia también está marcada por la necesidad de crear oportunidades donde no siempre existen. Desde joven ha encontrado en el emprendimiento, la escritura y la participación social formas de convertir las ideas en acciones.</p>
         <p>El Club nace, en buena parte, de esa manera de entender la vida:</p>
         <p><strong>no esperar a que alguien construya el mundo que queremos, sino empezar a construirlo con las herramientas que tenemos.</strong></p>
+        <img src="julian-garcia.jpg" alt="Julián García" style="width:100%;max-width:280px;border-radius:14px;display:block;margin:6px auto 4px">
       ` },
       { titulo: "Andrés Poveda", html: `
         <p>Junto a Julián está <strong>Andrés Poveda</strong>, cofundador y director estratégico.</p>
