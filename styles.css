@@ -505,7 +505,7 @@ a { color: inherit; text-decoration: none; }
 .faq-item.is-open .faq-item__ic { transform: rotate(180deg); color: var(--verde); }
 .faq-item__a { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
 .faq-item__a p { font-size: 13.5px; color: var(--tinta-60); line-height: 1.65; padding: 0 0 18px; }
-.faq-item.is-open .faq-item__a { max-height: 700px; }
+.faq-item__a p:last-child { padding-bottom: 20px; }
 
 /* ============================================================
    SHEET

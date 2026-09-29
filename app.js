@@ -556,25 +556,180 @@ const FAQ = [
   },
 ];
 
+/* ---------- Acordeón genérico (FAQ y Quiénes somos comparten el mismo look) ---------- */
+function htmlAcordeonItem(titulo, htmlContenido) {
+  return `
+    <div class="faq-item">
+      <button type="button" class="faq-item__q">
+        <span>${titulo}</span>
+        <i data-lucide="chevron-down" class="faq-item__ic"></i>
+      </button>
+      <div class="faq-item__a">${htmlContenido}</div>
+    </div>`;
+}
+function htmlAcordeonGrupos(grupos) {
+  return grupos.map(g => `
+    <div class="faq-grupo">
+      ${g.grupo ? `<div class="sheet__sub">${g.grupo}</div>` : ""}
+      ${g.items.map(it => htmlAcordeonItem(it.titulo, it.html)).join("")}
+    </div>
+  `).join("");
+}
+function bindAcordeon() {
+  sheetInner.querySelectorAll(".faq-item__q").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const item = btn.closest(".faq-item");
+      const body = item.querySelector(".faq-item__a");
+      const abierto = item.classList.contains("is-open");
+      item.classList.toggle("is-open", !abierto);
+      body.style.maxHeight = abierto ? "0px" : body.scrollHeight + "px";
+    });
+  });
+}
+
 /* Sheet — Preguntas frecuentes */
 function sheetFaq() {
   return `
     <div class="sheet__cat">Ayuda</div>
     <h2 class="sheet__nombre">Preguntas frecuentes</h2>
-    ${FAQ.map(g => `
-      <div class="faq-grupo">
-        <div class="sheet__sub">${g.grupo}</div>
-        ${g.preguntas.map(item => `
-          <div class="faq-item">
-            <button type="button" class="faq-item__q">
-              <span>${item.q}</span>
-              <i data-lucide="chevron-down" class="faq-item__ic"></i>
-            </button>
-            <div class="faq-item__a"><p>${item.a}</p></div>
-          </div>
-        `).join("")}
-      </div>
-    `).join("")}
+    ${htmlAcordeonGrupos(FAQ.map(g => ({ grupo: g.grupo, items: g.preguntas.map(p => ({ titulo: p.q, html: `<p>${p.a}</p>` })) })))}
+  `;
+}
+
+/* ---------- DATOS: QUIÉNES SOMOS ---------- */
+const QUIENES_SOMOS = [
+  {
+    grupo: null,
+    items: [
+      { titulo: "Una idea que nació de una pregunta", html: `
+        <p>Hay ideas que nacen en una oficina.<br>La nuestra nació hablando con la gente.</p>
+        <p>En la <strong>Casa de la Gente</strong>, en Fusagasugá, comenzamos a compartir espacios de liderazgo junto al exalcalde <strong>Jairo Hortúa</strong>. Allí hablábamos de participación, de comunidad, de emprendimiento y, sobre todo, de algo que parecía sencillo, pero que muchas veces olvidamos: <strong>el poder que tenemos cuando decidimos ayudarnos entre nosotros.</strong></p>
+        <p>En esos encuentros escuchábamos historias de personas que tenían mucho para aportar, pero pocas oportunidades. Emprendedores que trabajaban incansablemente para sacar adelante sus negocios y aun así tenían dificultades para encontrar clientes. Familias que querían comprar lo necesario, pero tenían que pensar dos veces antes de gastar.</p>
+        <p>Y entonces apareció una pregunta.</p>
+        <p><strong>¿Qué pasaría si pudiéramos conectar esas dos realidades?</strong></p>
+        <p>¿Qué pasaría si una persona pudiera ahorrar mientras compra en un negocio local?<br>¿Qué pasaría si ese negocio pudiera recibir nuevos clientes gracias a una comunidad que cree en él?<br>¿Y qué pasaría si una parte de ese movimiento pudiera convertirse también en ayuda para alguien que la necesita?</p>
+        <p>De esa pregunta nació una idea que después se convirtió en un propósito.</p>
+        <p><strong>El Club de la Gente.</strong></p>
+      ` },
+      { titulo: "El día en que entendimos que ahorrar también podía ser ayudar", html: `
+        <p>La idea de Julián García fue crear un espacio donde las personas pudieran <strong>ahorrar comprando</strong>, acceder a beneficios y descuentos exclusivos en negocios aliados, continuar aprendiendo a través de talleres y, al mismo tiempo, hacer parte de una comunidad que también pensara en los demás a través de obras sociales.</p>
+        <p>Porque entendimos algo:</p>
+        <p>Cuando una persona decide comprarle a un negocio local, está ayudando a que un emprendedor tenga un cliente.<br>Cuando ese emprendedor crece, puede sostener su hogar, contratar a otra persona o invertir nuevamente en su negocio.<br>Cuando muchas personas hacen lo mismo, el dinero comienza a circular dentro de la comunidad.<br>Y cuando una comunidad decide destinar parte de lo que construye a ayudar a otros, el consumo puede convertirse también en una herramienta de solidaridad.</p>
+        <p>Por eso quisimos construir algo diferente.</p>
+        <p>No queríamos crear solamente una plataforma de descuentos.<br>Queríamos crear una <strong>comunidad con propósito</strong>.</p>
+        <p>En mayo de 2026 nació <strong>El Club de la Gente S.A.S. BIC</strong>, con una idea sencilla de explicar, pero grande en lo que quiere lograr:</p>
+        <p><strong>que ahorrar, aprender y ayudar puedan suceder al mismo tiempo.</strong></p>
+      ` },
+    ],
+  },
+  {
+    grupo: "¿Quién está detrás?",
+    items: [
+      { titulo: "Julián García", html: `
+        <p>Detrás de este proyecto está <strong>Julián Eduardo García Velandia</strong>, fusagasugueño por adopción, emprendedor, escritor y estudiante.</p>
+        <p>Julián cree profundamente en una idea: <strong>el conocimiento puede cambiar la vida de una persona, pero una comunidad puede cambiar la vida de muchas.</strong></p>
+        <p>Su historia también está marcada por la necesidad de crear oportunidades donde no siempre existen. Desde joven ha encontrado en el emprendimiento, la escritura y la participación social formas de convertir las ideas en acciones.</p>
+        <p>El Club nace, en buena parte, de esa manera de entender la vida:</p>
+        <p><strong>no esperar a que alguien construya el mundo que queremos, sino empezar a construirlo con las herramientas que tenemos.</strong></p>
+      ` },
+      { titulo: "Andrés Poveda", html: `
+        <p>Junto a Julián está <strong>Andrés Poveda</strong>, cofundador y director estratégico.</p>
+        <p>Su responsabilidad es convertir el propósito en una experiencia real: fortalecer la relación con los aliados, cuidar los beneficios ofrecidos a los miembros y ayudar a que cada parte del Club funcione de manera organizada y transparente.</p>
+        <p>Porque una buena intención necesita también una buena estructura para convertirse en realidad.</p>
+      ` },
+    ],
+  },
+  {
+    grupo: "Nuestro propósito",
+    items: [
+      { titulo: "No somos solamente una empresa", html: `
+        <p>Somos una comunidad.</p>
+        <p>Una comunidad formada por personas que quieren que su dinero les alcance un poco más, por emprendedores que necesitan oportunidades para crecer y por personas que todavía creen que progresar no significa necesariamente hacerlo solos.</p>
+        <p>Por eso cada miembro, cada aliado y cada profesional que se suma al Club hace parte de algo más grande que una simple transacción.</p>
+        <p><strong>Un miembro obtiene beneficios.<br>Un negocio obtiene oportunidades.<br>Un emprendedor encuentra una comunidad.<br>Y la sociedad recibe una parte de lo que juntos somos capaces de construir.</strong></p>
+        <p>Ese es el círculo que queremos crear.</p>
+      ` },
+      { titulo: "Nuestra misión", html: `
+        <p>Nuestra misión es <strong>ayudar a las personas y familias a ahorrar, aprender y crecer</strong>, conectándolas con negocios, profesionales y oportunidades que les permitan obtener beneficios reales.</p>
+        <p>Al mismo tiempo, buscamos fortalecer el comercio local y convertir una parte de nuestro crecimiento en acciones que generen impacto positivo en la comunidad.</p>
+        <p>Porque creemos que una empresa puede preguntarse no solamente:</p>
+        <p><strong>"¿Cuánto podemos ganar?"</strong></p>
+        <p>sino también:</p>
+        <p><strong>"¿Cuánto podemos aportar mientras crecemos?"</strong></p>
+      ` },
+      { titulo: "Nuestra visión", html: `
+        <p>Comenzamos en Fusagasugá porque creemos que los grandes cambios no siempre comienzan en los lugares más grandes.</p>
+        <p>A veces comienzan en una ciudad, en un barrio, en una conversación o incluso en una pregunta.</p>
+        <p>Nuestra visión es que, para 2030, <strong>El Club de la Gente sea una de las comunidades de beneficios con mayor reconocimiento en Colombia</strong>, conectando personas, negocios y oportunidades alrededor de un mismo propósito.</p>
+        <p>Queremos crecer sin perder aquello que nos dio origen:</p>
+        <p><strong>la cercanía.</strong></p>
+        <p>Queremos que pertenecer al Club signifique mucho más que tener un descuento.</p>
+        <p>Que signifique:</p>
+        <p><strong>pagar menos, aprender más, apoyar lo local y saber que haces parte de una comunidad que también piensa en los demás.</strong></p>
+      ` },
+    ],
+  },
+  {
+    grupo: "Lo que nos mueve",
+    items: [
+      { titulo: "🤝 Comunidad", html: `
+        <p>Creemos que nadie debería sentir que tiene que salir adelante completamente solo.</p>
+        <p>Una comunidad fuerte no es aquella donde todos tienen lo mismo.</p>
+        <p>Es aquella donde <strong>cada persona puede aportar algo para que los demás tengan más oportunidades.</strong></p>
+      ` },
+      { titulo: "💰 Ahorro", html: `
+        <p>Sabemos que detrás de cada compra hay una familia, un esfuerzo y muchas veces un presupuesto limitado.</p>
+        <p>Por eso buscamos beneficios que tengan sentido en la vida cotidiana.</p>
+        <p>No queremos descuentos que simplemente se vean bien.</p>
+        <p><strong>Queremos beneficios que se sientan en el bolsillo.</strong></p>
+      ` },
+      { titulo: "📚 Aprendizaje", html: `
+        <p>Creemos que una persona que aprende adquiere nuevas herramientas para transformar su realidad.</p>
+        <p>Por eso el Club no solamente busca ayudarte a ahorrar dinero.</p>
+        <p>También quiere ayudarte a <strong>adquirir conocimiento, desarrollar habilidades y encontrar nuevas oportunidades.</strong></p>
+      ` },
+      { titulo: "🤝 Confianza", html: `
+        <p>Una comunidad no puede construirse sin confianza.</p>
+        <p>Por eso creemos en relaciones claras, beneficios comprensibles y compromisos que puedan cumplirse.</p>
+        <p>Porque detrás de cada membresía hay una persona que decidió confiar en nosotros.</p>
+        <p>Y esa confianza merece respeto.</p>
+      ` },
+      { titulo: "❤️ Impacto social", html: `
+        <p>Creemos que crecer tiene más sentido cuando el crecimiento también puede alcanzar a alguien más.</p>
+        <p>Como empresa <strong>S.A.S. BIC</strong>, buscamos que nuestro propósito empresarial esté acompañado de acciones que generen valor para la sociedad.</p>
+        <p>Por eso impulsamos iniciativas como el apoyo a fundaciones de rescate animal, la entrega de mercados a personas en condición de calle y el fortalecimiento de emprendimientos locales.</p>
+        <p>No porque pensemos que podemos solucionar todos los problemas.</p>
+        <p>Sino porque creemos que <strong>no hacer todo no significa no hacer nada.</strong></p>
+      ` },
+      { titulo: "🌱 Crecimiento", html: `
+        <p>Queremos crecer.</p>
+        <p>Pero también queremos preguntarnos <strong>para qué</strong>.</p>
+        <p>Porque para nosotros el verdadero crecimiento no se mide únicamente en miembros, aliados o ingresos.</p>
+        <p>También se mide en las oportunidades que ayudamos a crear, en los negocios que lograron conseguir nuevos clientes, en las personas que aprendieron algo nuevo y en las vidas que pudimos tocar.</p>
+      ` },
+    ],
+  },
+  {
+    grupo: null,
+    items: [
+      { titulo: "Una membresía. Tres propósitos.", html: `
+        <p>Al final, todo vuelve a la idea que nos dio origen.</p>
+        <p><strong>Ahorra.</strong><br>Porque tu dinero merece rendir más.</p>
+        <p><strong>Aprende.</strong><br>Porque el conocimiento puede abrir puertas que antes parecían cerradas.</p>
+        <p><strong>Ayuda.</strong><br>Porque cuando lo que construimos también sirve para alguien más, el éxito adquiere otro significado.</p>
+        <p>Eso es <strong>El Club de la Gente</strong>.</p>
+        <p>Una idea que comenzó en Fusagasugá.<br>Una pregunta que se convirtió en propósito.<br>Y una comunidad que apenas está comenzando a escribir su historia.</p>
+      ` },
+    ],
+  },
+];
+
+/* Sheet — Quiénes somos */
+function sheetQuienesSomos() {
+  return `
+    <div class="sheet__cat">El Club de la Gente</div>
+    <h2 class="sheet__nombre">Quiénes somos</h2>
+    ${htmlAcordeonGrupos(QUIENES_SOMOS)}
   `;
 }
 
@@ -640,9 +795,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // Preguntas frecuentes
     if (e.target.closest("[data-faq-btn]")) {
       openSheet(sheetFaq());
-      sheetInner.querySelectorAll(".faq-item__q").forEach(btn => {
-        btn.addEventListener("click", () => btn.closest(".faq-item").classList.toggle("is-open"));
-      });
+      bindAcordeon();
+      return;
+    }
+
+    // Quiénes somos
+    if (e.target.closest("[data-quienes-btn]")) {
+      openSheet(sheetQuienesSomos());
+      bindAcordeon();
       return;
     }
 
