@@ -256,7 +256,7 @@ function sheetAliado(a) {
       </div>`;
     }).join("") : `<p style="font-size:13px;color:#888;padding:8px 0">Este aliado todavía no tiene promociones cargadas. Consulta directamente en el establecimiento.</p>`}
 
-    ${promos.length ? `
+    ${(promos.length && MIEMBRO_ID) ? `
     <div class="sheet__sub" style="margin-top:34px">Aplicar promoción</div>
     <div class="calc">
       <span class="calc__lbl">Tu beneficio en vivo</span>
@@ -318,7 +318,7 @@ function sheetAliado(a) {
 /* ---------- CALCULADORA (se adapta al tipo de promoción elegida) ---------- */
 function wireCalc(a) {
   const promos = a.promociones || [];
-  if (!promos.length) return;
+  if (!promos.length || !MIEMBRO_ID) return;
 
   const montoWrap = $("#calc-monto-wrap");
   const resultWrap = $("#calc-result");
