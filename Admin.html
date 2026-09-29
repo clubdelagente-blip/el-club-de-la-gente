@@ -1314,6 +1314,7 @@ function bindFormPromocionInline(aliadoId,editId){
     const updPct=()=>{const n=parseInt($("#pr-precio-n-pct")?.value)||0;const pct=parseInt($("#pr-pct")?.value)||0;const el=$("#pr-ahorro-pct-prev");if(el)el.textContent=n&&pct?`Ahorro: $${Math.round(n*pct/100).toLocaleString('es-CO')} por visita`:'';};
     $("#pr-precio-n-pct")?.addEventListener('input',updPct);$("#pr-pct")?.addEventListener('input',updPct);updPct();
     document.querySelectorAll('#pr-dias-chips .fa-chip').forEach(chip=>chip.addEventListener('click',()=>chip.classList.toggle('is-on')));
+    renderFotosPromoPreview();
     $("#pr-cancel")?.addEventListener('click',()=>{const w=$("#fa-promo-form-wrap");if(w){w.style.display='none';w.innerHTML='';}});
     const btn=$("#pr-save");
     btn?.addEventListener('click',async()=>{
@@ -1327,9 +1328,13 @@ function bindFormPromocionInline(aliadoId,editId){
       else if(tipo==='monto_fijo'){ahorro_fijo=parseInt($("#pr-ahorro-fijo")?.value)||null;}
       else if(tipo==='regalo'){ahorro_fijo=parseInt($("#pr-regalo-val")?.value)||null;}
       const diasActivos=[...document.querySelectorAll('#pr-dias-chips .fa-chip.is-on')].map(b=>b.dataset.dia);
-      let foto_url=$("#pr-foto-url")?.value||null;
-      const file=$("#pr-foto")?.files?.[0];
-      if(file)try{foto_url=await subirImagen(file);}catch(_){toast('Error al subir la foto');}
+      let fotosUrls=[];try{fotosUrls=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){fotosUrls=[];}
+      const filesNuevos=[...($("#pr-foto")?.files||[])];
+      if(filesNuevos.length){
+        try{const nuevas=await Promise.all(filesNuevos.map(f=>subirImagen(f)));fotosUrls=[...fotosUrls,...nuevas];}
+        catch(_){toast('Error al subir alguna foto');}
+      }
+      const foto_url=fotosUrls[0]||null;
       const payload={aliado_id:aliadoId,tipo,descripcion,
         aplica_a:$("#pr-aplica")?.value||'toda_la_tienda',
         producto_especifico:$("#pr-aplica")?.value==='producto_especifico'?($("#pr-prod")?.value.trim()||null):null,
@@ -1337,7 +1342,7 @@ function bindFormPromocionInline(aliadoId,editId){
         dias_aplica:diasActivos.length?diasActivos:['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
         hora_inicio:$("#pr-hora-ini")?.value||null,hora_fin:$("#pr-hora-fin")?.value||null,
         fecha_inicio:$("#pr-fecha-ini")?.value||null,fecha_fin:$("#pr-fecha-fin")?.value||null,
-        monto_minimo:parseInt($("#pr-min")?.value)||0,foto_url,activa:$("#pr-activa")?.checked!==false,
+        monto_minimo:parseInt($("#pr-min")?.value)||0,foto_url,fotos_urls:fotosUrls,activa:$("#pr-activa")?.checked!==false,
         es_cumpleanos:$("#pr-cumple")?.checked||false,solo_premium:$("#pr-solo-premium")?.checked||false,
         fecha_especial:$("#pr-fecha-especial")?.value||null};
       const id=btn.dataset.id||editId;
@@ -1882,6 +1887,21 @@ const FECHAS_ESPECIALES=[
   {slug:'navidad',lbl:'Temporada de Navidad (17 al 24 dic)'},
   {slug:'fin_de_ano',lbl:'Promo fin de año'},
 ];
+function renderFotosPromoPreview(){
+  let urls=[];try{urls=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){urls=[];}
+  const cont=$("#pr-fotos-preview");if(!cont)return;
+  cont.innerHTML=urls.map((url,i)=>`
+    <div style="position:relative">
+      <img src="${url}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;display:block">
+      <button type="button" class="pr-foto-rm" data-idx="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;border:none;cursor:pointer;font-size:12px;line-height:1;padding:0">×</button>
+    </div>`).join('');
+  cont.querySelectorAll('.pr-foto-rm').forEach(btn=>btn.addEventListener('click',()=>{
+    let arr=[];try{arr=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){arr=[];}
+    arr.splice(+btn.dataset.idx,1);
+    const h=$("#pr-fotos-urls");if(h)h.value=JSON.stringify(arr);
+    renderFotosPromoPreview();
+  }));
+}
 function htmlFormPromocion(p={},aliadoId){
   const DIAS=['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
   const DIAS_LBL=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
@@ -1945,10 +1965,11 @@ function htmlFormPromocion(p={},aliadoId){
     <div class="ad-field"><label>Vigencia desde <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-fecha-ini" type="date" value="${p.fecha_inicio||''}"></div>
     <div class="ad-field"><label>Vigencia hasta <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-fecha-fin" type="date" value="${p.fecha_fin||''}"></div>
   </div>
-  <div class="ad-field-2">
-    <div class="ad-field"><label>Compra mínima ($) <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-min" type="number" min="0" value="${p.monto_minimo||''}" placeholder="0"></div>
-    <div class="ad-field"><label>Foto <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label>
-      ${p.foto_url?`<img src="${p.foto_url}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;margin-bottom:6px;display:block">`:''}<input id="pr-foto" type="file" accept="image/*"><input type="hidden" id="pr-foto-url" value="${p.foto_url||''}"></div>
+  <div class="ad-field"><label>Compra mínima ($) <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-min" type="number" min="0" value="${p.monto_minimo||''}" placeholder="0" style="max-width:220px"></div>
+  <div class="ad-field"><label>Fotos <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional, puedes subir varias -- se muestran en carrusel)</span></label>
+    <div id="pr-fotos-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
+    <input id="pr-foto" type="file" accept="image/*" multiple>
+    <input type="hidden" id="pr-fotos-urls" value="${esc(JSON.stringify(p.fotos_urls||(p.foto_url?[p.foto_url]:[])))}">
   </div>
   <div style="background:rgba(234,183,73,.08);border:1px solid rgba(234,183,73,.3);border-radius:10px;padding:12px 14px;margin-bottom:10px">
     <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:rgba(26,26,24,.75);margin-bottom:8px">
@@ -1997,6 +2018,7 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
     $("#pr-pct")?.addEventListener('input',updPct);
     updPct();
     document.querySelectorAll('#pr-dias-chips .fa-chip').forEach(chip=>chip.addEventListener('click',()=>chip.classList.toggle('is-on')));
+    renderFotosPromoPreview();
     $("#pr-cancel")?.addEventListener('click',()=>{cargarYMostrarPromociones(aliadoId,aliadoNombre);});
     const btn=$("#pr-save");
     btn?.addEventListener('click',async()=>{
@@ -2020,9 +2042,13 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
         ahorro_fijo=parseInt($("#pr-regalo-val")?.value)||null;
       }
       const diasActivos=[...document.querySelectorAll('#pr-dias-chips .fa-chip.is-on')].map(b=>b.dataset.dia);
-      let foto_url=$("#pr-foto-url")?.value||null;
-      const file=$("#pr-foto")?.files?.[0];
-      if(file)try{foto_url=await subirImagen(file);}catch(_){toast('Error al subir la foto');}
+      let fotosUrls=[];try{fotosUrls=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){fotosUrls=[];}
+      const filesNuevos=[...($("#pr-foto")?.files||[])];
+      if(filesNuevos.length){
+        try{const nuevas=await Promise.all(filesNuevos.map(f=>subirImagen(f)));fotosUrls=[...fotosUrls,...nuevas];}
+        catch(_){toast('Error al subir alguna foto');}
+      }
+      const foto_url=fotosUrls[0]||null;
       const payload={aliado_id:aliadoId,tipo,descripcion,
         aplica_a:$("#pr-aplica")?.value||'toda_la_tienda',
         producto_especifico:$("#pr-aplica")?.value==='producto_especifico'?($("#pr-prod")?.value.trim()||null):null,
@@ -2033,7 +2059,7 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
         fecha_inicio:$("#pr-fecha-ini")?.value||null,
         fecha_fin:$("#pr-fecha-fin")?.value||null,
         monto_minimo:parseInt($("#pr-min")?.value)||0,
-        foto_url,activa:$("#pr-activa")?.checked!==false,
+        foto_url,fotos_urls:fotosUrls,activa:$("#pr-activa")?.checked!==false,
         es_cumpleanos:$("#pr-cumple")?.checked||false,solo_premium:$("#pr-solo-premium")?.checked||false,
         fecha_especial:$("#pr-fecha-especial")?.value||null};
       const id=btn.dataset.id||editId;

@@ -218,14 +218,21 @@ function sheetAliado(a) {
     </div>` : ''}
 
     <div class="sheet__sub">Promociones disponibles</div>
-    ${promos.length ? promos.map((p) => `
-      <div class="descuento">
+    ${promos.length ? promos.map((p) => {
+      const fotos = (Array.isArray(p.fotos_urls) && p.fotos_urls.length) ? p.fotos_urls : (p.foto_url ? [p.foto_url] : []);
+      return `
+      <div class="descuento" style="flex-wrap:wrap">
+        ${fotos.length ? `
+        <div style="width:100%;display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;margin-bottom:10px;-webkit-overflow-scrolling:touch">
+          ${fotos.map(url => `<img src="${url}" style="width:140px;height:100px;object-fit:cover;border-radius:8px;flex:none;scroll-snap-align:start">`).join("")}
+        </div>` : ""}
         <div class="descuento__pct">${badgePromo(p)}</div>
         <div class="descuento__body">
           <h4>${p.descripcion}</h4>
           <p>${beneficioTexto(p)}${detallePromo(p) ? " · " + detallePromo(p) : ""}</p>
         </div>
-      </div>`).join("") : `<p style="font-size:13px;color:#888;padding:8px 0">Este aliado todavía no tiene promociones cargadas. Consulta directamente en el establecimiento.</p>`}
+      </div>`;
+    }).join("") : `<p style="font-size:13px;color:#888;padding:8px 0">Este aliado todavía no tiene promociones cargadas. Consulta directamente en el establecimiento.</p>`}
 
     ${promos.length ? `
     <div class="sheet__sub" style="margin-top:34px">Aplicar promoción</div>
