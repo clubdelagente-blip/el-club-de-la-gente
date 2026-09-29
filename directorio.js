@@ -67,13 +67,20 @@ let PLAN_ACTUAL = "gratis";
 let LIMITE_ALCANZADO = false;
 let SIN_ACCESO_ALIADOS = false; // Gratis: 0 descuentos de aliado, mensaje distinto a "llegaste al límite"
 
+// Quién tiene el navegador abierto ahora mismo (si hay sesión). Se usa para
+// distinguir "el aliado escaneó el QR de este miembro" (nadie con sesión, o
+// alguien más) de "el propio miembro abrió su link" (sesión = MIEMBRO_ID) --
+// la calculadora de aplicar promoción solo es para el primer caso.
+let VIEWER_USER_ID = null;
+
 /* Resuelve el plan real del visitante:
    1) ?plan= en la URL (un aliado viendo lo que le corresponde a un miembro escaneado)
    2) sesión activa de Supabase (un miembro navegando desde su propio dashboard)
    3) sin sesión ni parámetro: visitante anónimo → solo ve el nivel Gratis */
 async function resolverPlanVisitante() {
-  if (PLAN_URL) return PLAN_URL;
   const { data: { session } } = await supabase.auth.getSession();
+  VIEWER_USER_ID = session?.user?.id || null;
+  if (PLAN_URL) return PLAN_URL;
   if (session?.user?.id) {
     const { data } = await supabase.from("perfiles").select("plan").eq("id", session.user.id).maybeSingle();
     if (data?.plan && data.plan !== "sin_plan") return data.plan;
@@ -256,7 +263,7 @@ function sheetAliado(a) {
       </div>`;
     }).join("") : `<p style="font-size:13px;color:#888;padding:8px 0">Este aliado todavía no tiene promociones cargadas. Consulta directamente en el establecimiento.</p>`}
 
-    ${(promos.length && MIEMBRO_ID) ? `
+    ${(promos.length && MIEMBRO_ID && VIEWER_USER_ID !== MIEMBRO_ID) ? `
     <div class="sheet__sub" style="margin-top:34px">Aplicar promoción</div>
     <div class="calc">
       <span class="calc__lbl">Tu beneficio en vivo</span>
@@ -318,7 +325,7 @@ function sheetAliado(a) {
 /* ---------- CALCULADORA (se adapta al tipo de promoción elegida) ---------- */
 function wireCalc(a) {
   const promos = a.promociones || [];
-  if (!promos.length || !MIEMBRO_ID) return;
+  if (!promos.length || !MIEMBRO_ID || VIEWER_USER_ID === MIEMBRO_ID) return;
 
   const montoWrap = $("#calc-monto-wrap");
   const resultWrap = $("#calc-result");
