@@ -1338,7 +1338,8 @@ function bindFormPromocionInline(aliadoId,editId){
         hora_inicio:$("#pr-hora-ini")?.value||null,hora_fin:$("#pr-hora-fin")?.value||null,
         fecha_inicio:$("#pr-fecha-ini")?.value||null,fecha_fin:$("#pr-fecha-fin")?.value||null,
         monto_minimo:parseInt($("#pr-min")?.value)||0,foto_url,activa:$("#pr-activa")?.checked!==false,
-        es_cumpleanos:$("#pr-cumple")?.checked||false,solo_premium:$("#pr-solo-premium")?.checked||false};
+        es_cumpleanos:$("#pr-cumple")?.checked||false,solo_premium:$("#pr-solo-premium")?.checked||false,
+        fecha_especial:$("#pr-fecha-especial")?.value||null};
       const id=btn.dataset.id||editId;
       const{error}=id?await supabase.from('promociones').update(payload).eq('id',id):await supabase.from('promociones').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;btn.innerHTML=`${ic("check")} ${id?'Guardar cambios':'Guardar promoción'}`;if(window.lucide)lucide.createIcons();return;}
@@ -1866,6 +1867,21 @@ function bindListaPromociones(aliadoId,aliadoNombre){
     if(window.lucide)lucide.createIcons();
   },80);
 }
+const FECHAS_ESPECIALES=[
+  {slug:'cumple_fusa',lbl:'Cumpleaños de Fusagasugá (5 feb)'},
+  {slug:'san_valentin',lbl:'San Valentín (14 feb)'},
+  {slug:'dia_mujer',lbl:'Día de la mujer (8 mar)'},
+  {slug:'dia_nino',lbl:'Día del niño (25 abr)'},
+  {slug:'dia_madre',lbl:'Día de la madre (10 may)'},
+  {slug:'dia_padre',lbl:'Día del padre (14 jun)'},
+  {slug:'primaton',lbl:'La Primatón -- mitad de año (última semana de jun)'},
+  {slug:'amor_amistad',lbl:'Día del amor y la amistad (19 sep)'},
+  {slug:'halloween',lbl:'Halloween (31 oct)'},
+  {slug:'black_friday',lbl:'Black Friday (27 nov)'},
+  {slug:'dia_velitas',lbl:'Día de las velitas (8 dic)'},
+  {slug:'navidad',lbl:'Temporada de Navidad (17 al 24 dic)'},
+  {slug:'fin_de_ano',lbl:'Promo fin de año'},
+];
 function htmlFormPromocion(p={},aliadoId){
   const DIAS=['lunes','martes','miercoles','jueves','viernes','sabado','domingo'];
   const DIAS_LBL=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
@@ -1939,10 +1955,16 @@ function htmlFormPromocion(p={},aliadoId){
       <input id="pr-cumple" type="checkbox" style="width:16px;height:16px;accent-color:#095544" ${p.es_cumpleanos?'checked':''}>
       🎂 Válida para cumpleañeros -- el Agente de WhatsApp la avisa el día del cumpleaños del miembro
     </label>
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:rgba(26,26,24,.75)">
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:rgba(26,26,24,.75);margin-bottom:10px">
       <input id="pr-solo-premium" type="checkbox" style="width:16px;height:16px;accent-color:#095544" ${p.solo_premium?'checked':''}>
       Solo para miembros Premium/Vitalicia
     </label>
+    <div class="ad-field" style="margin-bottom:0"><label>Fecha especial (opcional)</label>
+      <select id="pr-fecha-especial" style="${fldStyle}">
+        <option value="">Ninguna -- promoción normal</option>
+        ${FECHAS_ESPECIALES.map(f=>`<option value="${f.slug}"${p.fecha_especial===f.slug?' selected':''}>${f.lbl}</option>`).join('')}
+      </select>
+    </div>
   </div>
   <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:rgba(26,26,24,.6);margin-bottom:4px">
     <input id="pr-activa" type="checkbox" style="width:16px;height:16px;accent-color:#095544" ${p.activa===false?'':'checked'}>
@@ -2012,7 +2034,8 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
         fecha_fin:$("#pr-fecha-fin")?.value||null,
         monto_minimo:parseInt($("#pr-min")?.value)||0,
         foto_url,activa:$("#pr-activa")?.checked!==false,
-        es_cumpleanos:$("#pr-cumple")?.checked||false,solo_premium:$("#pr-solo-premium")?.checked||false};
+        es_cumpleanos:$("#pr-cumple")?.checked||false,solo_premium:$("#pr-solo-premium")?.checked||false,
+        fecha_especial:$("#pr-fecha-especial")?.value||null};
       const id=btn.dataset.id||editId;
       const{error}=id?await supabase.from('promociones').update(payload).eq('id',id):await supabase.from('promociones').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;btn.innerHTML=`${ic("check")} ${id?'Guardar cambios':'Guardar promoción'}`;if(window.lucide)lucide.createIcons();return;}
