@@ -811,12 +811,11 @@ function irAExitoProfesional(nombre) {
   $("#exito-eyebrow").textContent = "Registro recibido";
   $("#exito-nombre").textContent = `¡Gracias, ${primerNombre}!`;
   $("#exito-msg").innerHTML = `Tu cuenta ha sido creada. En cuanto nuestro equipo revise y apruebe tu perfil, aparecerás en el directorio de profesionales del Club.`;
-  $("#exito-wa-title").textContent = "Mientras tanto, prepara tu perfil";
-  $("#exito-wa-msg").textContent = "Puedes acceder ya a tu panel de profesional e ingresar tu foto, descripción y datos de contacto antes de que sea publicado.";
+  const waCard = $("#exito-wa-card"); if (waCard) waCard.hidden = true;
   const social = $("#exito-social"); if (social) social.hidden = false;
   const cta = $("#exito-cta");
   cta.setAttribute("href", "Perfil.html");
-  cta.innerHTML = `Ir a mi consultorio <span class="ar">&rarr;</span>`;
+  cta.innerHTML = `Ir a mi perfil <span class="ar">&rarr;</span>`;
   $(".stepper").style.visibility = "hidden";
   mostrarVista("view-exito");
   if (window.lucide) lucide.createIcons();
