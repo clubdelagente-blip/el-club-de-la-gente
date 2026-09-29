@@ -31,6 +31,30 @@ function iconoCategoria(categoria) {
   return "store";
 }
 
+/* Color por categoría -- le da variedad y energía visual al directorio sin
+   que el admin tenga que elegir nada (se deriva del mismo texto de siempre). */
+const COLORES_CAT = [
+  [/odont/i, "#4FA8E0"], [/veterinar|mascota/i, "#F5B942"], [/turis/i, "#2FA76F"],
+  [/canasta|fruver|mercado|supermercado/i, "#8BC53F"], [/ropa|moda|accesorio/i, "#9B6BD9"],
+  [/helad/i, "#FF7AA8"], [/comida|restaurante|cafeter/i, "#FF9F45"], [/barber/i, "#1E88A8"],
+  [/bienestar|salud|spa/i, "#FF6B5C"], [/belleza|estetic/i, "#E85D9E"],
+  [/educaci|tutor/i, "#5B6EE1"], [/deporte|gym/i, "#F4511E"], [/tecnolog/i, "#00BCD4"],
+  [/regalo/i, "#EAB749"],
+];
+function colorCategoria(categoria) {
+  const c = categoria || "";
+  for (const [rx, color] of COLORES_CAT) if (rx.test(c)) return color;
+  return "#095544";
+}
+function hexToRgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+function ccVars(categoria) {
+  const cc = colorCategoria(categoria);
+  return `--cc:${cc};--cc-soft:${hexToRgba(cc, .14)};--cc-glow:${hexToRgba(cc, .45)}`;
+}
+
 /* ---------- CONTEXTO DEL VISITANTE ---------- */
 const _p = new URLSearchParams(location.search);
 const MIEMBRO_ID  = _p.get("miembro");
@@ -90,7 +114,7 @@ async function cargarAliados() {
 /* ---------- RENDER FILTROS ---------- */
 function renderFiltros() {
   $("#dir-filtros").innerHTML = GRUPOS.map(g =>
-    `<button class="dir-chip${g === filtroActivo ? " is-on" : ""}" data-grupo="${g}">${g}</button>`
+    `<button class="dir-chip${g === filtroActivo ? " is-on" : ""}" data-grupo="${g}" style="${g === "Todos" ? "" : ccVars(g)}">${g === "Todos" ? "" : `<span class="dir-chip__dot"></span>`}${g}</button>`
   ).join("");
 }
 
@@ -115,21 +139,19 @@ function renderGrid() {
     return;
   }
 
-  cont.innerHTML = list.map(a => `
-    <article class="dir-card" data-aliado="${a.id}" tabindex="0">
+  cont.innerHTML = list.map((a, i) => `
+    <article class="dir-card" data-aliado="${a.id}" tabindex="0" style="${ccVars(a.categoria)};animation-delay:${Math.min(i * 45, 400)}ms">
       <div class="dir-card__top">
         ${a.imagen_url
-          ? `<img src="${a.imagen_url}" alt="" style="width:40px;height:40px;border-radius:8px;object-fit:cover;flex-shrink:0">`
+          ? `<img src="${a.imagen_url}" alt="" style="width:52px;height:52px;border-radius:14px;object-fit:cover;flex-shrink:0">`
           : `<span class="dir-card__ic">${ic(iconoCategoria(a.categoria))}</span>`}
         <div>
           <div class="dir-card__cat">${a.categoria || "Aliado del Club"}</div>
           <div class="dir-card__nombre">${a.nombre}</div>
         </div>
       </div>
-      <div class="dir-card__pct-row">
-        <span class="dir-card__pct">${a.descuento || "Ver más"}</span>
-        <span class="dir-card__pct-lbl">de descuento<br>para miembros</span>
-      </div>
+      <div class="dir-card__badge">${ic("flame")}<span>${a.descuento || "Beneficio especial"}</span></div>
+      <span class="dir-card__pct-lbl">para miembros del Club</span>
       <div class="dir-card__ver">
         <button class="btn btn--ghost-verde" data-aliado-btn="${a.id}">Ver establecimiento &rarr;</button>
       </div>
@@ -448,14 +470,14 @@ async function cargarDestacados() {
   if (!wrap || !track) return;
   const dupl = [...items, ...items];
   track.innerHTML = dupl.map(a => `
-    <div class="dest-card" data-aliado-btn="${a.id}">
+    <div class="dest-card" data-aliado-btn="${a.id}" style="${ccVars(a.categoria)}">
       <div class="dest-card__img">
         ${a.imagen_url ? `<img src="${a.imagen_url}" alt="${a.nombre}">` : `<span class="dest-card__av">${(a.nombre || '?')[0]}</span>`}
       </div>
       <div class="dest-card__body">
         ${a.categoria ? `<span class="dest-card__cat">${a.categoria}</span>` : ''}
         <div class="dest-card__nombre">${a.nombre}</div>
-        ${a.descuento ? `<div class="dest-card__desc">${a.descuento}</div>` : ''}
+        ${a.descuento ? `<div class="dest-card__desc">${ic("flame")}${a.descuento}</div>` : ''}
       </div>
     </div>`).join('');
   wrap.style.display = 'block';
