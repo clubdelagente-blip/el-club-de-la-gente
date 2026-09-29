@@ -1067,9 +1067,8 @@ function htmlFormAliado(a={}){
   ${a.user_id?`
     <p style="font-size:13px;color:#095544;background:rgba(9, 85, 68,.08);padding:10px 14px;border-radius:8px">✓ Ya tiene cuenta. Puede iniciar sesión con su email en Registro.html (pestaña "Inicia sesión" → "¿Eres profesional?").</p>
   `:`
-    <div class="ad-field"><label>Email para su cuenta</label><input id="fa-cuenta-email" type="email" placeholder="negocio@correo.com"></div>
     <button type="button" class="ad-btn ad-btn--verde" id="fa-crear-cuenta" style="font-size:12px">${ic("key")} Crear cuenta de acceso</button>
-    <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Se genera una contraseña automática que te mostramos una sola vez para que se la compartas al aliado.</span>
+    <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Se crea con el WhatsApp del aliado (${(a.whatsapp||'').trim()?esc(a.whatsapp):'agrega su WhatsApp arriba primero'}) y le llega un mensaje de bienvenida automático por WhatsApp.</span>
   `}
   `:''}
   <hr style="border:none;border-top:1px solid rgba(26,26,24,.12);margin:20px 0 14px">
@@ -1147,11 +1146,12 @@ function bindFormAliado(){
     $("#fa-crear-cuenta")?.addEventListener('click',async()=>{
       const btn=$("#fa-crear-cuenta");
       const aliadoId=$("#fa-save")?.dataset.id;
-      const email=$("#fa-cuenta-email")?.value.trim();
       const nombre=$("#fa-nombre")?.value.trim();
-      const whatsapp=$("#fa-wa")?.value.trim();
+      let waDigits=($("#fa-wa")?.value||"").replace(/\D/g,"");
+      while(waDigits.length>10&&waDigits.startsWith("57"))waDigits=waDigits.slice(2);
       if(!aliadoId){toast('Guarda el aliado primero');return;}
-      if(!email){toast('Escribe un email para la cuenta');return;}
+      if(!waDigits){toast('Agrega el WhatsApp del aliado primero');return;}
+      const email=waDigits+"@clubdelagente.app";
       btn.disabled=true;btn.innerHTML=`${ic("loader")} Creando…`;if(window.lucide)lucide.createIcons();
 
       const password=Array.from(crypto.getRandomValues(new Uint8Array(6))).map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -1165,7 +1165,7 @@ function bindFormAliado(){
       }
 
       await supabase.from('aliados').update({user_id:data.user.id}).eq('id',aliadoId);
-      await supabase.from('perfiles').upsert({id:data.user.id,nombre,whatsapp:whatsapp||null,rol:'aliado',plan:'vitalicia'});
+      await supabase.from('perfiles').upsert({id:data.user.id,nombre,whatsapp:waDigits,rol:'aliado',plan:'vitalicia'});
 
       const beneficiosVitalicia=[
         'Membresía Premium vitalicia y gratuita, para siempre',
@@ -1174,9 +1174,20 @@ function bindFormAliado(){
         'Descuentos premium y beneficios ampliados',
         'Acceso prioritario a eventos del Club',
       ];
+      const msg=`¡Bienvenido al Club, ${nombre}! 🌿\n\nYa eres aliado de El Club de la Gente. Estos son los datos de acceso a tu cuenta:\nEmail: ${email}\nContraseña: ${password}\n\nTu cuenta ya incluye membresía Premium vitalicia y gratuita:\n${beneficiosVitalicia.map(b=>'• '+b).join('\n')}`;
+
+      let enviado=false;
+      try{
+        const res=await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3",{
+          method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({to:waDigits,body:msg})
+        });
+        enviado=res.ok;
+      }catch(_){enviado=false;}
+
       const a=_aliados.find(x=>x.id===aliadoId);
       abrirModal('Cuenta creada ✓',nombre,`
-        <p style="font-size:13px;color:rgba(242,240,234,.6);margin-bottom:16px">Comparte estos datos con el aliado (por el canal que prefieras). No se van a volver a mostrar.</p>
+        <p style="font-size:13px;color:${enviado?'#00DF81':'#f0a020'};margin-bottom:16px">${enviado?'✓ Se envió el mensaje de bienvenida por WhatsApp a '+waDigits:'⚠ No se pudo enviar el WhatsApp automático -- copia el mensaje y compártelo tú mismo.'}</p>
         <div class="ad-field"><label>Email</label><input type="text" readonly value="${email}" id="fa-cred-email"></div>
         <div class="ad-field"><label>Contraseña</label><input type="text" readonly value="${password}" id="fa-cred-pass"></div>
         <div class="ad-field">
@@ -1192,7 +1203,6 @@ function bindFormAliado(){
       `);
       if(window.lucide)lucide.createIcons();
       $("#fa-cred-copiar")?.addEventListener('click',async()=>{
-        const msg=`¡Bienvenido al Club, ${nombre}! 🌿\n\nAquí están los datos de acceso a tu cuenta de aliado:\nEmail: ${email}\nContraseña: ${password}\n\nTu cuenta ya incluye membresía Premium vitalicia y gratuita:\n${beneficiosVitalicia.map(b=>'• '+b).join('\n')}`;
         await navigator.clipboard.writeText(msg).catch(()=>{});
         toast('Copiado ✓');
       });
@@ -1222,7 +1232,9 @@ function bindFormAliado(){
       if(contratoFile)try{contrato_url=await subirImagen(contratoFile);}catch(_){toast('Error al subir el contrato');}
       const planesSel=$("#fa-planes")?.value.split(',').map(s=>s.trim()).filter(Boolean);
       const subcategorias=($("#fa-subcat")?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
-      const payload={nombre,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:$("#fa-wa")?.value.trim()||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
+      let waAliado=($("#fa-wa")?.value||'').replace(/\D/g,'');
+      while(waAliado.length>10&&waAliado.startsWith('57'))waAliado=waAliado.slice(2);
+      const payload={nombre,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:waAliado||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
       const id=btn.dataset.id;
       const{error}=id?await supabase.from('aliados').update(payload).eq('id',id):await supabase.from('aliados').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}
@@ -1325,7 +1337,8 @@ function bindFormPromocionInline(aliadoId,editId){
         dias_aplica:diasActivos.length?diasActivos:['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
         hora_inicio:$("#pr-hora-ini")?.value||null,hora_fin:$("#pr-hora-fin")?.value||null,
         fecha_inicio:$("#pr-fecha-ini")?.value||null,fecha_fin:$("#pr-fecha-fin")?.value||null,
-        monto_minimo:parseInt($("#pr-min")?.value)||0,foto_url,activa:$("#pr-activa")?.checked!==false};
+        monto_minimo:parseInt($("#pr-min")?.value)||0,foto_url,activa:$("#pr-activa")?.checked!==false,
+        es_cumpleanos:$("#pr-cumple")?.checked||false,solo_premium:$("#pr-solo-premium")?.checked||false};
       const id=btn.dataset.id||editId;
       const{error}=id?await supabase.from('promociones').update(payload).eq('id',id):await supabase.from('promociones').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;btn.innerHTML=`${ic("check")} ${id?'Guardar cambios':'Guardar promoción'}`;if(window.lucide)lucide.createIcons();return;}
@@ -1921,6 +1934,16 @@ function htmlFormPromocion(p={},aliadoId){
     <div class="ad-field"><label>Foto <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label>
       ${p.foto_url?`<img src="${p.foto_url}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;margin-bottom:6px;display:block">`:''}<input id="pr-foto" type="file" accept="image/*"><input type="hidden" id="pr-foto-url" value="${p.foto_url||''}"></div>
   </div>
+  <div style="background:rgba(234,183,73,.08);border:1px solid rgba(234,183,73,.3);border-radius:10px;padding:12px 14px;margin-bottom:10px">
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:rgba(26,26,24,.75);margin-bottom:8px">
+      <input id="pr-cumple" type="checkbox" style="width:16px;height:16px;accent-color:#095544" ${p.es_cumpleanos?'checked':''}>
+      🎂 Válida para cumpleañeros -- el Agente de WhatsApp la avisa el día del cumpleaños del miembro
+    </label>
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:rgba(26,26,24,.75)">
+      <input id="pr-solo-premium" type="checkbox" style="width:16px;height:16px;accent-color:#095544" ${p.solo_premium?'checked':''}>
+      Solo para miembros Premium/Vitalicia
+    </label>
+  </div>
   <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:rgba(26,26,24,.6);margin-bottom:4px">
     <input id="pr-activa" type="checkbox" style="width:16px;height:16px;accent-color:#095544" ${p.activa===false?'':'checked'}>
     Promoción activa
@@ -1988,7 +2011,8 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
         fecha_inicio:$("#pr-fecha-ini")?.value||null,
         fecha_fin:$("#pr-fecha-fin")?.value||null,
         monto_minimo:parseInt($("#pr-min")?.value)||0,
-        foto_url,activa:$("#pr-activa")?.checked!==false};
+        foto_url,activa:$("#pr-activa")?.checked!==false,
+        es_cumpleanos:$("#pr-cumple")?.checked||false,solo_premium:$("#pr-solo-premium")?.checked||false};
       const id=btn.dataset.id||editId;
       const{error}=id?await supabase.from('promociones').update(payload).eq('id',id):await supabase.from('promociones').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;btn.innerHTML=`${ic("check")} ${id?'Guardar cambios':'Guardar promoción'}`;if(window.lucide)lucide.createIcons();return;}
