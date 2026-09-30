@@ -218,11 +218,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (planElegido) localStorage.setItem("ecdlg_plan", planElegido);
   const refId = params.get("ref");
   if (refId) localStorage.setItem("ecdlg_ref", refId);
-  const tabInicial = params.get("tab") === "login" ? "login" : "registro";
-  setTab(tabInicial);
-
   // Ocultar tabs según el modo de entrada
   const modo = params.get("modo");
+  const tabInicial = (params.get("tab") === "login" || modo === "login") ? "login" : "registro";
+  setTab(tabInicial);
   if (modo === "registro" || modo === "login") {
     const tabs = $("#auth-tabs");
     if (tabs) tabs.style.display = "none";
