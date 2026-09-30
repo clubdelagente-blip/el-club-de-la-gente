@@ -2033,18 +2033,32 @@ document.addEventListener("DOMContentLoaded", () => {
   // antes de salir de la página.
   history.replaceState({ panel: "inicio" }, "", location.href);
   mostrarPanel("inicio");
-  // getSession() puede devolver null momentáneamente al reabrir la app (PWA
-  // en segundo plano, token vencido) si el refresh automático de Supabase no
-  // alcanzó a completarse por falta de red en ese instante -- antes eso
-  // mandaba a Login.html de una, pidiendo el código de nuevo aunque la
-  // sesión siguiera siendo válida. Ahora se reintenta una vez (dándole medio
-  // segundo a la red) antes de decidir que de verdad no hay sesión.
+  // getSession() puede devolver null al reabrir la app (PWA en segundo plano)
+  // -- antes eso mandaba a Login.html de una, pidiendo el código de nuevo
+  // aunque la sesión siguiera siendo válida. Se reintenta varias veces (hasta
+  // ~4s en total) y, si sigue sin aparecer pero SÍ hay un token guardado en
+  // este navegador, se fuerza un refreshSession() antes de rendirse --
+  // cubre el caso de iOS en modo "app" (ícono de pantalla de inicio), donde
+  // el proceso se suspende/mata al segundo de salir y getSession() puede
+  // tardar en releer lo que ya está guardado en el dispositivo.
+  function haySesionGuardadaEnStorage() {
+    try {
+      return Object.keys(localStorage).some(k => k.startsWith("sb-") && k.endsWith("-auth-token"));
+    } catch { return false; }
+  }
   async function obtenerSesionConReintento() {
-    const primero = await supabase.auth.getSession();
-    if (primero.data.session?.user?.id) return primero.data.session;
-    await new Promise(r => setTimeout(r, 600));
-    const segundo = await supabase.auth.getSession();
-    return segundo.data.session || null;
+    for (const espera of [0, 400, 900, 1600]) {
+      if (espera) await new Promise(r => setTimeout(r, espera));
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user?.id) return data.session;
+    }
+    if (haySesionGuardadaEnStorage()) {
+      try {
+        const { data } = await supabase.auth.refreshSession();
+        if (data.session?.user?.id) return data.session;
+      } catch {}
+    }
+    return null;
   }
   obtenerSesionConReintento().then(async (session) => {
     if (!session?.user?.id) { location.href = "Registro.html?modo=login"; return; }
