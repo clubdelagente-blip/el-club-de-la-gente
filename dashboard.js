@@ -2033,7 +2033,20 @@ document.addEventListener("DOMContentLoaded", () => {
   // antes de salir de la página.
   history.replaceState({ panel: "inicio" }, "", location.href);
   mostrarPanel("inicio");
-  supabase.auth.getSession().then(async ({ data: { session } }) => {
+  // getSession() puede devolver null momentáneamente al reabrir la app (PWA
+  // en segundo plano, token vencido) si el refresh automático de Supabase no
+  // alcanzó a completarse por falta de red en ese instante -- antes eso
+  // mandaba a Login.html de una, pidiendo el código de nuevo aunque la
+  // sesión siguiera siendo válida. Ahora se reintenta una vez (dándole medio
+  // segundo a la red) antes de decidir que de verdad no hay sesión.
+  async function obtenerSesionConReintento() {
+    const primero = await supabase.auth.getSession();
+    if (primero.data.session?.user?.id) return primero.data.session;
+    await new Promise(r => setTimeout(r, 600));
+    const segundo = await supabase.auth.getSession();
+    return segundo.data.session || null;
+  }
+  obtenerSesionConReintento().then(async (session) => {
     if (!session?.user?.id) { location.href = "Registro.html?modo=login"; return; }
     const userId = session.user.id;
     _miembroId = userId;
