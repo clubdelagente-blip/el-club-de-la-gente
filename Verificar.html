@@ -431,7 +431,11 @@
         document.getElementById("prof-cancelar")?.addEventListener("click", () => cargarYRenderizar());
         document.getElementById("prof-continuar")?.addEventListener("click", async () => {
           const errEl = document.getElementById("prof-error");
-          const wa = (document.getElementById("prof-wa")?.value || "").replace(/\D/g, "");
+          // Mismo match exacto que usan los conductores de Uber (no ilike
+          // difuso -- ese "código" es su identificador real) contra el
+          // WhatsApp ya normalizado, quitando un "57" duplicado al inicio.
+          let wa = (document.getElementById("prof-wa")?.value || "").replace(/\D/g, "");
+          while (wa.length > 10 && wa.startsWith("57")) wa = wa.slice(2);
           if (wa.length < 7) {
             if (errEl) { errEl.textContent = "Ingresa un WhatsApp válido."; errEl.style.display = "block"; }
             return;
@@ -442,7 +446,7 @@
             .from("profesionales")
             .select("id, nombre, whatsapp")
             .eq("activo", true)
-            .ilike("whatsapp", `%${wa}%`)
+            .eq("whatsapp", wa)
             .maybeSingle();
 
           if (!profesional) {
