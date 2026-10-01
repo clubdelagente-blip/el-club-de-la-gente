@@ -610,7 +610,15 @@
         const { data, error } = await conTimeout(
           supabaseClient.rpc("verificar_codigo_miembro", { p_miembro_id: id, p_codigo: codigo }), 10000
         );
-        if (error || !data) {
+        if (error) {
+          renderCodigoGate("No se pudo verificar por un problema de conexión. Intenta de nuevo.");
+          return;
+        }
+        if (data === "bloqueado") {
+          renderCodigoGate("Demasiados intentos fallidos. Espera 2 minutos e inténtalo de nuevo.");
+          return;
+        }
+        if (data !== "ok") {
           renderCodigoGate("Código incorrecto o vencido. Pídele al miembro que voltee su ClubCard de nuevo.");
           return;
         }
