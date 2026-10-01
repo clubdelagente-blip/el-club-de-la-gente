@@ -167,6 +167,24 @@ const overlay = $("#sheet-overlay");
 const sheet = $("#sheet");
 const sheetInner = $("#sheet-inner");
 let aliadoActual = null;
+let carruselInterval = null;
+
+function wireCarrusel() {
+  if (carruselInterval) { clearInterval(carruselInterval); carruselInterval = null; }
+  const cont = sheetInner.querySelector(".aliado-carrusel");
+  if (!cont) return;
+  const imgs = cont.querySelectorAll("img");
+  if (imgs.length < 2) return;
+  let idx = 0;
+  carruselInterval = setInterval(() => {
+    idx = (idx + 1) % imgs.length;
+    cont.scrollTo({ left: cont.clientWidth * idx, behavior: "smooth" });
+  }, 2000);
+  // Si el miembro desliza con el dedo, se respeta su control y se detiene el auto-avance
+  cont.addEventListener("touchstart", () => {
+    if (carruselInterval) { clearInterval(carruselInterval); carruselInterval = null; }
+  }, { passive: true, once: true });
+}
 
 async function openSheet(aliadoId) {
   const a = ALIADOS.find(x => x.id === aliadoId);
@@ -184,11 +202,13 @@ async function openSheet(aliadoId) {
   sheetInner.innerHTML = sheetAliado(a);
   if (window.lucide) lucide.createIcons();
   wireCalc(a);
+  wireCarrusel();
 }
 function closeSheet() {
   overlay.classList.remove("is-open");
   sheet.classList.remove("is-open");
   document.body.style.overflow = "";
+  if (carruselInterval) { clearInterval(carruselInterval); carruselInterval = null; }
 }
 
 /* ---------- Lectura de promociones (tipos heterogéneos) ---------- */
