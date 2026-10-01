@@ -1144,7 +1144,7 @@ async function cargarAliadosRecomendados(perfData) {
 
   const { data: aliados, error } = await supabase
     .from("aliados")
-    .select("id, nombre, categoria, descuento, whatsapp")
+    .select("id, nombre, categoria, descuento, whatsapp, imagen_url")
     .eq("activo", true);
   if (error || !aliados?.length) return;
 
@@ -1188,7 +1188,9 @@ async function cargarAliadosRecomendados(perfData) {
     const href = a.whatsapp ? `https://wa.me/57${String(a.whatsapp).replace(/\D/g, "")}` : "Directorio.html";
     return `
     <a class="aliado-mini" href="${href}" target="_blank" rel="noopener">
-      <span class="aliado-mini__ic">${ic(getIcon(a.categoria))}</span>
+      ${a.imagen_url
+        ? `<img class="aliado-mini__ic" src="${esc(a.imagen_url)}" alt="" style="object-fit:cover">`
+        : `<span class="aliado-mini__ic">${ic(getIcon(a.categoria))}</span>`}
       <span>
         <span class="aliado-mini__name">${esc(a.nombre)}</span><br>
         <span class="aliado-mini__cat">${esc(a.categoria || "")}</span>
