@@ -112,6 +112,25 @@
 }
 .dir-card__badge svg { width: 14px; height: 14px; flex: none; }
 
+/* ---------- Tarjeta de promoción (dentro de la ficha del aliado) ---------- */
+.promo-card {
+  background: #fff; border: 1.5px solid var(--linea); border-radius: 16px;
+  padding: 18px 20px; margin-bottom: 14px; position: relative; overflow: hidden;
+}
+.promo-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--cc, var(--verde)); }
+.promo-card__fotos { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; margin-bottom: 14px; -webkit-overflow-scrolling: touch; }
+.promo-card__fotos img { width: 140px; height: 100px; object-fit: cover; border-radius: 10px; flex: none; scroll-snap-align: start; }
+.promo-card__badge {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 15px 7px 11px; border-radius: 100px;
+  background: var(--cc, var(--verde)); color: #fff; font-weight: 800; font-size: 13px; margin-bottom: 12px;
+}
+.promo-card__badge svg { width: 14px; height: 14px; flex: none; }
+.promo-card__desc { font-size: 14px; color: var(--tinta); line-height: 1.6; margin-bottom: 12px; white-space: pre-line; }
+.promo-card__meta {
+  display: inline-block; font-size: 12px; font-weight: 700; color: var(--cc, var(--verde));
+  background: var(--cc-soft, var(--verde-soft)); padding: 6px 12px; border-radius: 8px;
+}
+
 .dir-empty { grid-column: 1 / -1; text-align: center; padding: 70px 20px; color: var(--tinta-60); }
 .dir-empty svg { width: 34px; height: 34px; color: var(--tinta-45); margin-bottom: 14px; }
 .dir-empty h3 { font-family: var(--display); font-size: 26px; font-weight: 600; color: var(--tinta); }

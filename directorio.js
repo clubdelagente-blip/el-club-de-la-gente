@@ -256,16 +256,14 @@ function sheetAliado(a) {
     ${promos.length ? promos.map((p) => {
       const fotos = (Array.isArray(p.fotos_urls) && p.fotos_urls.length) ? p.fotos_urls : (p.foto_url ? [p.foto_url] : []);
       return `
-      <div class="descuento" style="flex-wrap:wrap">
+      <div class="promo-card">
         ${fotos.length ? `
-        <div style="width:100%;display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;margin-bottom:10px;-webkit-overflow-scrolling:touch">
-          ${fotos.map(url => `<img src="${url}" style="width:140px;height:100px;object-fit:cover;border-radius:8px;flex:none;scroll-snap-align:start">`).join("")}
+        <div class="promo-card__fotos">
+          ${fotos.map(url => `<img src="${url}">`).join("")}
         </div>` : ""}
-        <div class="descuento__pct">${badgePromo(p)}</div>
-        <div class="descuento__body">
-          <h4>${p.descripcion}</h4>
-          <p>${beneficioTexto(p)}${detallePromo(p) ? " · " + detallePromo(p) : ""}</p>
-        </div>
+        <span class="promo-card__badge">${ic("flame")}${badgePromo(p)}</span>
+        <p class="promo-card__desc">${p.descripcion}</p>
+        <span class="promo-card__meta">${beneficioTexto(p)}${detallePromo(p) ? " · " + detallePromo(p) : ""}</span>
       </div>`;
     }).join("") : `<p style="font-size:13px;color:#888;padding:8px 0">Este aliado todavía no tiene promociones cargadas. Consulta directamente en el establecimiento.</p>`}
 
