@@ -640,6 +640,9 @@ async function abrirAhorroMensual() {
       <div style="font-family:'Fraunces',serif;font-size:19px;font-weight:700;margin-bottom:8px;line-height:1.25">¡Pronto premiaremos a quienes más ahorran!</div>
       <p style="font-size:13.5px;line-height:1.55;opacity:.85">Viajes, celulares, ropa de marca y muchas sorpresas más para los miembros que más aprovechen sus beneficios cada mes. Sigue ahorrando — ¡tú podrías ser el próximo ganador! 🎉</p>
     </div>
+    <div style="text-align:center;margin-top:22px">
+      <img src="logo-club.png" alt="El Club de la Gente" style="height:34px;width:auto;opacity:.55">
+    </div>
   `);
 
   const cont = document.querySelector("#ahorro-chart-svg")?.parentElement;
