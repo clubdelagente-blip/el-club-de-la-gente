@@ -156,8 +156,8 @@ function renderTienda() {
         <div class="ad-card__head"><div class="ad-card__title">Tiendas de aliados activas</div></div>
         <div class="ad-table-wrap">
           <table class="ad-table">
-            <thead><tr><th>Tienda</th><th>Aliado</th><th>Productos</th><th>Pedidos</th><th>Ventas confirmadas</th><th style="text-align:right">Comisión a cobrar</th></tr></thead>
-            <tbody id="tiendas-aliados-body"><tr><td colspan="6" style="text-align:center;padding:30px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
+            <thead><tr><th>Tienda</th><th>Aliado</th><th>Productos</th><th>Pedidos</th><th style="text-align:right">Ventas confirmadas</th></tr></thead>
+            <tbody id="tiendas-aliados-body"><tr><td colspan="5" style="text-align:center;padding:30px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
           </table>
         </div>
       </div>

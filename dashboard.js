@@ -914,7 +914,7 @@ async function cargarMisProductos(aliadoId) {
     const { error, count } = await supabase.from("productos_aliado").delete({ count: "exact" }).eq("id", btn.dataset.rmProdal);
     if (error) {
       if (error.code === "23503") {
-        if (confirm("Este producto ya tiene pedidos y no se puede eliminar sin perder ese historial.\n\n¿Prefieres solo desactivarlo? (desaparece de la tienda, pero conserva los pedidos y comisiones)")) {
+        if (confirm("Este producto ya tiene pedidos y no se puede eliminar sin perder ese historial.\n\n¿Prefieres solo desactivarlo? (desaparece de la tienda, pero conserva los pedidos)")) {
           const { error: errDesact } = await supabase.from("productos_aliado").update({ activo: false }).eq("id", btn.dataset.rmProdal);
           if (errDesact) { toast("Error desactivando: " + errDesact.message); return; }
           toast("Producto desactivado ✓");
@@ -1074,11 +1074,9 @@ async function cargarPedidosAliado(aliadoId) {
   const pedidos = data || [];
 
   const vendido = pedidos.filter(p => p.estado === "confirmado" || p.estado === "entregado").reduce((s, p) => s + (p.monto || 0), 0);
-  const comisionPendiente = pedidos.filter(p => p.estado === "pendiente" || p.estado === "confirmado").reduce((s, p) => s + (p.comision_valor || 0), 0);
   const nPendientes = pedidos.filter(p => p.estado === "pendiente").length;
   const statVendidoEl = $("#tda-stat-vendido"); if (statVendidoEl) statVendidoEl.textContent = COP(vendido);
   const statPendEl = $("#tda-stat-pendientes"); if (statPendEl) statPendEl.textContent = nPendientes;
-  const statComEl = $("#tda-stat-comision"); if (statComEl) statComEl.textContent = COP(comisionPendiente);
 
   if (!pedidos.length) { list.innerHTML = `<p style="padding:8px 0">Aún no has recibido pedidos.</p>`; return; }
 
@@ -1093,7 +1091,6 @@ async function cargarPedidosAliado(aliadoId) {
         <div style="flex:1;min-width:180px">
           <div style="font-weight:600;font-size:14px">${esc(p.productos_aliado?.nombre) || "Producto"} — ${COP(p.monto)}</div>
           <div style="font-size:12px;color:#777">${entrega}</div>
-          <div style="font-size:12px;color:#777">Comisión: ${COP(p.comision_valor)} (${p.comision_pct}%)</div>
         </div>
         <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};white-space:nowrap">${est.t}</span>
       </div>
@@ -1370,7 +1367,6 @@ function inicializarBloqueo() {
 const COP = n => n != null ? '$' + Number(n).toLocaleString('es-CO') : '';
 let _tiendaCargada = false;
 let _miembroId = null;
-let _comisionTiendaPct = 10;
 
 /* ---------- Notificaciones (campana del topbar) ---------- */
 async function cargarNotificacionesMiembro(userId) {
@@ -1969,15 +1965,11 @@ async function cargarTiendaAliados() {
   if (!grid || !wrap) return;
 
   const hoy = new Date().toISOString().slice(0, 10);
-  const [{ data: prods }, { data: comPct }] = await Promise.all([
-    supabase.from('productos_aliado')
-      .select('*, categorias_productos(nombre), aliados(nombre, tienda_nombre, whatsapp, maps_url, tienda_llave_pago, instagram, facebook, tiktok)')
-      .eq('estado', 'aprobado').eq('activo', true)
-      .or(`fecha_fin.is.null,fecha_fin.gte.${hoy}`)
-      .order('created_at', { ascending: false }),
-    supabase.rpc('get_comision_tienda_pct'),
-  ]);
-  if (comPct != null) _comisionTiendaPct = comPct;
+  const { data: prods } = await supabase.from('productos_aliado')
+    .select('*, categorias_productos(nombre), aliados(nombre, tienda_nombre, whatsapp, maps_url, tienda_llave_pago, instagram, facebook, tiktok)')
+    .eq('estado', 'aprobado').eq('activo', true)
+    .or(`fecha_fin.is.null,fecha_fin.gte.${hoy}`)
+    .order('created_at', { ascending: false });
 
   const productos = prods || [];
   if (!productos.length) { wrap.style.display = 'none'; return; }
@@ -2132,7 +2124,6 @@ function abrirCheckoutProducto(p) {
     if (upErr) { toast("Error subiendo el comprobante"); btn.disabled = false; btn.textContent = "Confirmar pedido"; return; }
     const comprobante_url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
 
-    const comisionValor = Math.round(precio * (_comisionTiendaPct / 100));
     const payload = {
       producto_id: p.id,
       aliado_id: p.aliado_id,
@@ -2143,8 +2134,6 @@ function abrirCheckoutProducto(p) {
       envio_telefono: tipoEntrega === "envio" ? telefono : null,
       comprobante_url,
       monto: precio,
-      comision_pct: _comisionTiendaPct,
-      comision_valor: comisionValor,
       estado: "pendiente",
     };
     const { error } = await supabase.from("pedidos").insert(payload);

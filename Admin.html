@@ -203,7 +203,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=5"></script>
-  <script src="admin.js?v=25"></script>
+  <script src="admin.js?v=26"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -228,8 +228,8 @@ function clienteAislado(){
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
 }
-let _aliados=[], _anuncios=[], _programas=[], _profesionales=[], _gastos=[], _categoriasGasto=[], _pagos=[], _contMes=null, _contGastosMes=[], _contPagosMes=[], _contConfig={iva_pct:19,ica_pct:0.92,fundador_pct:20,reserva_legal_pct:10,disponible_pct:45,renta_pct:35,comision_tienda_pct:10};
-let _pedidosCom=[], _ingresosManuales=[], _categoriasIngreso=[], _contComisionMes=[], _contIngManMes=[], _contFilasIngreso=[], _contFiltroIngreso=null;
+let _aliados=[], _anuncios=[], _programas=[], _profesionales=[], _gastos=[], _categoriasGasto=[], _pagos=[], _contMes=null, _contGastosMes=[], _contPagosMes=[], _contConfig={iva_pct:19,ica_pct:0.92,fundador_pct:20,reserva_legal_pct:10,disponible_pct:45,renta_pct:35};
+let _ingresosManuales=[], _categoriasIngreso=[], _contIngManMes=[], _contFilasIngreso=[], _contFiltroIngreso=null;
 
 // Arranca con esta lista por defecto y se reemplaza por las opciones reales de
 // la pregunta "categorías de interés" del Formulario de bienvenida en cuanto
@@ -2268,17 +2268,16 @@ document.addEventListener('DOMContentLoaded',async()=>{
   async function cargarContabilidad(){
     const hoy=new Date();
     if(!_contMes)_contMes=`${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}`;
-    const[{data:pagos},{data:gastos},{data:cats},{data:cfg},{data:pedidosCom},{data:ingMan},{data:catsIng}]=await Promise.all([
+    const[{data:pagos},{data:gastos},{data:cats},{data:cfg},{data:ingMan},{data:catsIng}]=await Promise.all([
       supabase.from('pagos').select('id,monto,plan,referencia,created_at,perfiles(nombre)').order('created_at',{ascending:false}),
       supabase.from('gastos').select('id,monto,proveedor,fecha,nota,categoria_id,factura_url,categorias_gasto(nombre)').order('fecha',{ascending:false}),
       supabase.from('categorias_gasto').select('*').order('nombre'),
       supabase.from('config_contabilidad').select('*').eq('id',1).maybeSingle(),
-      supabase.from('pedidos').select('id,monto,comision_valor,created_at,productos_aliado(nombre),aliados(nombre,tienda_nombre)').in('estado',['confirmado','entregado']).order('created_at',{ascending:false}),
       supabase.from('ingresos_manuales').select('id,monto,descripcion,fecha,nota,categoria_id,tipo,categorias_ingreso(nombre)').order('fecha',{ascending:false}),
       supabase.from('categorias_ingreso').select('*').order('nombre'),
     ]);
     _pagos=pagos||[];_gastos=gastos||[];_categoriasGasto=cats||[];
-    _pedidosCom=pedidosCom||[];_ingresosManuales=ingMan||[];_categoriasIngreso=catsIng||[];
+    _ingresosManuales=ingMan||[];_categoriasIngreso=catsIng||[];
     if(cfg)_contConfig=cfg;
     renderContabilidadUI();
   }
@@ -2288,18 +2287,16 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const enMes=(iso,ymStr)=>{const d=new Date(iso);const[yy,mm]=ymStr.split('-').map(Number);return d.getFullYear()===yy&&(d.getMonth()+1)===mm;};
     _contGastosMes=_gastos.filter(g=>enMes(g.fecha,_contMes));
     _contPagosMes=_pagos.filter(p=>enMes(p.created_at,_contMes));
-    _contComisionMes=_pedidosCom.filter(p=>enMes(p.created_at,_contMes));
     _contIngManMes=_ingresosManuales.filter(i=>enMes(i.fecha,_contMes));
     const soloOperativo=arr=>arr.filter(i=>i.tipo!=='patrimonio');
-    const totalIngresos=(pagosArr,comArr,manArr)=>pagosArr.reduce((s,p)=>s+(p.monto||0),0)+comArr.reduce((s,p)=>s+(p.comision_valor||0),0)+soloOperativo(manArr).reduce((s,i)=>s+(i.monto||0),0);
+    const totalIngresos=(pagosArr,manArr)=>pagosArr.reduce((s,p)=>s+(p.monto||0),0)+soloOperativo(manArr).reduce((s,i)=>s+(i.monto||0),0);
     const gastosMesAnt=_gastos.filter(g=>enMes(g.fecha,mesAnt)).reduce((s,g)=>s+(g.monto||0),0);
-    const ingresosMesAnt=totalIngresos(_pagos.filter(p=>enMes(p.created_at,mesAnt)),_pedidosCom.filter(p=>enMes(p.created_at,mesAnt)),_ingresosManuales.filter(i=>enMes(i.fecha,mesAnt)));
-    const ingresosMes=totalIngresos(_contPagosMes,_contComisionMes,_contIngManMes);
+    const ingresosMesAnt=totalIngresos(_pagos.filter(p=>enMes(p.created_at,mesAnt)),_ingresosManuales.filter(i=>enMes(i.fecha,mesAnt)));
+    const ingresosMes=totalIngresos(_contPagosMes,_contIngManMes);
     const gastosMes=_contGastosMes.reduce((s,g)=>s+(g.monto||0),0);
     const balanceMes=ingresosMes-gastosMes;
     const filasIngreso=[
       ..._contPagosMes.map(p=>({tipo:'membresia',concepto:'Membresía',detalle:p.perfiles?.nombre||'—',fecha:p.created_at,monto:p.monto})),
-      ..._contComisionMes.map(p=>({tipo:'comision',concepto:'Comisión tienda de aliados',detalle:`${p.productos_aliado?.nombre||'Producto'} · ${p.aliados?.tienda_nombre||p.aliados?.nombre||''}`,fecha:p.created_at,monto:p.comision_valor})),
       ..._contIngManMes.map(i=>({tipo:i.tipo==='patrimonio'?'patrimonio':'manual',concepto:i.categorias_ingreso?.nombre||(i.tipo==='patrimonio'?'Patrimonio':'Otros'),detalle:i.descripcion||'—',fecha:i.fecha,monto:i.monto,id:i.id,editable:true})),
     ].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
     _contFilasIngreso=filasIngreso;
@@ -2328,7 +2325,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
 
     const ingresosAnio=totalIngresos(
       _pagos.filter(p=>new Date(p.created_at).getFullYear()===y),
-      _pedidosCom.filter(p=>new Date(p.created_at).getFullYear()===y),
       _ingresosManuales.filter(i=>new Date(i.fecha).getFullYear()===y)
     );
     const gastosAnio=_gastos.filter(g=>new Date(g.fecha).getFullYear()===y).reduce((s,g)=>s+(g.monto||0),0);
@@ -2341,7 +2337,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
         <div class="ad-spacer"></div>
       </div>
       <div class="ad-metrics">
-        ${metric('banknote',COPc(ingresosMes),'Ingresos del mes','membresías + comisiones + otros (sin patrimonio)',chIng.chip,chIng.dir)}
+        ${metric('banknote',COPc(ingresosMes),'Ingresos del mes','membresías + otros (sin patrimonio)',chIng.chip,chIng.dir)}
         ${metric('receipt',COPc(gastosMes),'Gastos del mes','registrados a mano',chGas.chip,chGas.dir)}
         ${metric('scale',COPc(balanceMes),'Balance del mes',balanceMes>=0?'positivo':'negativo','','up')}
         ${metric('landmark',COPc(balanceAnio),'Balance del año',`año ${y} · ingresos ${COPc(ingresosAnio)} − gastos ${COPc(gastosAnio)}`,'','up')}
@@ -2363,7 +2359,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       </div>
       <div class="ad-toolbar" style="margin-top:24px"><div class="ad-card__title">Ingresos</div><div class="ad-spacer"></div><button class="ad-btn" id="ingresos-csv">${ic('download')} Descargar Excel</button><button class="ad-btn ad-btn--verde" id="ingreso-add">${ic('plus')} Agregar ingreso</button></div>
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-        ${[['todos','Todos'],['membresia','Membresías'],['comision','Comisiones'],['manual','Otros'],['patrimonio','Patrimonio']].map(([val,lbl])=>
+        ${[['todos','Todos'],['membresia','Membresías'],['manual','Otros'],['patrimonio','Patrimonio']].map(([val,lbl])=>
           `<button class="ad-btn${_contFiltroIngreso===val?' ad-btn--verde':''}" data-filtro-ingreso="${val}" style="font-size:12px">${lbl}</button>`
         ).join('')}
       </div>
@@ -2634,11 +2630,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const tiendasBody=$('#tiendas-aliados-body');
     if(tiendasBody){
       if(!tiendas?.length){
-        tiendasBody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Ningún aliado ha activado su tienda todavía</td></tr>`;
+        tiendasBody.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Ningún aliado ha activado su tienda todavía</td></tr>`;
       }else{
         const[{data:aprobados},{data:pedidos}]=await Promise.all([
           supabase.from('productos_aliado').select('aliado_id').eq('estado','aprobado'),
-          supabase.from('pedidos').select('aliado_id,monto,comision_valor,estado'),
+          supabase.from('pedidos').select('aliado_id,monto,estado'),
         ]);
         const countAprobados=(id)=>(aprobados||[]).filter(x=>x.aliado_id===id).length;
         const pedidosDe=(id)=>(pedidos||[]).filter(x=>x.aliado_id===id);
@@ -2646,14 +2642,12 @@ document.addEventListener('DOMContentLoaded',async()=>{
         tiendasBody.innerHTML=tiendas.map(t=>{
           const conf=confirmadosDe(t.id);
           const ventas=conf.reduce((s,p)=>s+(p.monto||0),0);
-          const comision=conf.reduce((s,p)=>s+(p.comision_valor||0),0);
           return `<tr data-ver-tienda="${t.id}" data-nom-tienda="${esc(t.tienda_nombre||t.nombre)}" style="cursor:pointer">
           <td>${esc(t.tienda_nombre||t.nombre)}</td>
           <td style="font-size:12px">${esc(t.nombre)}</td>
           <td>${countAprobados(t.id)}</td>
           <td>${pedidosDe(t.id).length}</td>
-          <td>${COP(ventas)}</td>
-          <td style="text-align:right"><span class="ad-num-strong">${COP(comision)}</span></td>
+          <td style="text-align:right"><span class="ad-num-strong">${COP(ventas)}</span></td>
         </tr>`;
         }).join('');
       }
@@ -2745,7 +2739,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       !pedidos.length
         ?`<p style="color:rgba(242,240,234,.4);text-align:center;padding:20px 0">Esta tienda no tiene pedidos todavía</p>`
         :`<div class="ad-table-wrap"><table class="ad-table">
-            <thead><tr><th>Producto</th><th>Fecha</th><th>Entrega</th><th>Monto</th><th>Comisión</th><th style="text-align:right">Estado</th></tr></thead>
+            <thead><tr><th>Producto</th><th>Fecha</th><th>Entrega</th><th>Monto</th><th style="text-align:right">Estado</th></tr></thead>
             <tbody>${pedidos.map(p=>{
               const est=ESTADO_PEDIDO_ADMIN[p.estado]||ESTADO_PEDIDO_ADMIN.pendiente;
               return `<tr>
@@ -2753,7 +2747,6 @@ document.addEventListener('DOMContentLoaded',async()=>{
                 <td style="font-size:12px">${new Date(p.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}</td>
                 <td style="font-size:12px">${p.tipo_entrega==='envio'?'Envío':'Recoger'}</td>
                 <td>${COP(p.monto)}</td>
-                <td>${COP(p.comision_valor)} <span style="color:rgba(242,240,234,.4)">(${p.comision_pct}%)</span></td>
                 <td style="text-align:right"><span class="ad-pill" style="background:${est.c}22;color:${est.c}"><span class="d"></span>${est.t}</span></td>
               </tr>`;
             }).join('')}</tbody>
