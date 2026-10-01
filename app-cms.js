@@ -11,6 +11,22 @@ const supabase = createClient(
 
 const ic = (n) => `<i data-lucide="${n}"></i>`;
 
+/* Color por categoría -- mismo mapeo que directorio.js, para que el borde
+   de cada tarjeta del carrusel combine con el color de su categoría. */
+const COLORES_CAT = [
+  [/odont/i, "#4FA8E0"], [/veterinar|mascota/i, "#F5B942"], [/turis/i, "#2FA76F"],
+  [/canasta|fruver|mercado|supermercado/i, "#8BC53F"], [/ropa|moda|accesorio/i, "#9B6BD9"],
+  [/helad/i, "#FF7AA8"], [/comida|restaurante|cafeter/i, "#FF9F45"], [/barber/i, "#1E88A8"],
+  [/bienestar|salud|spa/i, "#FF6B5C"], [/belleza|estetic/i, "#E85D9E"],
+  [/educaci|tutor/i, "#5B6EE1"], [/deporte|gym/i, "#F4511E"], [/tecnolog/i, "#00BCD4"],
+  [/regalo/i, "#EAB749"],
+];
+function colorCategoria(categoria) {
+  const c = categoria || "";
+  for (const [rx, color] of COLORES_CAT) if (rx.test(c)) return color;
+  return "#095544";
+}
+
 /* ---------- Aliados ---------- */
 async function cargarAliadosPub() {
   const { data, error } = await supabase
@@ -216,7 +232,7 @@ async function cargarCarruselPromos() {
   track.innerHTML = items.map(p => {
     const al = aliadosMap.get(p.aliado_id);
     return `
-    <div class="promo-card">
+    <div class="promo-card" style="--pc-cc:${colorCategoria(al?.categoria)}">
       <img class="promo-card__img" src="${p.foto_url}" alt="${p.descripcion || ''}">
       <div class="promo-card__body">
         ${al?.categoria ? `<div class="promo-card__cat">${al.categoria}</div>` : ''}
