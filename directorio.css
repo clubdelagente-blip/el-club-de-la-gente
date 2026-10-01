@@ -113,11 +113,17 @@
 .dir-card__badge svg { width: 14px; height: 14px; flex: none; }
 
 /* ---------- Carrusel de fotos del aliado (dentro de la ficha) ---------- */
+.aliado-carrusel-wrap { margin: 20px 0; }
 .aliado-carrusel {
   display: flex; gap: 0; overflow-x: auto; scroll-snap-type: x mandatory;
-  border-radius: 14px; margin: 20px 0; -webkit-overflow-scrolling: touch;
+  border-radius: 14px; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; -ms-overflow-style: none;
 }
-.aliado-carrusel img { width: 100%; flex: none; height: 220px; object-fit: cover; scroll-snap-align: start; }
+.aliado-carrusel::-webkit-scrollbar { display: none; height: 0; }
+.aliado-carrusel img { width: 100%; flex: none; height: 220px; object-fit: cover; object-position: center; scroll-snap-align: start; background: var(--crema-2, #eee); }
+.aliado-carrusel-dots { display: flex; justify-content: center; gap: 7px; margin-top: 10px; }
+.aliado-carrusel-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--linea-fuerte); cursor: pointer; transition: background .25s, width .25s; }
+.aliado-carrusel-dot.is-on { width: 20px; border-radius: 4px; background: var(--cc, var(--verde)); }
 
 /* ---------- Tarjeta de promoción (dentro de la ficha del aliado) ---------- */
 .promo-card {

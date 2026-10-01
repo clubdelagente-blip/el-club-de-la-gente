@@ -175,15 +175,22 @@ function wireCarrusel() {
   if (!cont) return;
   const imgs = cont.querySelectorAll("img");
   if (imgs.length < 2) return;
+  const dots = [...sheetInner.querySelectorAll(".aliado-carrusel-dot")];
   let idx = 0;
-  carruselInterval = setInterval(() => {
-    idx = (idx + 1) % imgs.length;
+  const irA = (i) => {
+    idx = i;
     cont.scrollTo({ left: cont.clientWidth * idx, behavior: "smooth" });
-  }, 2000);
+    dots.forEach((d, di) => d.classList.toggle("is-on", di === idx));
+  };
+  carruselInterval = setInterval(() => irA((idx + 1) % imgs.length), 2000);
   // Si el miembro desliza con el dedo, se respeta su control y se detiene el auto-avance
   cont.addEventListener("touchstart", () => {
     if (carruselInterval) { clearInterval(carruselInterval); carruselInterval = null; }
   }, { passive: true, once: true });
+  dots.forEach((dot) => dot.addEventListener("click", () => {
+    if (carruselInterval) { clearInterval(carruselInterval); carruselInterval = null; }
+    irA(+dot.dataset.dot);
+  }));
 }
 
 async function openSheet(aliadoId) {
@@ -261,7 +268,11 @@ function sheetAliado(a) {
     ${(() => {
       const fotos = (Array.isArray(a.fotos_carrusel) && a.fotos_carrusel.length) ? a.fotos_carrusel : (a.imagen_url ? [a.imagen_url] : []);
       if (!fotos.length) return `<div class="foto-ph" style="background:var(--cc-soft);color:${cc}"><span class="foto-ph__ic">${ic(iconoCategoria(a.categoria))}</span><span class="foto-ph__txt">${a.nombre}</span></div>`;
-      return `<div class="aliado-carrusel">${fotos.map(url => `<img src="${url}" alt="${a.nombre}">`).join("")}</div>`;
+      return `
+        <div class="aliado-carrusel-wrap">
+          <div class="aliado-carrusel">${fotos.map(url => `<img src="${url}" alt="${a.nombre}">`).join("")}</div>
+          ${fotos.length > 1 ? `<div class="aliado-carrusel-dots">${fotos.map((_, i) => `<span class="aliado-carrusel-dot${i === 0 ? " is-on" : ""}" data-dot="${i}" style="--cc:${cc}"></span>`).join("")}</div>` : ""}
+        </div>`;
     })()}
 
     <div class="sheet__sub">Sobre este aliado</div>
