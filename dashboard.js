@@ -1225,6 +1225,20 @@ function generarQR(userId) {
   document.querySelectorAll(".ccv2-qr img").forEach(img => img.src = qrSrc);
 }
 
+// Código dinámico de verificación (reverso de la ClubCard): un aliado tiene
+// que pedírselo al miembro para pasar la puerta de seguridad de
+// Verificar.html -- el QR solo ya no alcanza para evitar suplantación.
+let _ultimoCodigoVerifTs = 0;
+async function generarCodigoVerificacion() {
+  const ahora = Date.now();
+  if (ahora - _ultimoCodigoVerifTs < 10000) return; // evita pedir uno nuevo en cada flip rápido
+  _ultimoCodigoVerifTs = ahora;
+  const { data, error } = await supabase.rpc("generar_codigo_verificacion");
+  if (error || !data) return;
+  const codigo = String(data);
+  document.querySelectorAll(".cc-codigo-verif").forEach(el => el.textContent = `${codigo.slice(0, 2)} ${codigo.slice(2)}`);
+}
+
 /* ---------- MODAL ACTIVAR ---------- */
 function abrirModalActivar() {
   const m = document.getElementById("modal-activar");
@@ -2303,12 +2317,27 @@ document.addEventListener("DOMContentLoaded", () => {
   $$("[data-goto-panel]").forEach(b => b.addEventListener("click", () => irPanel(b.dataset.gotoPanel)));
 
   // Flip de ClubCard -- también se voltea tocando la tarjeta misma, no
-  // solo con el botón "Quiero acceder a mis beneficios".
-  $("#cc-flip-toggle")?.addEventListener("click", () => $("#cc-flip").classList.toggle("is-back"));
-  $("#cc-flip")?.addEventListener("click", () => $("#cc-flip").classList.toggle("is-back"));
+  // solo con el botón "Quiero acceder a mis beneficios". Cada vez que queda
+  // mostrando el reverso, se pide un código de verificación nuevo (el QR
+  // solo ya no basta -- una foto del QR serviría para siempre; el código
+  // vence a los pocos minutos).
+  const flipYGenerarCodigo = (flipEl) => {
+    flipEl.classList.toggle("is-back");
+    if (flipEl.classList.contains("is-back")) generarCodigoVerificacion();
+  };
+  $("#cc-flip-toggle")?.addEventListener("click", () => flipYGenerarCodigo($("#cc-flip")));
+  $("#cc-flip")?.addEventListener("click", () => flipYGenerarCodigo($("#cc-flip")));
   // Preview de la ClubCard en Inicio: se voltea igual, es su propia tarjeta
   // (id distinto porque no puede repetirse "cc-flip" en la misma página).
-  $("#cc-flip-inicio")?.addEventListener("click", () => $("#cc-flip-inicio").classList.toggle("is-back"));
+  $("#cc-flip-inicio")?.addEventListener("click", () => flipYGenerarCodigo($("#cc-flip-inicio")));
+
+  // Copiar el código de verificación (sin disparar el flip de la tarjeta)
+  $$("[data-copiar-codigo-verif]").forEach(btn => btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const codigo = (document.querySelector(".cc-codigo-verif")?.textContent || "").replace(/[^\d]/g, "");
+    if (codigo.length !== 4) return;
+    navigator.clipboard?.writeText(codigo).then(() => toast("Código copiado ✓")).catch(() => {});
+  }));
 
   // ---- Configuración ----
   $("#cfg-foto-btn")?.addEventListener("click", () => $("#cfg-foto-input").click());

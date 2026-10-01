@@ -240,6 +240,15 @@
 .ccv2-renueva { font-size: clamp(11px, 2.8vw, 13px); color: rgba(244,241,234,.78); }
 .ccv2-renueva span { font-weight: 600; color: #F4F1EA; }
 
+.ccv2-codigo-verif { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.ccv2-codigo-verif__lbl { font-size: clamp(8px, 2vw, 10px); color: rgba(244,241,234,.6); text-transform: uppercase; letter-spacing: .08em; }
+.ccv2-codigo-verif__row { display: flex; align-items: center; gap: 8px; }
+.ccv2-codigo-verif__val { font-family: var(--display); font-size: clamp(18px, 4.5vw, 24px); font-weight: 700; letter-spacing: .14em; color: #F4F1EA; }
+.ccv2-codigo-verif__copy { width: 26px; height: 26px; border-radius: 50%; background: rgba(244,241,234,.12); border: none; color: #F4F1EA; display: grid; place-items: center; cursor: pointer; flex: none; transition: transform .15s, background .2s; }
+.ccv2-codigo-verif__copy:hover { background: rgba(244,241,234,.22); }
+.ccv2-codigo-verif__copy:active { transform: scale(.9); }
+.ccv2-codigo-verif__copy svg { width: 14px; height: 14px; }
+
 /* ============================================================
    Las 4 membresías: el color de marca ya NO va en el texto -- se
    probó (gratis=verde/básica=plata/premium=dorado/vitalicia=turquesa

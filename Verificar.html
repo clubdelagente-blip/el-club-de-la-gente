@@ -579,7 +579,52 @@
       }
     }
 
-    cargarYRenderizar();
+    // ---------- Puerta de seguridad: código dinámico de 4 dígitos ----------
+    // El QR por sí solo ya no es suficiente (una foto del QR serviría para
+    // siempre) -- antes de mostrar nada del miembro, se exige el código que
+    // aparece al voltear su ClubCard, válido solo unos minutos.
+    function renderCodigoGate(mensajeError) {
+      card.innerHTML = `
+        <div class="estado-ic" style="background:var(--verde-claro)">🔒</div>
+        <div class="estado-lbl" style="color:var(--tinta)">Verificación de seguridad</div>
+        <p style="font-size:13px;color:#777;margin:10px 0 18px">Pídele al miembro el código de 4 dígitos que aparece al voltear su ClubCard.</p>
+        <input id="codigo-input" type="text" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="off"
+          style="width:100%;padding:14px;border:1.5px solid #ddd;border-radius:12px;font-size:30px;letter-spacing:.3em;text-align:center;font-weight:700;margin-bottom:10px;font-family:inherit">
+        ${mensajeError ? `<p class="error-msg" style="margin-bottom:10px">${mensajeError}</p>` : ""}
+        <button id="btn-verificar-codigo" style="${btnStyle('#095544')}">Verificar código</button>
+      `;
+      const input = document.getElementById("codigo-input");
+      input?.addEventListener("input", () => { input.value = input.value.replace(/\D/g, "").slice(0, 4); });
+      input?.addEventListener("keydown", (e) => { if (e.key === "Enter") verificarCodigoYContinuar(); });
+      input?.focus();
+      document.getElementById("btn-verificar-codigo")?.addEventListener("click", verificarCodigoYContinuar);
+    }
+
+    async function verificarCodigoYContinuar() {
+      const input = document.getElementById("codigo-input");
+      const codigo = (input?.value || "").trim();
+      if (codigo.length !== 4) { renderCodigoGate("Ingresa los 4 dígitos."); return; }
+      const btn = document.getElementById("btn-verificar-codigo");
+      if (btn) { btn.disabled = true; btn.textContent = "Verificando…"; }
+      try {
+        const { data, error } = await conTimeout(
+          supabaseClient.rpc("verificar_codigo_miembro", { p_miembro_id: id, p_codigo: codigo }), 10000
+        );
+        if (error || !data) {
+          renderCodigoGate("Código incorrecto o vencido. Pídele al miembro que voltee su ClubCard de nuevo.");
+          return;
+        }
+        cargarYRenderizar();
+      } catch (_) {
+        renderCodigoGate("No se pudo verificar por un problema de conexión. Intenta de nuevo.");
+      }
+    }
+
+    if (!id) {
+      renderNo("Código QR inválido. Escanea el código desde la ClubCard del miembro.");
+    } else {
+      renderCodigoGate();
+    }
     })();
   </script>
 
