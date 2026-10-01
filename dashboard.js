@@ -121,7 +121,7 @@ function render() {
   if (actEl) actEl.innerHTML = `<li class="act-item" style="color:#888;font-size:13px;padding:12px 0">Aún no tienes descuentos registrados.</li>`;
 
   const tablaEl = $("#tabla-body");
-  if (tablaEl) tablaEl.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#888;padding:16px">Sin actividad aún</td></tr>`;
+  if (tablaEl) tablaEl.innerHTML = `<li class="act-item" style="color:#888;font-size:13px;padding:16px 0;border-bottom:none;justify-content:center">Sin actividad aún</li>`;
 
   // Rol aliado ("Mi negocio") y rol profesional ("Mi consultorio"/"Mis
   // viajes") ya no se deciden acá con localStorage — se resuelven con la
@@ -384,7 +384,7 @@ async function cargarDescuentos(userId, whatsapp) {
 
   const [{ data: aliadosData, error }, { data: tiendaData }, { data: uberData }, { data: profData }] = await Promise.all([
     supabase.from("descuentos")
-      .select("aliado_nombre, categoria, descuento_pct, compra, ahorro, created_at")
+      .select("aliado_nombre, categoria, descuento_pct, compra, ahorro, created_at, aliados(imagen_url)")
       .eq("miembro_id", userId).order("created_at", { ascending: false }),
     supabase.from("pedidos_club")
       .select("nombre_producto, monto, ahorro, created_at")
@@ -431,7 +431,7 @@ async function cargarDescuentos(userId, whatsapp) {
   const TIPO_UBER_LBL = { carro: "Carro", moto: "Moto", domicilio: "Domicilio" };
   const data = [
     ...(aliadosData || []).map(d => ({
-      tipo: "aliado", nombre: d.aliado_nombre, categoria: d.categoria,
+      tipo: "aliado", nombre: d.aliado_nombre, categoria: d.categoria, imagen_url: d.aliados?.imagen_url || null,
       descuento_pct: d.descuento_pct, compra: d.compra, ahorro: d.ahorro || 0, created_at: d.created_at,
     })),
     ...(tiendaData || []).map(d => ({
@@ -469,12 +469,10 @@ async function cargarDescuentos(userId, whatsapp) {
 
     const tablaEl = $("#tabla-body");
     if (tablaEl) tablaEl.innerHTML = `
-      <tr><td colspan="5" style="text-align:center;padding:32px 16px">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
-          <span style="font-size:13px;color:var(--tinta-45,#888)">Todavía no tienes descuentos registrados.</span>
-          <a href="${dirHref}" style="font-size:12.5px;font-weight:700;color:var(--verde);text-decoration:none">Explora los aliados del Club →</a>
-        </div>
-      </td></tr>`;
+      <li class="act-item" style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:32px 16px;border-bottom:none">
+        <span style="font-size:13px;color:var(--tinta-45,#888)">Todavía no tienes descuentos registrados.</span>
+        <a href="${dirHref}" style="font-size:12.5px;font-weight:700;color:var(--verde);text-decoration:none">Explora los aliados del Club →</a>
+      </li>`;
 
     if (window.lucide) lucide.createIcons();
     return;
@@ -561,17 +559,23 @@ async function cargarDescuentos(userId, whatsapp) {
       </span>
     </li>`).join("");
 
-  // Tabla completa de descuentos
+  // Lista completa de descuentos (antes era una tabla de 5 columnas que se
+  // desbordaba en móvil -- se usa el mismo patrón que "Actividad reciente")
   const tablaEl = $("#tabla-body");
   if (tablaEl) tablaEl.innerHTML = data.map(it => `
-    <tr>
-      <td><span class="tabla__aliado"><span class="tabla__ic">${ic(getIcon(it))}</span>
-        <span><span class="tabla__name">${esc(it.nombre)}</span><br><span class="tabla__cat">${esc(it.categoria || "")}</span></span></span></td>
-      <td>${fmtFecha(it.created_at)}</td>
-      <td><span class="tag-pct">${it.descuento_pct ? esc(String(it.descuento_pct)) : "—"}</span></td>
-      <td>${fmtCOP(it.compra)}</td>
-      <td class="tabla__ahorro">−${fmtCOP(it.ahorro)}</td>
-    </tr>`).join("");
+    <li class="act-item">
+      ${it.imagen_url
+        ? `<img class="act-item__ic" src="${esc(it.imagen_url)}" alt="" style="object-fit:cover">`
+        : `<span class="act-item__ic">${ic(getIcon(it))}</span>`}
+      <span class="act-item__body">
+        <span class="act-item__name">${esc(it.nombre)}</span>
+        <span class="act-item__meta">${esc(it.categoria || "")} · ${fmtFecha(it.created_at)}${it.descuento_pct ? ` · ${esc(String(it.descuento_pct))}` : ""}</span>
+      </span>
+      <span class="act-item__nums">
+        <span class="act-item__ahorro">−${fmtCOP(it.ahorro)}</span>
+        <span class="act-item__compra">de ${fmtCOP(it.compra)}</span>
+      </span>
+    </li>`).join("");
 
   if (window.lucide) lucide.createIcons();
 }
