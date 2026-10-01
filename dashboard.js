@@ -2293,6 +2293,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (l.dataset.panel === 'programas') cargarProgramas();
   }));
 
+  // Avatar del topbar: acceso directo a Configuración (foto, usuario, contraseña)
+  $("#topbar-avatar-btn")?.addEventListener("click", () => irPanel("config"));
+
   // Burger móvil
   $("#topbar-burger")?.addEventListener("click", () => $("#dash").classList.toggle("menu-open"));
   $("#dash-backdrop")?.addEventListener("click", () => $("#dash").classList.remove("menu-open"));

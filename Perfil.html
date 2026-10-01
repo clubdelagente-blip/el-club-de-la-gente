@@ -105,7 +105,7 @@
             <button class="icon-btn" id="topbar-notif-btn"><i data-lucide="bell"></i><span class="topbar-notif-badge" id="topbar-notif-dot" hidden></span></button>
             <div id="topbar-notif-drop" style="display:none;position:absolute;top:calc(100% + 10px);right:0;width:300px;max-height:400px;overflow-y:auto;background:#fff;border:1px solid #ebebeb;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.15);z-index:50"></div>
           </div>
-          <div class="topbar__avatar" data-ini>CP</div>
+          <div class="topbar__avatar" id="topbar-avatar-btn" data-ini style="cursor:pointer" title="Configuración">CP</div>
         </div>
       </header>
 
@@ -945,7 +945,7 @@
             <div class="card">
               <form id="form-usuario">
                 <div class="card__head"><span class="card__title">Cambiar usuario</span></div>
-                <div class="campo"><label for="cfg-usuario">Nombre de usuario</label><input type="text" id="cfg-usuario" value="carlosperez" autocomplete="username"></div>
+                <div class="campo"><label for="cfg-usuario">Nombre de usuario</label><input type="text" id="cfg-usuario" placeholder="Elige tu nombre de usuario" autocomplete="username"></div>
                 <button class="btn btn--primario" type="submit" style="margin-top:16px">Guardar usuario</button>
               </form>
             </div>
@@ -1183,7 +1183,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=2"></script>
-  <script type="module" src="dashboard.js?v=107"></script>
+  <script type="module" src="dashboard.js?v=108"></script>
   <script type="module" src="agente.js?v=1"></script>
 
   <template id="__bundler_thumbnail">
