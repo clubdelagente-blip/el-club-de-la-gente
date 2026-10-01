@@ -1561,6 +1561,30 @@ async function cargarEducacion() {
     return;
   }
 
+  const filtrosCont = document.getElementById('educacion-filtros');
+  if (filtrosCont) {
+    const categoriasEnUso = new Map();
+    lista.forEach(e => { if (e.categoria_id && e.categorias_educacion?.nombre) categoriasEnUso.set(e.categoria_id, e.categorias_educacion.nombre); });
+    if (!categoriasEnUso.size) {
+      filtrosCont.innerHTML = '';
+    } else {
+      const chip = (id, nombre, activo) => `<button type="button" data-filtro-categ="${id}" style="font-size:12.5px;font-weight:600;padding:6px 14px;border-radius:20px;border:1px solid ${activo ? 'var(--verde)' : '#ddd'};background:${activo ? 'var(--verde)' : '#fff'};color:${activo ? '#fff' : '#555'};cursor:pointer">${esc(nombre)}</button>`;
+      filtrosCont.innerHTML = chip('', 'Todas', true) + [...categoriasEnUso.entries()].map(([id, nombre]) => chip(id, nombre, false)).join('');
+      filtrosCont.querySelectorAll('[data-filtro-categ]').forEach(btn => btn.addEventListener('click', () => {
+        const id = btn.dataset.filtroCateg;
+        filtrosCont.querySelectorAll('[data-filtro-categ]').forEach(b => {
+          const activo = b === btn;
+          b.style.borderColor = activo ? 'var(--verde)' : '#ddd';
+          b.style.background = activo ? 'var(--verde)' : '#fff';
+          b.style.color = activo ? '#fff' : '#555';
+        });
+        grid.querySelectorAll('[data-categoria-id]').forEach(card => {
+          card.style.display = (!id || card.dataset.categoriaId === id) ? '' : 'none';
+        });
+      }));
+    }
+  }
+
   const { data: resenasRaw } = await supabase
     .from('resenas_evento')
     .select('id, evento_id, estrellas, comentario, miembro_id, perfiles(nombre)')
@@ -1580,7 +1604,7 @@ async function cargarEducacion() {
     const resenasEvento = resenasPorEvento.get(e.id) || [];
     const { promedio, texto } = resumenResenas(resenasEvento);
     return `
-    <div style="border:1px solid #ebebeb;border-radius:12px;overflow:hidden;background:#fff">
+    <div data-categoria-id="${e.categoria_id || ''}" style="border:1px solid #ebebeb;border-radius:12px;overflow:hidden;background:#fff">
       ${e.imagen_url ? `<img src="${esc(e.imagen_url)}" alt="${esc(e.titulo)}" data-ampliar-flyer="${esc(e.imagen_url)}" style="width:100%;height:150px;object-fit:cover;cursor:zoom-in">` : ''}
       <div style="padding:16px">
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
