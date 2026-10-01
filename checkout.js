@@ -212,4 +212,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   pintarSeleccion();
   wireTarjetas();
   wirePago();
+
+  // Link directo de renovación (desde el recordatorio de WhatsApp): salta
+  // la pantalla de elegir plan y va directo a la pantalla de pago con el
+  // mismo plan que ya tenía -- solo funciona si llega con sesión activa,
+  // igual que cualquier otro pago (abrirPagoManual ya lo exige).
+  const renovarPlan = new URLSearchParams(location.search).get("renovar");
+  if (renovarPlan && PLANES[renovarPlan]) {
+    const card = document.querySelector(`.plan-pick[data-plan="${renovarPlan}"]`);
+    if (card) abrirPagoManual(renovarPlan, card);
+  }
 });

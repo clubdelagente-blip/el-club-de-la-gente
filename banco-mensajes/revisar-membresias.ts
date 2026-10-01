@@ -40,7 +40,7 @@ Deno.serve(async (_req: Request) => {
   // 2) Recordatorio de WhatsApp a quien vence en 3 días
   const { data: porVencer, error: errPorVencer } = await supabase
     .from("perfiles")
-    .select("id, nombre, whatsapp")
+    .select("id, nombre, whatsapp, plan")
     .not("plan", "in", "(gratis,vitalicia,sin_plan)")
     .eq("fecha_vencimiento", fecha3dias);
 
@@ -65,7 +65,11 @@ Deno.serve(async (_req: Request) => {
   for (const p of porVencer || []) {
     if (!p.whatsapp || noQuierenRenueva.has(p.id)) continue;
     const primerNombre = (p.nombre || "").trim().split(" ")[0] || "";
-    const msg = `¡Hola ${primerNombre}! 🌿 Tu membresía de El Club de la Gente vence en 3 días.\n\nRenueva a tiempo para no perder tus descuentos y beneficios. Entra a tu perfil para renovar:\nhttps://elclubdelagente.com/Perfil.html\n\nEl Club de la Gente`;
+    // Link directo al pago de SU plan actual (Planes.html?renovar=<plan>
+    // salta la pantalla de elegir plan y va directo a la llave Bre-B) --
+    // solo funciona si sigue con sesión iniciada en el navegador.
+    const linkRenovar = `https://elclubdelagente.com/Planes.html?renovar=${p.plan}`;
+    const msg = `¡Hola ${primerNombre}! 🌿 Tu membresía de El Club de la Gente vence en 3 días.\n\nRenueva a tiempo para no perder tus descuentos y beneficios. Entra aquí para pagar directo:\n${linkRenovar}\n\nEl Club de la Gente`;
     try {
       const r = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
         method: "POST",
