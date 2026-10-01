@@ -1502,6 +1502,41 @@ function cargarProgramas() {
     });
   }));
 }
+function estrellasHtml(valor, size) {
+  const redondeado = Math.round(valor || 0);
+  return `<span style="display:inline-flex;gap:1px">${[1, 2, 3, 4, 5].map(n => `<i data-lucide="star" style="width:${size}px;height:${size}px;${n <= redondeado ? 'color:#EAB749;fill:#EAB749' : 'color:#ccc;fill:none'}"></i>`).join('')}</span>`;
+}
+function resumenResenas(resenas) {
+  if (!resenas.length) return { promedio: 0, texto: 'Sin reseñas aún' };
+  const promedio = resenas.reduce((s, r) => s + r.estrellas, 0) / resenas.length;
+  return { promedio, texto: `${promedio.toFixed(1)} (${resenas.length})` };
+}
+function listaResenasHtml(resenas, eventoId, miembroId) {
+  const yaReseno = resenas.some(r => r.miembro_id === miembroId);
+  const lista = resenas.length
+    ? resenas.map(r => `
+      <div style="padding:10px 0;border-bottom:1px solid #f5f5f5">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+          <span style="font-size:12.5px;font-weight:600;color:#333">${esc((r.perfiles?.nombre || 'Miembro').split(' ')[0])}</span>
+          ${estrellasHtml(r.estrellas, 12)}
+        </div>
+        ${r.comentario ? `<p style="font-size:12.5px;color:#666;line-height:1.5;margin:0">${esc(r.comentario)}</p>` : ''}
+      </div>`).join('')
+    : `<p style="font-size:12.5px;color:#999;padding:4px 0 12px">Sé el primero en dejar una reseña de este taller.</p>`;
+
+  const form = yaReseno
+    ? `<div style="font-size:12.5px;color:var(--verde);font-weight:600;padding-top:10px">✓ Ya dejaste tu reseña de este taller</div>`
+    : `<div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:4px">
+        <div style="font-size:12.5px;font-weight:600;margin-bottom:8px;color:#444">Deja tu reseña</div>
+        <div data-resena-stars="${eventoId}" data-selected="0" style="display:flex;gap:4px;margin-bottom:8px">
+          ${[1, 2, 3, 4, 5].map(n => `<button type="button" data-estrella="${n}" style="background:none;border:none;cursor:pointer;padding:2px"><i data-lucide="star" style="width:22px;height:22px;color:#ccc;fill:none"></i></button>`).join('')}
+        </div>
+        <textarea data-resena-texto="${eventoId}" rows="2" placeholder="Cuéntanos qué te pareció (opcional)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:8px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>
+        <button data-enviar-resena="${eventoId}" class="btn btn--primario" style="font-size:12.5px;padding:8px 14px;margin-top:8px">Enviar reseña</button>
+      </div>`;
+
+  return lista + form;
+}
 async function cargarEducacion() {
   if (_educacionCargada) return;
   _educacionCargada = true;
@@ -1511,7 +1546,7 @@ async function cargarEducacion() {
 
   const { data: eventos } = await supabase
     .from('eventos_educacion')
-    .select('*, facilitadores_educacion(nombre, foto_url)')
+    .select('*, facilitadores_educacion(nombre, foto_url), categorias_educacion(nombre)')
     .eq('activo', true)
     .order('fecha', { ascending: false });
 
@@ -1526,16 +1561,33 @@ async function cargarEducacion() {
     return;
   }
 
+  const { data: resenasRaw } = await supabase
+    .from('resenas_evento')
+    .select('id, evento_id, estrellas, comentario, miembro_id, perfiles(nombre)')
+    .in('evento_id', lista.map(e => e.id))
+    .order('created_at', { ascending: false });
+
+  const resenasPorEvento = new Map();
+  (resenasRaw || []).forEach(r => {
+    if (!resenasPorEvento.has(r.evento_id)) resenasPorEvento.set(r.evento_id, []);
+    resenasPorEvento.get(r.evento_id).push(r);
+  });
+
   const hoy = new Date().toISOString().slice(0, 10);
   grid.innerHTML = lista.map(e => {
     const esProximo = e.fecha >= hoy;
     const fechaFmt = new Date(e.fecha + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+    const resenasEvento = resenasPorEvento.get(e.id) || [];
+    const { promedio, texto } = resumenResenas(resenasEvento);
     return `
     <div style="border:1px solid #ebebeb;border-radius:12px;overflow:hidden;background:#fff">
       ${e.imagen_url ? `<img src="${esc(e.imagen_url)}" alt="${esc(e.titulo)}" data-ampliar-flyer="${esc(e.imagen_url)}" style="width:100%;height:150px;object-fit:cover;cursor:zoom-in">` : ''}
       <div style="padding:16px">
-        <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:${esProximo ? 'var(--verde-soft)' : '#EAF3EF'};color:${esProximo ? 'var(--verde)' : '#888'}">${esProximo ? 'Próximo' : 'Pasado'} · ${fechaFmt}</span>
-        <div style="font-weight:700;font-size:15px;margin:10px 0 4px">${esc(e.titulo)}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+          <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:${esProximo ? 'var(--verde-soft)' : '#EAF3EF'};color:${esProximo ? 'var(--verde)' : '#888'}">${esProximo ? 'Próximo' : 'Pasado'} · ${fechaFmt}</span>
+          ${e.categorias_educacion?.nombre ? `<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:#EEF0FD;color:#5B6EE1">${esc(e.categorias_educacion.nombre)}</span>` : ''}
+        </div>
+        <div style="font-weight:700;font-size:15px;margin:0 0 4px">${esc(e.titulo)}</div>
         ${e.descripcion ? `<p style="font-size:13px;color:#666;line-height:1.5;margin-bottom:10px">${esc(e.descripcion)}</p>` : ''}
         ${e.facilitadores_educacion?.nombre ? `<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#777;margin-bottom:12px">
           ${e.facilitadores_educacion.foto_url ? `<img src="${esc(e.facilitadores_educacion.foto_url)}" style="width:22px;height:22px;border-radius:50%;object-fit:cover">` : ''}
@@ -1547,6 +1599,14 @@ async function cargarEducacion() {
           ${esProximo ? `<button class="btn btn--primario" data-confirmar-evento="${e.id}" style="font-size:12.5px;padding:8px 12px">Confirmar asistencia</button>` : ''}
         </div>
         <div data-confirmado-msg="${e.id}" style="display:none;font-size:12.5px;color:var(--verde);font-weight:600;margin-top:8px">✓ Ya confirmaste tu asistencia</div>
+
+        <button type="button" data-toggle-detalle="${e.id}" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;background:none;border:none;border-top:1px solid #f0f0f0;margin-top:12px;padding:12px 0 0;cursor:pointer;text-align:left">
+          <span data-resumen-resenas="${e.id}" style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:#666">${estrellasHtml(promedio, 13)}<span>${texto}</span></span>
+          <i data-lucide="chevron-down" data-chevron-ico style="width:16px;height:16px;color:#999;transition:transform .2s;flex-shrink:0"></i>
+        </button>
+        <div data-detalle-evento="${e.id}" style="display:none;margin-top:4px">
+          ${listaResenasHtml(resenasEvento, e.id, _miembroId)}
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -1570,6 +1630,70 @@ async function cargarEducacion() {
   grid.querySelectorAll('[data-ampliar-flyer]').forEach(img => img.addEventListener('click', () => {
     abrirLightbox(img.dataset.ampliarFlyer);
   }));
+
+  async function refrescarDetalleEvento(eventoId) {
+    const { data } = await supabase
+      .from('resenas_evento')
+      .select('id, evento_id, estrellas, comentario, miembro_id, perfiles(nombre)')
+      .eq('evento_id', eventoId)
+      .order('created_at', { ascending: false });
+    const resenasEvento = data || [];
+    const det = grid.querySelector(`[data-detalle-evento="${eventoId}"]`);
+    if (det) det.innerHTML = listaResenasHtml(resenasEvento, eventoId, _miembroId);
+    const resumen = grid.querySelector(`[data-resumen-resenas="${eventoId}"]`);
+    if (resumen) {
+      const { promedio, texto } = resumenResenas(resenasEvento);
+      resumen.innerHTML = `${estrellasHtml(promedio, 13)}<span>${texto}</span>`;
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
+  grid.addEventListener('click', e => {
+    const toggleBtn = e.target.closest('[data-toggle-detalle]');
+    if (toggleBtn) {
+      const det = grid.querySelector(`[data-detalle-evento="${toggleBtn.dataset.toggleDetalle}"]`);
+      const chevron = toggleBtn.querySelector('[data-chevron-ico]');
+      if (det) {
+        const abierto = det.style.display !== 'none';
+        det.style.display = abierto ? 'none' : 'block';
+        if (chevron) chevron.style.transform = abierto ? '' : 'rotate(180deg)';
+      }
+      return;
+    }
+    const starBtn = e.target.closest('[data-estrella]');
+    if (starBtn) {
+      const cont = starBtn.closest('[data-resena-stars]');
+      const n = +starBtn.dataset.estrella;
+      cont.dataset.selected = n;
+      [...cont.querySelectorAll('[data-estrella]')].forEach((b, idx) => {
+        const icono = b.querySelector('svg, i');
+        if (!icono) return;
+        icono.style.color = idx < n ? '#EAB749' : '#ccc';
+        icono.style.fill = idx < n ? '#EAB749' : 'none';
+      });
+      return;
+    }
+    const enviarBtn = e.target.closest('[data-enviar-resena]');
+    if (enviarBtn) {
+      const eventoId = enviarBtn.dataset.enviarResena;
+      const starsCont = grid.querySelector(`[data-resena-stars="${eventoId}"]`);
+      const estrellas = +(starsCont?.dataset.selected || 0);
+      if (!estrellas) { toast('Selecciona cuántas estrellas le das al taller'); return; }
+      const comentario = grid.querySelector(`[data-resena-texto="${eventoId}"]`)?.value.trim() || null;
+      enviarBtn.disabled = true; enviarBtn.textContent = 'Enviando…';
+      supabase.from('resenas_evento').insert({ evento_id: eventoId, miembro_id: _miembroId, estrellas, comentario })
+        .then(({ error }) => {
+          if (error) {
+            toast(error.code === '23505' ? 'Ya habías dejado una reseña de este taller' : 'Error: ' + error.message);
+            enviarBtn.disabled = false; enviarBtn.textContent = 'Enviar reseña';
+            return;
+          }
+          toast('¡Gracias por tu reseña! ✓');
+          refrescarDetalleEvento(eventoId);
+        });
+      return;
+    }
+  });
 }
 window.cargarEducacion = cargarEducacion;
 

@@ -203,7 +203,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=5"></script>
-  <script src="admin.js?v=24"></script>
+  <script src="admin.js?v=25"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -1570,21 +1570,22 @@ function bindFormProg(){setTimeout(()=>{
   });if(window.lucide)lucide.createIcons();
 },80);}
 
-/* ---- EDUCACIÓN: facilitadores y eventos ---- */
-let _eventosEdu=[], _facilitadoresEdu=[];
+/* ---- EDUCACIÓN: facilitadores, categorías y eventos ---- */
+let _eventosEdu=[], _facilitadoresEdu=[], _categoriasEdu=[];
 async function cargarEventosEducacionAdmin(){
-  const[{data:eventos},{data:facilitadores},{data:confirmaciones}]=await Promise.all([
-    supabase.from('eventos_educacion').select('*,facilitadores_educacion(nombre)').order('fecha',{ascending:false}),
+  const[{data:eventos},{data:facilitadores},{data:confirmaciones},{data:categorias}]=await Promise.all([
+    supabase.from('eventos_educacion').select('*,facilitadores_educacion(nombre),categorias_educacion(nombre)').order('fecha',{ascending:false}),
     supabase.from('facilitadores_educacion').select('id,nombre'),
     supabase.from('confirmaciones_evento').select('evento_id'),
+    supabase.from('categorias_educacion').select('id,nombre').order('nombre'),
   ]);
-  _eventosEdu=eventos||[];_facilitadoresEdu=facilitadores||[];
+  _eventosEdu=eventos||[];_facilitadoresEdu=facilitadores||[];_categoriasEdu=categorias||[];
   const cont=$("#edutab-eventos");if(!cont)return;
   const countConf=id=>(confirmaciones||[]).filter(c=>c.evento_id===id).length;
   const lista=_eventosEdu.length?_eventosEdu.map(e=>`<div style="display:flex;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
     ${e.imagen_url?`<img src="${e.imagen_url}" style="width:72px;height:72px;object-fit:cover;border-radius:6px;flex-shrink:0">`:`<span class="ad-av">${esc((e.titulo||'E')[0])}</span>`}
     <div style="flex:1;min-width:0">
-      <div style="font-weight:600;margin-bottom:4px">${esc(e.titulo)}</div>
+      <div style="font-weight:600;margin-bottom:4px">${esc(e.titulo)}${e.categorias_educacion?.nombre?` <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:#5B6EE122;color:#5B6EE1;border:1px solid #5B6EE155;vertical-align:middle">${esc(e.categorias_educacion.nombre)}</span>`:''}</div>
       <div style="font-size:13px;color:rgba(242,240,234,.5)">${new Date(e.fecha+'T00:00:00').toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})}${e.facilitadores_educacion?.nombre?' · '+esc(e.facilitadores_educacion.nombre):''}</div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;flex-wrap:wrap">
@@ -1612,6 +1613,35 @@ async function cargarFacilitadoresAdmin(){
 }
 window.cargarFacilitadoresAdmin=cargarFacilitadoresAdmin;
 
+async function cargarCategoriasEducacionAdmin(){
+  const{data}=await supabase.from('categorias_educacion').select('*').order('nombre');
+  _categoriasEdu=data||[];
+  const cont=$("#edutab-categorias");if(!cont)return;
+  const lista=_categoriasEdu.length?_categoriasEdu.map(c=>`<div style="display:flex;gap:14px;align-items:center;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
+    <div style="flex:1;min-width:0;font-weight:600">${esc(c.nombre)}</div>
+    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+      <button class="ad-btn" data-ed-categ="${c.id}">${ic("pencil")}</button><button class="ad-btn" data-rm-categ="${c.id}">${ic("trash-2")}</button>
+    </div></div>`).join(''):`<p style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">No hay categorías aún.</p>`;
+  cont.innerHTML=`<div class="ad-toolbar"><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="btn-categ-add">${ic("plus")} Nueva categoría</button></div>${lista}`;
+  if(window.lucide)lucide.createIcons();
+}
+window.cargarCategoriasEducacionAdmin=cargarCategoriasEducacionAdmin;
+
+function htmlFormCateg(c={}){return `
+  <div class="ad-field"><label>Nombre *</label><input id="categ-nom" type="text" value="${(c.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Liderazgo, Finanzas, Bienestar"></div>
+  <div class="ad-toolbar" style="margin:6px 0 0"><div class="ad-spacer"></div><button class="ad-btn" id="categ-cancel">Cancelar</button><button class="ad-btn ad-btn--verde" id="categ-save" data-id="${c.id||''}">${ic("check")} ${c.id?'Guardar cambios':'Crear categoría'}</button></div>`;}
+function bindFormCateg(){setTimeout(()=>{
+  $("#categ-cancel")?.addEventListener('click',()=>window.cerrarModal?.());
+  const btn=$("#categ-save");
+  btn?.addEventListener('click',async()=>{
+    const nombre=$("#categ-nom")?.value.trim();if(!nombre){toast('El nombre es obligatorio');return;}
+    btn.disabled=true;
+    const payload={nombre};const id=btn.dataset.id;
+    id?await supabase.from('categorias_educacion').update(payload).eq('id',id):await supabase.from('categorias_educacion').insert(payload);
+    window.cerrarModal?.();cargarCategoriasEducacionAdmin();toast(id?'Categoría actualizada ✓':'Categoría creada ✓');
+  });if(window.lucide)lucide.createIcons();
+},80);}
+
 function htmlFormFacil(f={}){return `
   <div class="ad-field"><label>Nombre *</label><input id="fac-nom" type="text" value="${(f.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Andrea Gómez"></div>
   <div class="ad-field"><label>Descripción</label><textarea id="fac-desc" rows="3" placeholder="Breve bio del facilitador">${f.descripcion||''}</textarea></div>
@@ -1632,6 +1662,7 @@ function bindFormFacil(){setTimeout(()=>{
 
 function htmlFormEvento(e={}){
   const opts=_facilitadoresEdu.map(f=>`<option value="${f.id}" ${e.facilitador_id===f.id?'selected':''}>${esc(f.nombre)}</option>`).join('');
+  const optsCateg=_categoriasEdu.map(c=>`<option value="${c.id}" ${e.categoria_id===c.id?'selected':''}>${esc(c.nombre)}</option>`).join('');
   return `
   <div class="ad-field"><label>Título *</label><input id="ev-titulo" type="text" value="${(e.titulo||'').replace(/"/g,'&quot;')}" placeholder="Ej: Taller de liderazgo"></div>
   <div class="ad-field"><label>Descripción</label><textarea id="ev-desc" rows="3" placeholder="De qué trata el taller">${e.descripcion||''}</textarea></div>
@@ -1639,7 +1670,10 @@ function htmlFormEvento(e={}){
     <div class="ad-field"><label>Fecha *</label><input id="ev-fecha" type="date" value="${e.fecha||''}"></div>
     <div class="ad-field"><label>Lugar</label><input id="ev-lugar" type="text" value="${(e.lugar||'').replace(/"/g,'&quot;')}" placeholder="Sede del Club"></div>
   </div>
-  <div class="ad-field"><label>Facilitador</label><select id="ev-facil"><option value="">Sin asignar</option>${opts}</select></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div class="ad-field"><label>Facilitador</label><select id="ev-facil"><option value="">Sin asignar</option>${opts}</select></div>
+    <div class="ad-field"><label>Categoría</label><select id="ev-categ"><option value="">Sin categoría</option>${optsCateg}</select></div>
+  </div>
   <div class="ad-field"><label>Pieza publicitaria (opcional)</label>${e.imagen_url?`<img src="${e.imagen_url}" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;margin-bottom:10px">`:''}<input id="ev-img" type="file" accept="image/*"><input type="hidden" id="ev-img-url" value="${e.imagen_url||''}"></div>
   <div class="ad-field"><label>PDF del material <span style="font-weight:400;opacity:.5">— se puede agregar después del taller</span></label><input id="ev-pdf" type="file" accept="application/pdf"><input type="hidden" id="ev-pdf-url" value="${e.pdf_url||''}">${e.pdf_url?`<a href="${e.pdf_url}" target="_blank" style="font-size:12px;color:#00DF81;display:block;margin-top:4px">Ver PDF actual</a>`:''}</div>
   <div class="ad-field"><label>Link de la clase grabada (Meet/Zoom) <span style="font-weight:400;opacity:.5">— se agrega después</span></label><input id="ev-grabacion" type="url" value="${e.link_grabacion||''}" placeholder="https://..."></div>
@@ -1660,6 +1694,7 @@ function bindFormEvento(){setTimeout(()=>{
       titulo,descripcion:$("#ev-desc")?.value.trim()||null,fecha,
       lugar:$("#ev-lugar")?.value.trim()||null,
       facilitador_id:$("#ev-facil")?.value||null,
+      categoria_id:$("#ev-categ")?.value||null,
       imagen_url,pdf_url,
       link_grabacion:$("#ev-grabacion")?.value.trim()||null,
     };
@@ -3163,6 +3198,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
     if(e.target.closest('#btn-facil-add')){abrirModal('Nuevo facilitador','Aparecerá asociado a sus talleres',htmlFormFacil());bindFormFacil();return;}
     const edFacil=e.target.closest('[data-ed-facil]');if(edFacil){const f=_facilitadoresEdu.find(x=>x.id===edFacil.dataset.edFacil);if(f){abrirModal('Editar facilitador',f.nombre,htmlFormFacil(f));bindFormFacil();}return;}
     const rmFacil=e.target.closest('[data-rm-facil]');if(rmFacil&&confirm('¿Eliminar este facilitador?')){await supabase.from('facilitadores_educacion').delete().eq('id',rmFacil.dataset.rmFacil);cargarFacilitadoresAdmin();toast('Facilitador eliminado');return;}
+    if(e.target.closest('#btn-categ-add')){abrirModal('Nueva categoría','Para clasificar los talleres de Educación',htmlFormCateg());bindFormCateg();return;}
+    const edCateg=e.target.closest('[data-ed-categ]');if(edCateg){const c=_categoriasEdu.find(x=>x.id===edCateg.dataset.edCateg);if(c){abrirModal('Editar categoría',c.nombre,htmlFormCateg(c));bindFormCateg();}return;}
+    const rmCateg=e.target.closest('[data-rm-categ]');if(rmCateg&&confirm('¿Eliminar esta categoría? Los talleres que la tengan asignada quedarán sin categoría.')){await supabase.from('categorias_educacion').delete().eq('id',rmCateg.dataset.rmCateg);cargarCategoriasEducacionAdmin();toast('Categoría eliminada');return;}
     if(e.target.closest('#btn-prof-add')){abrirModal('Agregar profesional','Se publicará en el directorio',htmlFormProf());bindFormProf();return;}
     const aprobarProf=e.target.closest('[data-aprobar-prof]');if(aprobarProf){const id=aprobarProf.dataset.aprobarProf;const waProf=aprobarProf.dataset.waProf;const nomProf=aprobarProf.dataset.nomProf||'';await supabase.from('profesionales').update({estado:'aprobado'}).eq('id',id);if(waProf){fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:waProf,body:`¡Hola ${nomProf}! 🎉 Tu perfil de profesional en El Club de la Gente fue aprobado.\n\nMuy pronto activamos tu cuenta y quedas visible en el directorio de Profesionales para nuestros miembros Premium.\n\n¡Bienvenido al Club!\nEl Club de la Gente`})}).catch(()=>{});}cargarProfesionales();toast('Profesional aprobado — WhatsApp enviado ✓');return;}
     const activarProf=e.target.closest('[data-activar-prof]');if(activarProf){const pid=activarProf.dataset.activarProf;await supabase.from('profesionales').update({estado:'activo',activo:true}).eq('id',pid);const p=_profesionales.find(x=>x.id===pid);if(p?.user_id)await supabase.from('perfiles').update({plan:'vitalicia'}).eq('id',p.user_id);cargarProfesionales();toast('Profesional activado ✓ — vitalicia mientras esté afiliado');return;}

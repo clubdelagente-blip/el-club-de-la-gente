@@ -242,16 +242,20 @@ function renderEducacion() {
     <div style="display:flex;gap:8px;margin-bottom:20px">
       <button class="ad-link" data-edutab="eventos" style="width:auto;display:inline-flex" data-is-tab>Eventos</button>
       <button class="ad-link" data-edutab="facilitadores" style="width:auto;display:inline-flex" data-is-tab>Facilitadores</button>
+      <button class="ad-link" data-edutab="categorias" style="width:auto;display:inline-flex" data-is-tab>Categorías</button>
     </div>
     <div id="edutab-eventos"><div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div></div>
-    <div id="edutab-facilitadores" style="display:none"><div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div></div>`;
+    <div id="edutab-facilitadores" style="display:none"><div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div></div>
+    <div id="edutab-categorias" style="display:none"><div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div></div>`;
   if (window.lucide) lucide.createIcons();
   window.cargarEventosEducacionAdmin?.();
   $$("[data-edutab]").forEach(b => b.addEventListener("click", () => {
     const tab = b.dataset.edutab;
     $("#edutab-eventos").style.display = tab === "eventos" ? "" : "none";
     $("#edutab-facilitadores").style.display = tab === "facilitadores" ? "" : "none";
+    $("#edutab-categorias").style.display = tab === "categorias" ? "" : "none";
     if (tab === "facilitadores") window.cargarFacilitadoresAdmin?.();
+    if (tab === "categorias") window.cargarCategoriasEducacionAdmin?.();
   }));
 }
 window.renderEducacion = renderEducacion;
