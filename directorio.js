@@ -148,20 +148,14 @@ function renderGrid() {
 
   cont.innerHTML = list.map((a, i) => `
     <article class="dir-card" data-aliado="${a.id}" tabindex="0" style="${ccVars(a.categoria)};animation-delay:${Math.min(i * 45, 400)}ms">
-      <div class="dir-card__top">
+      <div class="dir-card__logo">
         ${a.imagen_url
-          ? `<img src="${a.imagen_url}" alt="" style="width:52px;height:52px;border-radius:14px;object-fit:cover;flex-shrink:0">`
-          : `<span class="dir-card__ic">${ic(iconoCategoria(a.categoria))}</span>`}
-        <div>
-          <div class="dir-card__cat">${a.categoria || "Aliado del Club"}</div>
-          <div class="dir-card__nombre">${a.nombre}</div>
-        </div>
+          ? `<img src="${a.imagen_url}" alt="">`
+          : `<span class="dir-card__logo-ic">${ic(iconoCategoria(a.categoria))}</span>`}
       </div>
+      <div class="dir-card__nombre">${a.nombre}</div>
+      <div class="dir-card__cat">${a.categoria || "Aliado del Club"}</div>
       <div class="dir-card__badge">${ic("flame")}<span>${a.descuento || "Beneficio especial"}</span></div>
-      <span class="dir-card__pct-lbl">para miembros del Club</span>
-      <div class="dir-card__ver">
-        <button class="btn btn--ghost-verde" data-aliado-btn="${a.id}">Ver establecimiento &rarr;</button>
-      </div>
     </article>`).join("");
   if (window.lucide) lucide.createIcons();
 }
@@ -232,18 +226,30 @@ function detallePromo(p) {
 
 function sheetAliado(a) {
   const promos = a.promociones || [];
+  const cc = colorCategoria(a.categoria);
   return `
-    <div class="sheet__cat">${a.categoria || "Aliado del Club"}</div>
-    <h2 class="sheet__nombre">${a.nombre}</h2>
+    <div style="${ccVars(a.categoria)}">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+      <div style="width:60px;height:60px;border-radius:50%;flex:none;overflow:hidden;display:grid;place-items:center;background:#fff;box-shadow:0 0 0 4px var(--cc-soft)">
+        ${a.imagen_url ? `<img src="${a.imagen_url}" alt="" style="width:100%;height:100%;object-fit:cover">` : `<span style="color:${cc}">${ic(iconoCategoria(a.categoria))}</span>`}
+      </div>
+      <div>
+        <div class="sheet__cat" style="color:${cc}">${a.categoria || "Aliado del Club"}</div>
+        <h2 class="sheet__nombre" style="margin-top:2px">${a.nombre}</h2>
+      </div>
+    </div>
     ${a.imagen_url
-      ? `<img src="${a.imagen_url}" alt="${a.nombre}" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;margin:28px 0">`
-      : `<div class="foto-ph"><span class="foto-ph__ic">${ic(iconoCategoria(a.categoria))}</span><span class="foto-ph__txt">${a.nombre}</span></div>`}
+      ? `<img src="${a.imagen_url}" alt="${a.nombre}" style="width:100%;max-height:220px;object-fit:cover;border-radius:14px;margin:20px 0">`
+      : `<div class="foto-ph" style="background:var(--cc-soft);color:${cc}"><span class="foto-ph__ic">${ic(iconoCategoria(a.categoria))}</span><span class="foto-ph__txt">${a.nombre}</span></div>`}
+
+    <div class="sheet__sub">Sobre este aliado</div>
     <p class="sheet__desc">${a.descripcion || "Aliado de El Club de la Gente."}</p>
 
     ${(a.direccion || a.maps_url) ? `
-    <div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px;flex-wrap:wrap;">
-      ${a.direccion ? `<span style="font-size:13px;color:#666;display:flex;align-items:center;gap:5px;">${ic("map-pin")}${a.direccion}</span>` : ''}
-      ${a.maps_url ? `<a href="${a.maps_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#e8f5ee;color:#095544;border-radius:99px;font-size:12px;font-weight:600;text-decoration:none;">${ic("navigation")}Ver en mapa</a>` : ''}
+    <div class="sheet__sub">Cómo llegar</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--cc-soft);border-radius:12px;padding:14px 16px;margin-bottom:4px">
+      ${a.direccion ? `<span style="font-size:13.5px;color:var(--tinta);display:flex;align-items:center;gap:7px;font-weight:600">${ic("map-pin")}${a.direccion}</span>` : '<span></span>'}
+      ${a.maps_url ? `<a href="${a.maps_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:8px 14px;background:${cc};color:#fff;border-radius:99px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap">${ic("navigation")}Ver en mapa</a>` : ''}
     </div>` : ''}
 
     <div class="sheet__sub">Promociones disponibles</div>
@@ -319,6 +325,7 @@ function sheetAliado(a) {
       </div>
       <p class="calc__nota" id="calc-nota"></p>
     </div>` : ""}
+    </div>
   `;
 }
 
