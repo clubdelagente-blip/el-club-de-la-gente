@@ -9,6 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=33">
   <link rel="stylesheet" href="admin.css?v=6">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
   <style>
     body { background: #0A0A0A; }
     /* Chips de categoría en modal */
@@ -1030,15 +1032,50 @@ function bindFotosCarruselInput(){
   const input=$("#fa-carrusel-input");
   if(!input||input.dataset.bound)return;
   input.dataset.bound='1';
-  input.addEventListener('change',async(e)=>{
+  input.addEventListener('change',(e)=>{
     const file=e.target.files?.[0];
     e.target.value='';
     if(!file)return;
-    let url;try{url=await subirImagen(file);}catch(_){toast('Error al subir la foto');return;}
-    let arr=[];try{arr=JSON.parse($("#fa-carrusel-urls")?.value||'[]');}catch(_){arr=[];}
-    arr.push(url);
-    const h=$("#fa-carrusel-urls");if(h)h.value=JSON.stringify(arr);
-    renderFotosCarruselAliado();
+    abrirRecorteFotoCarrusel(file);
+  });
+}
+// Overlay propio (no el modal compartido de Admin) para no perder el
+// formulario de "Editar aliado" que sigue abierto detras mientras se recorta.
+function abrirRecorteFotoCarrusel(file){
+  const url=URL.createObjectURL(file);
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.75);display:grid;place-items:center;padding:20px';
+  ov.innerHTML=`
+    <div style="background:#fff;border-radius:14px;padding:20px;max-width:520px;width:100%">
+      <div style="font-weight:700;font-size:15px;margin-bottom:4px">Ajustar foto</div>
+      <p style="font-size:12px;color:rgba(26,26,24,.5);margin-bottom:14px">Mueve y haz zoom para encuadrar -- se recorta en proporción 16:9, igual que se ve en el carrusel.</p>
+      <div style="max-height:52vh;overflow:hidden;background:#000;border-radius:8px">
+        <img id="fa-crop-img" src="${url}" style="max-width:100%;display:block">
+      </div>
+      <div class="ad-toolbar" style="margin-top:16px"><div class="ad-spacer"></div>
+        <button class="ad-btn" id="fa-crop-cancel">Cancelar</button>
+        <button class="ad-btn ad-btn--verde" id="fa-crop-ok">${ic('check')} Recortar y subir</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  if(window.lucide)lucide.createIcons();
+
+  const cerrar=()=>{cropper.destroy();URL.revokeObjectURL(url);ov.remove();};
+  const imgEl=ov.querySelector('#fa-crop-img');
+  const cropper=new Cropper(imgEl,{aspectRatio:16/9,viewMode:1,autoCropArea:1,background:false});
+  ov.querySelector('#fa-crop-cancel').addEventListener('click',cerrar);
+  ov.querySelector('#fa-crop-ok').addEventListener('click',()=>{
+    const btn=ov.querySelector('#fa-crop-ok');
+    btn.disabled=true;btn.innerHTML=`${ic('loader')} Subiendo…`;if(window.lucide)lucide.createIcons();
+    cropper.getCroppedCanvas({width:1280,height:720}).toBlob(async(blob)=>{
+      const archivo=new File([blob],'foto.jpg',{type:'image/jpeg'});
+      cerrar();
+      let subidaUrl;try{subidaUrl=await subirImagen(archivo);}catch(_){toast('Error al subir la foto');return;}
+      let arr=[];try{arr=JSON.parse($("#fa-carrusel-urls")?.value||'[]');}catch(_){arr=[];}
+      arr.push(subidaUrl);
+      const h=$("#fa-carrusel-urls");if(h)h.value=JSON.stringify(arr);
+      renderFotosCarruselAliado();
+    },'image/jpeg',0.9);
   });
 }
 function htmlFormAliado(a={}){
