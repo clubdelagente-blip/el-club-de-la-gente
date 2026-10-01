@@ -93,7 +93,11 @@
 .hero-ahorro {
   background: var(--negro); color: var(--crema); border-radius: 18px;
   padding: 26px 26px 22px; margin-bottom: 14px; position: relative; overflow: hidden;
+  cursor: pointer; transition: transform .2s, box-shadow .2s;
 }
+.hero-ahorro:hover, .hero-ahorro:active { transform: translateY(-2px); box-shadow: 0 16px 32px -18px rgba(0,0,0,.5); }
+.hero-ahorro__ver { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--verde-claro); margin-top: 14px; opacity: .9; }
+.hero-ahorro__ver i { width: 13px !important; height: 13px !important; }
 .hero-ahorro__lbl { font-size: 12.5px; font-weight: 600; color: rgba(241,247,246,.6); letter-spacing: .04em; }
 .hero-ahorro__num { font-family: var(--display); font-size: clamp(38px, 9vw, 50px); font-weight: 600; line-height: 1; margin-top: 8px; }
 .hero-ahorro__trend { display: inline-flex; align-items: center; gap: 6px; background: var(--verde-soft); color: var(--verde-claro); font-size: 12px; font-weight: 700; padding: 6px 13px; border-radius: 999px; margin-top: 14px; }

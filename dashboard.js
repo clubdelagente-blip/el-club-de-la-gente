@@ -580,6 +580,88 @@ async function cargarDescuentos(userId, whatsapp) {
   if (window.lucide) lucide.createIcons();
 }
 
+/* ---------- Modal: evolución del ahorro mes a mes ---------- */
+function barPathTop(x, y, w, h, r) {
+  const rr = Math.min(r, w / 2, Math.max(h, 0));
+  if (h <= 0) return `M${x},${y} L${x + w},${y} Z`;
+  return `M${x},${y + h} L${x},${y + rr} Q${x},${y} ${x + rr},${y} L${x + w - rr},${y} Q${x + w},${y} ${x + w},${y + rr} L${x + w},${y + h} Z`;
+}
+async function abrirAhorroMensual() {
+  if (!_miembroId) return;
+  const hoy = new Date();
+  const desde = new Date(hoy.getFullYear(), hoy.getMonth() - 5, 1);
+
+  const [{ data: d1 }, { data: d2 }, { data: d3 }, { data: d4 }] = await Promise.all([
+    supabase.from("descuentos").select("ahorro, created_at").eq("miembro_id", _miembroId).gte("created_at", desde.toISOString()),
+    supabase.from("pedidos_club").select("ahorro, created_at").eq("miembro_id", _miembroId).not("estado", "in", "(pendiente_pago,cancelado)").gte("created_at", desde.toISOString()),
+    supabase.from("viajes_conductor").select("ahorro, created_at").eq("miembro_id", _miembroId).eq("anulado", false).gte("created_at", desde.toISOString()),
+    supabase.from("servicios_aplicados").select("ahorro, created_at").eq("miembro_id", _miembroId).gte("created_at", desde.toISOString()),
+  ]);
+  const todos = [...(d1 || []), ...(d2 || []), ...(d3 || []), ...(d4 || [])];
+
+  const meses = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+    meses.push({ clave: `${d.getFullYear()}-${d.getMonth()}`, lbl: MES_LBL[d.getMonth()], total: 0 });
+  }
+  todos.forEach(it => {
+    const f = new Date(it.created_at);
+    const clave = `${f.getFullYear()}-${f.getMonth()}`;
+    const mes = meses.find(m => m.clave === clave);
+    if (mes) mes.total += (it.ahorro || 0);
+  });
+
+  const ANCHO = 300, ALTO = 150, EJE_Y = 116, BAR_W = 30;
+  const GAP = (ANCHO - BAR_W * 6) / 7;
+  const maxVal = Math.max(...meses.map(m => m.total), 1);
+
+  const barsSvg = meses.map((m, i) => {
+    const h = Math.round((m.total / maxVal) * (EJE_Y - 18));
+    const x = GAP + i * (BAR_W + GAP);
+    const y = EJE_Y - h;
+    const esActual = i === meses.length - 1;
+    const color = esActual ? "#00DF81" : "rgba(0,223,129,.32)";
+    return `
+      <g class="ahorro-bar-g" data-valor="${fmtCOP(m.total)}" data-mes="${m.lbl}" tabindex="0">
+        <rect x="${x}" y="0" width="${BAR_W}" height="${ALTO}" fill="transparent"></rect>
+        <path d="${barPathTop(x, y, BAR_W, h, 4)}" fill="${color}"></path>
+        ${esActual ? `<text x="${x + BAR_W / 2}" y="${y - 8}" text-anchor="middle" font-family="Fraunces, serif" font-size="12" font-weight="700" fill="#F1F7F6">${fmtCOP(m.total)}</text>` : ""}
+        <text x="${x + BAR_W / 2}" y="${EJE_Y + 16}" text-anchor="middle" font-size="10.5" fill="rgba(241,247,246,.55)">${m.lbl}</text>
+      </g>`;
+  }).join("");
+
+  abrirModalTienda("Tu ahorro mes a mes", `
+    <div style="background:#021B1A;border-radius:16px;padding:22px 14px 14px;margin-bottom:20px;position:relative">
+      <svg viewBox="0 0 ${ANCHO} ${ALTO}" style="width:100%;height:auto;display:block;overflow:visible" id="ahorro-chart-svg">${barsSvg}</svg>
+      <div id="ahorro-chart-tooltip" style="display:none;position:absolute;transform:translate(-50%,-100%);background:#fff;color:#021B1A;font-size:12px;font-weight:700;padding:6px 10px;border-radius:8px;pointer-events:none;box-shadow:0 6px 16px rgba(0,0,0,.25);white-space:nowrap;z-index:2"></div>
+    </div>
+    <div style="background:linear-gradient(135deg,#EAB749,#d99a2b);border-radius:16px;padding:22px 20px;color:#2b1d02;text-align:center">
+      <div style="font-size:30px;margin-bottom:8px">🏆 🎁 ✈️</div>
+      <div style="font-family:'Fraunces',serif;font-size:19px;font-weight:700;margin-bottom:8px;line-height:1.25">¡Pronto premiaremos a quienes más ahorran!</div>
+      <p style="font-size:13.5px;line-height:1.55;opacity:.85">Viajes, celulares, ropa de marca y muchas sorpresas más para los miembros que más aprovechen sus beneficios cada mes. Sigue ahorrando — ¡tú podrías ser el próximo ganador! 🎉</p>
+    </div>
+  `);
+
+  const cont = document.querySelector("#ahorro-chart-svg")?.parentElement;
+  const svg = document.getElementById("ahorro-chart-svg");
+  const tip = document.getElementById("ahorro-chart-tooltip");
+  const mostrarTip = (g) => {
+    if (!tip || !cont) return;
+    const barRect = g.querySelector("path").getBoundingClientRect();
+    const contRect = cont.getBoundingClientRect();
+    tip.style.left = `${barRect.left - contRect.left + barRect.width / 2}px`;
+    tip.style.top = `${barRect.top - contRect.top - 8}px`;
+    tip.textContent = `${g.dataset.mes}: ${g.dataset.valor}`;
+    tip.style.display = "block";
+  };
+  svg?.querySelectorAll(".ahorro-bar-g").forEach(g => {
+    g.style.cursor = "pointer";
+    g.addEventListener("click", () => mostrarTip(g));
+    g.addEventListener("mouseenter", () => mostrarTip(g));
+    g.addEventListener("mouseleave", () => { if (tip) tip.style.display = "none"; });
+  });
+}
+
 /* ---------- Ventas del negocio (aliados) ---------- */
 const MES_LBL = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 
@@ -2312,6 +2394,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Avatar del topbar: acceso directo a Configuración (foto, usuario, contraseña)
   $("#topbar-avatar-btn")?.addEventListener("click", () => irPanel("config"));
+
+  // Tarjeta "Ahorro total del mes": abre la evolución mes a mes
+  $("#hero-ahorro-card")?.addEventListener("click", () => abrirAhorroMensual());
+  $("#hero-ahorro-card")?.addEventListener("keydown", (e) => { if (e.key === "Enter") abrirAhorroMensual(); });
 
   // Burger móvil
   $("#topbar-burger")?.addEventListener("click", () => $("#dash").classList.toggle("menu-open"));
