@@ -108,7 +108,7 @@ let query = "";
 async function cargarAliados() {
   // Nota: "codigo_aliado" NUNCA se pide acá a propósito — se valida server-side (RPC verificar_codigo_aliado)
   const { data } = await supabase.from("aliados")
-    .select("id, nombre, categoria, descuento, descripcion, whatsapp, direccion, maps_url, imagen_url, destacado, planes_visibles")
+    .select("id, nombre, categoria, descuento, descripcion, whatsapp, direccion, maps_url, imagen_url, fotos_carrusel, destacado, planes_visibles")
     .eq("activo", true).order("nombre");
   const todos = data || [];
   ALIADOS = todos.filter(a => (a.planes_visibles && a.planes_visibles.length ? a.planes_visibles : ["basica", "premium"]).includes(PLAN_ACTUAL));
@@ -238,9 +238,11 @@ function sheetAliado(a) {
         <h2 class="sheet__nombre" style="margin-top:2px">${a.nombre}</h2>
       </div>
     </div>
-    ${a.imagen_url
-      ? `<img src="${a.imagen_url}" alt="${a.nombre}" style="width:100%;max-height:220px;object-fit:cover;border-radius:14px;margin:20px 0">`
-      : `<div class="foto-ph" style="background:var(--cc-soft);color:${cc}"><span class="foto-ph__ic">${ic(iconoCategoria(a.categoria))}</span><span class="foto-ph__txt">${a.nombre}</span></div>`}
+    ${(() => {
+      const fotos = (Array.isArray(a.fotos_carrusel) && a.fotos_carrusel.length) ? a.fotos_carrusel : (a.imagen_url ? [a.imagen_url] : []);
+      if (!fotos.length) return `<div class="foto-ph" style="background:var(--cc-soft);color:${cc}"><span class="foto-ph__ic">${ic(iconoCategoria(a.categoria))}</span><span class="foto-ph__txt">${a.nombre}</span></div>`;
+      return `<div class="aliado-carrusel">${fotos.map(url => `<img src="${url}" alt="${a.nombre}">`).join("")}</div>`;
+    })()}
 
     <div class="sheet__sub">Sobre este aliado</div>
     <p class="sheet__desc">${a.descripcion || "Aliado de El Club de la Gente."}</p>

@@ -112,6 +112,13 @@
 }
 .dir-card__badge svg { width: 14px; height: 14px; flex: none; }
 
+/* ---------- Carrusel de fotos del aliado (dentro de la ficha) ---------- */
+.aliado-carrusel {
+  display: flex; gap: 0; overflow-x: auto; scroll-snap-type: x mandatory;
+  border-radius: 14px; margin: 20px 0; -webkit-overflow-scrolling: touch;
+}
+.aliado-carrusel img { width: 100%; flex: none; height: 220px; object-fit: cover; scroll-snap-align: start; }
+
 /* ---------- Tarjeta de promoción (dentro de la ficha del aliado) ---------- */
 .promo-card {
   background: #fff; border: 1.5px solid var(--linea); border-radius: 16px;

@@ -1008,6 +1008,39 @@ async function cargarPostulaciones(){
   tableWrap.insertAdjacentHTML('beforebegin',html);
   if(window.lucide)lucide.createIcons();
 }
+
+function renderFotosCarruselAliado(){
+  let urls=[];try{urls=JSON.parse($("#fa-carrusel-urls")?.value||'[]');}catch(_){urls=[];}
+  const cont=$("#fa-carrusel-preview");if(!cont)return;
+  cont.innerHTML=urls.map((url,i)=>`
+    <div style="position:relative;width:64px;height:64px">
+      <img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
+      <button type="button" class="fa-carrusel-rm" data-idx="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer">×</button>
+    </div>`).join('')+(urls.length<6?`
+    <button type="button" id="fa-carrusel-add" style="width:64px;height:64px;border:2px dashed #ccc;border-radius:8px;background:none;cursor:pointer;font-size:24px;color:#999;line-height:1">+</button>`:'');
+  $("#fa-carrusel-add")?.addEventListener('click',()=>$("#fa-carrusel-input")?.click());
+  cont.querySelectorAll('.fa-carrusel-rm').forEach(btn=>btn.addEventListener('click',()=>{
+    let arr=[];try{arr=JSON.parse($("#fa-carrusel-urls")?.value||'[]');}catch(_){arr=[];}
+    arr.splice(+btn.dataset.idx,1);
+    const h=$("#fa-carrusel-urls");if(h)h.value=JSON.stringify(arr);
+    renderFotosCarruselAliado();
+  }));
+}
+function bindFotosCarruselInput(){
+  const input=$("#fa-carrusel-input");
+  if(!input||input.dataset.bound)return;
+  input.dataset.bound='1';
+  input.addEventListener('change',async(e)=>{
+    const file=e.target.files?.[0];
+    e.target.value='';
+    if(!file)return;
+    let url;try{url=await subirImagen(file);}catch(_){toast('Error al subir la foto');return;}
+    let arr=[];try{arr=JSON.parse($("#fa-carrusel-urls")?.value||'[]');}catch(_){arr=[];}
+    arr.push(url);
+    const h=$("#fa-carrusel-urls");if(h)h.value=JSON.stringify(arr);
+    renderFotosCarruselAliado();
+  });
+}
 function htmlFormAliado(a={}){
   const sel=(a.categoria||'').split(',').map(s=>s.trim()).filter(Boolean);
   const chips=CATS.map(c=>`<button type="button" class="fa-chip${sel.includes(c)?' is-on':''}" data-cat="${c}">${c}</button>`).join('');
@@ -1046,9 +1079,13 @@ function htmlFormAliado(a={}){
     <div class="ad-field"><label>Dirección</label><input id="fa-dir" type="text" value="${(a.direccion||'').replace(/"/g,'&quot;')}" placeholder="Calle, barrio"></div>
   </div>
   <div class="ad-field"><label>Link de Google Maps</label><input id="fa-maps" type="url" value="${(a.maps_url||'').replace(/"/g,'&quot;')}" placeholder="https://maps.app.goo.gl/..."></div>
-  <div class="ad-field"><label>Foto del establecimiento</label>
+  <div class="ad-field"><label>Foto de portada <span style="font-weight:400;color:rgba(26,26,24,.4)">(logo, se ve en la tarjeta y como avatar)</span></label>
     ${a.imagen_url?`<img src="${a.imagen_url}" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:10px">`:''}
     <input id="fa-img" type="file" accept="image/*"><input type="hidden" id="fa-img-url" value="${a.imagen_url||''}"></div>
+  <div class="ad-field"><label>Carrusel de fotos <span style="font-weight:400;color:rgba(26,26,24,.4)">(hasta 6, se muestran deslizables dentro de la ficha)</span></label>
+    <div id="fa-carrusel-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px"></div>
+    <input type="file" id="fa-carrusel-input" accept="image/*" style="display:none">
+    <input type="hidden" id="fa-carrusel-urls" value="${esc(JSON.stringify(a.fotos_carrusel||[]))}"></div>
   <hr style="border:none;border-top:1px solid rgba(26,26,24,.12);margin:20px 0 14px">
   <div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(26,26,24,.4);margin-bottom:10px">Vigencia y contrato — privado, solo Admin</div>
   <div class="ad-field-2">
@@ -1111,6 +1148,7 @@ function renderFaSubcats(){
 }
 function bindFormAliado(){
   setTimeout(()=>{
+    renderFotosCarruselAliado();bindFotosCarruselInput();
     document.querySelectorAll('#fa-chips .fa-chip').forEach(chip=>{
       chip.addEventListener('click',()=>{
         chip.classList.toggle('is-on');
@@ -1234,7 +1272,8 @@ function bindFormAliado(){
       const subcategorias=($("#fa-subcat")?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
       let waAliado=($("#fa-wa")?.value||'').replace(/\D/g,'');
       while(waAliado.length>10&&waAliado.startsWith('57'))waAliado=waAliado.slice(2);
-      const payload={nombre,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:waAliado||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
+      let fotosCarrusel=[];try{fotosCarrusel=JSON.parse($("#fa-carrusel-urls")?.value||'[]');}catch(_){fotosCarrusel=[];}
+      const payload={nombre,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:waAliado||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fotos_carrusel:fotosCarrusel,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
       const id=btn.dataset.id;
       const{error}=id?await supabase.from('aliados').update(payload).eq('id',id):await supabase.from('aliados').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}
