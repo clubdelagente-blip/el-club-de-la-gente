@@ -1185,9 +1185,8 @@ async function cargarAliadosRecomendados(perfData) {
 
   wrap.innerHTML = top.map(a => {
     const pctLen = (a.descuento || "").length;
-    const href = a.whatsapp ? `https://wa.me/57${String(a.whatsapp).replace(/\D/g, "")}` : "Directorio.html";
     return `
-    <a class="aliado-mini" href="${href}" target="_blank" rel="noopener">
+    <a class="aliado-mini" href="Directorio.html?abrir=${a.id}">
       ${a.imagen_url
         ? `<img class="aliado-mini__ic" src="${esc(a.imagen_url)}" alt="" style="object-fit:cover">`
         : `<span class="aliado-mini__ic">${ic(getIcon(a.categoria))}</span>`}

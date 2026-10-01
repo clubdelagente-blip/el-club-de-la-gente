@@ -541,6 +541,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderGrid();
   if (window.lucide) lucide.createIcons();
 
+  // Si se llega con ?abrir=<id> (ej. desde "Aliados para ti" del Inicio del
+  // miembro), se abre la ficha de ese aliado directo, sin que tenga que
+  // buscarlo de nuevo en la grilla.
+  const abrirId = _p.get("abrir");
+  if (abrirId) {
+    history.replaceState({}, "", location.pathname + location.search.replace(/[?&]abrir=[^&]*/, "").replace(/^&/, "?"));
+    if (ALIADOS.some(a => a.id === abrirId)) openSheet(abrirId);
+  }
+
   // Buscador en vivo
   $("#dir-search").addEventListener("input", (e) => { query = e.target.value; renderGrid(); });
 
