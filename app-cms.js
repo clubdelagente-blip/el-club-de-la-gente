@@ -93,6 +93,25 @@ function tarjetaPlanHtml(p, i) {
       <ul class="plan__beneficios">
         ${(p.beneficios || []).map(b => `<li><span class="dot"></span>${b}</li>`).join("")}
       </ul>
+      <button type="button" class="plan__cc-toggle" data-cc-toggle="${i}">Ver mi ClubCard ${ic('chevron-down')}</button>
+      <div class="ccv2 ${claseSlug.replace('plan--', 'ccv2--')}" id="plan-cc-${i}" hidden>
+        <div class="ccv2-card">
+          <img src="marco-card.png" class="ccv2-frame-img" alt="">
+          <div class="ccv2-front__in">
+            <span class="ccv2-brand">CLUBCARD</span>
+            <div class="ccv2-mid"><img src="logo-club.png" class="ccv2-logo-img" alt=""></div>
+            <div class="ccv2-footer">
+              <div class="ccv2-name">TU NOMBRE AQUÍ</div>
+              <div class="ccv2-codigo"><span class="ccv2-codigo__lbl">Código:</span><span class="ccv2-codigo__val">300 000 0000</span></div>
+            </div>
+          </div>
+        </div>
+        <p>Vista previa — tu ClubCard real tendrá tu nombre y tu código.</p>
+      </div>
+      ${p.slug === 'basica' || p.slug === 'premium' ? `
+      <div class="plan__urgencia">⏰ Últimas unidades</div>
+      <a class="btn btn--primario" href="Registro.html?plan=${p.slug}&comprar=1">Comprar</a>` : p.slug === 'gratis' ? `
+      <a class="btn btn--secundario" href="Registro.html?modo=registro">Unirme gratis</a>` : ""}
     </article>`;
 }
 async function cargarPlanesPub() {
@@ -104,6 +123,18 @@ async function cargarPlanesPub() {
   // La vitalicia no se "elige" con clic — se gana con 5 referidos, igual que en Planes.html
   cont.innerHTML = data.filter(p => p.slug !== 'vitalicia').map(tarjetaPlanHtml).join('');
   if (window.lucide) lucide.createIcons();
+
+  cont.querySelectorAll('[data-cc-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const prev = document.getElementById('plan-cc-' + btn.dataset.ccToggle);
+      if (!prev) return;
+      const abrir = prev.hidden;
+      prev.hidden = !abrir;
+      btn.classList.toggle('is-open', abrir);
+      btn.innerHTML = (abrir ? 'Ocultar ClubCard ' : 'Ver mi ClubCard ') + ic('chevron-down');
+      if (window.lucide) lucide.createIcons();
+    });
+  });
 }
 
 /* ---------- Programas ---------- */

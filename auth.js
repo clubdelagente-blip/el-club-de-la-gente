@@ -24,6 +24,47 @@ async function numeroAdmin() {
   return data?.valor || "3043394870";
 }
 
+// ---------- "Pagar primero, registrarse después" (visitantes nuevos) ----------
+// El comprobante (File) se retiene en memoria -- recién se sube y se crea la
+// solicitud cuando ya existe un miembro_id real, dentro del handler de
+// #form-registro. Nada de esto toca Planes.html/checkout.js (flujo de
+// miembros ya logueados, sin cambios).
+let pendingPago = null;     // { plan, precio, planLabel, file }
+let pagoPrevioState = null; // fila de "planes" validada para ?comprar=1
+
+async function cargarPlanPago(slug) {
+  const { data } = await supabase.from("planes").select("*").eq("slug", slug).maybeSingle();
+  return data || null;
+}
+async function cargarLlavePago() {
+  const { data } = await supabase.from("configuracion").select("valor").eq("clave", "club_llave_pago").maybeSingle();
+  return data?.valor || null;
+}
+function mostrarPagoPrevio(plan) {
+  $("#pp-title").textContent = `Paga tu membresía ${plan.tag || plan.nombre}.`;
+  $("#pp-sub").textContent = `Vas a pagar tu membresía ${plan.tag || plan.nombre}.`;
+  $("#pp-monto").textContent = new Intl.NumberFormat("es-CO").format(Number(plan.precio)) + " COP";
+  $("#pp-llave").value = "Cargando…";
+  mostrarVista("view-pago-previo");
+  $(".stepper").style.visibility = "hidden";
+  cargarLlavePago().then(llave => { $("#pp-llave").value = llave || "No configurada — escríbenos por WhatsApp"; });
+}
+function irAExitoPagoPendiente({ nombre, plan, ok }) {
+  const primerNombre = (nombre || "").split(" ")[0] || "Miembro";
+  $("#exito-eyebrow").textContent = "Cuenta creada";
+  $("#exito-nombre").textContent = `¡Bienvenido al club, ${primerNombre}!`;
+  $("#exito-msg").innerHTML = ok
+    ? `Ya puedes usar tu plan <b>Gratis</b> mientras confirmamos tu pago de la membresía <b>${plan}</b>. En cuanto lo aprobemos, tu plan se activa solo y te avisamos por WhatsApp.`
+    : `Tu cuenta ya quedó activa en el plan <b>Gratis</b>. Tuvimos un problema guardando tu comprobante de la membresía <b>${plan}</b> — escríbenos por WhatsApp para completarlo y activarla.`;
+  const cta = $("#exito-cta");
+  if (cta) { cta.setAttribute("href", "Perfil.html?bienvenida=1"); cta.innerHTML = `Ir a mi perfil <span class="ar">&rarr;</span>`; }
+  $(".stepper").style.visibility = "hidden";
+  const wa = $("#exito-social"); if (wa) wa.hidden = true;
+  mostrarVista("view-exito");
+  if (window.lucide) lucide.createIcons();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 /* ---------- ARQUETIPOS (número de misión) ---------- */
 const ARQUETIPOS = {
   1:  { nombre: "El Líder",            tono: "directo y motivador" },
@@ -86,6 +127,8 @@ function resetRoles() {
   const roles = $("#reg-roles"), wrap = $("#reg-form-wrap");
   if (roles) roles.hidden = false;
   if (wrap) wrap.hidden = true;
+  const aviso = $("#reg-pago-aviso");
+  if (aviso) aviso.hidden = true;
 }
 function elegirRol(rol) {
   localStorage.setItem("ecdlg_rol", rol);
@@ -218,18 +261,35 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (planElegido) localStorage.setItem("ecdlg_plan", planElegido);
   const refId = params.get("ref");
   if (refId) localStorage.setItem("ecdlg_ref", refId);
+
+  // "Pagar primero" -- solo si comprar=1 Y el plan es uno pagado real
+  // (basica/premium) con precio configurado. Un "?plan=" suelto, sin
+  // comprar=1, sigue cayendo en el flujo de siempre (solo guarda
+  // ecdlg_plan para que Planes.html lo use después de registrarse).
+  if (params.get("comprar") === "1" && planElegido) {
+    const fila = await cargarPlanPago(planElegido);
+    if (fila && ["basica", "premium"].includes(fila.slug) && Number(fila.precio) > 0) {
+      pagoPrevioState = fila;
+    }
+  }
+
   // Ocultar tabs según el modo de entrada
   const modo = params.get("modo");
   const tabInicial = (params.get("tab") === "login" || modo === "login") ? "login" : "registro";
-  setTab(tabInicial);
-  if (modo === "registro" || modo === "login") {
-    const tabs = $("#auth-tabs");
-    if (tabs) tabs.style.display = "none";
-  }
-  if (modo === "login") {
-    // Ocultar "¿No tienes cuenta? Regístrate gratis"
-    const switchLink = $("#view-login .auth-switch");
-    if (switchLink) switchLink.style.display = "none";
+
+  if (pagoPrevioState) {
+    mostrarPagoPrevio(pagoPrevioState);
+  } else {
+    setTab(tabInicial);
+    if (modo === "registro" || modo === "login") {
+      const tabs = $("#auth-tabs");
+      if (tabs) tabs.style.display = "none";
+    }
+    if (modo === "login") {
+      // Ocultar "¿No tienes cuenta? Regístrate gratis"
+      const switchLink = $("#view-login .auth-switch");
+      if (switchLink) switchLink.style.display = "none";
+    }
   }
 
   // Tabs
@@ -239,6 +299,41 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Selección de rol
   $$("[data-role]").forEach(b => b.addEventListener("click", () => elegirRol(b.dataset.role)));
   $("#reg-back")?.addEventListener("click", resetRoles);
+
+  // Pantalla de pago previo
+  $("#pp-copiar")?.addEventListener("click", () => {
+    const btn = $("#pp-copiar");
+    navigator.clipboard.writeText($("#pp-llave")?.value || "").then(() => {
+      const orig = btn.textContent;
+      btn.textContent = "Copiada";
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    });
+  });
+  $("#form-pago-previo")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const file = $("#pp-comprobante")?.files?.[0];
+    if (!file) { alert("Sube el comprobante de pago"); return; }
+    pendingPago = {
+      plan: pagoPrevioState.slug,
+      precio: Number(pagoPrevioState.precio),
+      planLabel: pagoPrevioState.tag || pagoPrevioState.nombre || pagoPrevioState.slug,
+      file,
+    };
+    setTab("registro");
+    elegirRol("miembro"); // pagar ya implica "miembro" -- se salta el selector de rol
+    const aviso = $("#reg-pago-aviso");
+    if (aviso) {
+      aviso.hidden = false;
+      aviso.textContent = `Tu comprobante de ${pendingPago.planLabel} quedó listo — solo falta crear tu cuenta.`;
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  $("#pp-omitir")?.addEventListener("click", () => {
+    pendingPago = null;
+    setTab("registro");
+    elegirRol("miembro");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
 
   // Documentos de verificación del profesional
   $("#prof-docs-input")?.addEventListener("change", (e) => {
@@ -252,7 +347,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Link directo desde el footer ("¿Quieres ser aliado?" / "¿Quieres ser profesional?")
   // o desde "Únete gratis aquí" en la pantalla de éxito de aliado/profesional.
   const rolParam = params.get("rol");
-  if (tabInicial === "registro" && ["aliado", "profesional", "miembro"].includes(rolParam)) {
+  if (!pagoPrevioState && tabInicial === "registro" && ["aliado", "profesional", "miembro"].includes(rolParam)) {
     elegirRol(rolParam);
   }
 
@@ -569,6 +664,39 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    // "Pagar primero" -- recién ahora existe un miembro_id real, así que
+    // recién ahora se sube el comprobante retenido en memoria y se crea la
+    // solicitud (mismo patrón que checkout.js). Un fallo aquí NO bloquea la
+    // cuenta ya creada ni la pantalla de éxito -- mismo criterio que el
+    // "cuenta se creó pero hubo un error..." de arriba.
+    let pagoPendienteOk = false;
+    const pagoPendiente = pendingPago;
+    if (pagoPendiente) {
+      try {
+        const ext = pagoPendiente.file.name.split(".").pop();
+        const path = `comprobante-membresia-${data.user.id}-${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("contenido").upload(path, pagoPendiente.file, { upsert: true });
+        if (upErr) throw upErr;
+        const comprobante_url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+        const { error: solErr } = await supabase.from("solicitudes_membresia").insert({
+          miembro_id: data.user.id,
+          plan: pagoPendiente.plan,
+          monto: pagoPendiente.precio,
+          comprobante_url,
+        });
+        if (solErr) throw solErr;
+        pagoPendienteOk = true;
+        pendingPago = null;
+        fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ to: await numeroAdmin(), body: `💳 Nueva solicitud de membresía ${pagoPendiente.planLabel} por ${new Intl.NumberFormat("es-CO").format(pagoPendiente.precio)} COP (registro nuevo). Revísala en Admin → Ventas.` }),
+        }).catch(() => {});
+      } catch (e) {
+        console.error("Error guardando el pago pendiente:", e);
+      }
+    }
+
     // Mensaje de bienvenida por WhatsApp — el registro activa Gratis de una
     // vez, así que va directo el mensaje con sus beneficios reales (no el
     // genérico). Con keepalive: sin esto, el location.href de abajo navega
@@ -576,7 +704,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     // petición — el mensaje nunca llegaba.
     if (waDigits) {
       const primerNombre = nombre.split(" ")[0];
-      const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nCon tu plan Gratis ya tienes:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).\n🛍️ Acceso ilimitado a la Tienda del Club.\n\nA continuación te invitamos a rellenar el siguiente formulario para validar tu membresía gratuita:\nhttps://elclubdelagente.com/Bienvenida.html?id=${data.user.id}\n\nSi quieres acceder a promociones, sorteos, un agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿`;
+      let msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nCon tu plan Gratis ya tienes:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).\n🛍️ Acceso ilimitado a la Tienda del Club.\n\nA continuación te invitamos a rellenar el siguiente formulario para validar tu membresía gratuita:\nhttps://elclubdelagente.com/Bienvenida.html?id=${data.user.id}\n\nSi quieres acceder a promociones, sorteos, un agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿`;
+      if (pagoPendiente) {
+        msgBienvenida += pagoPendienteOk
+          ? `\n\n💳 Recibimos tu comprobante de pago de la membresía ${pagoPendiente.planLabel}. En cuanto lo confirmemos, tu plan se activa automáticamente y te avisamos por aquí.`
+          : `\n\n⚠️ Tuvimos un problema guardando tu comprobante de pago de la membresía ${pagoPendiente.planLabel}. Escríbenos por este WhatsApp y te ayudamos a completarlo.`;
+      }
       fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -585,7 +718,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       }).catch(() => {});
     }
 
-    location.href = "Perfil.html?bienvenida=1";
+    if (pagoPendiente) {
+      irAExitoPagoPendiente({ nombre, plan: pagoPendiente.planLabel, ok: pagoPendienteOk });
+    } else {
+      location.href = "Perfil.html?bienvenida=1";
+    }
   });
 
   // ---------- OLVIDÉ MI CONTRASEÑA ----------

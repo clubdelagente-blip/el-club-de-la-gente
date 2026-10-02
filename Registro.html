@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=34">
+  <link rel="stylesheet" href="styles.css?v=35">
   <link rel="stylesheet" href="auth.css?v=3">
 </head>
 <body class="auth-body">
@@ -157,6 +157,7 @@
           <!-- Paso 2: formulario según rol -->
           <div id="reg-form-wrap" hidden>
             <button class="auth-role-back" id="reg-back"><i data-lucide="arrow-left"></i> Cambiar</button>
+            <p id="reg-pago-aviso" hidden style="background:#eef7f1;border-radius:8px;padding:10px 14px;margin-bottom:14px;color:#095544;font-weight:600;font-size:13px"></p>
             <span class="auth-eyebrow" id="reg-eyebrow">Crea tu cuenta · Miembro</span>
             <h1 class="auth-title" id="reg-title">Únete al club.</h1>
 
@@ -323,6 +324,31 @@
           </form>
         </section>
 
+        <!-- VISTA PAGO PREVIO (solo para visitantes nuevos que llegan con ?comprar=1) -->
+        <section class="auth-view" id="view-pago-previo" data-screen-label="Pago previo">
+          <span class="auth-eyebrow">Activa tu membresía</span>
+          <h1 class="auth-title" id="pp-title">Paga tu membresía.</h1>
+          <p class="auth-desc" id="pp-sub">Vas a pagar tu membresía.</p>
+
+          <form class="auth-form" id="form-pago-previo">
+            <div style="background:#fff;border:1px solid #ebebeb;border-radius:14px;padding:20px;margin-bottom:16px">
+              <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Llave de pago del Club</label>
+              <div style="display:flex;gap:8px">
+                <input id="pp-llave" readonly style="flex:1;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px" value="Cargando…">
+                <button type="button" class="btn" id="pp-copiar" style="padding:0 16px;white-space:nowrap">Copiar</button>
+              </div>
+              <div style="text-align:center;font-weight:800;letter-spacing:.02em;font-size:13px;border:1px solid #ebebeb;border-radius:8px;padding:6px;margin-top:10px">Bre-B</div>
+              <p style="font-size:12px;color:#777;margin-top:10px">Transfiere <b id="pp-monto"></b> a esa llave antes de continuar.</p>
+            </div>
+            <div style="background:#fff;border:1px solid #ebebeb;border-radius:14px;padding:20px;margin-bottom:16px">
+              <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Comprobante de pago *</label>
+              <input type="file" id="pp-comprobante" accept="image/*">
+            </div>
+            <button class="btn btn--primario btn--bloque" type="submit">Continuar al registro <span class="ar">&rarr;</span></button>
+          </form>
+          <button type="button" id="pp-omitir" style="display:block;margin:14px auto 0;background:none;border:none;color:#777;font-size:13px;cursor:pointer;text-decoration:underline">Prefiero crear mi cuenta primero y pagar después</button>
+        </section>
+
         <!-- VISTA ÉXITO -->
         <section class="auth-view success" id="view-exito" data-screen-label="Éxito">
           <div class="success__check">
@@ -363,7 +389,7 @@
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
-  <script type="module" src="auth.js?v=41"></script>
+  <script type="module" src="auth.js?v=42"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
