@@ -74,6 +74,8 @@ async function cargarAliadosPub() {
 }
 
 /* ---------- Planes (precios y beneficios editables desde Admin) ---------- */
+let PLANES_LANDING = {}; // slug -> fila de "planes", para poblar el modal de ClubCard
+
 function tarjetaPlanHtml(p, i) {
   const esPremium = p.slug === "premium";
   const esVitalicia = p.slug === "vitalicia";
@@ -93,27 +95,77 @@ function tarjetaPlanHtml(p, i) {
       <ul class="plan__beneficios">
         ${(p.beneficios || []).map(b => `<li><span class="dot"></span>${b}</li>`).join("")}
       </ul>
-      <button type="button" class="plan__cc-toggle" data-cc-toggle="${i}">Ver mi ClubCard ${ic('chevron-down')}</button>
-      <div class="ccv2 ${claseSlug.replace('plan--', 'ccv2--')}" id="plan-cc-${i}" hidden>
-        <div class="ccv2-card">
-          <img src="marco-card.png" class="ccv2-frame-img" alt="">
-          <div class="ccv2-front__in">
-            <span class="ccv2-brand">CLUBCARD</span>
-            <div class="ccv2-mid"><img src="logo-club.png" class="ccv2-logo-img" alt=""></div>
-            <div class="ccv2-footer">
-              <div class="ccv2-name">TU NOMBRE AQUÍ</div>
-              <div class="ccv2-codigo"><span class="ccv2-codigo__lbl">Código:</span><span class="ccv2-codigo__val">300 000 0000</span></div>
+      <button type="button" class="plan__cc-toggle" data-cc-modal="${p.slug}">Ver mi ClubCard ${ic('credit-card')}</button>
+    </article>`;
+}
+
+/* ---------- Modal compartido de ClubCard (una sola tarjeta, misma altura siempre) ---------- */
+function crearModalClubCard() {
+  if (document.getElementById('cc-modal-ov')) return;
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="cc-modal-ov" id="cc-modal-ov">
+      <div class="cc-modal">
+        <button type="button" class="cc-modal__close" id="cc-modal-close">${ic('x')}</button>
+        <div class="ccv2" id="cc-modal-ccv2">
+          <div class="ccv2__flip" id="cc-modal-flip">
+            <div class="ccv2-card ccv2-card--front">
+              <img src="marco-card.png" class="ccv2-frame-img" alt="">
+              <div class="ccv2-front__in">
+                <span class="ccv2-brand">CLUBCARD</span>
+                <div class="ccv2-mid"><img src="logo-club.png" class="ccv2-logo-img" alt=""></div>
+                <div class="ccv2-footer">
+                  <div class="ccv2-name">TU NOMBRE AQUÍ</div>
+                  <div class="ccv2-codigo"><span class="ccv2-codigo__lbl">Código:</span><span class="ccv2-codigo__val">300 000 0000</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="ccv2-card ccv2-card--back">
+              <img src="marco-ornamento.png" class="ccv2-orn-img" alt="">
+              <div class="ccv2-back__in">
+                <div class="ccv2-back__qr">${ic('qr-code')}</div>
+                <p class="ccv2-back__txt">Con este código QR exclusivo puedes acceder a todas las promociones que tenemos para ti y más sorpresas.</p>
+              </div>
             </div>
           </div>
         </div>
-        <p>Vista previa — tu ClubCard real tendrá tu nombre y tu código.</p>
+        <p class="cc-modal__hint">Toca la tarjeta para voltearla</p>
+        <div class="cc-modal__urgencia" id="cc-modal-urgencia" hidden>🚀 Últimos días de promo por lanzamiento</div>
+        <a class="btn btn--primario" id="cc-modal-cta" href="#" style="width:100%;text-align:center">Comprar</a>
       </div>
-      ${p.slug === 'basica' || p.slug === 'premium' ? `
-      <div class="plan__urgencia">⏰ Últimas unidades</div>
-      <a class="btn btn--primario" href="Registro.html?plan=${p.slug}&comprar=1">Comprar</a>` : p.slug === 'gratis' ? `
-      <a class="btn btn--secundario" href="Registro.html?modo=registro">Unirme gratis</a>` : ""}
-    </article>`;
+    </div>`);
+  if (window.lucide) lucide.createIcons();
+
+  const ov = document.getElementById('cc-modal-ov');
+  const cerrar = () => ov.classList.remove('is-open');
+  document.getElementById('cc-modal-close')?.addEventListener('click', cerrar);
+  ov.addEventListener('click', (e) => { if (e.target === ov) cerrar(); });
+  document.getElementById('cc-modal-flip')?.addEventListener('click', () => {
+    document.getElementById('cc-modal-flip').classList.toggle('is-back');
+  });
 }
+
+function abrirModalClubCard(slug) {
+  const p = PLANES_LANDING[slug];
+  if (!p) return;
+  crearModalClubCard();
+
+  const ccv2 = document.getElementById('cc-modal-ccv2');
+  ccv2.className = 'ccv2 ccv2--' + slug;
+  document.getElementById('cc-modal-flip')?.classList.remove('is-back');
+
+  const esPago = slug === 'basica' || slug === 'premium';
+  const urgencia = document.getElementById('cc-modal-urgencia');
+  if (urgencia) urgencia.hidden = !esPago;
+
+  const cta = document.getElementById('cc-modal-cta');
+  if (cta) {
+    cta.textContent = esPago ? 'Comprar' : 'Unirme gratis';
+    cta.href = esPago ? `Registro.html?plan=${slug}&comprar=1` : 'Registro.html?modo=registro';
+  }
+
+  document.getElementById('cc-modal-ov')?.classList.add('is-open');
+}
+
 async function cargarPlanesPub() {
   const { data, error } = await supabase.from('planes').select('*').order('orden');
   if (error || !data?.length) return; // sin datos: deja el contenido estático de respaldo tal cual
@@ -121,19 +173,13 @@ async function cargarPlanesPub() {
   const cont = document.querySelector('.planes');
   if (!cont) return;
   // La vitalicia no se "elige" con clic — se gana con 5 referidos, igual que en Planes.html
-  cont.innerHTML = data.filter(p => p.slug !== 'vitalicia').map(tarjetaPlanHtml).join('');
+  const planesVisibles = data.filter(p => p.slug !== 'vitalicia');
+  PLANES_LANDING = Object.fromEntries(data.map(p => [p.slug, p]));
+  cont.innerHTML = planesVisibles.map(tarjetaPlanHtml).join('');
   if (window.lucide) lucide.createIcons();
 
-  cont.querySelectorAll('[data-cc-toggle]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const prev = document.getElementById('plan-cc-' + btn.dataset.ccToggle);
-      if (!prev) return;
-      const abrir = prev.hidden;
-      prev.hidden = !abrir;
-      btn.classList.toggle('is-open', abrir);
-      btn.innerHTML = (abrir ? 'Ocultar ClubCard ' : 'Ver mi ClubCard ') + ic('chevron-down');
-      if (window.lucide) lucide.createIcons();
-    });
+  cont.querySelectorAll('[data-cc-modal]').forEach(btn => {
+    btn.addEventListener('click', () => abrirModalClubCard(btn.dataset.ccModal));
   });
 }
 
