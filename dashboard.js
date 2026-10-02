@@ -81,6 +81,75 @@ function iniciales(nombre) {
 const PLAN_LABEL = { sin_plan: "Sin activar", gratis: "Gratis", basica: "Básica", premium: "Premium", vitalicia: "Vitalicia" };
 const LIMITE_DESCUENTOS = { gratis: 0, basica: 2, premium: Infinity, vitalicia: Infinity };
 
+// Pinta en pantalla el plan activo (ClubCard, tarjeta "Plan activo"/"subir de
+// plan", fecha de renovación) -- se usa tanto en la carga inicial como desde
+// la suscripción en tiempo real, para que al aprobar un pago el plan se vea
+// activo sin que la persona tenga que cerrar y volver a entrar.
+function aplicarPlanUI(plan, fechaVencimiento) {
+  if (plan) {
+    localStorage.setItem("ecdlg_plan", plan);
+    const sbPlanEl = document.getElementById("sb-plan-name"); if (sbPlanEl) sbPlanEl.textContent = PLAN_LABEL[plan] || plan;
+
+    // Gratis/básica: en vez de la tarjeta "Plan activo", se muestra una
+    // invitación a subir de plan que lleva directo a pagar.
+    const esPlanTope = plan === "premium" || plan === "vitalicia";
+    const elActivo = document.getElementById("sb-plan-activo");
+    const elUpgrade = document.getElementById("sb-plan-upgrade");
+    if (elActivo) elActivo.style.display = esPlanTope ? "" : "none";
+    if (elUpgrade) {
+      elUpgrade.style.display = esPlanTope ? "none" : "block";
+      const nombreEl = document.getElementById("sb-plan-upgrade-name");
+      if (nombreEl) nombreEl.textContent = PLAN_LABEL[plan] || plan;
+    }
+    // Re-sincroniza el tema de la ClubCard con el plan real de Supabase --
+    // render() ya la pintó antes con el plan en caché (o "premium" como
+    // valor por defecto en el primerísimo login, antes de tener caché).
+    document.querySelectorAll(".ccv2").forEach(el => {
+      el.classList.toggle("ccv2--gratis", plan === "gratis");
+      el.classList.toggle("ccv2--premium", plan === "premium");
+      el.classList.toggle("ccv2--vitalicia", plan === "vitalicia");
+      el.classList.toggle("ccv2--basica", plan === "basica");
+    });
+  }
+
+  // Fecha de renovación real (viene del pago aprobado por el admin, no inventada)
+  const sbRenuevaEl = document.querySelector(".sb-plan__renueva");
+  const ccRenuevaEl = document.querySelector(".cc-card-renueva");
+  if (plan === "vitalicia") {
+    if (sbRenuevaEl) sbRenuevaEl.textContent = "Vitalicia — no vence";
+    if (ccRenuevaEl) ccRenuevaEl.textContent = "Vitalicia";
+  } else if (plan === "gratis") {
+    if (sbRenuevaEl) sbRenuevaEl.textContent = "Plan gratuito";
+    if (ccRenuevaEl) ccRenuevaEl.textContent = "—";
+  } else if (fechaVencimiento && (plan === "basica" || plan === "premium")) {
+    const dVenc = new Date(fechaVencimiento + "T00:00:00");
+    if (sbRenuevaEl) sbRenuevaEl.textContent = "Renueva el " + dVenc.toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" });
+    if (ccRenuevaEl) ccRenuevaEl.textContent = dVenc.toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" });
+  } else {
+    if (sbRenuevaEl) sbRenuevaEl.textContent = "Sin membresía activa";
+    if (ccRenuevaEl) ccRenuevaEl.textContent = "—";
+  }
+}
+
+// Escucha en vivo el cambio de plan de ESTE miembro (postgres_changes de
+// Supabase Realtime, mismo mecanismo que ya usa Admin para la bandeja de
+// Mi Agente) -- así, cuando el admin aprueba una solicitud de membresía
+// mientras la persona sigue con el Perfil abierto, el plan se actualiza
+// solo, sin recargar ni volver a entrar.
+let _planRealtimeCh = null;
+function suscribirPlanRealtime(userId) {
+  if (_planRealtimeCh) return;
+  _planRealtimeCh = supabase.channel('perfil-plan-' + userId)
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'perfiles', filter: `id=eq.${userId}` }, (payload) => {
+      const nuevo = payload.new;
+      if (!nuevo) return;
+      const subioDePlan = nuevo.plan && nuevo.plan !== payload.old?.plan;
+      aplicarPlanUI(nuevo.plan, nuevo.fecha_vencimiento);
+      if (subioDePlan) toast(`¡Tu membresía ${PLAN_LABEL[nuevo.plan] || nuevo.plan} ya está activa! 🎉`);
+    })
+    .subscribe();
+}
+
 /* ---------- RENDER ---------- */
 function render() {
   const u = leerPerfil();
@@ -2307,6 +2376,7 @@ document.addEventListener("DOMContentLoaded", () => {
     _miembroId = userId;
     generarQR(userId);
     cargarNotificacionesMiembro(userId);
+    suscribirPlanRealtime(userId);
 
     // Si viene de elegir un plan sin pago (gratis), se activa directo aquí.
     // Los planes de pago (básica/premium) NO se activan desde el navegador —
@@ -2388,49 +2458,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // en la página, así que nunca hubo un redirect con "nuevo=1" que avisara).
     const planAnterior = localStorage.getItem("ecdlg_plan");
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
-    if (plan) {
-      localStorage.setItem("ecdlg_plan", plan);
-      const sbPlanEl = document.getElementById("sb-plan-name"); if (sbPlanEl) sbPlanEl.textContent = PLAN_LABEL[plan] || plan;
-
-      // Gratis/básica: en vez de la tarjeta "Plan activo", se muestra una
-      // invitación a subir de plan que lleva directo a pagar.
-      const esPlanTope = plan === "premium" || plan === "vitalicia";
-      const elActivo = document.getElementById("sb-plan-activo");
-      const elUpgrade = document.getElementById("sb-plan-upgrade");
-      if (elActivo) elActivo.style.display = esPlanTope ? "" : "none";
-      if (elUpgrade) {
-        elUpgrade.style.display = esPlanTope ? "none" : "block";
-        const nombreEl = document.getElementById("sb-plan-upgrade-name");
-        if (nombreEl) nombreEl.textContent = PLAN_LABEL[plan] || plan;
-      }
-      // Re-sincroniza el tema de la ClubCard con el plan real de Supabase --
-      // render() ya la pintó antes con el plan en caché (o "premium" como
-      // valor por defecto en el primerísimo login, antes de tener caché).
-      $$(".ccv2").forEach(el => {
-        el.classList.toggle("ccv2--gratis", plan === "gratis");
-        el.classList.toggle("ccv2--premium", plan === "premium");
-        el.classList.toggle("ccv2--vitalicia", plan === "vitalicia");
-        el.classList.toggle("ccv2--basica", plan === "basica");
-      });
-    }
-
-    // Fecha de renovación real (viene del pago aprobado por el admin, no inventada)
-    const sbRenuevaEl = document.querySelector(".sb-plan__renueva");
-    const ccRenuevaEl = document.querySelector(".cc-card-renueva");
-    if (plan === "vitalicia") {
-      if (sbRenuevaEl) sbRenuevaEl.textContent = "Vitalicia — no vence";
-      if (ccRenuevaEl) ccRenuevaEl.textContent = "Vitalicia";
-    } else if (plan === "gratis") {
-      if (sbRenuevaEl) sbRenuevaEl.textContent = "Plan gratuito";
-      if (ccRenuevaEl) ccRenuevaEl.textContent = "—";
-    } else if (perfData?.fecha_vencimiento && (plan === "basica" || plan === "premium")) {
-      const dVenc = new Date(perfData.fecha_vencimiento + "T00:00:00");
-      if (sbRenuevaEl) sbRenuevaEl.textContent = "Renueva el " + dVenc.toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" });
-      if (ccRenuevaEl) ccRenuevaEl.textContent = dVenc.toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" });
-    } else {
-      if (sbRenuevaEl) sbRenuevaEl.textContent = "Sin membresía activa";
-      if (ccRenuevaEl) ccRenuevaEl.textContent = "—";
-    }
+    aplicarPlanUI(plan, perfData?.fecha_vencimiento);
 
     // Categorías de interés reales (nada de datos de ejemplo)
     const catsEl = document.getElementById("perfil-cats");
