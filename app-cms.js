@@ -82,7 +82,7 @@ function tarjetaPlanHtml(p, i) {
   const claseSlug = esPremium ? "plan--premium" : esVitalicia ? "plan--vitalicia" : p.slug === "gratis" ? "plan--gratis" : "plan--basica";
 
   return `
-    <article class="plan ${claseSlug} fade-up" style="--delay:${i * 60}ms">
+    <article class="plan ${claseSlug} fade-up" data-cc-modal="${p.slug}" style="--delay:${i * 60}ms;cursor:pointer">
       ${p.recomendado ? `<span class="plan__badge-rec" id="badge-rec">Recomendado</span>` : ""}
       <span class="plan__tag">${p.tag}</span>
       ${p.ribbon_texto ? `<span style="display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:#095544;color:#fff;padding:7px 14px;border-radius:100px;margin-top:12px;">${p.ribbon_texto}</span>` : ""}
@@ -95,7 +95,7 @@ function tarjetaPlanHtml(p, i) {
       <ul class="plan__beneficios">
         ${(p.beneficios || []).map(b => `<li><span class="dot"></span>${b}</li>`).join("")}
       </ul>
-      <button type="button" class="plan__cc-toggle" data-cc-modal="${p.slug}">Ver mi ClubCard ${ic('credit-card')}</button>
+      <button type="button" class="plan__cc-toggle">Ver mi ClubCard ${ic('credit-card')}</button>
     </article>`;
 }
 
@@ -178,8 +178,8 @@ async function cargarPlanesPub() {
   cont.innerHTML = planesVisibles.map(tarjetaPlanHtml).join('');
   if (window.lucide) lucide.createIcons();
 
-  cont.querySelectorAll('[data-cc-modal]').forEach(btn => {
-    btn.addEventListener('click', () => abrirModalClubCard(btn.dataset.ccModal));
+  cont.querySelectorAll('[data-cc-modal]').forEach(card => {
+    card.addEventListener('click', () => abrirModalClubCard(card.dataset.ccModal));
   });
 }
 
