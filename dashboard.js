@@ -2671,7 +2671,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (whatsapp) updates.whatsapp = whatsapp;
         if (categoriasParaEspejar) updates.categorias_interes = categoriasParaEspejar;
 
-        await supabase.from("perfiles").update(updates).eq("id", session.user.id);
+        const { error: segUpdateError } = await supabase.from("perfiles").update(updates).eq("id", session.user.id);
+        if (segUpdateError) {
+          // No lo demos por guardado si falló -- si no, la próxima sesión
+          // sigue viendo "sin respuestas" (reaparece el cuestionario) aunque
+          // la persona ya lo haya llenado, sin que nadie se entere del error.
+          console.error("Error guardando segmentación:", segUpdateError);
+          toast("No pudimos guardar tus respuestas. Intenta de nuevo en un momento.");
+          return;
+        }
         try { localStorage.removeItem("ecdlg_seg_borrador"); } catch {}
 
         const perfil = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
