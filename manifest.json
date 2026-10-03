@@ -10,6 +10,6 @@
   "theme_color": "#008000",
   "lang": "es-CO",
   "icons": [
-    { "src": "icon-club.png", "sizes": "4500x4500", "type": "image/png", "purpose": "any" }
+    { "src": "icon-club.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
   ]
 }
