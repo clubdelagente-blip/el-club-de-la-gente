@@ -933,11 +933,11 @@
         <section class="panel-view" data-panel="config" data-screen-label="Configuración">
           <div class="dash-greet">
             <h1>Configuración</h1>
-            <p>Administra tu foto de perfil, tu usuario y la seguridad de tu cuenta.</p>
+            <p>Administra tu foto de perfil.</p>
           </div>
 
           <div class="config-grid">
-            <div class="card">
+            <div class="card config-grid__wide">
               <div class="card__head"><span class="card__title">Foto de perfil</span></div>
               <div class="cfg-foto">
                 <div class="cfg-foto__avatar" id="cfg-avatar" data-ini>CP</div>
@@ -948,26 +948,6 @@
                   <p class="cfg-hint">JPG o PNG, máximo 5 MB. Se mostrará en tu perfil y tu ClubCard.</p>
                 </div>
               </div>
-            </div>
-
-            <div class="card">
-              <form id="form-usuario">
-                <div class="card__head"><span class="card__title">Cambiar usuario</span></div>
-                <div class="campo"><label for="cfg-usuario">Nombre de usuario</label><input type="text" id="cfg-usuario" placeholder="Elige tu nombre de usuario" autocomplete="username"></div>
-                <button class="btn btn--primario" type="submit" style="margin-top:16px">Guardar usuario</button>
-              </form>
-            </div>
-
-            <div class="card config-grid__wide">
-              <form id="form-pass">
-                <div class="card__head"><span class="card__title">Cambiar contraseña</span></div>
-                <div class="cfg-pass-grid">
-                  <div class="campo"><label for="cfg-pass-cur">Contraseña actual</label><input type="password" id="cfg-pass-cur" placeholder="••••••••" autocomplete="current-password"></div>
-                  <div class="campo"><label for="cfg-pass-new">Nueva contraseña</label><input type="password" id="cfg-pass-new" placeholder="Mínimo 8 caracteres" autocomplete="new-password"></div>
-                  <div class="campo"><label for="cfg-pass-conf">Confirmar contraseña</label><input type="password" id="cfg-pass-conf" placeholder="Repite la nueva" autocomplete="new-password"></div>
-                </div>
-                <button class="btn btn--primario" type="submit" style="margin-top:16px">Actualizar contraseña</button>
-              </form>
             </div>
           </div>
         </section>
@@ -1204,7 +1184,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=2"></script>
-  <script type="module" src="dashboard.js?v=124"></script>
+  <script type="module" src="dashboard.js?v=125"></script>
   <script type="module" src="agente.js?v=1"></script>
 
   <template id="__bundler_thumbnail">

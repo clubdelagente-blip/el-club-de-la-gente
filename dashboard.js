@@ -2730,21 +2730,6 @@ document.addEventListener("DOMContentLoaded", () => {
     toast("Foto de perfil actualizada");
   });
   $("#cfg-foto-quitar")?.addEventListener("click", () => { quitarFoto(); toast("Foto de perfil eliminada"); });
-  $("#form-usuario")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const v = $("#cfg-usuario").value.trim();
-    if (!v) return;
-    toast("Usuario actualizado a @" + v);
-  });
-  $("#form-pass")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const nueva = $("#cfg-pass-new").value, conf = $("#cfg-pass-conf").value;
-    if (nueva.length < 8) { toast("La contraseña debe tener al menos 8 caracteres"); return; }
-    if (nueva !== conf) { toast("Las contraseñas no coinciden"); return; }
-    e.target.reset();
-    toast("Contraseña actualizada correctamente");
-  });
-
   // Cerrar sesión → inicio
   $("#sb-logout")?.addEventListener("click", () => { location.href = "El Club de la Gente.html"; });
 
