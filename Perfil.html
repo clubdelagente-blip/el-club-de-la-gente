@@ -933,7 +933,7 @@
         <section class="panel-view" data-panel="config" data-screen-label="Configuración">
           <div class="dash-greet">
             <h1>Configuración</h1>
-            <p>Administra tu foto de perfil.</p>
+            <p>Administra tu foto de perfil y el WhatsApp con el que inicias sesión.</p>
           </div>
 
           <div class="config-grid">
@@ -946,6 +946,25 @@
                   <button class="btn btn--ghost-verde" id="cfg-foto-quitar" hidden>Quitar</button>
                   <input type="file" id="cfg-foto-input" accept="image/*" hidden>
                   <p class="cfg-hint">JPG o PNG, máximo 5 MB. Se mostrará en tu perfil y tu ClubCard.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card config-grid__wide">
+              <div class="card__head"><span class="card__title">Cambiar WhatsApp</span></div>
+              <p class="cfg-hint" style="margin-bottom:16px">Es el número con el que inicias sesión. El actual es <b id="cfg-wa-actual">—</b></p>
+
+              <div id="cfg-wa-paso1">
+                <div class="campo"><label for="cfg-wa-nuevo">Nuevo número de WhatsApp</label><input type="tel" id="cfg-wa-nuevo" placeholder="300 000 0000" inputmode="numeric" maxlength="13"></div>
+                <button class="btn btn--primario" type="button" id="cfg-wa-enviar" style="margin-top:16px">Enviar código de confirmación</button>
+              </div>
+
+              <div id="cfg-wa-paso2" hidden>
+                <p class="cfg-hint" id="cfg-wa-msg" style="margin-bottom:14px"></p>
+                <div class="campo"><label for="cfg-wa-otp">Código de confirmación</label><input type="text" id="cfg-wa-otp" placeholder="000000" maxlength="6" inputmode="numeric" style="letter-spacing:.2em;text-align:center;font-weight:600"></div>
+                <div style="display:flex;gap:10px;margin-top:16px">
+                  <button class="btn btn--primario" type="button" id="cfg-wa-confirmar">Confirmar</button>
+                  <button class="btn btn--secundario" type="button" id="cfg-wa-cancelar">Cancelar</button>
                 </div>
               </div>
             </div>
@@ -1184,7 +1203,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=2"></script>
-  <script type="module" src="dashboard.js?v=125"></script>
+  <script type="module" src="dashboard.js?v=126"></script>
   <script type="module" src="agente.js?v=1"></script>
 
   <template id="__bundler_thumbnail">

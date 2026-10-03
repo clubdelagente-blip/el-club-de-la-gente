@@ -2542,6 +2542,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     _respuestasSegPrevias = perfData?.respuestas_segmentacion || {};
     _whatsappPrevio = perfData?.whatsapp || "";
+    const cfgWaActualEl = document.getElementById("cfg-wa-actual");
+    if (cfgWaActualEl) cfgWaActualEl.textContent = _whatsappPrevio || "—";
 
     // Plan Gratis recién activado: mandar de una vez sus beneficios por
     // WhatsApp (mismo mensaje que usa el Agente cuando alguien en Gratis le
@@ -2730,6 +2732,76 @@ document.addEventListener("DOMContentLoaded", () => {
     toast("Foto de perfil actualizada");
   });
   $("#cfg-foto-quitar")?.addEventListener("click", () => { quitarFoto(); toast("Foto de perfil eliminada"); });
+
+  // Cambiar WhatsApp -- el número es la identidad de acceso (login por OTP),
+  // así que no basta con guardarlo en "perfiles": hace falta verificar que
+  // sea suyo (OTP al número nuevo) y una función con permisos de admin que
+  // actualice a la vez el perfil y el correo interno real en auth.users.
+  let _cfgWaPendiente = null;
+  $("#cfg-wa-nuevo")?.addEventListener("input", (e) => {
+    const limpio = e.target.value.replace(/\D/g, "");
+    if (limpio !== e.target.value) e.target.value = limpio;
+  });
+  $("#cfg-wa-enviar")?.addEventListener("click", async () => {
+    const btn = $("#cfg-wa-enviar");
+    let digits = ($("#cfg-wa-nuevo")?.value || "").replace(/\D/g, "");
+    while (digits.length > 10 && digits.startsWith("57")) digits = digits.slice(2);
+    if (!/^3\d{9}$/.test(digits)) { toast("Ingresa un número de WhatsApp colombiano válido (10 dígitos, empieza en 3)"); return; }
+    btn.disabled = true; btn.textContent = "Enviando…";
+    try {
+      const r = await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/cambiar-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "send", miembro_id: _miembroId, nuevo_whatsapp: digits }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(j.error || "No pudimos enviar el código."); btn.disabled = false; btn.textContent = "Enviar código de confirmación"; return; }
+      _cfgWaPendiente = digits;
+      $("#cfg-wa-msg").textContent = `Enviamos un código a tu nuevo WhatsApp (${digits}). Ingrésalo para confirmar.`;
+      $("#cfg-wa-paso1").hidden = true;
+      $("#cfg-wa-paso2").hidden = false;
+      setTimeout(() => $("#cfg-wa-otp")?.focus(), 50);
+    } catch (e) {
+      toast("Error de conexión. Intenta de nuevo.");
+    }
+    btn.disabled = false; btn.textContent = "Enviar código de confirmación";
+  });
+  $("#cfg-wa-confirmar")?.addEventListener("click", async () => {
+    const btn = $("#cfg-wa-confirmar");
+    const code = ($("#cfg-wa-otp")?.value || "").replace(/\D/g, "");
+    if (!/^\d{6}$/.test(code)) { toast("El código debe tener 6 dígitos"); return; }
+    btn.disabled = true; btn.textContent = "Confirmando…";
+    try {
+      const r = await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/cambiar-whatsapp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify", miembro_id: _miembroId, nuevo_whatsapp: _cfgWaPendiente, code }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(j.error || "No pudimos confirmar el código."); btn.disabled = false; btn.textContent = "Confirmar"; return; }
+      toast("¡WhatsApp actualizado! ✓");
+      const actualEl = $("#cfg-wa-actual"); if (actualEl) actualEl.textContent = _cfgWaPendiente;
+      $("#cfg-wa-paso2").hidden = true;
+      $("#cfg-wa-paso1").hidden = false;
+      $("#cfg-wa-nuevo").value = "";
+      $("#cfg-wa-otp").value = "";
+      const perfil = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
+      perfil.whatsapp = _cfgWaPendiente;
+      localStorage.setItem("ecdlg_perfil", JSON.stringify(perfil));
+      _whatsappPrevio = _cfgWaPendiente;
+      _cfgWaPendiente = null;
+    } catch (e) {
+      toast("Error de conexión. Intenta de nuevo.");
+    }
+    btn.disabled = false; btn.textContent = "Confirmar";
+  });
+  $("#cfg-wa-cancelar")?.addEventListener("click", () => {
+    $("#cfg-wa-paso2").hidden = true;
+    $("#cfg-wa-paso1").hidden = false;
+    $("#cfg-wa-otp").value = "";
+    _cfgWaPendiente = null;
+  });
+
   // Cerrar sesión → inicio
   $("#sb-logout")?.addEventListener("click", () => { location.href = "El Club de la Gente.html"; });
 
