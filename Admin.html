@@ -1233,7 +1233,20 @@ function bindFormAliado(){
       if(!nombre){toast('Agrega el nombre del responsable primero');return;}
       if(!waDigits){toast('Agrega el WhatsApp del aliado primero');return;}
       const email=waDigits+"@clubdelagente.app";
-      btn.disabled=true;btn.innerHTML=`${ic("loader")} Creando…`;if(window.lucide)lucide.createIcons();
+      btn.disabled=true;btn.innerHTML=`${ic("loader")} Guardando…`;if(window.lucide)lucide.createIcons();
+
+      // Si este aliado ya tiene cuenta (user_id), no hay que crear otra --
+      // signUp() con el mismo correo fallaría (o peor, quedaría en un estado
+      // raro) antes de llegar a corregir el nombre. Si ya existe, el botón
+      // solo actualiza el nombre/whatsapp del saludo, sin tocar su acceso.
+      const{data:aliadoActual}=await supabase.from('aliados').select('user_id').eq('id',aliadoId).maybeSingle();
+      if(aliadoActual?.user_id){
+        const{error:errUpd}=await supabase.from('perfiles').update({nombre,whatsapp:waDigits}).eq('id',aliadoActual.user_id);
+        btn.disabled=false;btn.innerHTML=`${ic("key")} Crear cuenta de acceso`;if(window.lucide)lucide.createIcons();
+        if(errUpd){toast('Error actualizando: '+errUpd.message);return;}
+        toast('Nombre del responsable actualizado ✓');
+        return;
+      }
 
       const password=Array.from(crypto.getRandomValues(new Uint8Array(6))).map(b=>b.toString(16).padStart(2,'0')).join('');
       const aislado=clienteAislado();
