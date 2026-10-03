@@ -1142,6 +1142,11 @@ function htmlFormAliado(a={}){
     <div class="ad-field"><label>Dirección</label><input id="fa-dir" type="text" value="${(a.direccion||'').replace(/"/g,'&quot;')}" placeholder="Calle, barrio"></div>
   </div>
   <div class="ad-field"><label>Link de Google Maps</label><input id="fa-maps" type="url" value="${(a.maps_url||'').replace(/"/g,'&quot;')}" placeholder="https://maps.app.goo.gl/..."></div>
+  <div class="ad-field"><label>Botón de contacto en su ficha</label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0"><input type="checkbox" id="fa-domicilio" style="width:auto" ${a.ofrece_domicilio?'checked':''}> Pide a domicilio (WhatsApp)</label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" id="fa-agenda" style="width:auto" ${a.ofrece_agenda?'checked':''}> Agendar cita (WhatsApp)</label>
+    <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Marca las que apliquen -- pueden ser las dos, una, o ninguna. Necesita WhatsApp cargado arriba.</span>
+  </div>
   <div class="ad-field"><label>Foto de portada <span style="font-weight:400;color:rgba(26,26,24,.4)">(logo, se ve en la tarjeta y como avatar)</span></label>
     ${a.imagen_url?`<img src="${a.imagen_url}" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;margin-bottom:10px">`:''}
     <input id="fa-img" type="file" accept="image/*"><input type="hidden" id="fa-img-url" value="${a.imagen_url||''}"></div>
@@ -1353,7 +1358,7 @@ function bindFormAliado(){
       let waAliado=($("#fa-wa")?.value||'').replace(/\D/g,'');
       while(waAliado.length>10&&waAliado.startsWith('57'))waAliado=waAliado.slice(2);
       let fotosCarrusel=[];try{fotosCarrusel=JSON.parse($("#fa-carrusel-urls")?.value||'[]');}catch(_){fotosCarrusel=[];}
-      const payload={nombre,nombre_responsable:$("#fa-responsable")?.value.trim()||null,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:waAliado||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fotos_carrusel:fotosCarrusel,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
+      const payload={nombre,nombre_responsable:$("#fa-responsable")?.value.trim()||null,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:waAliado||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,ofrece_domicilio:$("#fa-domicilio")?.checked||false,ofrece_agenda:$("#fa-agenda")?.checked||false,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fotos_carrusel:fotosCarrusel,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
       const id=btn.dataset.id;
       const{error}=id?await supabase.from('aliados').update(payload).eq('id',id):await supabase.from('aliados').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}

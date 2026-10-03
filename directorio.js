@@ -121,7 +121,7 @@ let query = "";
 async function cargarAliados() {
   // Nota: "codigo_aliado" NUNCA se pide acá a propósito — se valida server-side (RPC verificar_codigo_aliado)
   const { data } = await supabase.from("aliados")
-    .select("id, nombre, categoria, descuento, descripcion, whatsapp, direccion, maps_url, imagen_url, fotos_carrusel, destacado, planes_visibles")
+    .select("id, nombre, categoria, descuento, descripcion, whatsapp, direccion, maps_url, ofrece_domicilio, ofrece_agenda, imagen_url, fotos_carrusel, destacado, planes_visibles")
     .eq("activo", true).order("nombre");
   const todos = data || [];
   // Gratis ve el directorio completo como vitrina (marcado "bloqueado" el
@@ -351,10 +351,13 @@ function sheetAliado(a) {
       ${a.maps_url ? `<a href="${a.maps_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:8px 14px;background:${cc};color:#fff;border-radius:99px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap">${ic("navigation")}Ver en mapa</a>` : ''}
     </div>` : ''}
 
-    ${a.whatsapp ? `
-    <div class="sheet__sub">Pide a domicilio</div>
-    <a class="btn btn--primario btn--bloque" target="_blank" href="https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent('Hola, soy miembro de El Club de la Gente y quiero hacer un pedido en ' + (a.nombre || ''))}">${ICON_WA}Escribir por WhatsApp</a>
-    <p style="font-size:12px;color:#888;margin:10px 0 0;line-height:1.4">¿Pides a domicilio? Comparte con el negocio la clave dinámica que aparece al voltear tu ClubCard, para que pueda validar tu descuento sin que estés presencialmente.</p>
+    ${(a.whatsapp && (a.ofrece_domicilio || a.ofrece_agenda)) ? `
+    <div class="sheet__sub">Contacta al negocio</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${a.ofrece_domicilio ? `<a class="btn btn--primario btn--bloque" target="_blank" href="https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent('Hola, soy miembro de El Club de la Gente y quiero hacer un pedido en ' + (a.nombre || ''))}">${ICON_WA}Pedir a domicilio</a>` : ''}
+      ${a.ofrece_agenda ? `<a class="btn btn--primario btn--bloque" target="_blank" href="https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent('Hola, soy miembro de El Club de la Gente y quiero agendar una cita en ' + (a.nombre || ''))}">${ICON_WA}Agendar cita</a>` : ''}
+    </div>
+    ${a.ofrece_domicilio ? `<p style="font-size:12px;color:#888;margin:10px 0 0;line-height:1.4">¿Pides a domicilio? Comparte con el negocio la clave dinámica que aparece al voltear tu ClubCard, para que pueda validar tu descuento sin que estés presencialmente.</p>` : ''}
     ` : ''}
 
     <div class="sheet__sub">Promociones disponibles</div>
