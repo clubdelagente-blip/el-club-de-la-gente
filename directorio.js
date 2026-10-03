@@ -8,6 +8,7 @@ import { supabase } from './supabase.js';
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 const ic = (n) => `<i data-lucide="${n}"></i>`;
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const nf = new Intl.NumberFormat("es-CO");
 const fmtCOP = (n) => "$" + nf.format(Math.max(0, Math.round(n || 0)));
 function norm(s) {
@@ -77,6 +78,17 @@ let VIEWER_USER_ID = null;
    1) ?plan= en la URL (un aliado viendo lo que le corresponde a un miembro escaneado)
    2) sesión activa de Supabase (un miembro navegando desde su propio dashboard)
    3) sin sesión ni parámetro: visitante anónimo → solo ve el nivel Gratis */
+// "planes_visibles" en Admin solo ofrece Gratis/Básica/Premium (no hay
+// casilla de Vitalicia) -- así que ningún aliado podría marcarse visible
+// para ese plan y a un miembro vitalicio nunca le aparecería nada. Vitalicia
+// es el plan más alto que existe, así que hereda automáticamente todo lo que
+// ve Premium, sin que el admin tenga que reconfigurar cada aliado.
+function aliadoVisibleParaPlan(planesVisibles, plan) {
+  const lista = planesVisibles && planesVisibles.length ? planesVisibles : ["basica", "premium"];
+  if (plan === "vitalicia") return lista.includes("vitalicia") || lista.includes("premium");
+  return lista.includes(plan);
+}
+
 async function resolverPlanVisitante() {
   const { data: { session } } = await supabase.auth.getSession();
   VIEWER_USER_ID = session?.user?.id || null;
@@ -111,7 +123,13 @@ async function cargarAliados() {
     .select("id, nombre, categoria, descuento, descripcion, whatsapp, direccion, maps_url, imagen_url, fotos_carrusel, destacado, planes_visibles")
     .eq("activo", true).order("nombre");
   const todos = data || [];
-  ALIADOS = todos.filter(a => (a.planes_visibles && a.planes_visibles.length ? a.planes_visibles : ["basica", "premium"]).includes(PLAN_ACTUAL));
+  // Gratis ve el directorio completo como vitrina (marcado "bloqueado" el
+  // que no le corresponde) para incentivar a subir de plan, en vez de
+  // simplemente no mostrarle nada -- el resto de planes sigue viendo solo
+  // lo que ya le corresponde, como siempre.
+  ALIADOS = PLAN_ACTUAL === "gratis"
+    ? todos.map(a => ({ ...a, _bloqueado: !aliadoVisibleParaPlan(a.planes_visibles, "gratis") }))
+    : todos.filter(a => aliadoVisibleParaPlan(a.planes_visibles, PLAN_ACTUAL));
 
   const cats = new Set();
   ALIADOS.forEach(a => (a.categoria || "").split(",").map(s => s.trim()).filter(Boolean).forEach(c => cats.add(c)));
@@ -147,7 +165,8 @@ function renderGrid() {
   }
 
   cont.innerHTML = list.map((a, i) => `
-    <article class="dir-card" data-aliado="${a.id}" tabindex="0" style="${ccVars(a.categoria)};animation-delay:${Math.min(i * 45, 400)}ms">
+    <article class="dir-card${a._bloqueado ? " dir-card--bloqueada" : ""}" data-aliado="${a.id}" tabindex="0" style="${ccVars(a.categoria)};animation-delay:${Math.min(i * 45, 400)}ms">
+      ${a._bloqueado ? `<div class="dir-card__lock">${ic("lock")}<span>Mejora tu plan</span></div>` : ""}
       <div class="dir-card__logo">
         ${a.imagen_url
           ? `<img src="${a.imagen_url}" alt="">`
@@ -196,6 +215,7 @@ function wireCarrusel() {
 async function openSheet(aliadoId) {
   const a = ALIADOS.find(x => x.id === aliadoId);
   if (!a) return;
+  if (a._bloqueado) { abrirModalMejorarPlan(a); return; }
   aliadoActual = a;
   sheetInner.innerHTML = `<p style="text-align:center;padding:60px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></p>`;
   overlay.classList.add("is-open");
@@ -216,6 +236,51 @@ function closeSheet() {
   sheet.classList.remove("is-open");
   document.body.style.overflow = "";
   if (carruselInterval) { clearInterval(carruselInterval); carruselInterval = null; }
+}
+
+/* ---------- Mejorar plan (vitrina para Gratis) ---------- */
+let _planesCache = null;
+async function abrirModalMejorarPlan(aliado) {
+  const ov = document.createElement("div");
+  ov.className = "mp-ov";
+  ov.style.cssText = "position:fixed;inset:0;z-index:300;background:rgba(2,27,26,.6);display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto";
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:18px;padding:28px 24px;max-width:480px;width:100%;position:relative;margin:auto">
+      <button type="button" id="mp-close" style="position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:none;background:#f1f1ee;display:flex;align-items:center;justify-content:center;cursor:pointer">${ic("x")}</button>
+      <div style="text-align:center;margin-bottom:20px">
+        <span style="display:inline-flex;width:40px;height:40px;border-radius:50%;background:#fef3c7;color:#b45309;align-items:center;justify-content:center;margin-bottom:12px">${ic("lock")}</span>
+        <h2 style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;margin-bottom:6px">Desbloquea ${esc(aliado.nombre)}</h2>
+        <p style="font-size:13.5px;color:#666;line-height:1.5">El plan Gratis no incluye descuentos de aliados. Sube de plan para acceder a este y a todos los demás.</p>
+      </div>
+      <div id="mp-planes" style="display:flex;flex-direction:column;gap:12px">
+        <p style="text-align:center;padding:20px 0;color:#999;font-size:13px">Cargando planes…</p>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  document.body.style.overflow = "hidden";
+  if (window.lucide) lucide.createIcons();
+  const cerrar = () => { ov.remove(); document.body.style.overflow = ""; };
+  ov.querySelector("#mp-close").addEventListener("click", cerrar);
+  ov.addEventListener("click", (e) => { if (e.target === ov) cerrar(); });
+
+  if (!_planesCache) {
+    const { data } = await supabase.from("planes").select("slug, tag, precio_texto, precio_sufijo, beneficios").in("slug", ["basica", "premium"]).order("orden");
+    _planesCache = data || [];
+  }
+  const cont = ov.querySelector("#mp-planes");
+  if (!_planesCache.length) { cont.innerHTML = `<p style="text-align:center;padding:20px 0;color:#999;font-size:13px">No pudimos cargar los planes. Intenta de nuevo en un momento.</p>`; return; }
+  cont.innerHTML = _planesCache.map(p => `
+    <div style="border:1.5px solid #ebebeb;border-radius:14px;padding:18px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px">
+        <span style="font-weight:700;font-size:15px">${esc(p.tag)}</span>
+        <span style="font-weight:700;font-size:17px;color:var(--verde,#095544)">${esc(p.precio_texto)}<small style="font-weight:500;font-size:11px;color:#999"> ${esc(p.precio_sufijo || "")}</small></span>
+      </div>
+      <ul style="list-style:none;padding:0;margin:0 0 14px;display:flex;flex-direction:column;gap:6px">
+        ${(p.beneficios || []).slice(0, 3).map(b => `<li style="font-size:12.5px;color:#555;display:flex;gap:8px"><span style="color:var(--verde,#095544)">•</span>${esc(b)}</li>`).join("")}
+      </ul>
+      <a class="btn btn--primario" style="width:100%;text-align:center;display:block" href="Planes.html?renovar=${p.slug}">Comprar ${esc(p.tag)}</a>
+    </div>`).join("");
+  if (window.lucide) lucide.createIcons();
 }
 
 /* ---------- Lectura de promociones (tipos heterogéneos) ---------- */
@@ -508,7 +573,7 @@ function toast(msg, check = true) {
 /* ---------- CARRUSEL DESTACADOS (respeta el filtro de plan) ---------- */
 async function cargarDestacados() {
   const { data } = await supabase.from("aliados").select("id,nombre,categoria,descuento,imagen_url,planes_visibles").eq("destacado", true).eq("activo", true).order("nombre");
-  const items = (data || []).filter(a => (a.planes_visibles && a.planes_visibles.length ? a.planes_visibles : ["basica", "premium"]).includes(PLAN_ACTUAL));
+  const items = (data || []).filter(a => aliadoVisibleParaPlan(a.planes_visibles, PLAN_ACTUAL));
   if (!items.length) return;
   const wrap = document.getElementById("dest-wrap");
   const track = document.getElementById("dest-track");
