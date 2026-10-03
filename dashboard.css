@@ -370,10 +370,12 @@
   background: var(--crema); border-top: 1px solid var(--linea);
   padding: 6px 6px calc(env(safe-area-inset-bottom, 0px) + 6px);
   align-items: stretch; justify-content: space-between;
+  overflow: hidden; width: 100%; box-sizing: border-box;
 }
 .bottom-tabbar .sb-link {
   flex: 1; flex-direction: column; gap: 3px; padding: 6px 4px 4px; border-radius: 10px;
   font-size: 10.5px; font-weight: 700; text-align: center;
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .bottom-tabbar .sb-link.is-active { background: none; color: var(--verde); }
 .bottom-tabbar .sb-link:hover { background: var(--crema-2); }
