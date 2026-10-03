@@ -307,7 +307,7 @@ function abrirSeg(i = 0, mostrarIntro = false) {
 function cerrarSeg() {
   $(".seg-overlay").classList.remove("is-open");
   document.body.style.overflow = "";
-  localStorage.setItem("ecdlg_segmentado", "1");
+  if (_miembroId) localStorage.setItem(`ecdlg_segmentado_${_miembroId}`, "1");
 }
 
 // Pantallas especiales (justificación de datos, confirmación, cierre final):
@@ -2507,11 +2507,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // aprueba el comprobante, por seguridad (activar_plan solo permite
     // auto-activar "gratis").
     const paramsIniciales = new URLSearchParams(location.search);
-    // "bienvenida=1" es el parámetro real que usa el registro hoy (tanto
-    // manual como Google) desde que Gratis se activa directo sin pasar por
-    // Planes.html -- "nuevo=1" queda como el que sigue mandando el flujo de
-    // planes de pago vía ?activar=.
-    const esNuevo = paramsIniciales.get("nuevo") === "1" || paramsIniciales.get("bienvenida") === "1";
     const planActivar = paramsIniciales.get("activar");
     if (planActivar === "gratis") {
       const { error: rpcErr } = await supabase.rpc("activar_plan", { nuevo_plan: planActivar });
@@ -2575,11 +2570,6 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.setItem("ecdlg_perfil", JSON.stringify(perfilCache));
     }
     const plan = perfData?.plan || null;
-    // El plan que tenía la última vez que abrió el dashboard EN ESTE navegador
-    // -- se compara contra el de ahora para detectar una activación que pasó
-    // "por fuera" (el admin la aprobó en Ventas mientras la persona no estaba
-    // en la página, así que nunca hubo un redirect con "nuevo=1" que avisara).
-    const planAnterior = localStorage.getItem("ecdlg_plan");
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
     aplicarPlanUI(plan, perfData?.fecha_vencimiento);
 
@@ -2592,16 +2582,15 @@ document.addEventListener("DOMContentLoaded", () => {
         : `<span style="font-size:12.5px;color:var(--tinta-suave, #888)">Aún no elegiste categorías — dale a "Actualizar" para escogerlas.</span>`;
     }
 
-    // Segmentación del miembro nuevo: solo preguntamos lo que no sepamos ya
-    // (registro manual trae nombre/fecha/whatsapp; Google solo trae nombre).
-    // Dos formas de detectarlo: "nuevo=1" en la URL (registro o plan gratis,
-    // que se activan al instante y sí redirigen con ese parámetro), o un plan
-    // pago que cambió desde la última vez que vimos a esta persona en este
-    // navegador (básica/premium aprobados a mano en Ventas, que no redirigen
-    // a nadie porque el admin los aprueba en otra sesión por completo).
+    // Segmentación del miembro nuevo: se dispara simplemente si todavía no
+    // hay respuestas guardadas, sin importar cómo llegó a su perfil (registro
+    // normal, Google, o "pagar primero" -- este último nunca trae "?bienvenida=1"
+    // porque a propósito no lo mandamos a su perfil mientras el pago sigue sin
+    // verificar). Si ya le dio "Omitir por ahora" antes, no se le insiste en
+    // cada inicio de sesión (ver cerrarSeg(), guarda esa elección por cuenta).
     const sinRespuestasAun = !Object.keys(perfData?.respuestas_segmentacion || {}).length;
-    const planReciénActivado = plan && plan !== planAnterior && ["basica", "premium", "vitalicia"].includes(plan) && sinRespuestasAun;
-    if (esNuevo || planReciénActivado) {
+    const yaOmitioSegmentacion = localStorage.getItem(`ecdlg_segmentado_${userId}`) === "1";
+    if (sinRespuestasAun && !yaOmitioSegmentacion) {
       iniciarSegmentacion({ ...perfData, nombre });
     }
 
