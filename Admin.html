@@ -3124,12 +3124,14 @@ document.addEventListener('DOMContentLoaded',async()=>{
         // El rechazo siempre deja a la persona en Gratis -- ya sea un registro
         // nuevo (donde ya estaba en Gratis) o una renovación que no se pudo
         // confirmar (donde sí baja desde su plan pago anterior).
-        await supabase.from('perfiles').update({plan:'gratis'}).eq('id',s.miembro_id);
-        await supabase.from('notificaciones_miembro').insert({
+        const{error:errPlan}=await supabase.from('perfiles').update({plan:'gratis'}).eq('id',s.miembro_id);
+        if(errPlan)console.error('Error bajando a Gratis tras rechazo:',errPlan);
+        const{error:errNotif}=await supabase.from('notificaciones_miembro').insert({
           miembro_id:s.miembro_id,
           titulo:'No pudimos confirmar tu pago',
           cuerpo:'Tu cuenta sigue activa en el plan Gratis. Toca aquí para subir tu comprobante de nuevo y verificarlo.',
         });
+        if(errNotif){console.error('Error creando notificación de rechazo:',errNotif);toast('Se rechazó, pero la notificación en la app falló: '+errNotif.message);}
       }
       if(s?.perfiles?.whatsapp){
         fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3',{
