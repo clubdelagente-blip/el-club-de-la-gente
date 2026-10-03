@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=37">
   <link rel="stylesheet" href="estilos.css?v=19">
-  <link rel="stylesheet" href="dashboard.css?v=14">
+  <link rel="stylesheet" href="dashboard.css?v=15">
   <link rel="stylesheet" href="agente.css?v=2">
 </head>
 <body class="dash-body">
@@ -999,26 +999,6 @@
         <p>Cuéntanos un poco sobre ti para darte la mejor experiencia posible: entender tus gustos, mostrarte lo que de verdad te interesa y seguir sumando aliados pensando en ti. Solo toma 2 minutos.</p>
       </div>
 
-      <!-- BLOQUE 1 -->
-      <div class="seg-block is-active">
-        <div class="seg-q">
-          <div class="seg-q__label">Nombre</div>
-          <input type="text" class="seg-input" id="seg-nombre" placeholder="Tu nombre">
-        </div>
-        <div class="seg-q">
-          <div class="seg-q__label">Apellido</div>
-          <input type="text" class="seg-input" id="seg-apellido" placeholder="Tu apellido">
-        </div>
-        <div class="seg-q">
-          <div class="seg-q__label">Fecha de nacimiento <span class="seg-q__hint">la usamos para personalizar tu experiencia</span></div>
-          <input type="date" class="seg-input" id="seg-fecha" max="2012-12-31" min="1920-01-01">
-        </div>
-        <div class="seg-q">
-          <div class="seg-q__label">Tu WhatsApp <span class="seg-q__hint">para enviarte tu resumen mensual de ahorros</span></div>
-          <input type="tel" class="seg-input" id="seg-whatsapp" placeholder="300 000 0000">
-        </div>
-      </div>
-
       <!-- Bloques dinámicos: se llenan desde dashboard.js con las preguntas
            configuradas en Admin → Formulario de bienvenida -->
       <div id="seg-dinamico"></div>
@@ -1052,7 +1032,7 @@
 
       <!-- Interstitial: pantalla final, reemplaza el cierre con animación -->
       <div class="seg-interstitial seg-interstitial--final" id="seg-final-gracias" hidden>
-        <div class="seg-interstitial__ic seg-interstitial__ic--bounce">🎉</div>
+        <img src="logo-club.png" alt="El Club de la Gente" class="seg-interstitial__logo seg-interstitial__ic--bounce">
         <h2>¡Listo, muchas gracias!</h2>
         <p>Ya sabemos un poco más de ti — vamos a usarlo para hacer tu experiencia en el Club cada vez mejor.</p>
         <button class="btn btn--primario" id="seg-final-cerrar">Ir a mi cuenta</button>
@@ -1218,7 +1198,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=2"></script>
-  <script type="module" src="dashboard.js?v=120"></script>
+  <script type="module" src="dashboard.js?v=121"></script>
   <script type="module" src="agente.js?v=1"></script>
 
   <template id="__bundler_thumbnail">

@@ -253,7 +253,7 @@ window.addEventListener("popstate", (e) => {
    SEGMENTACIÓN
    ============================================================ */
 let segBlock = 0;
-let SEG_TOTAL = 1; // se recalcula tras cargar las preguntas dinámicas (1 = solo el bloque fijo de identidad)
+let SEG_TOTAL = 0; // se recalcula tras cargar las preguntas dinámicas (ya no hay bloque fijo de identidad)
 let _preguntasSeg = []; // preguntas activas traídas de Supabase, una por página
 let _catBlockIndex = 1; // índice de la página que contiene la pregunta "categorías" (para el botón Actualizar)
 let _respuestasSegPrevias = {}; // respuestas ya guardadas del miembro, para no perderlas al reabrir en una página puntual
@@ -379,7 +379,7 @@ async function cargarPreguntasSegmentacion() {
     const { data } = await supabase.from("preguntas_segmentacion").select("*").eq("activa", true).order("orden");
     _preguntasSeg = data || [];
   }
-  _catBlockIndex = 1 + Math.max(0, _preguntasSeg.findIndex(p => p.guardar_como_categorias));
+  _catBlockIndex = Math.max(0, _preguntasSeg.findIndex(p => p.guardar_como_categorias));
 
   cont.innerHTML = _preguntasSeg.map(p => {
     return `
@@ -394,7 +394,7 @@ async function cargarPreguntasSegmentacion() {
     </div>`;
   }).join("");
 
-  SEG_TOTAL = 1 + _preguntasSeg.length;
+  SEG_TOTAL = _preguntasSeg.length;
 
   // Los botones de opción y la lógica de único/múltiple viven en el mismo
   // documento; se enlazan cada vez que se regenera el HTML dinámico.
@@ -2773,8 +2773,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // de aceptarlo como respuesta final (ver botones seg-autorizar-si/no).
     const qAutorizacion = bloqueActual?.querySelector('.seg-q[data-autorizacion="1"]');
     if (qAutorizacion && !qAutorizacion.hidden) {
-      const seleccion = $(".seg-opt.is-on", qAutorizacion)?.textContent.trim();
-      if (seleccion === "No" && !qAutorizacion.dataset.justificado) {
+      const seleccion = $(".seg-opt.is-on", qAutorizacion)?.textContent.trim().toLowerCase();
+      if (seleccion === "no" && !qAutorizacion.dataset.justificado) {
         mostrarSegInterstitial("seg-autorizacion-justif");
         return;
       }
@@ -2783,10 +2783,14 @@ document.addEventListener("DOMContentLoaded", () => {
     guardarBorradorSeg();
 
     if (segSiguienteVisible(segBlock, 1) === null) {
-      const nombre = $("#seg-nombre")?.value.trim();
-      const apellido = $("#seg-apellido")?.value.trim();
+      // Ya no hay bloque fijo de nombre/apellido/fecha/WhatsApp (se quitó del
+      // cuestionario, esos datos ya se piden en el registro) -- estos campos
+      // ya no existen en el DOM, así que estas lecturas siempre dan vacío y
+      // las actualizaciones de más abajo quedan como no-ops seguros.
+      const nombre = $("#seg-nombre")?.value?.trim();
+      const apellido = $("#seg-apellido")?.value?.trim();
       const fecha = $("#seg-fecha")?.value;
-      const whatsapp = $("#seg-whatsapp")?.value.trim();
+      const whatsapp = $("#seg-whatsapp")?.value?.trim();
       const nombreCompleto = [nombre, apellido].filter(Boolean).join(" ");
 
       // Leer las respuestas de todas las preguntas dinámicas por su id (no por
@@ -2864,7 +2868,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Pantallas especiales de la pregunta de autorización de datos
   $("#seg-autorizar-si")?.addEventListener("click", () => {
     const q = $('.seg-q[data-autorizacion="1"]');
-    if (q) $$(".seg-opt", q).forEach(o => o.classList.toggle("is-on", o.textContent.trim() === "Sí"));
+    if (q) $$(".seg-opt", q).forEach(o => o.classList.toggle("is-on", o.textContent.trim().toLowerCase() !== "no"));
     ocultarSegInterstitials();
     $("#seg-next").click();
   });

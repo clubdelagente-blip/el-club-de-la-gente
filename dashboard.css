@@ -280,7 +280,8 @@
 .seg-interstitial { display: none; text-align: center; max-width: 480px; margin: 40px auto 0; animation: fade-in .4s ease; }
 .seg-interstitial:not([hidden]) { display: block; }
 .seg-interstitial__ic { font-size: 44px; margin-bottom: 18px; animation: seg-pop .5s cubic-bezier(.34,1.56,.64,1); }
-.seg-interstitial__ic--bounce { font-size: 64px; animation: seg-bounce 1s cubic-bezier(.34,1.56,.64,1); }
+.seg-interstitial__ic--bounce { animation: seg-bounce 1s cubic-bezier(.34,1.56,.64,1); }
+.seg-interstitial__logo { height: 56px; width: auto; margin: 0 auto 22px; display: block; }
 .seg-interstitial h2 { font-family: var(--display); font-size: clamp(24px, 3.4vw, 32px); font-weight: 600; margin-bottom: 14px; }
 .seg-interstitial p { font-size: 14.5px; color: var(--tinta-60); line-height: 1.6; margin-bottom: 28px; }
 .seg-interstitial__actions { display: flex; flex-direction: column; align-items: center; gap: 14px; }
