@@ -206,6 +206,57 @@ function aplicarFoto(dataUrl) {
   $$("[data-ini]").forEach(el => { el.innerHTML = `<img src="${dataUrl}" alt="Foto de perfil">`; });
   const quitar = $("#cfg-foto-quitar"); if (quitar) quitar.hidden = false;
 }
+async function subirFotoPerfil(file) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const path = `perfil-${session.user.id}-${Date.now()}.${ext}`;
+  const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+  if (upErr) { toast("Error subiendo la foto"); return; }
+  const url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+  await supabase.from("perfiles").update({ foto_url: url }).eq("id", session.user.id);
+  aplicarFoto(url);
+  const perfil = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
+  perfil.foto_url = url;
+  localStorage.setItem("ecdlg_perfil", JSON.stringify(perfil));
+  toast("Foto de perfil actualizada");
+}
+// Overlay propio (no el modal de paneles) para encuadrar la foto en 1:1
+// antes de subirla -- mismo patrón de recorte que ya usa Admin para las
+// fotos de aliados, pero cuadrado (la foto de perfil se ve en un círculo).
+function abrirRecorteFotoPerfil(file) {
+  const url = URL.createObjectURL(file);
+  const ov = document.createElement("div");
+  ov.style.cssText = "position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.75);display:grid;place-items:center;padding:20px";
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:14px;padding:20px;max-width:420px;width:100%">
+      <div style="font-weight:700;font-size:15px;margin-bottom:4px">Ajustar foto</div>
+      <p style="font-size:12px;color:#777;margin-bottom:14px">Mueve y haz zoom para encuadrar -- se recorta cuadrada, igual que se ve en tu perfil.</p>
+      <div style="max-height:52vh;overflow:hidden;background:#000;border-radius:8px">
+        <img id="cfg-crop-img" src="${url}" style="max-width:100%;display:block">
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+        <button class="btn btn--secundario" id="cfg-crop-cancel">Cancelar</button>
+        <button class="btn btn--primario" id="cfg-crop-ok">${ic("check")} Recortar y subir</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  if (window.lucide) lucide.createIcons();
+
+  const cerrar = () => { cropper.destroy(); URL.revokeObjectURL(url); ov.remove(); };
+  const imgEl = ov.querySelector("#cfg-crop-img");
+  const cropper = new Cropper(imgEl, { aspectRatio: 1, viewMode: 1, autoCropArea: 1, background: false });
+  ov.querySelector("#cfg-crop-cancel").addEventListener("click", cerrar);
+  ov.querySelector("#cfg-crop-ok").addEventListener("click", () => {
+    const btn = ov.querySelector("#cfg-crop-ok");
+    btn.disabled = true; btn.innerHTML = `${ic("loader")} Subiendo…`; if (window.lucide) lucide.createIcons();
+    cropper.getCroppedCanvas({ width: 500, height: 500 }).toBlob(async (blob) => {
+      const archivo = new File([blob], "foto.jpg", { type: "image/jpeg" });
+      cerrar();
+      await subirFotoPerfil(archivo);
+    }, "image/jpeg", 0.9);
+  });
+}
 async function quitarFoto() {
   const perfil = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
   delete perfil.foto_url;
@@ -2713,23 +2764,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---- Configuración ----
   $("#cfg-foto-btn")?.addEventListener("click", () => $("#cfg-foto-input").click());
-  $("#cfg-foto-input")?.addEventListener("change", async (e) => {
+  $("#cfg-foto-input")?.addEventListener("change", (e) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-    const path = `perfil-${session.user.id}-${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
-    if (upErr) { toast("Error subiendo la foto"); return; }
-    const url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
-    await supabase.from("perfiles").update({ foto_url: url }).eq("id", session.user.id);
-    aplicarFoto(url);
-    const perfil = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
-    perfil.foto_url = url;
-    localStorage.setItem("ecdlg_perfil", JSON.stringify(perfil));
-    toast("Foto de perfil actualizada");
+    abrirRecorteFotoPerfil(file);
   });
   $("#cfg-foto-quitar")?.addEventListener("click", () => { quitarFoto(); toast("Foto de perfil eliminada"); });
 
