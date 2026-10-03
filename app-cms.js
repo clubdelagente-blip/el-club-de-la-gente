@@ -282,6 +282,34 @@ async function cargarUltimoEventoEducativo() {
   if (window.lucide) lucide.createIcons();
 }
 
+/* ---------- Bolsa de trabajo ---------- */
+async function cargarVacantesPub() {
+  const seccion = document.querySelector('#bolsa-trabajo');
+  const grid = document.querySelector('#bolsa-grid');
+  if (!seccion || !grid) return;
+
+  const { data, error } = await supabase
+    .from('vacantes')
+    .select('*, aliados(nombre, imagen_url)')
+    .eq('estado', 'aprobada')
+    .eq('activo', true)
+    .order('created_at', { ascending: false });
+
+  if (error || !data?.length) return;
+
+  grid.innerHTML = data.map((v, i) => `
+    <div class="profe-card fade-up" style="--delay:${i * 60}ms">
+      ${v.aliados?.imagen_url ? `<img src="${v.aliados.imagen_url}" alt="${v.aliados.nombre || ''}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;margin-bottom:12px">` : `<span style="width:56px;height:56px;border-radius:10px;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:20px;font-weight:700;color:var(--verde)">${(v.aliados?.nombre || 'V')[0]}</span>`}
+      <div style="font-weight:600;font-size:15px;margin-bottom:4px">${v.titulo}</div>
+      <div style="font-size:13px;opacity:.6;margin-bottom:8px">${v.aliados?.nombre || ''}</div>
+      ${v.descripcion ? `<p style="font-size:13px;opacity:.6;line-height:1.5;margin-bottom:14px">${v.descripcion}</p>` : ''}
+      <a class="btn btn--primario" style="width:100%;justify-content:center" target="_blank" href="https://wa.me/57${v.whatsapp}?text=${encodeURIComponent('Hola, vi la vacante de ' + v.titulo + ' en El Club de la Gente')}">Escribir por WhatsApp</a>
+    </div>`).join('');
+
+  seccion.style.display = '';
+  if (window.lucide) lucide.createIcons();
+}
+
 /* ---------- Carrusel de promociones destacadas (solo visual) ---------- */
 async function cargarCarruselPromos() {
   const { data: promos, error } = await supabase
@@ -340,5 +368,6 @@ document.addEventListener('DOMContentLoaded', () => {
   cargarProgramasPub();
   cargarProfesionalesPub();
   cargarUltimoEventoEducativo();
+  cargarVacantesPub();
   cargarCarruselPromos();
 });

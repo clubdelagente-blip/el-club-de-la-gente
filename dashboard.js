@@ -269,7 +269,7 @@ async function quitarFoto() {
 }
 
 /* ---------- Navegación de paneles ---------- */
-const TITULOS = { inicio: "Inicio", negocio: "Mi negocio", perfil: "Mi perfil", clubcard: "Mi ClubCard", tienda: "Tienda", educacion: "Educación", "profesionales-club": "Profesionales", programas: "Programas", descuentos: "Mis descuentos", agente: "Mi Agente", config: "Configuración" };
+const TITULOS = { inicio: "Inicio", negocio: "Mi negocio", perfil: "Mi perfil", clubcard: "Mi ClubCard", tienda: "Tienda", educacion: "Educación", vacantes: "Bolsa de trabajo", "profesionales-club": "Profesionales", programas: "Programas", descuentos: "Mis descuentos", agente: "Mi Agente", config: "Configuración" };
 // Cambia el panel visible sin tocar el historial -- lo usa irPanel() (que sí
 // lo agrega) y el listener de popstate (para no crear una entrada nueva al
 // volver atrás, que crearía un loop).
@@ -998,6 +998,8 @@ function inicializarMiTienda(negocio) {
     const tab = b.dataset.negtab;
     const res = $("#negtab-resumen"); if (res) res.style.display = tab === "resumen" ? "" : "none";
     const tie = $("#negtab-tienda"); if (tie) tie.style.display = tab === "tienda" ? "" : "none";
+    const vac = $("#negtab-vacantes"); if (vac) vac.style.display = tab === "vacantes" ? "" : "none";
+    if (tab === "vacantes") cargarVacantesAliado(negocio.id);
   }));
 
   renderTiendaEstado(negocio);
@@ -1031,8 +1033,96 @@ function inicializarMiTienda(negocio) {
 
   $("#btn-agregar-producto")?.addEventListener("click", () => abrirFormProducto());
 
+  $("#vac-publicar")?.addEventListener("click", async () => {
+    const btn = $("#vac-publicar");
+    const titulo = $("#vac-titulo")?.value.trim();
+    const desc = $("#vac-desc")?.value.trim();
+    let wa = $("#vac-wa")?.value.trim().replace(/\D/g, "");
+    if (wa.length === 12 && wa.startsWith("57")) wa = wa.slice(2);
+    if (!titulo || !wa || wa.length !== 10) { toast("Completa el cargo y un WhatsApp válido (10 dígitos)"); return; }
+    btn.disabled = true;
+    const { error } = await supabase.from("vacantes").insert({ aliado_id: negocio.id, titulo, descripcion: desc || null, whatsapp: wa });
+    btn.disabled = false;
+    if (error) { toast("Error publicando la vacante"); return; }
+    $("#vac-titulo").value = ""; $("#vac-desc").value = ""; $("#vac-wa").value = "";
+    toast("Vacante enviada a revisión");
+    cargarVacantesAliado(negocio.id);
+  });
+
   cargarMisProductos(negocio.id);
   cargarPedidosAliado(negocio.id);
+}
+
+const ESTADO_VACANTE = {
+  pendiente: { c: "#b45309", bg: "#fef3c7", t: "En revisión" },
+  aprobada:  { c: "#095544", bg: "#e8f5ee", t: "Publicada" },
+  rechazada: { c: "#c0392b", bg: "#fdecea", t: "Rechazada" },
+};
+
+async function cargarVacantesAliado(aliadoId) {
+  const list = $("#vac-lista");
+  if (!list) return;
+  const { data } = await supabase.from("vacantes").select("*").eq("aliado_id", aliadoId).order("created_at", { ascending: false });
+  const vacantes = data || [];
+  if (!vacantes.length) { list.innerHTML = `<p style="padding:8px 0">Aún no has publicado ninguna vacante.</p>`; return; }
+  list.innerHTML = vacantes.map(v => {
+    const est = ESTADO_VACANTE[v.estado] || ESTADO_VACANTE.pendiente;
+    return `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #ebebeb">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:14px">${esc(v.titulo)}</div>
+        <div style="font-size:12px;color:#777">WhatsApp ${esc(v.whatsapp)}${!v.activo ? " · cerrada" : ""}</div>
+      </div>
+      <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};flex-shrink:0;white-space:nowrap">${est.t}</span>
+      ${v.estado !== "aprobada" || v.activo ? `<button data-cerrar-vac="${v.id}" style="border:none;background:none;cursor:pointer;color:#777;font-size:11px;font-weight:600;white-space:nowrap">${v.activo ? "Cerrar" : "Cerrada"}</button>` : ""}
+    </div>`;
+  }).join("");
+  list.querySelectorAll("[data-cerrar-vac]").forEach(btn => btn.addEventListener("click", async () => {
+    if (btn.textContent !== "Cerrar") return;
+    btn.disabled = true;
+    const { error } = await supabase.from("vacantes").update({ activo: false }).eq("id", btn.dataset.cerrarVac);
+    if (error) { toast("Error cerrando la vacante"); btn.disabled = false; return; }
+    cargarVacantesAliado(aliadoId);
+  }));
+}
+
+let _vacantesMiembroCargadas = false;
+async function cargarVacantesMiembro() {
+  if (_vacantesMiembroCargadas) return;
+  _vacantesMiembroCargadas = true;
+
+  const grid = $("#vacantes-grid");
+  if (!grid) return;
+
+  const { data } = await supabase
+    .from("vacantes")
+    .select("*, aliados(nombre, imagen_url)")
+    .eq("estado", "aprobada")
+    .eq("activo", true)
+    .order("created_at", { ascending: false });
+
+  const vacantes = data || [];
+  if (!vacantes.length) {
+    grid.innerHTML = `
+      <div style="text-align:center;padding:48px 20px;grid-column:1/-1">
+        <span style="display:inline-flex;width:38px;height:38px;border-radius:50%;background:var(--verde-soft);color:var(--verde);align-items:center;justify-content:center;margin-bottom:14px">${ic("briefcase")}</span>
+        <p style="font-size:13px;color:var(--tinta-45,#888);max-width:320px;margin:0 auto;line-height:1.5">Todavía no hay vacantes publicadas. En cuanto algún aliado publique una, la verás aquí.</p>
+      </div>`;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  grid.innerHTML = vacantes.map(v => `
+    <div class="card" style="padding:16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        ${v.aliados?.imagen_url ? `<img src="${v.aliados.imagen_url}" style="width:34px;height:34px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<div style="width:34px;height:34px;border-radius:8px;background:#f0faf4;flex-shrink:0"></div>`}
+        <div style="font-size:12px;color:#777;font-weight:600">${esc(v.aliados?.nombre || "")}</div>
+      </div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:6px">${esc(v.titulo)}</div>
+      ${v.descripcion ? `<p style="font-size:13px;color:#555;line-height:1.5;margin-bottom:12px">${esc(v.descripcion)}</p>` : ""}
+      <a class="btn btn--primario" style="width:100%;justify-content:center" target="_blank" href="https://wa.me/57${v.whatsapp}?text=${encodeURIComponent("Hola, vi la vacante de " + v.titulo + " en El Club de la Gente")}">Escribir por WhatsApp</a>
+    </div>`).join("");
+  if (window.lucide) lucide.createIcons();
 }
 
 const ESTADO_PRODUCTO_ALIADO = {
@@ -2721,6 +2811,7 @@ document.addEventListener("DOMContentLoaded", () => {
     irPanel(l.dataset.panel);
     if (l.dataset.panel === 'tienda') cargarTienda();
     if (l.dataset.panel === 'educacion') cargarEducacion();
+    if (l.dataset.panel === 'vacantes') cargarVacantesMiembro();
     if (l.dataset.panel === 'soporte') cargarSoporte();
     if (l.dataset.panel === 'programas') cargarProgramas();
   }));

@@ -55,6 +55,7 @@
           <li><button class="sb-link" data-panel="clubcard"><i data-lucide="credit-card"></i> Mi ClubCard</button></li>
           <li><button class="sb-link" data-panel="tienda"><i data-lucide="package"></i> Tienda <span class="sb-link__badge">Gratis</span></button></li>
           <li><button class="sb-link" data-panel="educacion"><i data-lucide="graduation-cap"></i> Educación <span class="sb-link__badge">Gratis</span></button></li>
+          <li><button class="sb-link" data-panel="vacantes"><i data-lucide="briefcase"></i> Bolsa de trabajo <span class="sb-link__badge">Gratis</span></button></li>
           <li><button class="sb-link" data-panel="profesionales-club"><i data-lucide="briefcase-medical"></i> Profesionales <span class="sb-link__badge">Premium</span></button></li>
           <li><button class="sb-link" data-panel="descuentos"><i data-lucide="receipt"></i> Mis descuentos</button></li>
           <li><button class="sb-link" data-panel="agente"><i data-lucide="message-circle"></i> Mi Agente <span class="sb-link__badge">WhatsApp</span></button></li>
@@ -437,6 +438,19 @@
         </section>
 
         <!-- ============================================================
+             PANEL: BOLSA DE TRABAJO (gratis para todos los planes)
+             ============================================================ -->
+        <section class="panel-view" data-panel="vacantes" data-screen-label="Bolsa de trabajo">
+          <div class="dash-greet">
+            <h1>Bolsa de trabajo</h1>
+            <p>Vacantes publicadas por los aliados del Club. Escríbeles directo por WhatsApp.</p>
+          </div>
+          <div id="vacantes-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
+            <div style="text-align:center;padding:60px 20px;grid-column:1/-1"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
+          </div>
+        </section>
+
+        <!-- ============================================================
              PANEL: PROFESIONALES (exclusivo Premium/Vitalicia)
              ============================================================ -->
         <section class="panel-view" data-panel="profesionales-club" data-screen-label="Profesionales">
@@ -650,6 +664,7 @@
           <div style="display:flex;gap:8px;margin-bottom:20px">
             <button class="neg-tab-btn is-active" data-negtab="resumen" type="button">Resumen</button>
             <button class="neg-tab-btn" data-negtab="tienda" type="button">Mi tienda</button>
+            <button class="neg-tab-btn" data-negtab="vacantes" type="button">Vacantes</button>
           </div>
 
           <div id="negtab-resumen">
@@ -793,6 +808,33 @@
                   <span id="tda-guardado-msg" style="font-size:13px;color:var(--verde);margin-left:14px;display:none">¡Guardado!</span>
                 </div>
               </details>
+            </div>
+          </div>
+
+          <div id="negtab-vacantes" style="display:none">
+            <div class="card" style="margin-bottom:20px">
+              <div class="card__head"><span class="card__title">Publicar una vacante</span></div>
+              <div style="padding:4px 0 8px">
+                <div class="cfg-campo">
+                  <label class="cfg-label">Cargo</label>
+                  <input class="cfg-input" id="vac-titulo" type="text" placeholder="Ej: Mesero/a, Domiciliario, Auxiliar contable">
+                </div>
+                <div class="cfg-campo">
+                  <label class="cfg-label">Descripción</label>
+                  <textarea class="cfg-input" id="vac-desc" rows="4" placeholder="Horario, requisitos, salario, etc." style="resize:vertical"></textarea>
+                </div>
+                <div class="cfg-campo">
+                  <label class="cfg-label">WhatsApp de contacto</label>
+                  <input class="cfg-input" id="vac-wa" type="tel" placeholder="300 000 0000">
+                </div>
+                <button class="btn btn--primario" id="vac-publicar">Publicar vacante <i data-lucide="check" style="width:15px;height:15px"></i></button>
+                <p style="font-size:12px;color:var(--tinta-45);margin-top:10px">Es gratis. El Club la revisa antes de publicarla en la bolsa de trabajo de la página principal.</p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card__head"><span class="card__title">Tus vacantes</span></div>
+              <div id="vac-lista" style="padding:8px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
             </div>
           </div>
         </section>
@@ -1205,7 +1247,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=2"></script>
-  <script type="module" src="dashboard.js?v=127"></script>
+  <script type="module" src="dashboard.js?v=128"></script>
   <script type="module" src="agente.js?v=1"></script>
 
   <template id="__bundler_thumbnail">

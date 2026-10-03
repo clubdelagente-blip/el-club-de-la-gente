@@ -258,12 +258,13 @@ window.cargarConfigTransporte=cargarConfigTransporte;
 
 /* ---- NOTIFICACIONES (campana): cuenta en vivo lo pendiente por resolver ---- */
 async function cargarNotificacionesAdmin(){
-  const[{data:solic},{data:postAl},{data:postProf},{data:pedClub},{data:pedTienda}]=await Promise.all([
+  const[{data:solic},{data:postAl},{data:postProf},{data:pedClub},{data:pedTienda},{data:vacPend}]=await Promise.all([
     supabase.from('solicitudes_membresia').select('id').eq('estado','pendiente'),
     supabase.from('aliados_postulaciones').select('id').eq('estado','pendiente'),
     supabase.from('profesionales').select('id').eq('estado','pendiente'),
     supabase.from('pedidos_club').select('id').eq('estado','pendiente_pago'),
     supabase.from('pedidos').select('id').eq('estado','pendiente'),
+    supabase.from('vacantes').select('id').eq('estado','pendiente'),
   ]);
   const items=[
     {n:(solic||[]).length,ic:'credit-card',txt:'solicitud de membresía por revisar',txtp:'solicitudes de membresía por revisar',panel:'ventas'},
@@ -271,6 +272,7 @@ async function cargarNotificacionesAdmin(){
     {n:(postProf||[]).length,ic:'briefcase-medical',txt:'postulación de profesional pendiente',txtp:'postulaciones de profesionales pendientes',panel:'profesionales'},
     {n:(pedClub||[]).length,ic:'package',txt:'pago de la Tienda del Club por confirmar',txtp:'pagos de la Tienda del Club por confirmar',panel:'tienda'},
     {n:(pedTienda||[]).length,ic:'shopping-bag',txt:'pedido de tienda de aliado pendiente',txtp:'pedidos de tiendas de aliados pendientes',panel:'tienda'},
+    {n:(vacPend||[]).length,ic:'briefcase',txt:'vacante pendiente de revisión',txtp:'vacantes pendientes de revisión',panel:'aliados'},
   ].filter(it=>it.n>0);
   const total=items.reduce((s,it)=>s+it.n,0);
   const dot=$('#ad-notif-dot');
@@ -1005,6 +1007,28 @@ async function cargarPostulaciones(){
         </div>
       </div>`;
     }).join('')}
+    <hr style="border:none;border-top:1px solid rgba(242,240,234,.08);margin:16px 0 0">
+  </div>`;
+  tableWrap.insertAdjacentHTML('beforebegin',html);
+  if(window.lucide)lucide.createIcons();
+}
+async function cargarVacantesPendientes(){
+  const{data}=await supabase.from('vacantes').select('*, aliados(nombre)').eq('estado','pendiente').order('created_at',{ascending:false});
+  const vac=data||[];const panel=$("#p-aliados");if(!panel||!vac.length)return;
+  const tableWrap=panel.querySelector('.ad-table-wrap');if(!tableWrap)return;
+  const html=`<div id="vacantes-pend-wrap" style="margin-bottom:20px">
+    <div style="font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(242,240,234,.35);margin-bottom:10px">Vacantes pendientes (${vac.length})</div>
+    ${vac.map(v=>`<div style="display:flex;gap:12px;padding:14px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:10px;margin-bottom:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;margin-bottom:2px">${esc(v.titulo)}</div>
+          <div style="font-size:12px;color:rgba(242,240,234,.4)">${esc(v.aliados?.nombre)||'(sin aliado)'} · WhatsApp ${esc(v.whatsapp)}</div>
+          ${v.descripcion?`<div style="font-size:12px;color:rgba(242,240,234,.5);margin-top:4px">${esc(v.descripcion)}</div>`:''}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+          <button class="ad-btn ad-btn--verde" data-aprobar-vac="${v.id}" style="font-size:12px">${ic('check')} Aprobar</button>
+          <button class="ad-btn" data-rechazar-vac="${v.id}" style="font-size:12px" title="Rechazar">${ic('x')}</button>
+        </div>
+      </div>`).join('')}
     <hr style="border:none;border-top:1px solid rgba(242,240,234,.08);margin:16px 0 0">
   </div>`;
   tableWrap.insertAdjacentHTML('beforebegin',html);
@@ -2263,7 +2287,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
 
   window.renderAliados=function(){
     $("#p-aliados").innerHTML=`<div class="ad-toolbar"><div class="ad-search-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="a-search" placeholder="Buscar aliado…" autocomplete="off"></div><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="a-add"><i data-lucide="plus"></i> Agregar aliado</button></div><div class="ad-table-wrap"><table class="ad-table"><thead><tr><th>Establecimiento</th><th>Categoría</th><th>Descuento</th><th>WhatsApp</th><th style="text-align:right">Estado</th></tr></thead><tbody id="a-body"><tr><td colspan="5" style="text-align:center;padding:30px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody></table></div>`;
-    cargarAliados();cargarPostulaciones();
+    cargarAliados();cargarPostulaciones();cargarVacantesPendientes();
   };
   window.abrirAgregarAliado=function(){abrirModal('Agregar aliado','Se publicará en el directorio',htmlFormAliado());bindFormAliado();};
   window.renderContenido=function(){$("#p-contenido").innerHTML=`<div style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>`;cargarAnuncios();};
@@ -3228,6 +3252,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const desactivarProf=e.target.closest('[data-desactivar-prof]');if(desactivarProf){const pid=desactivarProf.dataset.desactivarProf;await supabase.from('profesionales').update({estado:'pendiente',activo:false}).eq('id',pid);const p=_profesionales.find(x=>x.id===pid);if(p?.user_id)await supabase.from('perfiles').update({plan:'sin_plan'}).eq('id',p.user_id);cargarProfesionales();toast('Profesional desactivado');return;}
     const aprobarPost=e.target.closest('[data-aprobar-post]');if(aprobarPost){const id=aprobarPost.dataset.aprobarPost;const waPost=aprobarPost.dataset.waPost;const nombre=aprobarPost.dataset.nomPost;const nombreResponsable=aprobarPost.dataset.respPost||null;const categoria=aprobarPost.dataset.catPost;const whatsapp=aprobarPost.dataset.telPost;await supabase.from('aliados').insert({nombre,nombre_responsable:nombreResponsable,categoria,whatsapp,activo:false});await supabase.from('aliados_postulaciones').update({estado:'aprobado'}).eq('id',id);if(waPost){fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:waPost,body:`¡Hola! 🎉 La postulación de *${nombre}* en El Club de la Gente fue aprobada.\n\nMuy pronto activamos su perfil y quedan visibles en el directorio de aliados para todos nuestros miembros.\n\n¡Bienvenidos al Club!\nEl Club de la Gente`})}).catch(()=>{});}window.renderAliados?.();toast('Aliado aprobado — WhatsApp enviado ✓');return;}
     const rechazarPost=e.target.closest('[data-rechazar-post]');if(rechazarPost&&confirm('¿Rechazar esta postulación?')){await supabase.from('aliados_postulaciones').update({estado:'rechazado'}).eq('id',rechazarPost.dataset.rechazarPost);window.renderAliados?.();toast('Postulación rechazada');return;}
+    const aprobarVac=e.target.closest('[data-aprobar-vac]');if(aprobarVac){await supabase.from('vacantes').update({estado:'aprobada'}).eq('id',aprobarVac.dataset.aprobarVac);window.renderAliados?.();toast('Vacante aprobada ✓');return;}
+    const rechazarVac=e.target.closest('[data-rechazar-vac]');if(rechazarVac&&confirm('¿Rechazar esta vacante?')){await supabase.from('vacantes').update({estado:'rechazada'}).eq('id',rechazarVac.dataset.rechazarVac);window.renderAliados?.();toast('Vacante rechazada');return;}
     const edProf=e.target.closest('[data-ed-prof]');if(edProf){const p=_profesionales.find(x=>x.id===edProf.dataset.edProf);if(p){abrirModal('Editar profesional',p.nombre,htmlFormProf(p));bindFormProf(p);}return;}
     const togProf=e.target.closest('[data-tog-prof]');if(togProf){const activo=togProf.dataset.activo==='true';const pid=togProf.dataset.togProf;await supabase.from('profesionales').update({activo:!activo}).eq('id',pid);const p=_profesionales.find(x=>x.id===pid);if(p?.user_id)await supabase.from('perfiles').update({plan:!activo?'vitalicia':'sin_plan'}).eq('id',p.user_id);cargarProfesionales();return;}
     const rmProf=e.target.closest('[data-rm-prof]');if(rmProf&&confirm('¿Eliminar este profesional?')){const{error}=await supabase.from('profesionales').delete().eq('id',rmProf.dataset.rmProf);if(error){toast('No se pudo eliminar -- tiene viajes o servicios asociados');return;}cargarProfesionales();toast('Profesional eliminado');return;}
