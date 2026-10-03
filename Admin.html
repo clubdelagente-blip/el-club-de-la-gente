@@ -395,6 +395,108 @@ function valorMoneda(input){return parseInt((input?.value||'').replace(/\D/g,'')
 function abrirModal(t,s,b){$("#modal-title").textContent=t;$("#modal-sub").textContent=s;$("#modal-body").innerHTML=b;$("#ad-modal-ov").classList.add("is-open");if(window.lucide)lucide.createIcons();}
 async function subirImagen(file){const ext=file.name.split('.').pop();const path=`${Date.now()}-${Math.random().toString(36).substr(2,5)}.${ext}`;const{error}=await supabase.storage.from('contenido').upload(path,file);if(error)throw error;return supabase.storage.from('contenido').getPublicUrl(path).data.publicUrl;}
 
+/* ---- GENERADOR DE IMAGEN DE PROMO (flyer automático, plantilla de marca) ---- */
+function cargarImagenCORS(src){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.crossOrigin='anonymous';
+    img.onload=()=>resolve(img);
+    img.onerror=reject;
+    img.src=src;
+  });
+}
+function wrapCenterText(ctx,text,cx,centerY,maxWidth,lineHeight){
+  const words=(text||'').split(' ');
+  let line='';const lines=[];
+  words.forEach(w=>{
+    const test=line?line+' '+w:w;
+    if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=w;}else{line=test;}
+  });
+  if(line)lines.push(line);
+  let y=centerY-((lines.length-1)*lineHeight)/2;
+  lines.forEach(l=>{ctx.fillText(l,cx,y);y+=lineHeight;});
+  return lines.length;
+}
+async function generarImagenPromo(aliadoId,aliadoNombre){
+  const tipo=$("#pr-tipo")?.value;
+  const descripcion=$("#pr-desc")?.value.trim();
+  if(!tipo){toast('Selecciona el tipo de promoción primero');return;}
+  if(!descripcion){toast('Escribe la descripción primero');return;}
+  const btn=$("#pr-generar-img");
+  if(btn){btn.disabled=true;btn.innerHTML=`${ic("loader")} Generando…`;if(window.lucide)lucide.createIcons();}
+  try{
+    let destacado='PROMO';
+    if(tipo==='porcentaje'){const pct=parseInt($("#pr-pct")?.value)||0;destacado=pct?`${pct}% OFF`:'DESCUENTO';}
+    else if(tipo==='monto_fijo'){const m=parseInt($("#pr-ahorro-fijo")?.value)||0;destacado=m?`$${m.toLocaleString('es-CO')} OFF`:'DESCUENTO';}
+    else if(tipo==='precio_especial'){const d=parseInt($("#pr-precio-d")?.value)||0;destacado=d?`$${d.toLocaleString('es-CO')}`:'PRECIO ESPECIAL';}
+    else if(tipo==='2x1')destacado='2×1';
+    else if(tipo==='regalo')destacado='REGALO';
+    else destacado='PROMO';
+
+    await document.fonts.ready;
+
+    const canvas=document.createElement('canvas');
+    canvas.width=1080;canvas.height=1350;
+    const ctx=canvas.getContext('2d');
+
+    const grad=ctx.createLinearGradient(0,0,0,canvas.height);
+    grad.addColorStop(0,'#021B1A');
+    grad.addColorStop(1,'#095544');
+    ctx.fillStyle=grad;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    const aliado=_aliados.find(a=>a.id===aliadoId);
+    let logoX=70;
+    if(aliado?.imagen_url){
+      try{
+        const img=await cargarImagenCORS(aliado.imagen_url);
+        ctx.save();
+        ctx.beginPath();ctx.arc(140,150,70,0,Math.PI*2);ctx.closePath();ctx.clip();
+        ctx.drawImage(img,70,80,140,140);
+        ctx.restore();
+        logoX=235;
+      }catch(_){}
+    }
+    ctx.fillStyle='#F1F7F6';
+    ctx.textBaseline='middle';
+    ctx.textAlign='left';
+    ctx.font="600 34px 'Inter', sans-serif";
+    let nombreFit=(aliadoNombre||'').toUpperCase();
+    while(ctx.measureText(nombreFit).width>(canvas.width-logoX-60)&&nombreFit.length>4){nombreFit=nombreFit.slice(0,-2)+'…';}
+    ctx.fillText(nombreFit,logoX,150);
+
+    ctx.textAlign='center';
+    let fontSize=165;
+    ctx.font=`800 ${fontSize}px 'Fraunces', serif`;
+    while(ctx.measureText(destacado).width>920&&fontSize>60){fontSize-=8;ctx.font=`800 ${fontSize}px 'Fraunces', serif`;}
+    ctx.fillStyle='#00DF81';
+    ctx.fillText(destacado,canvas.width/2,600);
+
+    ctx.fillStyle='#F1F7F6';
+    ctx.font="500 42px 'Inter', sans-serif";
+    wrapCenterText(ctx,descripcion,canvas.width/2,820,880,56);
+
+    ctx.fillStyle='rgba(241,247,246,.6)';
+    ctx.font="600 26px 'Inter', sans-serif";
+    ctx.fillText('EL CLUB DE LA GENTE',canvas.width/2,canvas.height-70);
+    ctx.textAlign='left';
+
+    const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
+    if(!blob)throw new Error('No se pudo generar la imagen');
+    const file=new File([blob],`promo-${Date.now()}.png`,{type:'image/png'});
+    const url=await subirImagen(file);
+    let arr=[];try{arr=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){arr=[];}
+    arr.unshift(url);
+    const h=$("#pr-fotos-urls");if(h)h.value=JSON.stringify(arr);
+    renderFotosPromoPreview();
+    toast('Imagen generada ✓');
+  }catch(err){
+    toast('No se pudo generar la imagen');
+  }finally{
+    if(btn){btn.disabled=false;btn.innerHTML=`${ic("sparkles")} Generar imagen de la promo`;if(window.lucide)lucide.createIcons();}
+  }
+}
+
 /* ---- DASHBOARD (datos reales) ---- */
 const MES_LBL_DASH=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 function tiempoRelativo(iso){
@@ -2137,6 +2239,10 @@ function htmlFormPromocion(p={},aliadoId){
     <div class="ad-field"><label>Vigencia hasta <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-fecha-fin" type="date" value="${p.fecha_fin||''}"></div>
   </div>
   <div class="ad-field"><label>Compra mínima ($) <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-min" type="number" min="0" value="${p.monto_minimo||''}" placeholder="0" style="max-width:220px"></div>
+  <div class="ad-field">
+    <button type="button" class="ad-btn ad-btn--verde" id="pr-generar-img" data-aliado-id="${aliadoId}">${ic("sparkles")} Generar imagen de la promo</button>
+    <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Arma un flyer automático con el tipo, descripción y logo del aliado, y lo agrega como foto principal. Completa tipo y descripción primero.</span>
+  </div>
   <div class="ad-field"><label>Fotos <span style="font-weight:400;color:rgba(26,26,24,.4)">(hasta 5, la primera es la foto principal -- se muestran en carrusel)</span></label>
     <div id="pr-fotos-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px"></div>
     <input type="file" id="pr-foto-input" accept="image/*" style="display:none">
@@ -2190,6 +2296,7 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
     updPct();
     document.querySelectorAll('#pr-dias-chips .fa-chip').forEach(chip=>chip.addEventListener('click',()=>chip.classList.toggle('is-on')));
     renderFotosPromoPreview();bindFotosPromoInput();
+    $("#pr-generar-img")?.addEventListener('click',()=>generarImagenPromo(aliadoId,aliadoNombre));
     $("#pr-cancel")?.addEventListener('click',()=>{cargarYMostrarPromociones(aliadoId,aliadoNombre);});
     const btn=$("#pr-save");
     btn?.addEventListener('click',async()=>{
