@@ -40,7 +40,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; scroll-padding-top: var(--nav-h); }
+html { scroll-behavior: smooth; scroll-padding-top: var(--nav-h); overflow-x: hidden; width: 100%; }
 
 /* ---------- Loader de marca — logo "G" animado ---------- */
 @keyframes brandPulse { 0%, 100% { transform: scale(.82); opacity: .5; } 50% { transform: scale(1); opacity: 1; } }
@@ -63,6 +63,8 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+  width: 100%;
+  overscroll-behavior-x: none;
 }
 img { display: block; max-width: 100%; }
 button { font-family: inherit; cursor: pointer; }
