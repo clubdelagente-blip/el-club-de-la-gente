@@ -734,6 +734,60 @@ function sheetQuienesSomos() {
   `;
 }
 
+/* ---------- DATOS: VALORES (hero — Ahorra / Aprende / Apoya) ---------- */
+const VALORES = [
+  {
+    grupo: null,
+    items: [
+      { titulo: "💰 Ahorra de verdad", html: `
+        <p style="font-weight:600;margin-bottom:10px">Tu ahorro también mueve la economía</p>
+        <p>Ahorrar no significa solamente gastar menos. Cuando consigues un mejor precio, liberas dinero que puedes utilizar en otras cosas que necesitas o disfrutas.</p>
+        <p>Los descuentos también pueden incentivar el consumo y fortalecer la conexión entre clientes y comercios. Cuando compras en un negocio local, tu dinero se convierte en ingresos para ese negocio y puede volver a circular entre trabajadores, proveedores y otras empresas.</p>
+        <p><strong>¿Qué hay detrás?</strong><br>La economía estudia cómo los precios y los incentivos influyen en nuestras decisiones de consumo. Además, el llamado efecto multiplicador explica cómo un gasto puede convertirse en ingreso para otras personas dentro de la economía.</p>
+        <p><strong>Por eso creemos en ahorrar:</strong><br>Tu beneficio no termina cuando pagas menos. Puede comenzar una nueva oportunidad.</p>
+        <p>💡 <strong>Dato interesante:</strong> si ahorras $20.000 en una compra, esos $20.000 no desaparecen. Puedes destinarlos a otra necesidad, ahorrar, invertir o incluso aprender algo nuevo.</p>
+        <p><strong>En el Club:</strong> ahorras mientras apoyas a los comercios que hacen parte de nuestra comunidad.</p>
+      ` },
+      { titulo: "🎓 Aprende cosas nuevas", html: `
+        <p style="font-weight:600;margin-bottom:10px">Aprender es invertir en ti</p>
+        <p>El conocimiento tiene algo especial: puedes compartirlo sin perderlo y utilizarlo durante toda la vida.</p>
+        <p>La teoría del capital humano, desarrollada entre otros por el economista Gary Becker, plantea que la educación y las habilidades pueden aumentar las capacidades y oportunidades de las personas.</p>
+        <p>Y hoy aprender es más importante que nunca. La tecnología, la inteligencia artificial y los cambios en el mundo laboral hacen que muchas habilidades deban actualizarse constantemente.</p>
+        <p>Por eso queremos que aprender en el Club no sea solamente acumular certificados. Queremos ayudarte a desarrollar habilidades para la vida real:</p>
+        <p>🧠 Pensamiento crítico<br>💡 Creatividad y resolución de problemas<br>💻 Habilidades digitales e inteligencia artificial<br>💰 Finanzas personales y emprendimiento<br>🗣️ Comunicación y liderazgo<br>🚀 Adaptación y aprendizaje permanente</p>
+        <p>Porque aprender puede cambiar tus posibilidades. Lo que hoy aprendes puede convertirse mañana en una oportunidad.</p>
+        <p><strong>En el Club:</strong> no solamente queremos que ahorres dinero. Queremos que aumentes tu valor, tus capacidades y tus oportunidades.</p>
+      ` },
+      { titulo: "❤️ Apoya lo que importa", html: `
+        <p style="font-weight:600;margin-bottom:10px">Cuando una comunidad se une, puede hacer mucho más</p>
+        <p>El desarrollo de una sociedad no depende únicamente del dinero que produce. También depende de su capacidad para cooperar, crear redes, confiar y ayudar a quienes lo necesitan.</p>
+        <p>Por eso el Club busca apoyar programas sociales que generen beneficios reales para la comunidad y para otros seres sintientes.</p>
+        <p>Esto se relaciona con el concepto de capital social: las redes, la confianza y la cooperación pueden convertirse en una fuerza para resolver problemas y generar bienestar.</p>
+        <p><strong>¿Y qué significa esto para ti?</strong><br>Que pertenecer al Club no tiene que significar únicamente recibir beneficios. También puede significar ser parte de algo que ayuda a otros.</p>
+        <p>🤝 Una comunidad que coopera.<br>💙 Personas que aportan.<br>🌱 Proyectos que generan oportunidades.<br>🐾 Iniciativas que protegen y ayudan a otros seres sintientes.</p>
+        <p>Porque el verdadero valor de una comunidad no está solamente en lo que recibe, sino también en lo que es capaz de hacer por los demás.</p>
+        <p><strong>En el Club:</strong><br>Ahorras para beneficiarte.<br>Aprendes para crecer.<br>Y ayudas para transformar.</p>
+      ` },
+    ],
+  },
+];
+
+/* Sheet — Valores (Ahorra / Aprende / Apoya) */
+function sheetValores() {
+  return `
+    <div class="sheet__cat">El Club de la Gente</div>
+    <h2 class="sheet__nombre">Por qué existe el Club</h2>
+    ${htmlAcordeonGrupos(VALORES)}
+  `;
+}
+function abrirAcordeonItem(idx) {
+  const item = sheetInner.querySelectorAll(".faq-item")[idx];
+  if (!item) return;
+  const body = item.querySelector(".faq-item__a");
+  item.classList.add("is-open");
+  body.style.maxHeight = body.scrollHeight + "px";
+}
+
 /* ---------- TOAST ---------- */
 let toastT;
 function toast(msg, check = true) {
@@ -799,6 +853,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // Profesional
     const profe = e.target.closest("[data-profesional]");
     if (profe) { openSheet(sheetProfesional(+profe.dataset.profesional)); return; }
+
+    // Valores del hero (Ahorra / Aprende / Apoya)
+    const valor = e.target.closest("[data-valor]");
+    if (valor) {
+      openSheet(sheetValores());
+      bindAcordeon();
+      abrirAcordeonItem(+valor.dataset.valor);
+      return;
+    }
 
     // Preguntas frecuentes
     if (e.target.closest("[data-faq-btn]")) {
