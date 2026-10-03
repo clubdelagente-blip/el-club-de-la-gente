@@ -326,6 +326,13 @@ function ocultarSegInterstitials() {
   $("#seg-flujo").hidden = false;
 }
 
+// La clave del borrador incluye el miembro_id -- si no, un borrador a medias
+// de una cuenta queda pegado en el navegador y se lo come la siguiente
+// cuenta que inicie sesión ahí (ej. pruebas), saltándole la bienvenida.
+function claveSegBorrador() {
+  return _miembroId ? `ecdlg_seg_borrador_${_miembroId}` : "ecdlg_seg_borrador";
+}
+
 // Guarda en el navegador lo respondido hasta ahora en el cuestionario, para
 // que minimizar o recargar a mitad de camino no borre el progreso. Solo dura
 // mientras no se llega al final (cerrarSeg/el guardado real la limpia).
@@ -343,7 +350,7 @@ function guardarBorradorSeg() {
     if (sel.length) respuestas[id] = q.dataset.multi === "1" ? sel : sel[0];
   });
   try {
-    localStorage.setItem("ecdlg_seg_borrador", JSON.stringify({
+    localStorage.setItem(claveSegBorrador(), JSON.stringify({
       bloque: segBlock,
       respuestas,
       nombre: $("#seg-nombre")?.value.trim() || "",
@@ -357,7 +364,7 @@ function guardarBorradorSeg() {
 // Restaura un borrador previo (si existe) sobre los campos ya renderizados.
 function restaurarBorradorSeg() {
   let borrador;
-  try { borrador = JSON.parse(localStorage.getItem("ecdlg_seg_borrador") || "null"); } catch { borrador = null; }
+  try { borrador = JSON.parse(localStorage.getItem(claveSegBorrador()) || "null"); } catch { borrador = null; }
   if (!borrador) return null;
 
   if (borrador.nombre) { const el = $("#seg-nombre"); if (el) el.value = borrador.nombre; }
@@ -2840,7 +2847,7 @@ document.addEventListener("DOMContentLoaded", () => {
           toast("No pudimos guardar tus respuestas. Intenta de nuevo en un momento.");
           return;
         }
-        try { localStorage.removeItem("ecdlg_seg_borrador"); } catch {}
+        try { localStorage.removeItem(claveSegBorrador()); } catch {}
 
         const perfil = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
         if (nombreCompleto) { perfil.nombre = nombreCompleto; perfil.primerNombre = nombre; }
