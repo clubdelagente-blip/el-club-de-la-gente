@@ -287,6 +287,7 @@ function segMostrar(i) {
 function abrirSeg(i = 0) {
   $(".seg-overlay").classList.add("is-open");
   document.body.style.overflow = "hidden";
+  ocultarSegInterstitials();
   segMostrar(i);
   if (window.lucide) lucide.createIcons();
 }
@@ -294,6 +295,26 @@ function cerrarSeg() {
   $(".seg-overlay").classList.remove("is-open");
   document.body.style.overflow = "";
   localStorage.setItem("ecdlg_segmentado", "1");
+}
+
+// Pantallas especiales (justificación de datos, confirmación, cierre final):
+// reemplazan temporalmente el flujo normal de preguntas sin tocar segBlock/
+// SEG_TOTAL, para no desordenar la barra de progreso ni la paginación.
+function mostrarSegInterstitial(id) {
+  document.querySelector(".seg-logo").style.display = id === "seg-final-gracias" ? "none" : "";
+  $("#seg-progress-wrap").style.display = "none";
+  $("#seg-head").style.display = "none";
+  $$(".seg-block").forEach(b => b.classList.remove("is-active"));
+  $("#seg-actions").style.display = "none";
+  $$(".seg-interstitial").forEach(el => el.hidden = el.id !== id);
+  $(".seg-overlay").scrollTo({ top: 0, behavior: "smooth" });
+}
+function ocultarSegInterstitials() {
+  document.querySelector(".seg-logo").style.display = "";
+  $("#seg-progress-wrap").style.display = "";
+  $("#seg-head").style.display = "";
+  $("#seg-actions").style.display = "";
+  $$(".seg-interstitial").forEach(el => el.hidden = true);
 }
 
 // Guarda en el navegador lo respondido hasta ahora en el cuestionario, para
@@ -364,7 +385,7 @@ async function cargarPreguntasSegmentacion() {
     return `
     <div class="seg-block">
       <div class="seg-block__title">${esc(p.bloque)}</div>
-      <div class="seg-q" data-pregunta-id="${p.id}" ${p.tipo === "multiple" ? 'data-multi="1"' : ""} ${p.obligatoria ? 'data-obligatoria="1"' : ""} ${p.guardar_como_categorias ? 'data-categorias="1"' : ""} ${p.pregunta_padre_id ? `data-padre-id="${p.pregunta_padre_id}" data-mostrar-si="${esc(p.mostrar_si_respuesta || "")}" hidden` : ""}>
+      <div class="seg-q" data-pregunta-id="${p.id}" ${p.tipo === "multiple" ? 'data-multi="1"' : ""} ${p.obligatoria ? 'data-obligatoria="1"' : ""} ${p.guardar_como_categorias ? 'data-categorias="1"' : ""} ${p.es_autorizacion_datos ? 'data-autorizacion="1"' : ""} ${p.pregunta_padre_id ? `data-padre-id="${p.pregunta_padre_id}" data-mostrar-si="${esc(p.mostrar_si_respuesta || "")}" hidden` : ""}>
         <div class="seg-q__label">${esc(p.pregunta)}${p.obligatoria ? ' <span class="seg-q__hint">obligatoria</span>' : ""}${p.ayuda ? ` <span class="seg-q__hint">${esc(p.ayuda)}</span>` : ""}</div>
         ${p.tipo === "texto"
           ? `<input type="text" class="seg-input">`
@@ -2747,6 +2768,18 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // Pregunta de autorización de datos: si responde "No" por primera vez,
+    // se le muestra una justificación con oportunidad de reconsiderar antes
+    // de aceptarlo como respuesta final (ver botones seg-autorizar-si/no).
+    const qAutorizacion = bloqueActual?.querySelector('.seg-q[data-autorizacion="1"]');
+    if (qAutorizacion && !qAutorizacion.hidden) {
+      const seleccion = $(".seg-opt.is-on", qAutorizacion)?.textContent.trim();
+      if (seleccion === "No" && !qAutorizacion.dataset.justificado) {
+        mostrarSegInterstitial("seg-autorizacion-justif");
+        return;
+      }
+    }
+
     guardarBorradorSeg();
 
     if (segSiguienteVisible(segBlock, 1) === null) {
@@ -2820,13 +2853,34 @@ document.addEventListener("DOMContentLoaded", () => {
           catsEl.innerHTML = categoriasParaEspejar.map(c => `<span class="chip-int">${esc(c)}</span>`).join("");
         }
       }
-      cerrarSeg();
+      mostrarSegInterstitial("seg-final-gracias");
     } else {
       segMostrar(segSiguienteVisible(segBlock, 1));
     }
   });
   $("#seg-prev").addEventListener("click", () => { guardarBorradorSeg(); segMostrar(segSiguienteVisible(segBlock, -1) ?? 0); });
   $("#seg-skip").addEventListener("click", cerrarSeg);
+
+  // Pantallas especiales de la pregunta de autorización de datos
+  $("#seg-autorizar-si")?.addEventListener("click", () => {
+    const q = $('.seg-q[data-autorizacion="1"]');
+    if (q) $$(".seg-opt", q).forEach(o => o.classList.toggle("is-on", o.textContent.trim() === "Sí"));
+    ocultarSegInterstitials();
+    $("#seg-next").click();
+  });
+  $("#seg-autorizar-no")?.addEventListener("click", () => {
+    const q = $('.seg-q[data-autorizacion="1"]');
+    if (q) q.dataset.justificado = "1"; // ya se le explicó -- su "No" ahora sí se acepta
+    mostrarSegInterstitial("seg-autorizacion-gracias");
+  });
+  $("#seg-autorizacion-continuar")?.addEventListener("click", () => {
+    ocultarSegInterstitials();
+    $("#seg-next").click();
+  });
+  $("#seg-final-cerrar")?.addEventListener("click", () => {
+    ocultarSegInterstitials();
+    cerrarSeg();
+  });
 
   // Modal de activación
   $("#modal-activar-close")?.addEventListener("click", cerrarModalActivar);

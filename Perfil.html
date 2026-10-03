@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=37">
   <link rel="stylesheet" href="estilos.css?v=19">
-  <link rel="stylesheet" href="dashboard.css?v=13">
+  <link rel="stylesheet" href="dashboard.css?v=14">
   <link rel="stylesheet" href="agente.css?v=2">
 </head>
 <body class="dash-body">
@@ -990,17 +990,17 @@
   <div class="seg-overlay" data-screen-label="Segmentación">
     <div class="seg-grain" aria-hidden="true"></div>
     <div class="seg-wrap">
-      <div class="seg-progress"><div class="seg-progress__bar" id="seg-bar"></div></div>
+      <img src="logo-club.png" alt="El Club de la Gente" class="seg-logo">
+      <div class="seg-progress" id="seg-progress-wrap"><div class="seg-progress__bar" id="seg-bar"></div></div>
 
-      <div class="seg-head">
-        <span class="eyebrow">Ya eres parte del Club de la Gente</span>
-        <h1>Cuéntanos un poco sobre ti</h1>
-        <p>Para darte la mejor experiencia posible. Solo toma 2 minutos.</p>
+      <div class="seg-head" id="seg-head">
+        <span class="eyebrow">¡Gracias por confiar en nosotros! 🌿</span>
+        <h1>Queremos conocerte mejor</h1>
+        <p>Cuéntanos un poco sobre ti para darte la mejor experiencia posible: entender tus gustos, mostrarte lo que de verdad te interesa y seguir sumando aliados pensando en ti. Solo toma 2 minutos.</p>
       </div>
 
       <!-- BLOQUE 1 -->
       <div class="seg-block is-active">
-        <div class="seg-block__title">01 — Cuéntanos quién eres</div>
         <div class="seg-q">
           <div class="seg-q__label">Nombre</div>
           <input type="text" class="seg-input" id="seg-nombre" placeholder="Tu nombre">
@@ -1023,12 +1023,39 @@
            configuradas en Admin → Formulario de bienvenida -->
       <div id="seg-dinamico"></div>
 
-      <div class="seg-actions">
+      <div class="seg-actions" id="seg-actions">
         <button class="seg-skip" id="seg-prev"><i data-lucide="arrow-left" style="width:14px;height:14px;vertical-align:-2px"></i> Atrás</button>
         <div style="display:flex;align-items:center;gap:18px;">
           <button class="seg-skip" id="seg-skip">Omitir por ahora</button>
           <button class="btn btn--primario" id="seg-next">Continuar</button>
         </div>
+      </div>
+
+      <!-- Interstitial: justificación cuando responde "No" a autorizar datos -->
+      <div class="seg-interstitial" id="seg-autorizacion-justif" hidden>
+        <div class="seg-interstitial__ic">🔒</div>
+        <h2>Antes de continuar...</h2>
+        <p>Usamos tus datos solo para dentro del Club: mostrarte las promociones de los aliados que de verdad te interesan, avisarte de sorteos y programas sociales relevantes para ti, y decidir qué nuevos aliados sumar pensando en tus gustos. Nunca los vendemos ni los compartimos con nadie afuera del Club.</p>
+        <div class="seg-interstitial__actions">
+          <button class="btn btn--primario" id="seg-autorizar-si">Sí, autorizo mis datos</button>
+          <button class="seg-skip" id="seg-autorizar-no">No, prefiero no autorizar</button>
+        </div>
+      </div>
+
+      <!-- Interstitial: confirmación tras el segundo "No" -->
+      <div class="seg-interstitial" id="seg-autorizacion-gracias" hidden>
+        <div class="seg-interstitial__ic">🌿</div>
+        <h2>Entendemos tu respuesta</h2>
+        <p>Por ahora podrás enterarte de todo lo que tenemos por nuestras redes sociales y la plataforma. Si en algún momento quieres cambiar de opinión y tener una atención personalizada por WhatsApp, puedes actualizar tus preferencias en Configuración.</p>
+        <button class="btn btn--primario" id="seg-autorizacion-continuar">Continuar</button>
+      </div>
+
+      <!-- Interstitial: pantalla final, reemplaza el cierre con animación -->
+      <div class="seg-interstitial seg-interstitial--final" id="seg-final-gracias" hidden>
+        <div class="seg-interstitial__ic seg-interstitial__ic--bounce">🎉</div>
+        <h2>¡Listo, muchas gracias!</h2>
+        <p>Ya sabemos un poco más de ti — vamos a usarlo para hacer tu experiencia en el Club cada vez mejor.</p>
+        <button class="btn btn--primario" id="seg-final-cerrar">Ir a mi cuenta</button>
       </div>
     </div>
   </div>
@@ -1191,7 +1218,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=2"></script>
-  <script type="module" src="dashboard.js?v=119"></script>
+  <script type="module" src="dashboard.js?v=120"></script>
   <script type="module" src="agente.js?v=1"></script>
 
   <template id="__bundler_thumbnail">

@@ -248,12 +248,13 @@
 .seg-overlay.is-open { display: block; }
 .seg-grain { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .045; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 .seg-wrap { max-width: 680px; margin: 0 auto; padding: 56px 32px 80px; position: relative; z-index: 2; }
+.seg-logo { display: block; height: 34px; width: auto; margin: 0 auto 32px; animation: seg-pop .5s cubic-bezier(.34,1.56,.64,1); }
 .seg-progress { height: 3px; background: var(--linea); border-radius: 100px; overflow: hidden; margin-bottom: 40px; }
-.seg-progress__bar { height: 100%; background: var(--verde); width: 25%; transition: width .4s ease; }
-.seg-head { text-align: center; margin-bottom: 40px; }
+.seg-progress__bar { height: 100%; background: linear-gradient(90deg, var(--verde), #00DF81); width: 25%; transition: width .5s cubic-bezier(.34,1.56,.64,1); }
+.seg-head { text-align: center; margin-bottom: 40px; animation: fade-in .5s ease; }
 .seg-head .eyebrow { justify-content: center; margin-bottom: 14px; }
 .seg-head h1 { font-family: var(--display); font-size: clamp(32px, 4.4vw, 46px); font-weight: 600; line-height: 1.05; }
-.seg-head p { font-size: 15px; color: var(--tinta-60); margin-top: 12px; }
+.seg-head p { font-size: 15px; color: var(--tinta-60); margin-top: 12px; max-width: 480px; margin-left: auto; margin-right: auto; }
 
 .seg-block { display: none; }
 .seg-block.is-active { display: block; animation: fade-in .4s ease; }
@@ -265,15 +266,33 @@
 .seg-opt {
   font-size: 13.5px; font-weight: 500; padding: 11px 18px; border-radius: 100px;
   border: 1.5px solid var(--linea-fuerte); background: transparent; cursor: pointer;
-  transition: background .2s, color .2s, border-color .2s; font-family: var(--cuerpo);
+  transition: background .2s, color .2s, border-color .2s, transform .15s; font-family: var(--cuerpo);
 }
-.seg-opt:hover { border-color: var(--tinta); }
-.seg-opt.is-on { background: var(--verde); color: #fff; border-color: var(--verde); }
+.seg-opt:hover { border-color: var(--tinta); transform: translateY(-1px); }
+.seg-opt.is-on { background: var(--verde); color: #fff; border-color: var(--verde); transform: scale(1.04); box-shadow: 0 6px 16px -4px rgba(9,85,68,.4); }
 .seg-input { width: 100%; font-family: var(--cuerpo); font-size: 14.5px; padding: 14px 16px; border-radius: 6px; border: 1px solid var(--linea-fuerte); background: #fff; }
 .seg-input:focus { outline: none; border-color: var(--verde); }
 .seg-actions { display: flex; justify-content: space-between; gap: 14px; margin-top: 40px; }
 .seg-skip { background: none; border: none; font-family: var(--cuerpo); font-size: 13.5px; font-weight: 600; color: var(--tinta-45); cursor: pointer; }
 .seg-skip:hover { color: var(--tinta); }
+
+/* Pantallas especiales: justificación de datos, confirmación y cierre */
+.seg-interstitial { display: none; text-align: center; max-width: 480px; margin: 40px auto 0; animation: fade-in .4s ease; }
+.seg-interstitial:not([hidden]) { display: block; }
+.seg-interstitial__ic { font-size: 44px; margin-bottom: 18px; animation: seg-pop .5s cubic-bezier(.34,1.56,.64,1); }
+.seg-interstitial__ic--bounce { font-size: 64px; animation: seg-bounce 1s cubic-bezier(.34,1.56,.64,1); }
+.seg-interstitial h2 { font-family: var(--display); font-size: clamp(24px, 3.4vw, 32px); font-weight: 600; margin-bottom: 14px; }
+.seg-interstitial p { font-size: 14.5px; color: var(--tinta-60); line-height: 1.6; margin-bottom: 28px; }
+.seg-interstitial__actions { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.seg-interstitial--final { margin-top: 90px; }
+
+@keyframes seg-pop { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes seg-bounce {
+  0% { transform: scale(.3) rotate(-10deg); opacity: 0; }
+  50% { transform: scale(1.15) rotate(6deg); opacity: 1; }
+  75% { transform: scale(.95) rotate(-3deg); }
+  100% { transform: scale(1) rotate(0); }
+}
 
 /* ============================================================
    PANEL: MI NEGOCIO (aliado)

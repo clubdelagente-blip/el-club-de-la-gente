@@ -2944,7 +2944,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       bloqueAnterior = p.bloque;
       const padre = p.pregunta_padre_id ? _preguntas.find(x => x.id === p.pregunta_padre_id) : null;
       return filaBloque + `<tr>
-        <td><div class="ad-cell-user__name">${padre ? '↳ ' : ''}${p.pregunta}${p.guardar_como_categorias ? ' <span style="font-size:10px;color:#00DF81">· categorías</span>' : ''}</div>${p.ayuda ? `<div style="font-size:11px;color:rgba(242,240,234,.35)">${p.ayuda}</div>` : ''}${padre ? `<div style="font-size:11px;color:rgba(242,240,234,.35)">Solo si "${padre.pregunta}" = ${p.mostrar_si_respuesta}</div>` : ''}</td>
+        <td><div class="ad-cell-user__name">${padre ? '↳ ' : ''}${p.pregunta}${p.guardar_como_categorias ? ' <span style="font-size:10px;color:#00DF81">· categorías</span>' : ''}${p.es_autorizacion_datos ? ' <span style="font-size:10px;color:#EAB749">· autorización de datos</span>' : ''}</div>${p.ayuda ? `<div style="font-size:11px;color:rgba(242,240,234,.35)">${p.ayuda}</div>` : ''}${padre ? `<div style="font-size:11px;color:rgba(242,240,234,.35)">Solo si "${padre.pregunta}" = ${p.mostrar_si_respuesta}</div>` : ''}</td>
         <td>${TIPO_LBL[p.tipo] || p.tipo}</td>
         <td>${p.obligatoria ? ic('check') : '—'}</td>
         <td><div style="display:flex;align-items:center;gap:6px">
@@ -2997,6 +2997,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
       </div>
       <div class="ad-field" id="fp-opciones-wrap"><label>Opciones (una por línea)</label><textarea id="fp-opciones" rows="4" placeholder="Opción 1&#10;Opción 2&#10;Opción 3">${opcionesTxt}</textarea></div>
       <div class="ad-field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="fp-obligatoria" ${p.obligatoria?'checked':''} style="width:auto"> Obligatoria — no deja avanzar sin responderla</label></div>
+      <div class="ad-field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="fp-autorizacion" ${p.es_autorizacion_datos?'checked':''} style="width:auto"> Es la pregunta de "autorizo el uso de mis datos"</label>
+        <div style="font-size:11px;color:rgba(26,26,24,.4);margin-top:4px">Si responde "No", antes de aceptarlo se le muestra una justificación con la opción de reconsiderar. Solo debería marcarse en UNA pregunta, con opciones "Sí"/"No".</div></div>
       <div class="ad-field" id="fp-cats-wrap"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="fp-cats" ${p.guardar_como_categorias?'checked':''} style="width:auto"> Usar como "categorías de interés"</label>
         <div style="font-size:11px;color:rgba(26,26,24,.4);margin-top:4px">Esta respuesta también alimenta la difusión de WhatsApp por categoría y "Mis categorías" en el perfil del miembro. Solo debería marcarse en UNA pregunta de varias opciones.</div></div>
       <div class="ad-field"><label>¿Depende de otra pregunta? (opcional)</label>
@@ -3053,6 +3055,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
           tipo,
           opciones: tipo === 'texto' ? null : opciones,
           obligatoria: !!$("#fp-obligatoria")?.checked,
+          es_autorizacion_datos: !!$("#fp-autorizacion")?.checked,
           guardar_como_categorias: tipo === 'multiple' && !!$("#fp-cats")?.checked,
           pregunta_padre_id: padreId,
           mostrar_si_respuesta: padreId ? $("#fp-mostrarsi")?.value : null,
