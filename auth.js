@@ -423,13 +423,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     setTimeout(() => { if (el) el.textContent = ""; }, 6000);
   }
 
-  // Paso 1: número WhatsApp
+  // Paso 1: número WhatsApp -- solo deja escribir dígitos (inputmode="numeric"
+  // solo cambia el teclado en celular, no bloquea pegar texto ni teclado físico)
+  $("#login-user")?.addEventListener("input", (e) => {
+    const limpio = e.target.value.replace(/\D/g, "");
+    if (limpio !== e.target.value) e.target.value = limpio;
+  });
+
   $("#form-login")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector("button[type=submit]");
     const raw = $("#login-user").value.trim();
     const digits = normalizarWhatsapp(raw);
-    if (digits.length < 7) { mostrarErrorLogin("Ingresa un número de WhatsApp válido."); return; }
+    if (!/^3\d{9}$/.test(digits)) { mostrarErrorLogin("Ingresa un número de WhatsApp colombiano válido (10 dígitos, empieza en 3)."); return; }
     _loginPhone = digits;
 
     setLoading(btn, true, "Continuar");
