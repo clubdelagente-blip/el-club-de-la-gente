@@ -51,13 +51,15 @@ function mostrarPagoPrevio(plan) {
 }
 function irAExitoPagoPendiente({ nombre, plan, ok }) {
   const primerNombre = (nombre || "").split(" ")[0] || "Miembro";
-  $("#exito-eyebrow").textContent = "Cuenta creada";
-  $("#exito-nombre").textContent = `¡Bienvenido al club, ${primerNombre}!`;
+  $("#exito-eyebrow").textContent = "Pago en verificación";
+  $("#exito-nombre").textContent = `¡Gracias, ${primerNombre}!`;
   $("#exito-msg").innerHTML = ok
-    ? `Ya puedes usar tu plan <b>Gratis</b> mientras confirmamos tu pago de la membresía <b>${plan}</b>. En cuanto lo aprobemos, tu plan se activa solo y te avisamos por WhatsApp.`
-    : `Tu cuenta ya quedó activa en el plan <b>Gratis</b>. Tuvimos un problema guardando tu comprobante de la membresía <b>${plan}</b> — escríbenos por WhatsApp para completarlo y activarla.`;
+    ? `Recibimos tu comprobante de la membresía <b>${plan}</b>. Te informaremos por WhatsApp apenas lo verifiquemos, para que puedas acceder a todos tus beneficios.`
+    : `Tuvimos un problema guardando tu comprobante de la membresía <b>${plan}</b> — escríbenos por WhatsApp para completarlo y activar tu cuenta.`;
+  // No se invita a entrar a la cuenta mientras el pago sigue sin verificar --
+  // se avisa por WhatsApp apenas quede aprobado.
   const cta = $("#exito-cta");
-  if (cta) { cta.setAttribute("href", "Perfil.html?bienvenida=1"); cta.innerHTML = `Ir a mi perfil <span class="ar">&rarr;</span>`; }
+  if (cta) cta.style.display = "none";
   $(".stepper").style.visibility = "hidden";
   const wa = $("#exito-social"); if (wa) wa.hidden = true;
   mostrarVista("view-exito");
@@ -704,12 +706,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     // petición — el mensaje nunca llegaba.
     if (waDigits) {
       const primerNombre = nombre.split(" ")[0];
-      let msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nCon tu plan Gratis ya tienes:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).\n🛍️ Acceso ilimitado a la Tienda del Club.\n\nA continuación te invitamos a rellenar el siguiente formulario para validar tu membresía gratuita:\nhttps://elclubdelagente.com/Bienvenida.html?id=${data.user.id}\n\nSi quieres acceder a promociones, sorteos, un agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿`;
-      if (pagoPendiente) {
-        msgBienvenida += pagoPendienteOk
-          ? `\n\n💳 Recibimos tu comprobante de pago de la membresía ${pagoPendiente.planLabel}. En cuanto lo confirmemos, tu plan se activa automáticamente y te avisamos por aquí.`
-          : `\n\n⚠️ Tuvimos un problema guardando tu comprobante de pago de la membresía ${pagoPendiente.planLabel}. Escríbenos por este WhatsApp y te ayudamos a completarlo.`;
-      }
+      // Quien venía de "pagar primero" no recibe el mensaje genérico de
+      // bienvenida a Gratis (no tiene sentido venderle los beneficios de
+      // Gratis a alguien que ya pagó Básica/Premium) -- recibe uno propio,
+      // enfocado solo en que le avisaremos apenas verifiquemos su pago.
+      const msgBienvenida = pagoPendiente
+        ? (pagoPendienteOk
+          ? `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nRecibimos tu comprobante de pago de la membresía ${pagoPendiente.planLabel}. Te informaremos por este mismo WhatsApp apenas lo verifiquemos, para que puedas acceder a todos tus beneficios.\n\nEl Club de la Gente`
+          : `¡Hola ${primerNombre}! 🌿 Tu cuenta en El Club de la Gente ya se creó, pero tuvimos un problema guardando tu comprobante de pago de la membresía ${pagoPendiente.planLabel}. Escríbenos por este WhatsApp y te ayudamos a completarlo.\n\nEl Club de la Gente`)
+        : `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nCon tu plan Gratis ya tienes:\n\n🚗 10% de descuento en viajes y domicilios con nuestros conductores de confianza (moto y carro).\n🛍️ Acceso ilimitado a la Tienda del Club.\n\nA continuación te invitamos a rellenar el siguiente formulario para validar tu membresía gratuita:\nhttps://elclubdelagente.com/Bienvenida.html?id=${data.user.id}\n\nSi quieres acceder a promociones, sorteos, un agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿`;
       fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

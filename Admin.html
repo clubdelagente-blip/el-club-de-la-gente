@@ -3121,16 +3121,20 @@ document.addEventListener('DOMContentLoaded',async()=>{
       const{error}=await supabase.from('solicitudes_membresia').update({estado:'rechazado'}).eq('id',id);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}
       if(s?.miembro_id){
+        // El rechazo siempre deja a la persona en Gratis -- ya sea un registro
+        // nuevo (donde ya estaba en Gratis) o una renovación que no se pudo
+        // confirmar (donde sí baja desde su plan pago anterior).
+        await supabase.from('perfiles').update({plan:'gratis'}).eq('id',s.miembro_id);
         await supabase.from('notificaciones_miembro').insert({
           miembro_id:s.miembro_id,
           titulo:'No pudimos confirmar tu pago',
-          cuerpo:'Escríbenos por WhatsApp para resolverlo y activar tu membresía.',
+          cuerpo:'Tu cuenta sigue activa en el plan Gratis. Toca aquí para subir tu comprobante de nuevo y verificarlo.',
         });
       }
       if(s?.perfiles?.whatsapp){
         fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3',{
           method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({to:s.perfiles.whatsapp,body:'No pudimos confirmar tu comprobante de pago. Escríbenos por WhatsApp para resolverlo y activar tu membresía. — El Club de la Gente'}),
+          body:JSON.stringify({to:s.perfiles.whatsapp,body:'No pudimos confirmar tu comprobante de pago. Tu cuenta sigue activa en el plan Gratis -- entra a la app y en tus notificaciones puedes volver a subir el comprobante para verificarlo de nuevo. — El Club de la Gente'}),
         }).catch(()=>{});
       }
       toast('Solicitud rechazada');

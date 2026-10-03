@@ -1452,8 +1452,92 @@ async function cargarNotificacionesMiembro(userId) {
           <div style="font-weight:700;font-size:13px;margin-bottom:2px">${esc(n.titulo)}</div>
           ${n.cuerpo ? `<div style="font-size:12.5px;color:#777;line-height:1.4">${esc(n.cuerpo)}</div>` : ""}
           <div style="font-size:11px;color:#999;margin-top:4px">${new Date(n.created_at).toLocaleDateString("es-CO", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</div>
+          ${n.titulo === "No pudimos confirmar tu pago" ? `<button type="button" data-reintentar-pago style="margin-top:8px;font-size:12px;font-weight:600;color:var(--verde);background:none;border:1px solid var(--verde);border-radius:8px;padding:6px 12px;cursor:pointer">Volver a subir comprobante</button>` : ""}
         </div>`).join("") : `<div style="padding:24px 16px;text-align:center;color:#999;font-size:13px">No tienes notificaciones todavía</div>`);
+    drop.querySelectorAll("[data-reintentar-pago]").forEach(btn => btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      drop.style.display = "none";
+      abrirReintentarComprobante();
+    }));
   }
+}
+
+// Reintentar un comprobante rechazado -- trae la última solicitud rechazada
+// de este miembro y deja subir uno nuevo, sin tener que escribir por
+// WhatsApp ni volver a pasar por todo el registro.
+async function abrirReintentarComprobante() {
+  if (!_miembroId) return;
+  const { data: sol } = await supabase.from("solicitudes_membresia")
+    .select("id, plan, monto")
+    .eq("miembro_id", _miembroId)
+    .eq("estado", "rechazado")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!sol) { toast("No encontramos una solicitud rechazada para reintentar."); return; }
+
+  const { data: planRow } = await supabase.from("planes").select("tag, nombre").eq("slug", sol.plan).maybeSingle();
+  const planLabel = planRow?.tag || planRow?.nombre || sol.plan;
+  const { data: cfg } = await supabase.from("configuracion").select("valor").eq("clave", "club_llave_pago").maybeSingle();
+  const llave = cfg?.valor || "No configurada — escríbenos por WhatsApp";
+
+  abrirModalTienda(`Reintentar pago: ${planLabel}`, `
+    <p style="font-size:14px;margin-bottom:16px">Vas a confirmar tu pago de <b>${COP(sol.monto)}</b> por tu membresía ${esc(planLabel)}.</p>
+    <div class="cfg-campo">
+      <label class="cfg-label">Llave de pago del Club</label>
+      <div style="display:flex;gap:8px">
+        <input class="cfg-input" id="rt-llave" readonly value="${esc(llave)}" style="flex:1">
+        <button type="button" class="btn" id="rt-copiar-llave" style="padding:0 16px;white-space:nowrap">${ic('copy')} Copiar</button>
+      </div>
+      <div style="text-align:center;font-weight:800;letter-spacing:.02em;font-size:13px;color:#111;border:1px solid #ebebeb;border-radius:8px;padding:6px;margin-top:8px;background:#fff">Bre-B</div>
+    </div>
+    <div class="cfg-campo">
+      <label class="cfg-label">Nuevo comprobante de pago *</label>
+      <input type="file" id="rt-comprobante" accept="image/*">
+    </div>
+    <button class="btn btn--primario" id="rt-confirmar" style="margin-top:8px;width:100%">Enviar comprobante ${ic('check')}</button>
+  `);
+
+  $("#rt-copiar-llave")?.addEventListener("click", () => {
+    const btn = $("#rt-copiar-llave");
+    navigator.clipboard.writeText($("#rt-llave")?.value || "").then(() => {
+      btn.innerHTML = `${ic('check')} Copiada`;
+      setTimeout(() => { btn.innerHTML = `${ic('copy')} Copiar`; if (window.lucide) lucide.createIcons(); }, 2000);
+      if (window.lucide) lucide.createIcons();
+    });
+  });
+
+  $("#rt-confirmar")?.addEventListener("click", async () => {
+    const btn = $("#rt-confirmar");
+    const file = $("#rt-comprobante")?.files?.[0];
+    if (!file) { toast("Sube el comprobante de pago"); return; }
+    btn.disabled = true; btn.textContent = "Enviando…";
+    const ext = file.name.split(".").pop();
+    const path = `comprobante-membresia-${_miembroId}-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+    if (upErr) { toast("Error subiendo el comprobante"); btn.disabled = false; btn.textContent = "Enviar comprobante"; return; }
+    const comprobante_url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+
+    const { error } = await supabase.from("solicitudes_membresia").update({
+      estado: "pendiente",
+      comprobante_url,
+      created_at: new Date().toISOString(),
+    }).eq("id", sol.id);
+    if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Enviar comprobante"; return; }
+
+    cerrarModalTienda();
+    toast("¡Comprobante enviado! Te avisamos apenas lo confirmemos.");
+
+    supabase.from("configuracion").select("valor").eq("clave", "numero_admin_notificaciones").maybeSingle()
+      .then(({ data }) => {
+        if (!data?.valor) return;
+        fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ to: data.valor, body: `💳 Comprobante reenviado para la membresía ${planLabel} (${COP(sol.monto)}). Revísalo en Admin → Ventas.` }),
+        }).catch(() => {});
+      }).catch(() => {});
+  });
 }
 
 document.getElementById("topbar-notif-btn")?.addEventListener("click", async (e) => {
