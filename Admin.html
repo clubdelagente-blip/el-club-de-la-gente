@@ -434,7 +434,7 @@ function dibujarCoverFlyer(ctx,img,x,y,w,h){
 let _flyerState=null;
 function dibujarFlyerEnCanvas(canvas){
   if(!_flyerState)return;
-  const{img1,img2,logoClub,color,nombre,categoriaTxt,destacado,descripcion}=_flyerState;
+  const{img1,img2,logoClub,logoAliado,color,nombre,categoriaTxt,destacado,descripcion}=_flyerState;
   const circR=parseInt($("#pr-circ-size")?.value)||148;
   const circX=1080*((parseInt($("#pr-circ-x")?.value)||50)/100);
   const circY=1350*((parseInt($("#pr-circ-y")?.value)||28)/100);
@@ -495,11 +495,18 @@ function dibujarFlyerEnCanvas(canvas){
   ctx.textBaseline='middle';
   ctx.save();
   ctx.beginPath();ctx.arc(130,fotoH+90,56,0,Math.PI*2);
-  ctx.fillStyle='rgba(255,255,255,.14)';ctx.fill();
-  ctx.fillStyle='#fff';
-  ctx.font="700 42px 'Fraunces', serif";
-  ctx.textAlign='center';
-  ctx.fillText((nombre||'?')[0].toUpperCase(),130,fotoH+94);
+  if(logoAliado){
+    ctx.save();
+    ctx.clip();
+    dibujarCoverFlyer(ctx,logoAliado,130-56,fotoH+90-56,112,112);
+    ctx.restore();
+  }else{
+    ctx.fillStyle='rgba(255,255,255,.14)';ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.font="700 42px 'Fraunces', serif";
+    ctx.textAlign='center';
+    ctx.fillText((nombre||'?')[0].toUpperCase(),130,fotoH+94);
+  }
   ctx.restore();
 
   ctx.fillStyle='#F1F7F6';
@@ -541,14 +548,10 @@ function dibujarFlyerEnCanvas(canvas){
   let dy=fotoH+230;
   lineasDesc.slice(0,3).forEach(l=>{ctx.fillText(l,70,dy);dy+=52;});
 
-  ctx.font="italic 500 24px 'Inter', sans-serif";
-  ctx.fillStyle='rgba(241,247,246,.45)';
-  ctx.fillText('*Aplican términos y condiciones',70,dy+16);
-
   ctx.textAlign='center';
-  ctx.fillStyle='rgba(241,247,246,.55)';
-  ctx.font="600 24px 'Inter', sans-serif";
-  ctx.fillText('EL CLUB DE LA GENTE',W/2,H-50);
+  ctx.font="italic 500 24px 'Inter', sans-serif";
+  ctx.fillStyle='rgba(241,247,246,.5)';
+  ctx.fillText('*Aplican términos y condiciones',W/2,H-50);
   ctx.textAlign='left';
 }
 async function generarImagenPromo(aliadoId,aliadoNombre){
@@ -578,13 +581,14 @@ async function generarImagenPromo(aliadoId,aliadoNombre){
     const nombre=aliadoNombre||aliado?.nombre||'Aliado';
     const categoriaTxt=(aliado?.categoria||'').split(',')[0].trim();
 
-    const[img1,img2,logoClub]=await Promise.all([
+    const[img1,img2,logoClub,logoAliado]=await Promise.all([
       cargarImagenCORS(fotosFuente[0]).catch(()=>null),
       cargarImagenCORS(fotosFuente[1]).catch(()=>null),
       cargarImagenCORS('logo-club.png').catch(()=>null),
+      aliado?.imagen_url?cargarImagenCORS(aliado.imagen_url).catch(()=>null):Promise.resolve(null),
     ]);
 
-    _flyerState={img1,img2,logoClub,color,nombre,categoriaTxt,destacado,descripcion,fotosFuente};
+    _flyerState={img1,img2,logoClub,logoAliado,color,nombre,categoriaTxt,destacado,descripcion,fotosFuente};
 
     const canvas=$("#pr-flyer-canvas");
     const wrap=$("#pr-flyer-preview-wrap");
