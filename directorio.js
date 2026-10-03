@@ -363,6 +363,13 @@ function sheetAliado(a) {
     <div class="sheet__sub">Promociones disponibles</div>
     ${promos.length ? promos.map((p) => {
       const fotos = (Array.isArray(p.fotos_urls) && p.fotos_urls.length) ? p.fotos_urls : (p.foto_url ? [p.foto_url] : []);
+      const esFlyer = fotos.length === 1 && fotos[0].includes('flyer=1');
+      if (esFlyer) {
+        return `
+        <div class="promo-card">
+          <img src="${fotos[0]}" style="width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;border-radius:10px">
+        </div>`;
+      }
       return `
       <div class="promo-card">
         ${fotos.length ? `

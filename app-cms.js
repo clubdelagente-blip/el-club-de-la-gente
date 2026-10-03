@@ -337,6 +337,13 @@ async function cargarCarruselPromos() {
   const items = [...promos, ...promos];
   track.innerHTML = items.map(p => {
     const al = aliadosMap.get(p.aliado_id);
+    const esFlyer = (p.foto_url || '').includes('flyer=1');
+    if (esFlyer) {
+      return `
+      <div class="promo-card" style="--pc-cc:${colorCategoria(al?.categoria)}">
+        <img class="promo-card__img" src="${p.foto_url}" alt="${p.descripcion || ''}" style="height:auto;aspect-ratio:4/5;object-fit:cover">
+      </div>`;
+    }
     return `
     <div class="promo-card" style="--pc-cc:${colorCategoria(al?.categoria)}">
       <img class="promo-card__img" src="${p.foto_url}" alt="${p.descripcion || ''}">
