@@ -1000,7 +1000,7 @@ async function cargarPostulaciones(){
         </div>
         <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
           <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:rgba(245,158,11,.15);color:#f59e0b;border:1px solid rgba(245,158,11,.3)">Pendiente</span>
-          ${wa?`<button class="ad-btn ad-btn--verde" data-aprobar-post="${p.id}" data-wa-post="${wa}" data-nom-post="${(p.nombre_negocio||'').replace(/"/g,'&quot;')}" data-cat-post="${(p.categoria||'').replace(/"/g,'&quot;')}" data-tel-post="${(p.whatsapp||'').replace(/"/g,'&quot;')}" style="font-size:12px">${ic('message-circle')} Aprobar&nbsp;+ WA</button>`:`<span style="font-size:11px;color:rgba(242,240,234,.3)">Sin WhatsApp</span>`}
+          ${wa?`<button class="ad-btn ad-btn--verde" data-aprobar-post="${p.id}" data-wa-post="${wa}" data-nom-post="${(p.nombre_negocio||'').replace(/"/g,'&quot;')}" data-resp-post="${(p.nombre_responsable||'').replace(/"/g,'&quot;')}" data-cat-post="${(p.categoria||'').replace(/"/g,'&quot;')}" data-tel-post="${(p.whatsapp||'').replace(/"/g,'&quot;')}" style="font-size:12px">${ic('message-circle')} Aprobar&nbsp;+ WA</button>`:`<span style="font-size:11px;color:rgba(242,240,234,.3)">Sin WhatsApp</span>`}
           <button class="ad-btn" data-rechazar-post="${p.id}" style="font-size:12px" title="Rechazar">${ic('x')}</button>
         </div>
       </div>`;
@@ -1085,6 +1085,8 @@ function htmlFormAliado(a={}){
   const customChips=personalizadas.map(c=>`<button type="button" class="fa-chip is-on" data-cat="${c.replace(/"/g,'&quot;')}" data-custom="1">${c} &times;</button>`).join('');
   return `
   <div class="ad-field"><label>Nombre del negocio *</label><input id="fa-nombre" type="text" value="${(a.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Café del Parque"></div>
+  <div class="ad-field"><label>Nombre del responsable</label><input id="fa-responsable" type="text" value="${(a.nombre_responsable||'').replace(/"/g,'&quot;')}" placeholder="Ej: Andrea Gómez">
+    <div style="font-size:11px;color:rgba(26,26,24,.4);margin-top:4px">La persona de contacto -- con este nombre se le saluda a ella, no con el del negocio, al crear su cuenta de acceso.</div></div>
   <div class="ad-field"><label>Categoría</label>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:2px" id="fa-chips">${chips}</div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px" id="fa-chips-custom">${customChips}</div>
@@ -1221,10 +1223,14 @@ function bindFormAliado(){
     $("#fa-crear-cuenta")?.addEventListener('click',async()=>{
       const btn=$("#fa-crear-cuenta");
       const aliadoId=$("#fa-save")?.dataset.id;
-      const nombre=$("#fa-nombre")?.value.trim();
+      // Con quien se saluda es el responsable (persona), no el negocio --
+      // si todavía no lo cargaron, no se deja seguir en vez de saludar con
+      // el nombre del negocio por defecto.
+      const nombre=$("#fa-responsable")?.value.trim();
       let waDigits=($("#fa-wa")?.value||"").replace(/\D/g,"");
       while(waDigits.length>10&&waDigits.startsWith("57"))waDigits=waDigits.slice(2);
       if(!aliadoId){toast('Guarda el aliado primero');return;}
+      if(!nombre){toast('Agrega el nombre del responsable primero');return;}
       if(!waDigits){toast('Agrega el WhatsApp del aliado primero');return;}
       const email=waDigits+"@clubdelagente.app";
       btn.disabled=true;btn.innerHTML=`${ic("loader")} Creando…`;if(window.lucide)lucide.createIcons();
@@ -1310,7 +1316,7 @@ function bindFormAliado(){
       let waAliado=($("#fa-wa")?.value||'').replace(/\D/g,'');
       while(waAliado.length>10&&waAliado.startsWith('57'))waAliado=waAliado.slice(2);
       let fotosCarrusel=[];try{fotosCarrusel=JSON.parse($("#fa-carrusel-urls")?.value||'[]');}catch(_){fotosCarrusel=[];}
-      const payload={nombre,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:waAliado||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fotos_carrusel:fotosCarrusel,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
+      const payload={nombre,nombre_responsable:$("#fa-responsable")?.value.trim()||null,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:waAliado||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fotos_carrusel:fotosCarrusel,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
       const id=btn.dataset.id;
       const{error}=id?await supabase.from('aliados').update(payload).eq('id',id):await supabase.from('aliados').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}
@@ -3207,7 +3213,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const aprobarProf=e.target.closest('[data-aprobar-prof]');if(aprobarProf){const id=aprobarProf.dataset.aprobarProf;const waProf=aprobarProf.dataset.waProf;const nomProf=aprobarProf.dataset.nomProf||'';await supabase.from('profesionales').update({estado:'aprobado'}).eq('id',id);if(waProf){fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:waProf,body:`¡Hola ${nomProf}! 🎉 Tu perfil de profesional en El Club de la Gente fue aprobado.\n\nMuy pronto activamos tu cuenta y quedas visible en el directorio de Profesionales para nuestros miembros Premium.\n\n¡Bienvenido al Club!\nEl Club de la Gente`})}).catch(()=>{});}cargarProfesionales();toast('Profesional aprobado — WhatsApp enviado ✓');return;}
     const activarProf=e.target.closest('[data-activar-prof]');if(activarProf){const pid=activarProf.dataset.activarProf;await supabase.from('profesionales').update({estado:'activo',activo:true}).eq('id',pid);const p=_profesionales.find(x=>x.id===pid);if(p?.user_id)await supabase.from('perfiles').update({plan:'vitalicia'}).eq('id',p.user_id);cargarProfesionales();toast('Profesional activado ✓ — vitalicia mientras esté afiliado');return;}
     const desactivarProf=e.target.closest('[data-desactivar-prof]');if(desactivarProf){const pid=desactivarProf.dataset.desactivarProf;await supabase.from('profesionales').update({estado:'pendiente',activo:false}).eq('id',pid);const p=_profesionales.find(x=>x.id===pid);if(p?.user_id)await supabase.from('perfiles').update({plan:'sin_plan'}).eq('id',p.user_id);cargarProfesionales();toast('Profesional desactivado');return;}
-    const aprobarPost=e.target.closest('[data-aprobar-post]');if(aprobarPost){const id=aprobarPost.dataset.aprobarPost;const waPost=aprobarPost.dataset.waPost;const nombre=aprobarPost.dataset.nomPost;const categoria=aprobarPost.dataset.catPost;const whatsapp=aprobarPost.dataset.telPost;await supabase.from('aliados').insert({nombre,categoria,whatsapp,activo:false});await supabase.from('aliados_postulaciones').update({estado:'aprobado'}).eq('id',id);if(waPost){fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:waPost,body:`¡Hola! 🎉 La postulación de *${nombre}* en El Club de la Gente fue aprobada.\n\nMuy pronto activamos su perfil y quedan visibles en el directorio de aliados para todos nuestros miembros.\n\n¡Bienvenidos al Club!\nEl Club de la Gente`})}).catch(()=>{});}window.renderAliados?.();toast('Aliado aprobado — WhatsApp enviado ✓');return;}
+    const aprobarPost=e.target.closest('[data-aprobar-post]');if(aprobarPost){const id=aprobarPost.dataset.aprobarPost;const waPost=aprobarPost.dataset.waPost;const nombre=aprobarPost.dataset.nomPost;const nombreResponsable=aprobarPost.dataset.respPost||null;const categoria=aprobarPost.dataset.catPost;const whatsapp=aprobarPost.dataset.telPost;await supabase.from('aliados').insert({nombre,nombre_responsable:nombreResponsable,categoria,whatsapp,activo:false});await supabase.from('aliados_postulaciones').update({estado:'aprobado'}).eq('id',id);if(waPost){fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({to:waPost,body:`¡Hola! 🎉 La postulación de *${nombre}* en El Club de la Gente fue aprobada.\n\nMuy pronto activamos su perfil y quedan visibles en el directorio de aliados para todos nuestros miembros.\n\n¡Bienvenidos al Club!\nEl Club de la Gente`})}).catch(()=>{});}window.renderAliados?.();toast('Aliado aprobado — WhatsApp enviado ✓');return;}
     const rechazarPost=e.target.closest('[data-rechazar-post]');if(rechazarPost&&confirm('¿Rechazar esta postulación?')){await supabase.from('aliados_postulaciones').update({estado:'rechazado'}).eq('id',rechazarPost.dataset.rechazarPost);window.renderAliados?.();toast('Postulación rechazada');return;}
     const edProf=e.target.closest('[data-ed-prof]');if(edProf){const p=_profesionales.find(x=>x.id===edProf.dataset.edProf);if(p){abrirModal('Editar profesional',p.nombre,htmlFormProf(p));bindFormProf(p);}return;}
     const togProf=e.target.closest('[data-tog-prof]');if(togProf){const activo=togProf.dataset.activo==='true';const pid=togProf.dataset.togProf;await supabase.from('profesionales').update({activo:!activo}).eq('id',pid);const p=_profesionales.find(x=>x.id===pid);if(p?.user_id)await supabase.from('perfiles').update({plan:!activo?'vitalicia':'sin_plan'}).eq('id',p.user_id);cargarProfesionales();return;}
