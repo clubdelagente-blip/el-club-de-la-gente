@@ -284,11 +284,24 @@ function segMostrar(i) {
   $("#seg-next").innerHTML = (esUltima ? "Finalizar" : "Siguiente") + ' <span class="ar">&rarr;</span>';
   $(".seg-overlay").scrollTo({ top: 0, behavior: "smooth" });
 }
-function abrirSeg(i = 0) {
+// mostrarIntro=true: pantalla de bienvenida sola, con su propio botón
+// "Comenzar" -- el flujo real de preguntas (progreso + bloques) arranca
+// recién cuando lo tocan. Se omite (va directo al flujo) si ya había un
+// borrador en curso o si se reabre en un bloque puntual (ej. "Actualizar
+// categorías"), para no volver a mostrarle la bienvenida a quien ya empezó.
+function abrirSeg(i = 0, mostrarIntro = false) {
   $(".seg-overlay").classList.add("is-open");
   document.body.style.overflow = "hidden";
-  ocultarSegInterstitials();
-  segMostrar(i);
+  $$(".seg-interstitial").forEach(el => el.hidden = true);
+  document.querySelector(".seg-logo").style.display = "";
+  if (mostrarIntro) {
+    $("#seg-intro").hidden = false;
+    $("#seg-flujo").hidden = true;
+  } else {
+    $("#seg-intro").hidden = true;
+    $("#seg-flujo").hidden = false;
+    segMostrar(i);
+  }
   if (window.lucide) lucide.createIcons();
 }
 function cerrarSeg() {
@@ -302,19 +315,15 @@ function cerrarSeg() {
 // SEG_TOTAL, para no desordenar la barra de progreso ni la paginación.
 function mostrarSegInterstitial(id) {
   document.querySelector(".seg-logo").style.display = id === "seg-final-gracias" ? "none" : "";
-  $("#seg-progress-wrap").style.display = "none";
-  $("#seg-head").style.display = "none";
-  $$(".seg-block").forEach(b => b.classList.remove("is-active"));
-  $("#seg-actions").style.display = "none";
+  $("#seg-intro").hidden = true;
+  $("#seg-flujo").hidden = true;
   $$(".seg-interstitial").forEach(el => el.hidden = el.id !== id);
   $(".seg-overlay").scrollTo({ top: 0, behavior: "smooth" });
 }
 function ocultarSegInterstitials() {
   document.querySelector(".seg-logo").style.display = "";
-  $("#seg-progress-wrap").style.display = "";
-  $("#seg-head").style.display = "";
-  $("#seg-actions").style.display = "";
   $$(".seg-interstitial").forEach(el => el.hidden = true);
+  $("#seg-flujo").hidden = false;
 }
 
 // Guarda en el navegador lo respondido hasta ahora en el cuestionario, para
@@ -436,13 +445,15 @@ async function iniciarSegmentacion(perfil, irABloque = 0) {
   await cargarPreguntasSegmentacion();
   if (perfil) prepararCamposConocidos(perfil);
   let bloqueInicial = irABloque === "categorias" ? _catBlockIndex : irABloque;
-  // Solo se restaura un borrador en la entrada normal (no cuando se pide
-  // explícitamente ir a "categorias" desde "Actualizar categorías").
+  // La bienvenida solo se muestra en la entrada normal, de cero -- no cuando
+  // se pide ir directo a "categorias", ni cuando ya había un borrador en
+  // curso (esa persona ya la vio la primera vez).
+  let mostrarIntro = irABloque === 0;
   if (irABloque === 0) {
     const bloqueGuardado = restaurarBorradorSeg();
-    if (bloqueGuardado != null) bloqueInicial = bloqueGuardado;
+    if (bloqueGuardado != null) { bloqueInicial = bloqueGuardado; mostrarIntro = false; }
   }
-  abrirSeg(bloqueInicial);
+  abrirSeg(bloqueInicial, mostrarIntro);
 }
 
 // Oculta y precarga del Bloque 1 solo lo que ya conocemos (registro manual o
@@ -2884,6 +2895,12 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#seg-final-cerrar")?.addEventListener("click", () => {
     ocultarSegInterstitials();
     cerrarSeg();
+  });
+  $("#seg-comenzar")?.addEventListener("click", () => {
+    $("#seg-intro").hidden = true;
+    $("#seg-flujo").hidden = false;
+    segMostrar(0);
+    if (window.lucide) lucide.createIcons();
   });
 
   // Modal de activación

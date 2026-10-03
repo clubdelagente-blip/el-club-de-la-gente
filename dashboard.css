@@ -255,6 +255,8 @@
 .seg-head .eyebrow { justify-content: center; margin-bottom: 14px; }
 .seg-head h1 { font-family: var(--display); font-size: clamp(32px, 4.4vw, 46px); font-weight: 600; line-height: 1.05; }
 .seg-head p { font-size: 15px; color: var(--tinta-60); margin-top: 12px; max-width: 480px; margin-left: auto; margin-right: auto; }
+#seg-intro { margin-top: 8vh; }
+#seg-intro #seg-comenzar { margin-top: 28px; }
 
 .seg-block { display: none; }
 .seg-block.is-active { display: block; animation: fade-in .4s ease; }
@@ -272,7 +274,18 @@
 .seg-opt.is-on { background: var(--verde); color: #fff; border-color: var(--verde); transform: scale(1.04); box-shadow: 0 6px 16px -4px rgba(9,85,68,.4); }
 .seg-input { width: 100%; font-family: var(--cuerpo); font-size: 14.5px; padding: 14px 16px; border-radius: 6px; border: 1px solid var(--linea-fuerte); background: #fff; }
 .seg-input:focus { outline: none; border-color: var(--verde); }
-.seg-actions { display: flex; justify-content: space-between; gap: 14px; margin-top: 40px; }
+
+/* Barra de acciones fija abajo -- en el celular no hay que bajar para
+   darle "Siguiente"; queda siempre a la vista mientras se responde. */
+#seg-dinamico { padding-bottom: 110px; }
+.seg-actions {
+  display: flex; justify-content: space-between; align-items: center; gap: 14px;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+  max-width: 680px; margin: 0 auto;
+  background: var(--crema);
+  padding: 16px 32px calc(16px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -8px 24px -10px rgba(0,0,0,.1);
+}
 .seg-skip { background: none; border: none; font-family: var(--cuerpo); font-size: 13.5px; font-weight: 600; color: var(--tinta-45); cursor: pointer; }
 .seg-skip:hover { color: var(--tinta); }
 

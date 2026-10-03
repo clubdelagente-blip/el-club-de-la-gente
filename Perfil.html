@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=37">
   <link rel="stylesheet" href="estilos.css?v=19">
-  <link rel="stylesheet" href="dashboard.css?v=15">
+  <link rel="stylesheet" href="dashboard.css?v=17">
   <link rel="stylesheet" href="agente.css?v=2">
 </head>
 <body class="dash-body">
@@ -991,23 +991,29 @@
     <div class="seg-grain" aria-hidden="true"></div>
     <div class="seg-wrap">
       <img src="logo-club.png" alt="El Club de la Gente" class="seg-logo">
-      <div class="seg-progress" id="seg-progress-wrap"><div class="seg-progress__bar" id="seg-bar"></div></div>
 
-      <div class="seg-head" id="seg-head">
+      <!-- Pantalla de bienvenida: sola, solo la primera vez -->
+      <div class="seg-head" id="seg-intro">
         <span class="eyebrow">¡Gracias por confiar en nosotros! 🌿</span>
         <h1>Queremos conocerte mejor</h1>
         <p>Cuéntanos un poco sobre ti para darte la mejor experiencia posible: entender tus gustos, mostrarte lo que de verdad te interesa y seguir sumando aliados pensando en ti. Solo toma 2 minutos.</p>
+        <button class="btn btn--primario" id="seg-comenzar">Comenzar <span class="ar">&rarr;</span></button>
       </div>
 
-      <!-- Bloques dinámicos: se llenan desde dashboard.js con las preguntas
-           configuradas en Admin → Formulario de bienvenida -->
-      <div id="seg-dinamico"></div>
+      <!-- Flujo real de preguntas: aparece recién al darle "Comenzar" -->
+      <div id="seg-flujo" hidden>
+        <div class="seg-progress" id="seg-progress-wrap"><div class="seg-progress__bar" id="seg-bar"></div></div>
 
-      <div class="seg-actions" id="seg-actions">
-        <button class="seg-skip" id="seg-prev"><i data-lucide="arrow-left" style="width:14px;height:14px;vertical-align:-2px"></i> Atrás</button>
-        <div style="display:flex;align-items:center;gap:18px;">
-          <button class="seg-skip" id="seg-skip">Omitir por ahora</button>
-          <button class="btn btn--primario" id="seg-next">Continuar</button>
+        <!-- Bloques dinámicos: se llenan desde dashboard.js con las preguntas
+             configuradas en Admin → Formulario de bienvenida -->
+        <div id="seg-dinamico"></div>
+
+        <div class="seg-actions" id="seg-actions">
+          <button class="seg-skip" id="seg-prev"><i data-lucide="arrow-left" style="width:14px;height:14px;vertical-align:-2px"></i> Atrás</button>
+          <div style="display:flex;align-items:center;gap:18px;">
+            <button class="seg-skip" id="seg-skip">Omitir por ahora</button>
+            <button class="btn btn--primario" id="seg-next">Continuar</button>
+          </div>
         </div>
       </div>
 
@@ -1198,7 +1204,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=2"></script>
-  <script type="module" src="dashboard.js?v=121"></script>
+  <script type="module" src="dashboard.js?v=122"></script>
   <script type="module" src="agente.js?v=1"></script>
 
   <template id="__bundler_thumbnail">
