@@ -658,11 +658,6 @@ const QUIENES_SOMOS = [
         <p><strong>no esperar a que alguien construya el mundo que queremos, sino empezar a construirlo con las herramientas que tenemos.</strong></p>
         <img src="julian-garcia.jpg" alt="Julián García" style="width:100%;max-width:280px;border-radius:14px;display:block;margin:6px auto 4px">
       ` },
-      { titulo: "Andrés Poveda", html: `
-        <p>Junto a Julián está <strong>Andrés Poveda</strong>, cofundador y director estratégico.</p>
-        <p>Su responsabilidad es convertir el propósito en una experiencia real: fortalecer la relación con los aliados, cuidar los beneficios ofrecidos a los miembros y ayudar a que cada parte del Club funcione de manera organizada y transparente.</p>
-        <p>Porque una buena intención necesita también una buena estructura para convertirse en realidad.</p>
-      ` },
     ],
   },
   {
@@ -900,6 +895,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Quiénes somos
     if (e.target.closest("[data-quienes-btn]")) {
+      if (e.target.closest("[data-cerrar-menu]")) {
+        nav.classList.remove("is-open");
+        $("#nav-mobile")?.classList.remove("is-open");
+      }
       openSheet(sheetQuienesSomos());
       bindAcordeon();
       return;
