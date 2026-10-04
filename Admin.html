@@ -3205,6 +3205,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   function htmlFormMarca(m = {}) {
     return `
       <div class="ad-field"><label>Nombre de la marca *</label><input id="fm-nombre" type="text" value="${(m.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Nike, Samsung, Adidas"></div>
+      <div class="ad-field"><label>Categoría <span style="font-weight:400;color:rgba(26,26,24,.4)">(se muestra debajo del logo en la landing)</span></label><input id="fm-categoria" type="text" value="${(m.categoria||'').replace(/"/g,'&quot;')}" placeholder="Ej: Moda, Viajes, Belleza"></div>
       <div class="ad-field"><label>Link de afiliado Amazon</label><input id="fm-link" type="url" value="${(m.link_afiliado||'').replace(/"/g,'&quot;')}" placeholder="https://amzn.to/..."></div>
       <div class="ad-field"><label>Logo de la marca</label>
         ${m.logo_url ? `<img src="${m.logo_url}" style="height:60px;object-fit:contain;border-radius:8px;background:#fff;padding:6px;margin-bottom:10px;display:block">` : ''}
@@ -3228,7 +3229,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
         let logo_url = $("#fm-img-url")?.value || null;
         const file = $("#fm-img")?.files[0];
         if (file) { try { logo_url = await subirLogo(file); } catch(e) { toast("Error subiendo logo"); btn.disabled=false; return; } }
-        const payload = { nombre, link_afiliado: $("#fm-link")?.value.trim()||null, logo_url, orden: parseInt($("#fm-orden")?.value||0), activa: true };
+        const payload = { nombre, categoria: $("#fm-categoria")?.value.trim()||null, link_afiliado: $("#fm-link")?.value.trim()||null, logo_url, orden: parseInt($("#fm-orden")?.value||0), activa: true };
         const id = btn.dataset.id;
         if (id) { await supabase.from('marcas_aliadas').update(payload).eq('id', id); toast("Marca actualizada ✓"); }
         else { await supabase.from('marcas_aliadas').insert(payload); toast("Marca agregada ✓"); }
