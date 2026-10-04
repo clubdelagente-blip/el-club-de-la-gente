@@ -344,16 +344,23 @@ function detallePromo(p) {
 function sheetAliado(a) {
   const promos = a.promociones || [];
   const cc = colorCategoria(a.categoria);
+  const promoTop = promos[0];
   return `
     <div style="${ccVars(a.categoria)}">
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
-      <div style="width:60px;height:60px;border-radius:50%;flex:none;overflow:hidden;display:grid;place-items:center;background:#fff;box-shadow:0 0 0 4px var(--cc-soft)">
-        ${a.imagen_url ? `<img src="${a.imagen_url}" alt="" style="width:100%;height:100%;object-fit:cover">` : `<span style="color:${cc}">${ic(iconoCategoria(a.categoria))}</span>`}
+    <div style="background:linear-gradient(135deg, var(--cc-soft), transparent 70%);border-radius:18px;padding:16px;margin:-6px -6px 14px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:60px;height:60px;border-radius:50%;flex:none;overflow:hidden;display:grid;place-items:center;background:#fff;box-shadow:0 0 0 4px #fff, 0 6px 18px -8px var(--cc-glow)">
+          ${a.imagen_url ? `<img src="${a.imagen_url}" alt="" style="width:100%;height:100%;object-fit:cover">` : `<span style="color:${cc}">${ic(iconoCategoria(a.categoria))}</span>`}
+        </div>
+        <div style="min-width:0">
+          <div class="sheet__cat" style="color:${cc}">${a.categoria || "Aliado del Club"}</div>
+          <h2 class="sheet__nombre" style="margin-top:2px">${a.nombre}</h2>
+        </div>
       </div>
-      <div>
-        <div class="sheet__cat" style="color:${cc}">${a.categoria || "Aliado del Club"}</div>
-        <h2 class="sheet__nombre" style="margin-top:2px">${a.nombre}</h2>
-      </div>
+      ${promoTop ? `
+      <div style="margin-top:14px;display:inline-flex;align-items:center;gap:7px;background:${cc};color:#fff;font-weight:800;font-size:15px;padding:9px 18px;border-radius:100px;box-shadow:0 10px 22px -10px var(--cc-glow)">
+        <i data-lucide="flame" style="width:17px;height:17px;flex:none"></i><span>${esc(badgePromo(promoTop))} · ¡activo ahora!</span>
+      </div>` : ''}
     </div>
     ${(() => {
       const fotos = (Array.isArray(a.fotos_carrusel) && a.fotos_carrusel.length) ? a.fotos_carrusel : (a.imagen_url ? [a.imagen_url] : []);
