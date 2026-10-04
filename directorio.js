@@ -358,9 +358,9 @@ function sheetAliado(a) {
         </div>
       </div>
       ${promoTop ? `
-      <div style="margin-top:14px;display:inline-flex;align-items:center;gap:7px;background:${cc};color:#fff;font-weight:800;font-size:15px;padding:9px 18px;border-radius:100px;box-shadow:0 10px 22px -10px var(--cc-glow)">
+      <button type="button" data-ir-promos style="margin-top:14px;display:inline-flex;align-items:center;gap:7px;background:${cc};color:#fff;font-weight:800;font-size:15px;padding:9px 18px;border-radius:100px;box-shadow:0 10px 22px -10px var(--cc-glow);border:none;cursor:pointer;font-family:inherit">
         <i data-lucide="flame" style="width:17px;height:17px;flex:none"></i><span>${esc(badgePromo(promoTop))} · ¡activo ahora!</span>
-      </div>` : ''}
+      </button>` : ''}
     </div>
     ${(() => {
       const fotos = (Array.isArray(a.fotos_carrusel) && a.fotos_carrusel.length) ? a.fotos_carrusel : (a.imagen_url ? [a.imagen_url] : []);
@@ -391,7 +391,7 @@ function sheetAliado(a) {
     ${a.ofrece_domicilio ? `<p style="font-size:12px;color:#888;margin:10px 0 0;line-height:1.4">¿Pides a domicilio? Comparte con el negocio la clave dinámica que aparece al voltear tu ClubCard, para que pueda validar tu descuento sin que estés presencialmente.</p>` : ''}
     ` : ''}
 
-    <div class="sheet__sub">Promociones disponibles</div>
+    <div class="sheet__sub" id="promos-disponibles">Promociones disponibles</div>
     ${promos.length ? promos.map((p) => {
       const fotos = (Array.isArray(p.fotos_urls) && p.fotos_urls.length) ? p.fotos_urls : (p.foto_url ? [p.foto_url] : []);
       const esFlyer = fotos.length === 1 && fotos[0].includes('flyer=1');
@@ -685,6 +685,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.addEventListener("click", (e) => {
     const card = e.target.closest("[data-aliado-btn], [data-aliado]");
     if (card) { openSheet(card.dataset.aliadoBtn ?? card.dataset.aliado); return; }
+    if (e.target.closest("[data-ir-promos]")) { $("#promos-disponibles")?.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
     if (e.target.closest("#sheet-close") || e.target === overlay) closeSheet();
   });
 
