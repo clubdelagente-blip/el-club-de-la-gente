@@ -395,14 +395,19 @@ function sheetAliado(a) {
     ${promos.length ? promos.map((p) => {
       const fotos = (Array.isArray(p.fotos_urls) && p.fotos_urls.length) ? p.fotos_urls : (p.foto_url ? [p.foto_url] : []);
       const esFlyer = fotos.length === 1 && fotos[0].includes('flyer=1');
+      const waPromo = a.whatsapp ? `https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.descripcion || badgePromo(p)}" de ${a.nombre} que vi en El Club de la Gente`)}` : null;
+      const tag = waPromo ? 'a' : 'div';
+      const attrsClick = waPromo ? ` href="${waPromo}" target="_blank" style="display:block;text-decoration:none;color:inherit;cursor:pointer"` : '';
+      const avisoWa = waPromo ? `<span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:${cc};margin-top:10px">${ICON_WA}Toca para aprovecharla por WhatsApp</span>` : '';
       if (esFlyer) {
         return `
-        <div class="promo-card">
+        <${tag} class="promo-card"${attrsClick}>
           <img src="${fotos[0]}" style="width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;border-radius:10px">
-        </div>`;
+          ${avisoWa}
+        </${tag}>`;
       }
       return `
-      <div class="promo-card">
+      <${tag} class="promo-card"${attrsClick}>
         ${fotos.length ? `
         <div class="promo-card__fotos">
           ${fotos.map(url => `<img src="${url}">`).join("")}
@@ -410,7 +415,8 @@ function sheetAliado(a) {
         <span class="promo-card__badge">${ic("flame")}${badgePromo(p)}</span>
         <p class="promo-card__desc">${p.descripcion}</p>
         <span class="promo-card__meta">${beneficioTexto(p)}${detallePromo(p) ? " · " + detallePromo(p) : ""}</span>
-      </div>`;
+        ${avisoWa}
+      </${tag}>`;
     }).join("") : `<p style="font-size:13px;color:#888;padding:8px 0">Este aliado todavía no tiene promociones cargadas. Consulta directamente en el establecimiento.</p>`}
 
     ${(promos.length && MIEMBRO_ID && VIEWER_USER_ID !== MIEMBRO_ID) ? `
