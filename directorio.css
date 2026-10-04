@@ -141,6 +141,7 @@
 .promo-card {
   background: #fff; border: 1.5px solid var(--linea); border-radius: 16px;
   padding: 18px 20px; margin-bottom: 14px; position: relative; overflow: hidden;
+  width: 100%; max-width: 100%; box-sizing: border-box;
 }
 .promo-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--cc, var(--verde)); }
 .promo-card__fotos { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; margin-bottom: 14px; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; touch-action: pan-x; }
