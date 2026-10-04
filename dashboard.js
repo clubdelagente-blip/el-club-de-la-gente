@@ -15,6 +15,28 @@ const ICON_WA = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentCo
 // agente.js es un script clásico (no módulo) que reutiliza estos helpers vía window
 window.$ = $; window.$$ = $$; window.ic = ic;
 const fmtCOP = (n) => "$" + new Intl.NumberFormat("es-CO").format(n);
+// overflow:hidden en el body NO basta en iOS Safari para bloquear el scroll
+// de fondo detrás de un overlay/modal -- el truco que sí funciona ahí es
+// "congelar" el body con position:fixed, guardando y restaurando el scroll.
+function bloquearScroll() {
+  const y = window.scrollY || window.pageYOffset || 0;
+  document.body.dataset.scrollY = y;
+  document.body.style.position = "fixed";
+  document.body.style.top = `-${y}px`;
+  document.body.style.left = "0";
+  document.body.style.right = "0";
+  document.body.style.width = "100%";
+}
+function desbloquearScroll() {
+  const y = parseInt(document.body.dataset.scrollY || "0", 10);
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.left = "";
+  document.body.style.right = "";
+  document.body.style.width = "";
+  delete document.body.dataset.scrollY;
+  window.scrollTo(0, y);
+}
 // Anima un número (formato COP) de 0 hasta el valor real -- el efecto de
 // "conteo" solo se ve una vez por carga, no engaña el dato final.
 function animarNumeroCOP(el, target) {
@@ -61,9 +83,14 @@ function leerPerfil() {
   const plan = localStorage.getItem("ecdlg_plan") || "premium";
   const params = new URLSearchParams(location.search);
   const rol = params.get("rol") || p.rol || localStorage.getItem("ecdlg_rol") || "miembro";
+  // A veces el nombre queda guardado como el correo interno
+  // (10digitos@clubdelagente.app) en vez del nombre real -- nunca se debe
+  // mostrar eso en pantalla, así que si pasa se cae a un genérico presentable.
+  const nombreCrudo = (p.nombre || "").trim();
+  const nombreOk = nombreCrudo && !nombreCrudo.includes("@");
   return {
-    nombre: p.nombre || "",
-    primerNombre: p.primerNombre || "Miembro",
+    nombre: nombreOk ? nombreCrudo : "Miembro del Club",
+    primerNombre: (p.primerNombre && !p.primerNombre.includes("@")) ? p.primerNombre : "Miembro",
     fechaISO: p.fechaISO || "",
     mision: p.mision || null,
     num: m.num || "",
@@ -343,7 +370,7 @@ function segMostrar(i) {
 // categorías"), para no volver a mostrarle la bienvenida a quien ya empezó.
 function abrirSeg(i = 0, mostrarIntro = false) {
   $(".seg-overlay").classList.add("is-open");
-  document.body.style.overflow = "hidden";
+  bloquearScroll();
   $$(".seg-interstitial").forEach(el => el.hidden = true);
   document.querySelector(".seg-logo").style.display = "";
   if (mostrarIntro) {
@@ -358,7 +385,7 @@ function abrirSeg(i = 0, mostrarIntro = false) {
 }
 function cerrarSeg() {
   $(".seg-overlay").classList.remove("is-open");
-  document.body.style.overflow = "";
+  desbloquearScroll();
   if (_miembroId) localStorage.setItem(`ecdlg_segmentado_${_miembroId}`, "1");
 }
 
@@ -951,14 +978,14 @@ function abrirModalTienda(titulo, bodyHtml) {
   const t = $("#modal-tienda-title"); if (t) t.textContent = titulo;
   const b = $("#modal-tienda-body"); if (b) b.innerHTML = bodyHtml;
   const m = $("#modal-tienda"); if (m) m.style.display = "flex";
-  document.body.style.overflow = "hidden";
+  bloquearScroll();
   if (!_modalTiendaAbierta) history.pushState({ modalTienda: true }, "");
   _modalTiendaAbierta = true;
   if (window.lucide) lucide.createIcons();
 }
 function cerrarModalTienda(_desdePopstate) {
   const m = $("#modal-tienda"); if (m) m.style.display = "none";
-  document.body.style.overflow = "";
+  desbloquearScroll();
   if (_modalTiendaAbierta) {
     _modalTiendaAbierta = false;
     if (!_desdePopstate) history.back();
@@ -1578,11 +1605,11 @@ async function generarCodigoVerificacion() {
 /* ---------- MODAL ACTIVAR ---------- */
 function abrirModalActivar() {
   const m = document.getElementById("modal-activar");
-  if (m) { m.style.display = "flex"; document.body.style.overflow = "hidden"; if (window.lucide) lucide.createIcons(); }
+  if (m) { m.style.display = "flex"; bloquearScroll(); if (window.lucide) lucide.createIcons(); }
 }
 function cerrarModalActivar() {
   const m = document.getElementById("modal-activar");
-  if (m) { m.style.display = "none"; document.body.style.overflow = ""; }
+  if (m) { m.style.display = "none"; desbloquearScroll(); }
 }
 
 /* ---------- BLOQUEO (sin_plan) ---------- */

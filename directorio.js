@@ -17,6 +17,28 @@ function norm(s) {
     .replace(/[áàäâã]/g, "a").replace(/[éèëê]/g, "e").replace(/[íìïî]/g, "i")
     .replace(/[óòöôõ]/g, "o").replace(/[úùüû]/g, "u").replace(/ñ/g, "n");
 }
+// overflow:hidden en el body NO basta en iOS Safari para bloquear el scroll
+// de fondo detrás de un modal/sheet -- el truco que sí funciona ahí es
+// "congelar" el body con position:fixed, guardando y restaurando el scroll.
+function bloquearScroll() {
+  const y = window.scrollY || window.pageYOffset || 0;
+  document.body.dataset.scrollY = y;
+  document.body.style.position = "fixed";
+  document.body.style.top = `-${y}px`;
+  document.body.style.left = "0";
+  document.body.style.right = "0";
+  document.body.style.width = "100%";
+}
+function desbloquearScroll() {
+  const y = parseInt(document.body.dataset.scrollY || "0", 10);
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.left = "";
+  document.body.style.right = "";
+  document.body.style.width = "";
+  delete document.body.dataset.scrollY;
+  window.scrollTo(0, y);
+}
 
 /* Ícono por palabra clave de categoría (aproximado, no requiere que el admin lo elija) */
 const ICONOS_CAT = [
@@ -221,7 +243,7 @@ async function openSheet(aliadoId) {
   sheetInner.innerHTML = `<p style="text-align:center;padding:60px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></p>`;
   overlay.classList.add("is-open");
   sheet.classList.add("is-open");
-  document.body.style.overflow = "hidden";
+  bloquearScroll();
   $("#sheet-scroll").scrollTop = 0;
   if (window.lucide) lucide.createIcons();
 
@@ -235,7 +257,7 @@ async function openSheet(aliadoId) {
 function closeSheet() {
   overlay.classList.remove("is-open");
   sheet.classList.remove("is-open");
-  document.body.style.overflow = "";
+  desbloquearScroll();
   if (carruselInterval) { clearInterval(carruselInterval); carruselInterval = null; }
 }
 
@@ -258,9 +280,9 @@ async function abrirModalMejorarPlan(aliado) {
       </div>
     </div>`;
   document.body.appendChild(ov);
-  document.body.style.overflow = "hidden";
+  bloquearScroll();
   if (window.lucide) lucide.createIcons();
-  const cerrar = () => { ov.remove(); document.body.style.overflow = ""; };
+  const cerrar = () => { ov.remove(); desbloquearScroll(); };
   ov.querySelector("#mp-close").addEventListener("click", cerrar);
   ov.addEventListener("click", (e) => { if (e.target === ov) cerrar(); });
 

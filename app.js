@@ -331,11 +331,34 @@ const overlay = $("#sheet-overlay");
 const sheet = $("#sheet");
 const sheetInner = $("#sheet-inner");
 
+// overflow:hidden en el body NO basta en iOS Safari para bloquear el scroll
+// de fondo detrás del sheet -- el truco que sí funciona ahí es "congelar" el
+// body con position:fixed, guardando y restaurando el scroll.
+function bloquearScroll() {
+  const y = window.scrollY || window.pageYOffset || 0;
+  document.body.dataset.scrollY = y;
+  document.body.style.position = "fixed";
+  document.body.style.top = `-${y}px`;
+  document.body.style.left = "0";
+  document.body.style.right = "0";
+  document.body.style.width = "100%";
+}
+function desbloquearScroll() {
+  const y = parseInt(document.body.dataset.scrollY || "0", 10);
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.left = "";
+  document.body.style.right = "";
+  document.body.style.width = "";
+  delete document.body.dataset.scrollY;
+  window.scrollTo(0, y);
+}
+
 function openSheet(html) {
   sheetInner.innerHTML = html;
   overlay.classList.add("is-open");
   sheet.classList.add("is-open");
-  document.body.style.overflow = "hidden";
+  bloquearScroll();
   if (window.lucide) lucide.createIcons();
   $("#sheet-scroll").scrollTop = 0;
   $$(".impacto__num[data-count]", sheetInner).forEach(animateCount);
@@ -343,7 +366,7 @@ function openSheet(html) {
 function closeSheet() {
   overlay.classList.remove("is-open");
   sheet.classList.remove("is-open");
-  document.body.style.overflow = "";
+  desbloquearScroll();
 }
 
 /* Sheet de aliado (Sección D / 5.3) */
