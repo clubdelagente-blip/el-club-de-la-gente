@@ -145,7 +145,7 @@ let query = "";
 async function cargarAliados() {
   // Nota: "codigo_aliado" NUNCA se pide acá a propósito — se valida server-side (RPC verificar_codigo_aliado)
   const { data } = await supabase.from("aliados")
-    .select("id, nombre, categoria, descuento, descripcion, whatsapp, direccion, maps_url, ofrece_domicilio, ofrece_agenda, imagen_url, fotos_carrusel, destacado, planes_visibles")
+    .select("id, nombre, categoria, descuento, descripcion, whatsapp, direccion, maps_url, ofrece_domicilio, ofrece_agenda, instagram, imagen_url, fotos_carrusel, destacado, planes_visibles")
     .eq("activo", true).order("nombre");
   const todos = data || [];
   // Gratis ve el directorio completo como vitrina (marcado "bloqueado" el
@@ -237,6 +237,27 @@ function wireCarrusel() {
   }));
 }
 
+function wireResenas(a) {
+  if (!VIEWER_USER_ID) return;
+  const cc = colorCategoria(a.categoria);
+  let seleccion = a._miResena?.estrellas || 0;
+  const botones = $$("#resena-stars [data-estrella]");
+  if (!botones.length) return;
+  const pintar = () => botones.forEach(b => { b.style.color = (+b.dataset.estrella <= seleccion) ? cc : "#ccc"; });
+  botones.forEach(b => b.addEventListener("click", () => { seleccion = +b.dataset.estrella; pintar(); }));
+  $("#resena-enviar")?.addEventListener("click", async () => {
+    if (!seleccion) { toast("Elige de 1 a 5 estrellas", false); return; }
+    const btn = $("#resena-enviar");
+    btn.disabled = true;
+    const comentario = $("#resena-comentario")?.value.trim() || null;
+    const { error } = await supabase.from("aliados_resenas")
+      .upsert({ aliado_id: a.id, miembro_id: VIEWER_USER_ID, estrellas: seleccion, comentario }, { onConflict: "aliado_id,miembro_id" });
+    if (error) { toast("Error guardando tu reseña", false); btn.disabled = false; return; }
+    toast("¡Gracias por tu reseña!");
+    openSheet(a.id);
+  });
+}
+
 async function openSheet(aliadoId) {
   const a = ALIADOS.find(x => x.id === aliadoId);
   if (!a) return;
@@ -251,10 +272,21 @@ async function openSheet(aliadoId) {
 
   const { data } = await supabase.from("promociones").select("*").eq("aliado_id", a.id).eq("activa", true).order("created_at", { ascending: false });
   a.promociones = data || [];
+
+  const { data: resenas } = await supabase.from("aliados_resenas").select("estrellas").eq("aliado_id", a.id);
+  a._resenas = resenas || [];
+  if (VIEWER_USER_ID) {
+    const { data: miResena } = await supabase.from("aliados_resenas").select("estrellas, comentario").eq("aliado_id", a.id).eq("miembro_id", VIEWER_USER_ID).maybeSingle();
+    a._miResena = miResena || null;
+  } else {
+    a._miResena = null;
+  }
+
   sheetInner.innerHTML = sheetAliado(a);
   if (window.lucide) lucide.createIcons();
   wireCalc(a);
   wireCarrusel();
+  wireResenas(a);
 }
 function closeSheet() {
   overlay.classList.remove("is-open");
@@ -341,10 +373,19 @@ function detallePromo(p) {
   return partes.join(" · ");
 }
 
+function starsHtml(avg, size) {
+  size = size || 14;
+  const llenas = Math.round(avg || 0);
+  let html = '';
+  for (let i = 1; i <= 5; i++) html += `<span style="color:${i <= llenas ? 'var(--cc)' : '#ddd'};font-size:${size}px;line-height:1">★</span>`;
+  return html;
+}
 function sheetAliado(a) {
   const promos = a.promociones || [];
   const cc = colorCategoria(a.categoria);
   const promoTop = promos[0];
+  const resenas = a._resenas || [];
+  const avgResena = resenas.length ? (resenas.reduce((s, r) => s + r.estrellas, 0) / resenas.length) : null;
   return `
     <div style="${ccVars(a.categoria)}">
     <div style="background:linear-gradient(135deg, var(--cc-soft), transparent 70%);border-radius:18px;padding:16px;margin:-6px -6px 14px">
@@ -352,10 +393,14 @@ function sheetAliado(a) {
         <div style="width:60px;height:60px;border-radius:50%;flex:none;overflow:hidden;display:grid;place-items:center;background:#fff;box-shadow:0 0 0 4px #fff, 0 6px 18px -8px var(--cc-glow)">
           ${a.imagen_url ? `<img src="${a.imagen_url}" alt="" style="width:100%;height:100%;object-fit:cover">` : `<span style="color:${cc}">${ic(iconoCategoria(a.categoria))}</span>`}
         </div>
-        <div style="min-width:0">
+        <div style="min-width:0;flex:1">
           <div class="sheet__cat" style="color:${cc}">${a.categoria || "Aliado del Club"}</div>
           <h2 class="sheet__nombre" style="margin-top:2px">${a.nombre}</h2>
         </div>
+        ${a.instagram ? `<a href="${a.instagram}" target="_blank" rel="noopener" style="flex:none;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:${cc};color:#fff"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>` : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:10px">
+        ${resenas.length ? `<span>${starsHtml(avgResena, 15)}</span><span style="font-size:12.5px;color:var(--tinta-60);font-weight:600">${avgResena.toFixed(1)} · ${resenas.length} reseña${resenas.length === 1 ? '' : 's'}</span>` : `<span style="font-size:12px;color:var(--tinta-45)">Aún sin reseñas</span>`}
       </div>
       ${promoTop ? `
       <button type="button" data-ir-promos style="margin-top:14px;display:inline-flex;align-items:center;gap:7px;background:${cc};color:#fff;font-weight:800;font-size:15px;padding:9px 18px;border-radius:100px;box-shadow:0 10px 22px -10px var(--cc-glow);border:none;cursor:pointer;font-family:inherit">
@@ -374,6 +419,17 @@ function sheetAliado(a) {
 
     <div class="sheet__sub">Sobre este aliado</div>
     <p class="sheet__desc">${a.descripcion || "Aliado de El Club de la Gente."}</p>
+
+    ${VIEWER_USER_ID ? `
+    <div class="sheet__sub">${a._miResena ? "Tu reseña" : "Califica este aliado"}</div>
+    <div style="background:var(--cc-soft);border-radius:12px;padding:16px;margin-bottom:22px">
+      <div id="resena-stars" style="display:flex;gap:4px;margin-bottom:10px">
+        ${[1, 2, 3, 4, 5].map(n => `<button type="button" data-estrella="${n}" style="background:none;border:none;cursor:pointer;padding:2px;font-size:30px;line-height:1;color:${(a._miResena?.estrellas || 0) >= n ? cc : "#ccc"}">★</button>`).join("")}
+      </div>
+      <textarea id="resena-comentario" placeholder="Cuéntales a otros miembros qué te pareció (opcional)" rows="2" style="width:100%;border:1px solid var(--linea-fuerte);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:13.5px;resize:vertical;margin-bottom:10px;background:#fff">${a._miResena?.comentario || ""}</textarea>
+      <button type="button" id="resena-enviar" class="btn btn--primario" style="width:100%;justify-content:center">${a._miResena ? "Actualizar reseña" : "Enviar reseña"}</button>
+    </div>
+    ` : ''}
 
     ${(a.direccion || a.maps_url) ? `
     <div class="sheet__sub">Cómo llegar</div>
