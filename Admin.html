@@ -1349,6 +1349,7 @@ function htmlFormAliado(a={}){
     <div class="ad-field"><label>Dirección</label><input id="fa-dir" type="text" value="${(a.direccion||'').replace(/"/g,'&quot;')}" placeholder="Calle, barrio"></div>
   </div>
   <div class="ad-field"><label>Link de Google Maps</label><input id="fa-maps" type="url" value="${(a.maps_url||'').replace(/"/g,'&quot;')}" placeholder="https://maps.app.goo.gl/..."></div>
+  <div class="ad-field"><label>Instagram <span style="font-weight:400;color:rgba(26,26,24,.4)">(se ve como ícono en la ficha)</span></label><input id="fa-instagram" type="url" value="${(a.instagram||'').replace(/"/g,'&quot;')}" placeholder="https://instagram.com/tu_negocio"></div>
   <div class="ad-field"><label>Botón de contacto en su ficha</label>
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0"><input type="checkbox" id="fa-domicilio" style="width:auto" ${a.ofrece_domicilio?'checked':''}> Pide a domicilio (WhatsApp)</label>
     <label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" id="fa-agenda" style="width:auto" ${a.ofrece_agenda?'checked':''}> Agendar cita (WhatsApp)</label>
@@ -1565,7 +1566,7 @@ function bindFormAliado(){
       let waAliado=($("#fa-wa")?.value||'').replace(/\D/g,'');
       while(waAliado.length>10&&waAliado.startsWith('57'))waAliado=waAliado.slice(2);
       let fotosCarrusel=[];try{fotosCarrusel=JSON.parse($("#fa-carrusel-urls")?.value||'[]');}catch(_){fotosCarrusel=[];}
-      const payload={nombre,nombre_responsable:$("#fa-responsable")?.value.trim()||null,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:waAliado||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,ofrece_domicilio:$("#fa-domicilio")?.checked||false,ofrece_agenda:$("#fa-agenda")?.checked||false,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fotos_carrusel:fotosCarrusel,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
+      const payload={nombre,nombre_responsable:$("#fa-responsable")?.value.trim()||null,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:waAliado||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,instagram:$("#fa-instagram")?.value.trim()||null,ofrece_domicilio:$("#fa-domicilio")?.checked||false,ofrece_agenda:$("#fa-agenda")?.checked||false,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fotos_carrusel:fotosCarrusel,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true};
       const id=btn.dataset.id;
       const{error}=id?await supabase.from('aliados').update(payload).eq('id',id):await supabase.from('aliados').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}
