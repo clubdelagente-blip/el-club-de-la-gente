@@ -103,7 +103,7 @@ let VIEWER_USER_ID = null;
    1) ?plan= en la URL (un aliado viendo lo que le corresponde a un miembro escaneado)
    2) sesión activa de Supabase (un miembro navegando desde su propio dashboard)
    3) sin sesión ni parámetro: visitante anónimo → solo ve el nivel Gratis */
-// "planes_visibles" en Admin solo ofrece Gratis/Básica/Premium (no hay
+// "planes_visibles" en Admin solo ofrece Gratis/Básico/Premium (no hay
 // casilla de Vitalicia) -- así que ningún aliado podría marcarse visible
 // para ese plan y a un miembro vitalicio nunca le aparecería nada. Vitalicia
 // es el plan más alto que existe, así que hereda automáticamente todo lo que
@@ -508,7 +508,7 @@ function sheetAliado(a) {
       </div>
       ${SIN_ACCESO_ALIADOS
         ? `<div style="margin-top:16px;padding:16px;background:#fef3c7;border-radius:12px;text-align:center">
-            <div style="font-weight:700;color:#b45309;font-size:14px;margin-bottom:4px">⚠ Exclusivo desde el plan Básica</div>
+            <div style="font-weight:700;color:#b45309;font-size:14px;margin-bottom:4px">⚠ Exclusivo desde el plan Básico</div>
             <p style="font-size:12px;color:#92400e;line-height:1.4">El plan Gratis no incluye descuentos de aliados. Este miembro puede actualizar su membresía para desbloquearlos.</p>
            </div>`
         : LIMITE_ALCANZADO

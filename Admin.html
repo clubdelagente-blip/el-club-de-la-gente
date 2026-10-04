@@ -202,8 +202,8 @@
        ============================================================ -->
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
-  <script src="admin-data.js?v=5"></script>
-  <script src="admin.js?v=27"></script>
+  <script src="admin-data.js?v=6"></script>
+  <script src="admin.js?v=28"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -379,7 +379,7 @@ async function cargarVentasReal(){
 }
 window.cargarVentasReal=cargarVentasReal;
 
-const PLANES_VIS=[{val:'gratis',lbl:'Gratis'},{val:'basica',lbl:'Básica'},{val:'premium',lbl:'Premium'}];
+const PLANES_VIS=[{val:'gratis',lbl:'Gratis'},{val:'basica',lbl:'Básico'},{val:'premium',lbl:'Premium'}];
 
 function toast(msg){const t=$("#ad-toast");if(!t)return;t.textContent=msg;t.classList.add("is-show");setTimeout(()=>t.classList.remove("is-show"),3000);}
 // Campos de dinero: texto con separador de miles en vivo (un <input type="number"> interpreta
@@ -651,7 +651,7 @@ async function cargarDashboardReal(){
   const maxMes=Math.max(1,...meses.map(x=>x.total));
 
   const feed=[
-    ...P.slice(0,5).map(p=>({tipo:'miembro',txt:`<b>${esc(p.nombre)}</b> se unió al plan ${p.plan==='premium'?'Premium':p.plan==='basica'?'Básica':(esc(p.plan)||'—')}`,fecha:p.created_at})),
+    ...P.slice(0,5).map(p=>({tipo:'miembro',txt:`<b>${esc(p.nombre)}</b> se unió al plan ${p.plan==='premium'?'Premium':p.plan==='basica'?'Básico':(esc(p.plan)||'—')}`,fecha:p.created_at})),
     ...PG.slice(0,5).map(p=>({tipo:'pago',txt:`Pago recibido de <b>${esc(p.perfiles?.nombre)||'un miembro'}</b> · ${COP(p.monto)}`,fecha:p.created_at})),
     ...D.slice(0,5).map(d=>({tipo:'descuento',txt:`<b>${esc(d.aliado_nombre)||'Aliado'}</b> · descuento aplicado · ahorro ${COP(d.ahorro||0)}`,fecha:d.created_at})),
   ].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha)).slice(0,8);
@@ -672,7 +672,7 @@ async function cargarDashboardReal(){
             <span class="ad-bar-col__lbl">${MES_LBL_DASH[x.m]}</span>
           </div>`).join('')}</div>
         <div class="ad-chart-legend">
-          <div class="ad-leg"><div class="ad-leg__top"><span class="ad-leg__sw b"></span> Básica</div><div class="ad-leg__val">${desglose.basica.miembros} <small>· ${COP(desglose.basica.valor)}</small></div></div>
+          <div class="ad-leg"><div class="ad-leg__top"><span class="ad-leg__sw b"></span> Básico</div><div class="ad-leg__val">${desglose.basica.miembros} <small>· ${COP(desglose.basica.valor)}</small></div></div>
           <div class="ad-leg"><div class="ad-leg__top"><span class="ad-leg__sw p"></span> Premium</div><div class="ad-leg__val">${desglose.premium.miembros} <small>· ${COP(desglose.premium.valor)}</small></div></div>
         </div>
       </div>
@@ -798,7 +798,7 @@ async function abrirDifusionReal(){
   const audienciasBase=[
     {id:'todos',lbl:'Todos los miembros',list:P.filter(p=>tieneWa(p))},
     {id:'premium',lbl:'Solo Premium',list:P.filter(p=>tieneWa(p)&&p.plan==='premium')},
-    {id:'basica',lbl:'Solo Básica',list:P.filter(p=>tieneWa(p)&&p.plan==='basica')},
+    {id:'basica',lbl:'Solo Básico',list:P.filter(p=>tieneWa(p)&&p.plan==='basica')},
     {id:'vencen',lbl:'Vencen esta semana',list:P.filter(p=>tieneWa(p)&&p.fecha_vencimiento&&new Date(p.fecha_vencimiento)<=en7dias&&new Date(p.fecha_vencimiento)>=hoy)},
     {id:'inactivos',lbl:'Miembros inactivos (sin plan)',list:P.filter(p=>tieneWa(p)&&(!p.plan||p.plan==='sin_plan'))},
   ];

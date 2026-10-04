@@ -10,7 +10,7 @@ const COP = (n) => "$" + nf.format(Math.round(n || 0));
 const COPk = (n) => n >= 1000000 ? "$" + (n / 1000000).toFixed(1).replace(".0", "") + "M" : "$" + nf.format(n);
 const ini = (nombre) => nombre.split(" ").filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
 const norm = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-const planLbl = (p) => p === "premium" ? "Premium" : "Básica";
+const planLbl = (p) => p === "premium" ? "Premium" : "Básico";
 // Expuestos por window para que el script inline (type="module") de Admin.html
 // pueda reusarlos sin depender del scope compartido entre script clasico y modulo.
 window.nf = nf; window.ini = ini; window.planLbl = planLbl;
@@ -84,7 +84,7 @@ function renderMiembros() {
   $("#p-miembros").innerHTML = `
     <div class="ad-toolbar">
       <div class="ad-tabs" id="m-tabs">
-        ${["todos", "premium", "basica", "inactivos"].map(t => `<button class="ad-tab ${t === miembroTab ? "is-on" : ""}" data-tab="${t}">${{ todos: "Todos", premium: "Premium", basica: "Básica", inactivos: "Inactivos" }[t]}</button>`).join("")}
+        ${["todos", "premium", "basica", "inactivos"].map(t => `<button class="ad-tab ${t === miembroTab ? "is-on" : ""}" data-tab="${t}">${{ todos: "Todos", premium: "Premium", basica: "Básico", inactivos: "Inactivos" }[t]}</button>`).join("")}
       </div>
       <div class="ad-search-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input id="m-search" placeholder="Buscar por nombre o número…" autocomplete="off"></div>
       <div class="ad-spacer"></div>

@@ -544,12 +544,12 @@ const FAQ = [
   {
     grupo: "Membresías y pagos",
     preguntas: [
-      { q: "¿Qué planes hay y cuánto cuestan?", a: "Básica ($10.000/mes): acceso a la plataforma, todos los programas educativos, descuentos limitados con aliados y voluntariado social.<br><br>Premium ($20.000/mes): todo lo de la Básica, más descuentos ilimitados, ClubCard personalizada, sorteos y accesos exclusivos.<br><br>Por menos de lo que te cuesta un tinto al día, ya eres parte del club." },
+      { q: "¿Qué planes hay y cuánto cuestan?", a: "Básico ($10.000/mes): acceso a la plataforma, todos los programas educativos, descuentos limitados con aliados y voluntariado social.<br><br>Premium ($20.000/mes): todo lo de la Básico, más descuentos ilimitados, ClubCard personalizada, sorteos y accesos exclusivos.<br><br>Por menos de lo que te cuesta un tinto al día, ya eres parte del club." },
       { q: "¿Cómo me afilio?", a: "Entra con tu cuenta de Google o tu WhatsApp, completa tu perfil, elige tu plan y haz el pago. En cuanto se confirme, tu membresía queda activa y ya puedes usar tus beneficios." },
       { q: "¿Cómo puedo pagar?", a: "Los pagos se procesan de forma segura a través de la llave Bre-B del Club. Una vez envíes el comprobante, se valida tu pago y se activa tu cuenta." },
       { q: "¿El cobro es automático cada mes?", a: "No. La membresía se renueva mes a mes para que no pierdas tus beneficios. Siempre puedes ver tu próximo cobro en tu perfil, te llega un recordatorio por WhatsApp y decides voluntariamente si seguir o no." },
       { q: "¿Puedo cancelar cuando quiera?", a: "Claro. No hay permanencia mínima, ni cláusulas raras, ni letra pequeña. Cancelas y no se te vuelve a cobrar." },
-      { q: "¿Puedo pasar de Básica a Premium (o al revés)?", a: "Sí, puedes cambiar de plan desde tu perfil." },
+      { q: "¿Puedo pasar de Básico a Premium (o al revés)?", a: "Sí, puedes cambiar de plan desde tu perfil." },
       { q: "¿Qué pasa si no uso la membresía un mes?", a: "Los beneficios de ese mes son tuyos; no se acumulan para el siguiente. Por eso te animamos a aprovecharlos al máximo." },
       { q: "¿Qué pasa si mi pago falla?", a: "Te avisaremos para que actualices tu medio de pago. Mientras el pago no se confirme, los beneficios quedan en pausa." },
     ],
@@ -559,8 +559,8 @@ const FAQ = [
     preguntas: [
       { q: "¿Cómo uso mis descuentos?", a: "Busca el aliado en el directorio de la plataforma, ve al negocio y muestra tu ClubCard desde el celular. El aliado la valida y te aplica el descuento." },
       { q: "¿Qué aliados hay?", a: "Ya tenemos aliados en bienestar y salud, estética, barbería, odontología, veterinaria, turismo, ropa personalizada, publicidad, comida rápida, fruver, tienda de regalos y heladería, y cada mes se suman más. En el directorio ves el detalle de cada uno y el beneficio que ofrece." },
-      { q: "¿Qué es la ClubCard?", a: "Es tu tarjeta digital personalizada de miembro (Premium, Básica o gratis). La llevas en el celular y te identifica ante los aliados." },
-      { q: "¿Qué significa \"descuentos limitados\" en la Básica?", a: "Tienes 2 usos al mes por cada aliado." },
+      { q: "¿Qué es la ClubCard?", a: "Es tu tarjeta digital personalizada de miembro (Premium, Básico o gratis). La llevas en el celular y te identifica ante los aliados." },
+      { q: "¿Qué significa \"descuentos limitados\" en la Básico?", a: "Tienes 2 usos al mes por cada aliado." },
       { q: "¿Los descuentos sirven fuera de Fusagasugá?", a: "Por ahora la red de aliados está en Fusagasugá, y pronto llegaremos a más ciudades. Sin embargo, está la Tienda del Club, que opera desde cualquier parte de Colombia y es de acceso gratuito." },
       { q: "Tengo un negocio, ¿cómo me vuelvo aliado?", a: "Escríbenos por WhatsApp al 304 339 4870. Ser aliado te da visibilidad, clientes nuevos y fieles y presencia en nuestra plataforma y redes, sin costo de vinculación, y te incluye membresía vitalicia." },
     ],

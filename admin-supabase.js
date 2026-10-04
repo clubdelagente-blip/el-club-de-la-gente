@@ -10,7 +10,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const nf = new Intl.NumberFormat("es-CO");
 const ini = (n) => n.split(" ").filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
-const planLbl = (p) => p === "premium" ? "Premium" : "Básica";
+const planLbl = (p) => p === "premium" ? "Premium" : "Básico";
 const ic = (n) => `<i data-lucide="${n}"></i>`;
 
 /* ---------- Cargar miembros reales ---------- */

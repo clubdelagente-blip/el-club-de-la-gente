@@ -30,7 +30,7 @@ const ADM_FEED = [
   { tipo: "miembro",    txt: "<b>Laura Restrepo</b> se unió al plan Premium", time: "hace 4 min" },
   { tipo: "pago",       txt: "Pago recibido de <b>Andrés Gómez</b> · $20.000", time: "hace 11 min" },
   { tipo: "descuento",  txt: "<b>Patitas Felices</b> · descuento 30% aplicado · ahorro $24.000", time: "hace 23 min" },
-  { tipo: "miembro",    txt: "<b>Diana Castaño</b> se unió al plan Básica", time: "hace 38 min" },
+  { tipo: "miembro",    txt: "<b>Diana Castaño</b> se unió al plan Básico", time: "hace 38 min" },
   { tipo: "renovacion", txt: "Renovación automática de <b>Carlos Pérez</b> · Premium", time: "hace 52 min" },
   { tipo: "descuento",  txt: "<b>Barbería Don Carlos</b> · descuento 30% · ahorro $7.500", time: "hace 1 h" },
   { tipo: "pago",       txt: "Pago recibido de <b>Mónica Salazar</b> · $10.000", time: "hace 1 h" },

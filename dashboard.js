@@ -108,7 +108,7 @@ function iniciales(nombre) {
   return nombre.split(" ").filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
 }
 
-const PLAN_LABEL = { sin_plan: "Sin activar", gratis: "Gratis", basica: "Básica", premium: "Premium", vitalicia: "Vitalicia" };
+const PLAN_LABEL = { sin_plan: "Sin activar", gratis: "Gratis", basica: "Básico", premium: "Premium", vitalicia: "Vitalicia" };
 const LIMITE_DESCUENTOS = { gratis: 0, basica: 2, premium: Infinity, vitalicia: Infinity };
 
 // Pinta en pantalla el plan activo (ClubCard, tarjeta "Plan activo"/"subir de
@@ -599,7 +599,7 @@ async function cargarDescuentos(userId, whatsapp) {
         banner.style.display = "flex";
         banner.innerHTML = `<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <span style="display:inline-flex;align-items:center;gap:4px;background:#0f4423;color:#fff;font-weight:800;font-size:12.5px;padding:5px 11px;border-radius:20px;white-space:nowrap">🔥 Hasta 40% OFF</span>
-          <span>Solo para las primeras 50 personas — los descuentos de aliados son exclusivos desde Básica · <a href="Planes.html" style="color:#0f4423;font-weight:800;text-decoration:underline">Ver membresías →</a></span>
+          <span>Solo para las primeras 50 personas — los descuentos de aliados son exclusivos desde Básico · <a href="Planes.html" style="color:#0f4423;font-weight:800;text-decoration:underline">Ver membresías →</a></span>
         </span>`;
         banner.style.background = "#e8f5ee";
         banner.style.color = "#095544";

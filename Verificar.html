@@ -181,12 +181,12 @@
       });
     }
 
-    const PLAN_NOMBRE = { gratis: "Gratis", basica: "Básica", premium: "Premium", vitalicia: "Vitalicia" };
+    const PLAN_NOMBRE = { gratis: "Gratis", basica: "Básico", premium: "Premium", vitalicia: "Vitalicia" };
     const LIMITE_DESCUENTOS = { gratis: 0, basica: 2, premium: Infinity, vitalicia: Infinity };
 
     function renderOk(p, usos, limite, aliadoInfo, listaAliados) {
       const rolLabel = { miembro: "Miembro", aliado: "Aliado comercial", profesional: "Profesional" }[p.rol] || "Miembro";
-      const planNombre = PLAN_NOMBRE[p.plan] || "Básica";
+      const planNombre = PLAN_NOMBRE[p.plan] || "Básico";
       const planLabel = limite === Infinity ? `${planNombre} · Ilimitado` : `${planNombre} · ${usos}/${limite} usos este mes`;
       const dirUrl = `Directorio.html?miembro=${id}&wa=${encodeURIComponent(p.whatsapp||"")}&plan=${p.plan||"basica"}&usos=${usos}`;
       card.innerHTML = `
@@ -211,17 +211,17 @@
     }
 
     function renderLimite(p, limite, aliadoInfo, listaAliados) {
-      const planNombre = PLAN_NOMBRE[p.plan] || "Básica";
+      const planNombre = PLAN_NOMBRE[p.plan] || "Básico";
       const wa = (p.whatsapp||"").replace(/\D/g,"");
       const numero = wa.startsWith("57") ? wa : "57"+wa;
       const sinAcceso = limite === 0;
       const estadoLbl = sinAcceso ? "Sin acceso a descuentos de aliados" : "Límite mensual alcanzado";
       const estadoDetalle = sinAcceso ? "No incluido en Gratis" : `${limite} de ${limite} este mes`;
       const parrafo = sinAcceso
-        ? "Los descuentos de aliados son exclusivos desde el plan Básica en adelante. El plan Gratis sí incluye Uber y la Tienda del Club."
+        ? "Los descuentos de aliados son exclusivos desde el plan Básico en adelante. El plan Gratis sí incluye Uber y la Tienda del Club."
         : `Este miembro usó su${limite!==1?"s":""} ${limite} descuento${limite!==1?"s":""} del mes. No aplica más descuentos hasta el próximo mes.`;
       const msg = sinAcceso
-        ? `¡Hola ${p.nombre}! 👋 Los descuentos de aliados son exclusivos desde el plan Básica.\n\nActualiza tu membresía y aprovecha el Club sin restricciones.\n\nEl Club de la Gente`
+        ? `¡Hola ${p.nombre}! 👋 Los descuentos de aliados son exclusivos desde el plan Básico.\n\nActualiza tu membresía y aprovecha el Club sin restricciones.\n\nEl Club de la Gente`
         : `¡Hola ${p.nombre}! 👋 Llegaste al límite de ${limite} descuento${limite!==1?"s":""} del mes con tu membresía ${planNombre}.\n\n¿Quieres descuentos ilimitados? Actualiza a Premium por solo $20.000/mes y aprovecha el Club sin restricciones.\n\nEl Club de la Gente`;
       const waUrl = `https://wa.me/${numero}?text=${encodeURIComponent(msg)}`;
       card.innerHTML = `

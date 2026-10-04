@@ -714,7 +714,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const primerNombre = nombre.split(" ")[0];
       // Quien venía de "pagar primero" no recibe el mensaje genérico de
       // bienvenida a Gratis (no tiene sentido venderle los beneficios de
-      // Gratis a alguien que ya pagó Básica/Premium) -- recibe uno propio,
+      // Gratis a alguien que ya pagó Básico/Premium) -- recibe uno propio,
       // enfocado solo en que le avisaremos apenas verifiquemos su pago.
       const msgBienvenida = pagoPendiente
         ? (pagoPendienteOk
