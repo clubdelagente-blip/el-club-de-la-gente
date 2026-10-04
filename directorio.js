@@ -21,6 +21,7 @@ function norm(s) {
 // de fondo detrás de un modal/sheet -- el truco que sí funciona ahí es
 // "congelar" el body con position:fixed, guardando y restaurando el scroll.
 function bloquearScroll() {
+  if (document.body.dataset.scrollY !== undefined) return; // ya estaba bloqueado
   const y = window.scrollY || window.pageYOffset || 0;
   document.body.dataset.scrollY = y;
   document.body.style.position = "fixed";
@@ -30,7 +31,8 @@ function bloquearScroll() {
   document.body.style.width = "100%";
 }
 function desbloquearScroll() {
-  const y = parseInt(document.body.dataset.scrollY || "0", 10);
+  if (document.body.dataset.scrollY === undefined) return; // no había bloqueo activo
+  const y = parseInt(document.body.dataset.scrollY, 10);
   document.body.style.position = "";
   document.body.style.top = "";
   document.body.style.left = "";

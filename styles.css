@@ -164,6 +164,7 @@ a { color: inherit; text-decoration: none; }
   opacity: 1; border-bottom: 1px solid var(--linea); transform: translate3d(0, -120%, 0);
   transition: transform .35s cubic-bezier(.4,0,.2,1); z-index: 99; isolation: isolate;
   padding: 12px 0 24px; -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  overflow-x: hidden; touch-action: pan-y;
 }
 .nav__mobile.is-open { transform: translate3d(0, 0, 0); }
 .nav__mobile a { display: block; padding: 16px 40px; font-size: 17px; font-weight: 500; border-bottom: 1px solid var(--linea); }

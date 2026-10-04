@@ -335,6 +335,7 @@ const sheetInner = $("#sheet-inner");
 // de fondo detrás del sheet -- el truco que sí funciona ahí es "congelar" el
 // body con position:fixed, guardando y restaurando el scroll.
 function bloquearScroll() {
+  if (document.body.dataset.scrollY !== undefined) return; // ya estaba bloqueado
   const y = window.scrollY || window.pageYOffset || 0;
   document.body.dataset.scrollY = y;
   document.body.style.position = "fixed";
@@ -344,7 +345,8 @@ function bloquearScroll() {
   document.body.style.width = "100%";
 }
 function desbloquearScroll() {
-  const y = parseInt(document.body.dataset.scrollY || "0", 10);
+  if (document.body.dataset.scrollY === undefined) return; // no había bloqueo activo
+  const y = parseInt(document.body.dataset.scrollY, 10);
   document.body.style.position = "";
   document.body.style.top = "";
   document.body.style.left = "";
@@ -854,12 +856,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // Hamburguesa (el panel vive fuera de <nav>, se controla con su propia clase)
   const navMobile = $("#nav-mobile");
   $("#burger").addEventListener("click", () => {
-    nav.classList.toggle("is-open");
-    navMobile?.classList.toggle("is-open");
+    const abierto = navMobile?.classList.toggle("is-open");
+    nav.classList.toggle("is-open", abierto);
+    if (abierto) bloquearScroll(); else desbloquearScroll();
   });
   $$(".nav__mobile a").forEach(a => a.addEventListener("click", () => {
+    const estabaAbierto = navMobile?.classList.contains("is-open");
     nav.classList.remove("is-open");
     navMobile?.classList.remove("is-open");
+    if (estabaAbierto) desbloquearScroll();
   }));
 
   // Delegación de clicks

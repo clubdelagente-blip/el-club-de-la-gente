@@ -14,6 +14,31 @@ const planLbl = (p) => p === "premium" ? "Premium" : "Básica";
 // Expuestos por window para que el script inline (type="module") de Admin.html
 // pueda reusarlos sin depender del scope compartido entre script clasico y modulo.
 window.nf = nf; window.ini = ini; window.planLbl = planLbl;
+// overflow:hidden en el body NO basta en iOS Safari para bloquear el scroll
+// de fondo detrás de un modal -- el truco que sí funciona ahí es "congelar"
+// el body con position:fixed, guardando y restaurando el scroll.
+function bloquearScroll() {
+  if (document.body.dataset.scrollY !== undefined) return; // ya estaba bloqueado
+  const y = window.scrollY || window.pageYOffset || 0;
+  document.body.dataset.scrollY = y;
+  document.body.style.position = "fixed";
+  document.body.style.top = `-${y}px`;
+  document.body.style.left = "0";
+  document.body.style.right = "0";
+  document.body.style.width = "100%";
+}
+function desbloquearScroll() {
+  if (document.body.dataset.scrollY === undefined) return; // no había bloqueo activo
+  const y = parseInt(document.body.dataset.scrollY, 10);
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.left = "";
+  document.body.style.right = "";
+  document.body.style.width = "";
+  delete document.body.dataset.scrollY;
+  window.scrollTo(0, y);
+}
+window.bloquearScroll = bloquearScroll; window.desbloquearScroll = desbloquearScroll;
 
 /* ---------- TÍTULOS DE PANEL ---------- */
 const PANELES = {
@@ -383,7 +408,7 @@ window.ADM_WA_PLANTILLAS = ADM_WA_PLANTILLAS;
 /* ============================================================
    MODAL DE MIEMBRO
    ============================================================ */
-function cerrarModal() { $("#ad-modal-ov").classList.remove("is-open"); }
+function cerrarModal() { $("#ad-modal-ov").classList.remove("is-open"); desbloquearScroll(); }
 
 /* ---------- MODAL: Crear evento ---------- */
 function abrirCrearEvento() {
@@ -401,6 +426,7 @@ function abrirCrearEvento() {
   $("#modal-title").textContent = "Crear evento";
   $("#modal-sub").textContent = "Se mostrará en el programa social seleccionado";
   $("#ad-modal-ov").classList.add("is-open");
+  bloquearScroll();
   if (window.lucide) lucide.createIcons();
 }
 
@@ -420,6 +446,7 @@ function abrirPrograma(i) {
   $("#modal-title").textContent = p ? "Editar programa social" : "Nuevo programa social";
   $("#modal-sub").textContent = p ? p.nombre : "Se publicará en la web pública";
   $("#ad-modal-ov").classList.add("is-open");
+  bloquearScroll();
   if (window.lucide) lucide.createIcons();
 }
 
@@ -443,7 +470,7 @@ function irPanel(panel) {
   $$(".ad-link[data-panel]").forEach(l => l.classList.toggle("is-active", l.dataset.panel === panel));
   $("#ad-h1").textContent = PANELES[panel].t;
   $("#ad-sub").textContent = PANELES[panel].s;
-  $("#admin").classList.remove("menu-open");
+  if ($("#admin").classList.contains("menu-open")) { $("#admin").classList.remove("menu-open"); desbloquearScroll(); }
   if (!RENDERED[panel]) {
     // window.X (no la variable local sin prefijo) para las funciones que vive en el
     // script inline de Admin.html: ese script es type="module" y puede tardar un
@@ -471,8 +498,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Nav
   $$(".ad-link[data-panel]").forEach(l => l.addEventListener("click", () => irPanel(l.dataset.panel)));
-  $("#ad-burger")?.addEventListener("click", () => $("#admin").classList.toggle("menu-open"));
-  $("#ad-backdrop")?.addEventListener("click", () => $("#admin").classList.remove("menu-open"));
+  $("#ad-burger")?.addEventListener("click", () => {
+    const abierto = $("#admin").classList.toggle("menu-open");
+    if (abierto) bloquearScroll(); else desbloquearScroll();
+  });
+  $("#ad-backdrop")?.addEventListener("click", () => { $("#admin").classList.remove("menu-open"); desbloquearScroll(); });
 
   // Delegación global
   document.addEventListener("click", (e) => {

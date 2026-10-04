@@ -19,6 +19,7 @@ const fmtCOP = (n) => "$" + new Intl.NumberFormat("es-CO").format(n);
 // de fondo detrás de un overlay/modal -- el truco que sí funciona ahí es
 // "congelar" el body con position:fixed, guardando y restaurando el scroll.
 function bloquearScroll() {
+  if (document.body.dataset.scrollY !== undefined) return; // ya estaba bloqueado
   const y = window.scrollY || window.pageYOffset || 0;
   document.body.dataset.scrollY = y;
   document.body.style.position = "fixed";
@@ -28,7 +29,8 @@ function bloquearScroll() {
   document.body.style.width = "100%";
 }
 function desbloquearScroll() {
-  const y = parseInt(document.body.dataset.scrollY || "0", 10);
+  if (document.body.dataset.scrollY === undefined) return; // no había bloqueo activo
+  const y = parseInt(document.body.dataset.scrollY, 10);
   document.body.style.position = "";
   document.body.style.top = "";
   document.body.style.left = "";
@@ -305,7 +307,7 @@ function mostrarPanel(panel) {
   $$(".panel-view").forEach(v => v.classList.toggle("is-active", v.dataset.panel === panel));
   $$(".sb-link[data-panel]").forEach(l => l.classList.toggle("is-active", l.dataset.panel === panel));
   $("#topbar-title").innerHTML = `Mi cuenta · <b>${TITULOS[panel] || ""}</b>`;
-  $("#dash").classList.remove("menu-open");
+  if ($("#dash").classList.contains("menu-open")) { $("#dash").classList.remove("menu-open"); desbloquearScroll(); }
   $(".dash-content").scrollTo?.({ top: 0 });
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -2852,8 +2854,11 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#hero-ahorro-card")?.addEventListener("keydown", (e) => { if (e.key === "Enter") abrirAhorroMensual(); });
 
   // Burger móvil
-  $("#topbar-burger")?.addEventListener("click", () => $("#dash").classList.toggle("menu-open"));
-  $("#dash-backdrop")?.addEventListener("click", () => $("#dash").classList.remove("menu-open"));
+  $("#topbar-burger")?.addEventListener("click", () => {
+    const abierto = $("#dash").classList.toggle("menu-open");
+    if (abierto) bloquearScroll(); else desbloquearScroll();
+  });
+  $("#dash-backdrop")?.addEventListener("click", () => { $("#dash").classList.remove("menu-open"); desbloquearScroll(); });
 
   // Atajos a ClubCard / perfil desde tarjetas
   $$("[data-goto-panel]").forEach(b => b.addEventListener("click", () => irPanel(b.dataset.gotoPanel)));
