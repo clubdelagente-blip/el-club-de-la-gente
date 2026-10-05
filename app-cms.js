@@ -196,16 +196,36 @@ async function cargarProgramasPub() {
   const grid = document.querySelector('#programas-grid');
   if (!grid) return;
 
-  grid.innerHTML = data.map(p => `
+  const LIMITE = 6;
+  const tarjeta = p => `
     <div class="programa-card fade-up">
-      ${p.imagen_url ? `<img src="${p.imagen_url}" alt="${p.nombre}" style="width:100%;height:180px;object-fit:cover;border-radius:10px 10px 0 0">` : ''}
+      ${p.imagen_url ? `
+      <div class="programa-card__img-wrap">
+        <img src="${p.imagen_url}" alt="${p.nombre}" style="width:100%;height:180px;object-fit:cover;display:block">
+        ${p.categoria ? `<span class="programa-card__cat">${p.categoria}</span>` : ''}
+      </div>` : ''}
       <div style="padding:20px">
         <h3 style="font-family:var(--display);font-size:20px;font-weight:600;margin-bottom:8px;color:inherit">${p.nombre}</h3>
         <p style="font-size:14px;opacity:.7;line-height:1.6">${p.descripcion || ''}</p>
       </div>
-    </div>`).join('');
+    </div>`;
 
+  grid.innerHTML = data.slice(0, LIMITE).map(tarjeta).join('');
   if (window.lucide) lucide.createIcons();
+
+  if (data.length > LIMITE) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'programas-ver-mas';
+    btn.className = 'btn btn--secundario';
+    btn.textContent = `Ver ${data.length - LIMITE} programas más`;
+    btn.addEventListener('click', () => {
+      grid.insertAdjacentHTML('beforeend', data.slice(LIMITE).map(tarjeta).join(''));
+      if (window.lucide) lucide.createIcons();
+      btn.remove();
+    });
+    grid.insertAdjacentElement('afterend', btn);
+  }
 }
 
 /* ---------- Profesionales ---------- */

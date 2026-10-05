@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=52">
+  <link rel="stylesheet" href="styles.css?v=53">
   <link rel="stylesheet" href="admin.css?v=9">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -1810,6 +1810,7 @@ async function cargarProgramas(){
 }
 function htmlFormProg(p={}){return `
   <div class="ad-field"><label>Nombre del programa *</label><input id="pg-nom" type="text" value="${(p.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Rescate Animal Fusagasugá"></div>
+  <div class="ad-field"><label>Categoría <span style="font-weight:400;color:rgba(242,240,234,.4)">(se ve como etiqueta sobre la foto)</span></label><input id="pg-cat" type="text" value="${(p.categoria||'').replace(/"/g,'&quot;')}" placeholder="Ej: Bienestar animal, Alimentación"></div>
   <div class="ad-field"><label>Descripción</label><textarea id="pg-desc" rows="4" placeholder="Describe el programa social">${p.descripcion||''}</textarea></div>
   <div class="ad-field"><label>Imagen (opcional)</label>${p.imagen_url?`<img src="${p.imagen_url}" style="width:100%;max-height:120px;object-fit:cover;border-radius:8px;margin-bottom:10px">`:''}<input id="pg-img" type="file" accept="image/*"><input type="hidden" id="pg-img-url" value="${p.imagen_url||''}"></div>
   <div class="ad-toolbar" style="margin:6px 0 0"><div class="ad-spacer"></div><button class="ad-btn" id="pg-cancel">Cancelar</button><button class="ad-btn ad-btn--verde" id="pg-save" data-id="${p.id||''}">${ic("check")} ${p.id?'Guardar cambios':'Crear programa'}</button></div>`;}
@@ -1820,7 +1821,7 @@ function bindFormProg(){setTimeout(()=>{
     const nombre=$("#pg-nom")?.value.trim();if(!nombre){toast('El nombre es obligatorio');return;}
     btn.disabled=true;let imagen_url=$("#pg-img-url")?.value||null;
     const file=$("#pg-img")?.files?.[0];if(file)try{imagen_url=await subirImagen(file);}catch(_){}
-    const payload={nombre,descripcion:$("#pg-desc")?.value.trim()||null,imagen_url};const id=btn.dataset.id;
+    const payload={nombre,categoria:$("#pg-cat")?.value.trim()||null,descripcion:$("#pg-desc")?.value.trim()||null,imagen_url};const id=btn.dataset.id;
     id?await supabase.from('programas').update(payload).eq('id',id):await supabase.from('programas').insert(payload);
     window.cerrarModal?.();cargarProgramas();toast(id?'Programa actualizado ✓':'Programa creado ✓');
   });if(window.lucide)lucide.createIcons();
