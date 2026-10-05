@@ -360,10 +360,53 @@ async function cargarCarruselPromos() {
   // revela directo, igual que el hero, en vez de depender del scroll.
   requestAnimationFrame(() => wrap.classList.add('is-in'));
 
-  // El auto-avance (continuo y arrastrable con dedo/mouse) lo maneja
-  // carrusel-auto.js, igual que el carrusel de marcas -- se inicializa
-  // solo al cargar la página y detecta cuando este track deja de estar
-  // vacío, sin que haga falta llamarlo de nuevo aquí.
+  // En celular: una tarjeta a todo el ancho que salta sola a la siguiente
+  // cada 2s (el desfile continuo de escritorio no cabe bien en pantallas
+  // chicas). Tocarla la congela para leerla, y se puede arrastrar con el
+  // dedo para moverse manualmente entre promociones.
+  if (window.matchMedia('(max-width: 600px)').matches) {
+    let idx = 0;
+    let intervalId = null;
+    let pausado = false;
+    let arrastrando = false;
+    let startX = 0;
+    let deltaX = 0;
+
+    function irA(i, animar) {
+      idx = ((i % items.length) + items.length) % items.length;
+      track.style.transition = animar ? 'transform .35s ease' : 'none';
+      track.style.transform = `translateX(calc(-${idx * 100}vw + ${deltaX}px))`;
+    }
+    function detenerAuto() { if (intervalId) clearInterval(intervalId); intervalId = null; }
+    function iniciarAuto() {
+      detenerAuto();
+      intervalId = setInterval(() => { if (!pausado && !arrastrando) irA(idx + 1, true); }, 2000);
+    }
+
+    track.addEventListener('touchstart', (e) => {
+      pausado = true;
+      arrastrando = true;
+      startX = e.touches[0].clientX;
+      deltaX = 0;
+    }, { passive: true });
+    track.addEventListener('touchmove', (e) => {
+      if (!arrastrando) return;
+      deltaX = e.touches[0].clientX - startX;
+      irA(idx, false);
+    }, { passive: true });
+    track.addEventListener('touchend', () => {
+      arrastrando = false;
+      const umbral = window.innerWidth * 0.18;
+      if (deltaX < -umbral) idx += 1;
+      else if (deltaX > umbral) idx -= 1;
+      deltaX = 0;
+      irA(idx, true);
+      setTimeout(() => { pausado = false; }, 2500);
+    }, { passive: true });
+
+    irA(0, false);
+    iniciarAuto();
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

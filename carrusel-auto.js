@@ -96,6 +96,6 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".marcas-carrusel, .promo-carrusel").forEach(iniciarCarrusel);
+    document.querySelectorAll(".marcas-carrusel").forEach(iniciarCarrusel);
   });
 })();
