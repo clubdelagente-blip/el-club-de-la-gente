@@ -36,7 +36,7 @@
   --cuerpo: "Inter", system-ui, sans-serif;
 
   --max: 1240px;
-  --nav-h: 74px;
+  --nav-h: 60px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
