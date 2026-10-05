@@ -1,5 +1,5 @@
 /* ============================================================
-   EL CLUB DE LA GENTE — Carrusel de marcas, movido por JS
+   EL CLUB DE LA GENTE — Carruseles movidos por JS (marcas y promos)
    Antes era una animación CSS pura (@keyframes) -- se quedaba
    congelada en algunos celulares. El intento con scroll nativo
    tampoco sirvió (necesita que el contenido desborde el contenedor
@@ -14,7 +14,7 @@
    ============================================================ */
 (function () {
   function iniciarCarrusel(wrap) {
-    const track = wrap.querySelector(".marcas-carrusel__track");
+    const track = wrap.querySelector('[class$="__track"]');
     if (!track || wrap.dataset.carruselAuto) return;
     wrap.dataset.carruselAuto = "1";
 
@@ -96,6 +96,6 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".marcas-carrusel").forEach(iniciarCarrusel);
+    document.querySelectorAll(".marcas-carrusel, .promo-carrusel").forEach(iniciarCarrusel);
   });
 })();
