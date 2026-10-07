@@ -238,12 +238,22 @@ function wireCarrusel() {
 }
 
 function wireResenas(a) {
+  $("[data-revelar-domicilio]")?.addEventListener("click", (e) => {
+    e.currentTarget.style.display = "none";
+    const extra = $("[data-domicilio-extra]");
+    if (extra) extra.hidden = false;
+  });
   if (!VIEWER_USER_ID) return;
-  const cc = colorCategoria(a.categoria);
   let seleccion = a._miResena?.estrellas || 0;
   const botones = $$("#resena-stars [data-estrella]");
   if (!botones.length) return;
-  const pintar = () => botones.forEach(b => { b.style.color = (+b.dataset.estrella <= seleccion) ? cc : "#ccc"; });
+  const pintar = () => botones.forEach(b => {
+    const icono = b.querySelector("svg, i");
+    if (!icono) return;
+    const lleno = +b.dataset.estrella <= seleccion;
+    icono.style.color = lleno ? "#EAB749" : "#ccc";
+    icono.style.fill = lleno ? "#EAB749" : "none";
+  });
   botones.forEach(b => b.addEventListener("click", () => { seleccion = +b.dataset.estrella; pintar(); }));
   $("#resena-enviar")?.addEventListener("click", async () => {
     if (!seleccion) { toast("Elige de 1 a 5 estrellas", false); return; }
@@ -273,7 +283,7 @@ async function openSheet(aliadoId) {
   const { data } = await supabase.from("promociones").select("*").eq("aliado_id", a.id).eq("activa", true).order("created_at", { ascending: false });
   a.promociones = data || [];
 
-  const { data: resenas } = await supabase.from("aliados_resenas").select("estrellas").eq("aliado_id", a.id);
+  const { data: resenas } = await supabase.from("aliados_resenas").select("estrellas, comentario, miembro_id, perfiles(nombre)").eq("aliado_id", a.id).order("created_at", { ascending: false });
   a._resenas = resenas || [];
   if (VIEWER_USER_ID) {
     const { data: miResena } = await supabase.from("aliados_resenas").select("estrellas, comentario").eq("aliado_id", a.id).eq("miembro_id", VIEWER_USER_ID).maybeSingle();
@@ -373,6 +383,10 @@ function detallePromo(p) {
   return partes.join(" · ");
 }
 
+function estrellasIconos(valor, size) {
+  const redondeado = Math.round(valor || 0);
+  return `<span style="display:inline-flex;gap:1px">${[1, 2, 3, 4, 5].map(n => `<i data-lucide="star" style="width:${size}px;height:${size}px;${n <= redondeado ? 'color:#EAB749;fill:#EAB749' : 'color:#ccc;fill:none'}"></i>`).join('')}</span>`;
+}
 function starsHtml(avg, size) {
   size = size || 14;
   const llenas = Math.round(avg || 0);
@@ -386,6 +400,26 @@ function sheetAliado(a) {
   const promoTop = promos[0];
   const resenas = a._resenas || [];
   const avgResena = resenas.length ? (resenas.reduce((s, r) => s + r.estrellas, 0) / resenas.length) : null;
+  const seleccionResena = a._miResena?.estrellas || 0;
+  const listaResenas = resenas.length
+    ? resenas.map(r => `
+      <div style="padding:10px 0;border-bottom:1px solid #f5f5f5">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
+          <span style="font-size:12.5px;font-weight:600;color:#333">${esc((r.perfiles?.nombre || 'Miembro').split(' ')[0])}</span>
+          ${estrellasIconos(r.estrellas, 12)}
+        </div>
+        ${r.comentario ? `<p style="font-size:12.5px;color:#666;line-height:1.5;margin:0">${esc(r.comentario)}</p>` : ''}
+      </div>`).join('')
+    : `<p style="font-size:12.5px;color:#999;padding:4px 0 12px">Sé el primero en dejar una reseña de este aliado.</p>`;
+  const formResena = VIEWER_USER_ID ? `
+      <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:4px">
+        <div style="font-size:12.5px;font-weight:600;margin-bottom:8px;color:#444">${a._miResena ? "Tu reseña" : "Deja tu reseña"}</div>
+        <div id="resena-stars" style="display:flex;gap:4px;margin-bottom:8px">
+          ${[1, 2, 3, 4, 5].map(n => `<button type="button" data-estrella="${n}" style="background:none;border:none;cursor:pointer;padding:2px"><i data-lucide="star" style="width:22px;height:22px;${n <= seleccionResena ? 'color:#EAB749;fill:#EAB749' : 'color:#ccc;fill:none'}"></i></button>`).join('')}
+        </div>
+        <textarea id="resena-comentario" rows="2" placeholder="Cuéntanos qué te pareció (opcional)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:8px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box">${esc(a._miResena?.comentario || "")}</textarea>
+        <button type="button" id="resena-enviar" class="btn btn--primario" style="font-size:12.5px;padding:8px 14px;margin-top:8px">${a._miResena ? "Actualizar reseña" : "Enviar reseña"}</button>
+      </div>` : '';
   return `
     <div style="${ccVars(a.categoria)}">
     <div style="background:linear-gradient(135deg, var(--cc-soft), transparent 70%);border-radius:18px;padding:16px;margin:-6px -6px 14px">
@@ -402,6 +436,16 @@ function sheetAliado(a) {
       <div style="display:flex;align-items:center;gap:6px;margin-top:10px">
         ${resenas.length ? `<span>${starsHtml(avgResena, 15)}</span><span style="font-size:12.5px;color:var(--tinta-60);font-weight:600">${avgResena.toFixed(1)} · ${resenas.length} reseña${resenas.length === 1 ? '' : 's'}</span>` : `<span style="font-size:12px;color:var(--tinta-45)">Aún sin reseñas</span>`}
       </div>
+      ${(a.whatsapp && (a.ofrece_domicilio || a.ofrece_agenda)) ? `
+      <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+        ${a.ofrece_domicilio ? `
+        <button type="button" class="btn btn--primario btn--bloque" data-revelar-domicilio>${ICON_WA}Pedir a domicilio</button>
+        <div data-domicilio-extra hidden style="display:flex;flex-direction:column;gap:10px">
+          <p style="font-size:12px;color:#888;margin:0;line-height:1.4">¿Pides a domicilio? Comparte con el negocio la clave dinámica que aparece al voltear tu ClubCard, para que pueda validar tu descuento sin que estés presencialmente.</p>
+          <a class="btn btn--primario btn--bloque" target="_blank" href="https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent('Hola, soy miembro de El Club de la Gente y quiero hacer un pedido en ' + (a.nombre || ''))}">${ICON_WA}Escribir</a>
+        </div>` : ''}
+        ${a.ofrece_agenda ? `<a class="btn btn--primario btn--bloque" target="_blank" href="https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent('Hola, soy miembro de El Club de la Gente y quiero agendar una cita en ' + (a.nombre || ''))}">${ICON_WA}Agendar cita</a>` : ''}
+      </div>` : ''}
       ${promoTop ? `
       <button type="button" data-ir-promos style="margin-top:14px;display:inline-flex;align-items:center;gap:7px;background:${cc};color:#fff;font-weight:800;font-size:15px;padding:9px 18px;border-radius:100px;box-shadow:0 10px 22px -10px var(--cc-glow);border:none;cursor:pointer;font-family:inherit">
         <i data-lucide="flame" style="width:17px;height:17px;flex:none"></i><span>${esc(badgePromo(promoTop))} · ¡activo ahora!</span>
@@ -420,32 +464,12 @@ function sheetAliado(a) {
     <div class="sheet__sub">Sobre este aliado</div>
     <p class="sheet__desc">${a.descripcion || "Aliado de El Club de la Gente."}</p>
 
-    ${VIEWER_USER_ID ? `
-    <div class="sheet__sub">${a._miResena ? "Tu reseña" : "Califica este aliado"}</div>
-    <div style="background:var(--cc-soft);border-radius:12px;padding:16px;margin-bottom:22px">
-      <div id="resena-stars" style="display:flex;gap:4px;margin-bottom:10px">
-        ${[1, 2, 3, 4, 5].map(n => `<button type="button" data-estrella="${n}" style="background:none;border:none;cursor:pointer;padding:2px;font-size:30px;line-height:1;color:${(a._miResena?.estrellas || 0) >= n ? cc : "#ccc"}">★</button>`).join("")}
-      </div>
-      <textarea id="resena-comentario" placeholder="Cuéntales a otros miembros qué te pareció (opcional)" rows="2" style="width:100%;border:1px solid var(--linea-fuerte);border-radius:8px;padding:10px 12px;font-family:inherit;font-size:13.5px;resize:vertical;margin-bottom:10px;background:#fff">${a._miResena?.comentario || ""}</textarea>
-      <button type="button" id="resena-enviar" class="btn btn--primario" style="width:100%;justify-content:center">${a._miResena ? "Actualizar reseña" : "Enviar reseña"}</button>
-    </div>
-    ` : ''}
-
     ${(a.direccion || a.maps_url) ? `
     <div class="sheet__sub">Cómo llegar</div>
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--cc-soft);border-radius:12px;padding:14px 16px;margin-bottom:4px">
       ${a.direccion ? `<span style="font-size:13.5px;color:var(--tinta);display:flex;align-items:center;gap:7px;font-weight:600">${ic("map-pin")}${a.direccion}</span>` : '<span></span>'}
       ${a.maps_url ? `<a href="${a.maps_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:8px 14px;background:${cc};color:#fff;border-radius:99px;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap">${ic("navigation")}Ver en mapa</a>` : ''}
     </div>` : ''}
-
-    ${(a.whatsapp && (a.ofrece_domicilio || a.ofrece_agenda)) ? `
-    <div class="sheet__sub">Contacta al negocio</div>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      ${a.ofrece_domicilio ? `<a class="btn btn--primario btn--bloque" target="_blank" href="https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent('Hola, soy miembro de El Club de la Gente y quiero hacer un pedido en ' + (a.nombre || ''))}">${ICON_WA}Pedir a domicilio</a>` : ''}
-      ${a.ofrece_agenda ? `<a class="btn btn--primario btn--bloque" target="_blank" href="https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent('Hola, soy miembro de El Club de la Gente y quiero agendar una cita en ' + (a.nombre || ''))}">${ICON_WA}Agendar cita</a>` : ''}
-    </div>
-    ${a.ofrece_domicilio ? `<p style="font-size:12px;color:#888;margin:10px 0 0;line-height:1.4">¿Pides a domicilio? Comparte con el negocio la clave dinámica que aparece al voltear tu ClubCard, para que pueda validar tu descuento sin que estés presencialmente.</p>` : ''}
-    ` : ''}
 
     <div class="sheet__sub" id="promos-disponibles">Promociones disponibles</div>
     ${promos.length ? promos.map((p) => {
@@ -474,6 +498,10 @@ function sheetAliado(a) {
         ${avisoWa}
       </${tag}>`;
     }).join("") : `<p style="font-size:13px;color:#888;padding:8px 0">Este aliado todavía no tiene promociones cargadas. Consulta directamente en el establecimiento.</p>`}
+
+    <div class="sheet__sub" style="margin-top:34px">Reseñas${resenas.length ? ` · ${avgResena.toFixed(1)} (${resenas.length})` : ''}</div>
+    <div style="margin-bottom:10px">${listaResenas}</div>
+    ${formResena}
 
     ${(promos.length && MIEMBRO_ID && VIEWER_USER_ID !== MIEMBRO_ID) ? `
     <div class="sheet__sub" style="margin-top:34px">Aplicar promoción</div>
