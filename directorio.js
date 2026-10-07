@@ -240,7 +240,7 @@ function wireCarrusel() {
 function wireResenas(a) {
   $("[data-revelar-domicilio]")?.addEventListener("click", () => {
     const extra = $("[data-domicilio-extra]");
-    if (extra) extra.hidden = !extra.hidden;
+    if (extra) extra.style.display = extra.style.display === "none" ? "flex" : "none";
   });
   if (!VIEWER_USER_ID) return;
   let seleccion = a._miResena?.estrellas || 0;
@@ -441,7 +441,7 @@ function sheetAliado(a) {
       ${(a.whatsapp && (a.ofrece_domicilio || a.ofrece_agenda)) ? `
       <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
         ${a.ofrece_domicilio ? `
-        <div data-domicilio-extra hidden style="display:flex;flex-direction:column;gap:10px">
+        <div data-domicilio-extra style="display:none;flex-direction:column;gap:10px">
           <p style="font-size:12px;color:#888;margin:0;line-height:1.4">¿Pides a domicilio? Comparte con el negocio la clave dinámica que aparece al voltear tu ClubCard, para que pueda validar tu descuento sin que estés presencialmente.</p>
           <a class="btn btn--primario btn--bloque" target="_blank" href="https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent('Hola, soy miembro de El Club de la Gente y quiero hacer un pedido en ' + (a.nombre || ''))}">${ICON_WA}Escribir</a>
         </div>` : ''}
