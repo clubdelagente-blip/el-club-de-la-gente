@@ -238,10 +238,9 @@ function wireCarrusel() {
 }
 
 function wireResenas(a) {
-  $("[data-revelar-domicilio]")?.addEventListener("click", (e) => {
-    e.currentTarget.style.display = "none";
+  $("[data-revelar-domicilio]")?.addEventListener("click", () => {
     const extra = $("[data-domicilio-extra]");
-    if (extra) extra.hidden = false;
+    if (extra) extra.hidden = !extra.hidden;
   });
   if (!VIEWER_USER_ID) return;
   let seleccion = a._miResena?.estrellas || 0;
@@ -431,7 +430,10 @@ function sheetAliado(a) {
           <div class="sheet__cat" style="color:${cc}">${a.categoria || "Aliado del Club"}</div>
           <h2 class="sheet__nombre" style="margin-top:2px">${a.nombre}</h2>
         </div>
-        ${a.instagram ? `<a href="${a.instagram}" target="_blank" rel="noopener" style="flex:none;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:${cc};color:#fff"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>` : ''}
+        <div style="flex:none;display:flex;flex-direction:column;gap:8px;align-items:center">
+          ${a.instagram ? `<a href="${a.instagram}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:${cc};color:#fff"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>` : ''}
+          ${(a.whatsapp && a.ofrece_domicilio) ? `<button type="button" data-revelar-domicilio aria-label="Pedir a domicilio" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:${cc};color:#fff;border:none;cursor:pointer;padding:0">${ICON_WA}</button>` : ''}
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;margin-top:10px">
         ${resenas.length ? `<span>${starsHtml(avgResena, 15)}</span><span style="font-size:12.5px;color:var(--tinta-60);font-weight:600">${avgResena.toFixed(1)} · ${resenas.length} reseña${resenas.length === 1 ? '' : 's'}</span>` : `<span style="font-size:12px;color:var(--tinta-45)">Aún sin reseñas</span>`}
@@ -439,7 +441,6 @@ function sheetAliado(a) {
       ${(a.whatsapp && (a.ofrece_domicilio || a.ofrece_agenda)) ? `
       <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
         ${a.ofrece_domicilio ? `
-        <button type="button" class="btn btn--primario btn--bloque" data-revelar-domicilio>${ICON_WA}Pedir a domicilio</button>
         <div data-domicilio-extra hidden style="display:flex;flex-direction:column;gap:10px">
           <p style="font-size:12px;color:#888;margin:0;line-height:1.4">¿Pides a domicilio? Comparte con el negocio la clave dinámica que aparece al voltear tu ClubCard, para que pueda validar tu descuento sin que estés presencialmente.</p>
           <a class="btn btn--primario btn--bloque" target="_blank" href="https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent('Hola, soy miembro de El Club de la Gente y quiero hacer un pedido en ' + (a.nombre || ''))}">${ICON_WA}Escribir</a>
