@@ -140,13 +140,15 @@ let ALIADOS = [];
 let GRUPOS = ["Todos"];
 let filtroActivo = "Todos";
 let query = "";
+let ERROR_CARGA = false;
 
 /* ---------- CARGA DE ALIADOS (filtrados por plan) ---------- */
 async function cargarAliados() {
   // Nota: "codigo_aliado" NUNCA se pide acá a propósito — se valida server-side (RPC verificar_codigo_aliado)
-  const { data } = await supabase.from("aliados")
+  const { data, error } = await supabase.from("aliados")
     .select("id, nombre, categoria, descuento, descripcion, whatsapp, direccion, maps_url, ofrece_domicilio, ofrece_agenda, instagram, imagen_url, fotos_carrusel, destacado, planes_visibles")
     .eq("activo", true).order("nombre");
+  ERROR_CARGA = !!error;
   const todos = data || [];
   // Gratis ve el directorio completo como vitrina (marcado "bloqueado" el
   // que no le corresponde) para incentivar a subir de plan, en vez de
@@ -184,6 +186,16 @@ function renderGrid() {
   $("#dir-count").innerHTML = `<b>${list.length}</b> ${list.length === 1 ? "aliado" : "aliados"}${filtroActivo !== "Todos" ? " · " + filtroActivo : ""}`;
 
   if (!list.length) {
+    if (ERROR_CARGA) {
+      cont.innerHTML = `<div class="dir-empty">${ic("wifi-off")}<h3>No pudimos cargar el directorio</h3><p>Hubo un problema de conexión. Revisa tu internet e intenta de nuevo.</p><button class="btn btn--primario" id="dir-reintentar-btn" style="margin-top:14px">Reintentar</button></div>`;
+      if (window.lucide) lucide.createIcons();
+      $("#dir-reintentar-btn")?.addEventListener("click", async () => {
+        await cargarAliados();
+        renderFiltros();
+        renderGrid();
+      });
+      return;
+    }
     cont.innerHTML = `<div class="dir-empty">${ic("search-x")}<h3>Sin resultados</h3><p>No encontramos aliados para tu búsqueda. Prueba con otra categoría.</p></div>`;
     if (window.lucide) lucide.createIcons();
     return;
