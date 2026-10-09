@@ -255,50 +255,92 @@ async function cargarProfesionalesPub() {
   if (window.lucide) lucide.createIcons();
 }
 
-/* ---------- Último evento educativo ---------- */
-async function cargarUltimoEventoEducativo() {
-  const seccion = document.querySelector('#educacion');
-  const cont = document.querySelector('#ultimo-evento-educativo');
-  if (!seccion || !cont) return;
+/* ---------- Eventos educativos (próximos + historial) ---------- */
+function tarjetaEvento(e, confirmados) {
+  const fechaFmt = new Date(e.fecha + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+  const facil = e.facilitadores_educacion;
+  const cat = e.categorias_educacion?.nombre;
 
-  const hoy = new Date().toISOString().slice(0, 10);
-  let { data: evento } = await supabase
-    .from('eventos_educacion')
-    .select('*, facilitadores_educacion(nombre, foto_url)')
-    .eq('activo', true)
-    .gte('fecha', hoy)
-    .order('fecha', { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  let esProximo = true;
-  if (!evento) {
-    esProximo = false;
-    const { data: pasado } = await supabase
-      .from('eventos_educacion')
-      .select('*, facilitadores_educacion(nombre, foto_url)')
-      .eq('activo', true)
-      .lt('fecha', hoy)
-      .order('fecha', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    evento = pasado;
+  let badgeCupo = '';
+  if (e.cupo_maximo) {
+    const restantes = e.cupo_maximo - confirmados;
+    badgeCupo = restantes > 0
+      ? `<span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:#fff4e5;color:#b9770e;white-space:nowrap">🔥 Quedan ${restantes} cupos</span>`
+      : `<span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:#fdeaea;color:#c0392b;white-space:nowrap">Cupos agotados</span>`;
   }
 
-  if (!evento) return;
-
-  const fechaFmt = new Date(evento.fecha + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
-  cont.innerHTML = `
-    <div class="evento-edu-card${evento.imagen_url ? '' : ' evento-edu-card--sin-img'}">
-      ${evento.imagen_url ? `<img class="evento-edu-card__img" src="${evento.imagen_url}" alt="${evento.titulo}">` : ''}
-      <div class="evento-edu-card__body">
-        <span style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;background:var(--verde-soft,#e8f5ee);color:var(--verde,#095544)">${esProximo ? 'Próximo taller' : 'Último taller realizado'} · ${fechaFmt}</span>
-        <h3 style="font-family:var(--display);font-size:24px;font-weight:600;margin:14px 0 10px">${evento.titulo}</h3>
-        ${evento.descripcion ? `<p style="font-size:14px;opacity:.7;line-height:1.6;margin-bottom:16px">${evento.descripcion}</p>` : ''}
-        ${evento.facilitadores_educacion?.nombre ? `<p style="font-size:13px;opacity:.6;margin-bottom:20px">Dictado por ${evento.facilitadores_educacion.nombre}</p>` : ''}
-        <a href="Registro.html?modo=registro" class="btn btn--primario">Únete gratis para participar &rarr;</a>
+  return `
+    <div class="programa-card fade-up">
+      <div class="programa-card__img-wrap">
+        <img src="${e.imagen_url || 'icon-club.png'}" alt="${e.titulo}" style="width:100%;height:160px;object-fit:cover;display:block">
+        ${cat ? `<span class="programa-card__cat">${cat}</span>` : ''}
+      </div>
+      <div style="padding:20px">
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+          <span style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;background:var(--verde-soft,#e8f5ee);color:var(--verde,#095544)">${fechaFmt}</span>
+          ${badgeCupo}
+        </div>
+        <h3 style="font-family:var(--display);font-size:19px;font-weight:600;margin-bottom:8px">${e.titulo}</h3>
+        ${e.descripcion ? `<p style="font-size:13.5px;opacity:.7;line-height:1.6;margin-bottom:14px">${e.descripcion}</p>` : ''}
+        ${facil?.nombre ? `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          ${facil.foto_url
+            ? `<img src="${facil.foto_url}" alt="${facil.nombre}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">`
+            : `<span style="width:28px;height:28px;border-radius:50%;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--verde)">${facil.nombre[0]}</span>`}
+          <span style="font-size:13px;opacity:.6">Dictado por ${facil.nombre}</span>
+        </div>` : ''}
+        <a href="Registro.html?modo=registro" class="btn btn--primario" style="width:100%;justify-content:center">Únete gratis para participar &rarr;</a>
       </div>
     </div>`;
+}
+
+function tarjetaHistorialEvento(e) {
+  const fechaFmt = new Date(e.fecha + 'T00:00:00').toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' });
+  return `
+    <div class="historial-edu-card">
+      ${e.imagen_url
+        ? `<img src="${e.imagen_url}" alt="${e.titulo}">`
+        : `<div style="height:120px;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:var(--verde)">${(e.titulo || 'E')[0]}</div>`}
+      <div class="historial-edu-card__body">
+        <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:4px">${fechaFmt}</div>
+        <div style="font-size:13.5px;font-weight:600;line-height:1.3">${e.titulo}</div>
+      </div>
+    </div>`;
+}
+
+async function cargarEventosEducativosPub() {
+  const seccion = document.querySelector('#educacion');
+  const grid = document.querySelector('#eventos-edu-grid');
+  const histWrap = document.querySelector('#eventos-edu-historial-wrap');
+  const histTrack = document.querySelector('#eventos-edu-historial');
+  if (!seccion || !grid) return;
+
+  const hoy = new Date().toISOString().slice(0, 10);
+  const SEL = '*, facilitadores_educacion(nombre, foto_url), categorias_educacion(nombre)';
+
+  const [{ data: proximos }, { data: historial }] = await Promise.all([
+    supabase.from('eventos_educacion').select(SEL).eq('activo', true).gte('fecha', hoy).order('fecha', { ascending: true }).limit(6),
+    supabase.from('eventos_educacion').select(SEL).eq('activo', true).lt('fecha', hoy).order('fecha', { ascending: false }).limit(8),
+  ]);
+
+  if (!proximos?.length && !historial?.length) return;
+
+  let confirmadosMap = new Map();
+  const idsConCupo = (proximos || []).filter(e => e.cupo_maximo).map(e => e.id);
+  if (idsConCupo.length) {
+    const { data: confs } = await supabase.from('confirmaciones_evento').select('evento_id').in('evento_id', idsConCupo);
+    (confs || []).forEach(c => confirmadosMap.set(c.evento_id, (confirmadosMap.get(c.evento_id) || 0) + 1));
+  }
+
+  if (proximos?.length) {
+    grid.innerHTML = proximos.map(e => tarjetaEvento(e, confirmadosMap.get(e.id) || 0)).join('');
+  }
+
+  if (historial?.length && histWrap && histTrack) {
+    histTrack.innerHTML = historial.map(tarjetaHistorialEvento).join('');
+    histWrap.style.display = '';
+  }
+
   seccion.style.display = '';
   if (window.lucide) lucide.createIcons();
 }
@@ -433,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
   cargarPlanesPub();
   cargarProgramasPub();
   cargarProfesionalesPub();
-  cargarUltimoEventoEducativo();
+  cargarEventosEducativosPub();
   cargarVacantesPub();
   cargarCarruselPromos();
 });

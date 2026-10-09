@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=54">
+  <link rel="stylesheet" href="styles.css?v=55">
   <link rel="stylesheet" href="admin.css?v=9">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -1846,7 +1846,7 @@ async function cargarEventosEducacionAdmin(){
       <div style="font-size:13px;color:rgba(242,240,234,.5)">${new Date(e.fecha+'T00:00:00').toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})}${e.facilitadores_educacion?.nombre?' · '+esc(e.facilitadores_educacion.nombre):''}</div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;flex-wrap:wrap">
-      <button class="ad-btn" data-ver-conf="${e.id}">${ic('users')} ${countConf(e.id)} confirmados</button>
+      <button class="ad-btn" data-ver-conf="${e.id}">${ic('users')} ${countConf(e.id)}${e.cupo_maximo?'/'+e.cupo_maximo:''} confirmados</button>
       <span class="ad-pill ${e.activo?'activo':'inactivo'}" data-tog-evento="${e.id}" data-activo="${e.activo}" style="cursor:pointer"><span class="d"></span>${e.activo?'Activo':'Inactivo'}</span>
       <button class="ad-btn" data-ed-evento="${e.id}">${ic("pencil")}</button><button class="ad-btn" data-rm-evento="${e.id}">${ic("trash-2")}</button>
     </div></div>`).join(''):`<p style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">No hay eventos aún.</p>`;
@@ -1927,6 +1927,7 @@ function htmlFormEvento(e={}){
     <div class="ad-field"><label>Fecha *</label><input id="ev-fecha" type="date" value="${e.fecha||''}"></div>
     <div class="ad-field"><label>Lugar</label><input id="ev-lugar" type="text" value="${(e.lugar||'').replace(/"/g,'&quot;')}" placeholder="Sede del Club"></div>
   </div>
+  <div class="ad-field"><label>Cupo máximo <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional — muestra "Quedan X cupos" en la web)</span></label><input id="ev-cupo" type="number" min="1" value="${e.cupo_maximo||''}" placeholder="Ej: 30"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
     <div class="ad-field"><label>Facilitador</label><select id="ev-facil"><option value="">Sin asignar</option>${opts}</select></div>
     <div class="ad-field"><label>Categoría</label><select id="ev-categ"><option value="">Sin categoría</option>${optsCateg}</select></div>
@@ -1952,6 +1953,7 @@ function bindFormEvento(){setTimeout(()=>{
       lugar:$("#ev-lugar")?.value.trim()||null,
       facilitador_id:$("#ev-facil")?.value||null,
       categoria_id:$("#ev-categ")?.value||null,
+      cupo_maximo:$("#ev-cupo")?.value?parseInt($("#ev-cupo").value,10):null,
       imagen_url,pdf_url,
       link_grabacion:$("#ev-grabacion")?.value.trim()||null,
     };
