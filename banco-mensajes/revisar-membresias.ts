@@ -165,6 +165,12 @@ Deno.serve(async (_req: Request) => {
     }
   }
 
+  // 4) Limpieza del log de rate-limit de whatsapp-send (solo se usa para
+  // contar envíos de las últimas horas, no hace falta guardarlo más de 1 día)
+  const hace1dia = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { error: errLimpiezaLog } = await supabase.from("whatsapp_envios_log").delete().lt("created_at", hace1dia);
+  if (errLimpiezaLog) console.error("Error limpiando whatsapp_envios_log:", errLimpiezaLog);
+
   return new Response(
     JSON.stringify({
       ok: true,

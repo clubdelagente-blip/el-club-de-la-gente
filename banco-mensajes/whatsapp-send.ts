@@ -7,6 +7,15 @@
 // con la reputacion del Club, costos de Twilio, riesgo de bloqueo de Meta).
 // Ahora solo se permite mandar a numeros que ya existen en la base de datos
 // (miembros o aliados) -- cierra la posibilidad de spamear a desconocidos.
+//
+// SEGURIDAD (2026-10-09): la función se llama desde navegador, Admin y
+// varias Edge Functions internas sin un token de sesión (demasiados
+// llamadores legítimos distintos para exigir uno sin romper algo), así que
+// en vez de autenticación se le puso un límite de frecuencia por número
+// destino -- si alguien descubre la URL (es pública: está en el código
+// fuente de Admin.html, que cualquiera puede ver) ya no puede usarla para
+// bombardear a un mismo miembro/aliado con mensajes de phishing usando el
+// WhatsApp oficial del Club.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -16,6 +25,12 @@ const FROM = "whatsapp:+14155238886";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+// Generoso a propósito: el Admin usa esta misma función para chatear en vivo
+// con un miembro (varios mensajes seguidos son normales ahí) -- el límite
+// solo necesita frenar un bombardeo real, no una conversación de soporte.
+const RATE_LIMIT_MAX = 20;
+const RATE_LIMIT_WINDOW_MIN = 10;
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -56,6 +71,19 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Número no autorizado" }), { status: 403, headers: cors });
     }
 
+    // Límite de frecuencia por número destino -- evita que alguien use esta
+    // función para bombardear al mismo miembro/aliado con el WhatsApp del Club.
+    const desde = new Date(Date.now() - RATE_LIMIT_WINDOW_MIN * 60 * 1000).toISOString();
+    const { count: enviosRecientes } = await supabase
+      .from("whatsapp_envios_log")
+      .select("id", { count: "exact", head: true })
+      .eq("numero", numSinPrefijo)
+      .gt("created_at", desde);
+    if ((enviosRecientes ?? 0) >= RATE_LIMIT_MAX) {
+      console.warn(`Rate limit excedido para ${numSinPrefijo}`);
+      return new Response(JSON.stringify({ error: "Demasiados mensajes a este número, intenta más tarde" }), { status: 429, headers: cors });
+    }
+
     const destino = "whatsapp:+" + (num.startsWith("57") ? num : "57" + num);
 
     const formFields: Record<string, string> = { From: FROM, To: destino };
@@ -77,6 +105,8 @@ Deno.serve(async (req) => {
     }
 
     console.log(`Enviado a ${destino}, sid=${json.sid}`);
+    const { error: logErr } = await supabase.from("whatsapp_envios_log").insert({ numero: numSinPrefijo });
+    if (logErr) console.error("Error registrando envío en whatsapp_envios_log:", logErr);
     return new Response(JSON.stringify({ ok: true, sid: json.sid }), { headers: { ...cors, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("Error inesperado en whatsapp-send:", e);
