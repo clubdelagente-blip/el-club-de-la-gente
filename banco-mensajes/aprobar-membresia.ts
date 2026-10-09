@@ -1,14 +1,22 @@
 // aprobar-membresia — El Club de la Gente
-// Supabase Edge Function · JWT: OFF
+// Supabase Edge Function · JWT: OFF (se verifica a mano que sea un admin real)
 // El admin aprueba un comprobante de pago manual (Bre-B) desde Admin → Ventas.
 // Reproduce exactamente lo que antes hacía wompi-webhook al confirmar un pago
 // de membresía: activa el plan, registra el pago, avisa por WhatsApp y valida
 // si el referidor llega a 5 referidos.
+//
+// SEGURIDAD (2026-10-09): esta función activaba cualquier solicitud con solo
+// mandarle su id -- sin esta verificación, cualquier miembro podía crearse su
+// propia solicitud_membresia desde el navegador (checkout.js la inserta
+// directo) y luego llamar esta función él mismo para auto-aprobarse Premium
+// o Vitalicia gratis, sin pagar ni pasar por el Admin. Ahora exige un token
+// de sesión real y que esa cuenta tenga rol='admin'.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,12 +33,33 @@ Deno.serve(async (req: Request) => {
     return new Response("Method not allowed", { status: 405, headers: corsHeaders });
   }
 
+  const authHeader = req.headers.get("Authorization") || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "");
+  if (!token) {
+    return new Response(JSON.stringify({ error: "No autorizado" }), { status: 401, headers: corsHeaders });
+  }
+
+  const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data: userData, error: userErr } = await supabaseAuth.auth.getUser(token);
+  if (userErr || !userData?.user) {
+    return new Response(JSON.stringify({ error: "No autorizado" }), { status: 401, headers: corsHeaders });
+  }
+
   const { solicitud_id } = await req.json().catch(() => ({}));
   if (!solicitud_id) {
     return new Response(JSON.stringify({ error: "solicitud_id requerido" }), { status: 400, headers: corsHeaders });
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+  const { data: perfilLlamador } = await supabase
+    .from("perfiles")
+    .select("rol")
+    .eq("id", userData.user.id)
+    .maybeSingle();
+  if (perfilLlamador?.rol !== "admin") {
+    return new Response(JSON.stringify({ error: "No tienes permisos de administrador" }), { status: 403, headers: corsHeaders });
+  }
 
   const { data: solicitud, error: solicitudErr } = await supabase
     .from("solicitudes_membresia")

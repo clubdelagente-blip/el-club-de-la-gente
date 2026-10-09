@@ -2920,7 +2920,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const r = await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/cambiar-whatsapp", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ action: "send", miembro_id: _miembroId, nuevo_whatsapp: digits }),
       });
       const j = await r.json().catch(() => ({}));
@@ -2943,7 +2943,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const r = await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/cambiar-whatsapp", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ action: "verify", miembro_id: _miembroId, nuevo_whatsapp: _cfgWaPendiente, code }),
       });
       const j = await r.json().catch(() => ({}));

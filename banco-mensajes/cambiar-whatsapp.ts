@@ -1,5 +1,5 @@
 // cambiar-whatsapp — El Club de la Gente
-// Supabase Edge Function · JWT: OFF
+// Supabase Edge Function · JWT: OFF (se verifica a mano que el token sea del propio miembro_id)
 //
 // El WhatsApp de un miembro no es solo un dato de contacto: es su identidad
 // de acceso (el login por OTP busca el correo interno "{digits}@clubdelagente.app").
@@ -8,13 +8,24 @@
 // igual que el login) y, con la llave de servicio, actualizar a la vez
 // perfiles.whatsapp y el email real en auth.users para que sigan coincidiendo.
 //
-// POST { action: "send",   miembro_id, nuevo_whatsapp }
-// POST { action: "verify", miembro_id, nuevo_whatsapp, code }
+// SEGURIDAD (2026-10-09): el OTP probaba que el número NUEVO era del que
+// llamaba, pero nunca se verificaba que quien llamaba fuera dueño del
+// miembro_id que se está modificando. Como el miembro_id de cualquiera es
+// público a propósito (es el mismo id que va en su link de referidos,
+// "?ref=<miembro_id>"), cualquiera que tuviera ese link podía secuestrar la
+// cuenta de otra persona: pedía el OTP a SU propio celular para el
+// miembro_id de la víctima, lo confirmaba, y la cuenta de la víctima pasaba
+// a iniciar sesión con el número del atacante. Ahora se exige el token de
+// sesión real del miembro_id que se está cambiando.
+//
+// POST { action: "send",   miembro_id, nuevo_whatsapp }   (requiere Authorization: Bearer <token del propio miembro_id>)
+// POST { action: "verify", miembro_id, nuevo_whatsapp, code }  (idem)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID")!;
 const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN")!;
 const TWILIO_FROM = Deno.env.get("TWILIO_WHATSAPP_FROM")!;
@@ -47,8 +58,17 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405, headers: cors });
 
   try {
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    if (!token) return json({ error: "No autorizado" }, 401);
+
+    const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data: userData, error: userErr } = await supabaseAuth.auth.getUser(token);
+    if (userErr || !userData?.user) return json({ error: "No autorizado" }, 401);
+
     const { action, miembro_id, nuevo_whatsapp, code } = await req.json();
     if (!miembro_id) return json({ error: "Falta miembro_id" }, 400);
+    if (userData.user.id !== miembro_id) return json({ error: "No autorizado" }, 403);
 
     const digits = normalizarDigits(nuevo_whatsapp);
     if (!digits || digits.length !== 10 || !digits.startsWith("3")) {

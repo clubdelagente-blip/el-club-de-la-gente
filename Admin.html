@@ -3422,8 +3422,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
       if(!confirm('¿Aprobar este pago y activar la membresía?'))return;
       btn.disabled=true;btn.textContent='Aprobando…';
       try{
+        const{data:sesion}=await supabase.auth.getSession();
         const r=await fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/aprobar-membresias',{
-          method:'POST',headers:{'Content-Type':'application/json'},
+          method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(sesion?.session?.access_token||'')},
           body:JSON.stringify({solicitud_id:id}),
         });
         const j=await r.json().catch(()=>({}));
