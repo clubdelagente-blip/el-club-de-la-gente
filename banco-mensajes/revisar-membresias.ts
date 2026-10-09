@@ -3,7 +3,9 @@
 //
 // 1) A quien se le venció la membresía hoy (o antes) y no renovó, le baja
 //    el plan a "sin_plan" -> eso activa la pantalla de ClubCard bloqueada
-//    que ya existe en Perfil.html, sin tocar nada más.
+//    que ya existe en Perfil.html, sin tocar nada más. EXCEPTO a quien ya
+//    ganó la Vitalicia por referidos (vitalicia_pendiente=true): a ese se
+//    le activa la Vitalicia justo ese día, en vez de bajarlo.
 // 2) A quien le vence en 3 días, le manda un recordatorio por WhatsApp.
 // 3) Aliados y profesionales cuyo contrato (fecha_fin) venció y no se
 //    renovó se desactivan solos del Directorio; al profesional además se
@@ -22,27 +24,65 @@ Deno.serve(async (_req: Request) => {
   en3dias.setDate(en3dias.getDate() + 3);
   const fecha3dias = en3dias.toISOString().slice(0, 10);
 
-  // 1) Bajar el plan de quien ya venció y sigue con un plan pago
+  // 1) Vencidos: al que ganó Vitalicia por referidos se le activa ahora;
+  //    al resto se le baja a sin_plan, como siempre.
   const { data: vencidos, error: errVencidos } = await supabase
     .from("perfiles")
-    .select("id")
+    .select("id, vitalicia_pendiente")
     .not("plan", "in", "(gratis,vitalicia,sin_plan)")
     .lte("fecha_vencimiento", hoy);
 
   if (errVencidos) console.error("Error buscando vencidos:", errVencidos);
 
-  if (vencidos?.length) {
-    const ids = vencidos.map((p) => p.id);
-    const { error: errBajar } = await supabase.from("perfiles").update({ plan: "sin_plan" }).in("id", ids);
+  const idsAVitalicia = (vencidos || []).filter((p) => p.vitalicia_pendiente).map((p) => p.id);
+  const idsASinPlan = (vencidos || []).filter((p) => !p.vitalicia_pendiente).map((p) => p.id);
+
+  if (idsAVitalicia.length) {
+    const { error: errVitalicia } = await supabase
+      .from("perfiles")
+      .update({ plan: "vitalicia", vitalicia_pendiente: false })
+      .in("id", idsAVitalicia);
+    if (errVitalicia) console.error("Error activando vitalicia ganada por referidos:", errVitalicia);
+
+    for (const id of idsAVitalicia) {
+      const { error: notifErr } = await supabase.from("notificaciones_miembro").insert({
+        miembro_id: id,
+        titulo: "¡Ya eres miembro Vitalicio!",
+        cuerpo: "Tu mes pagado terminó y, gracias a tus 5 referidos, tu membresía pasó a Vitalicia — descuentos ilimitados para siempre, sin ningún costo.",
+      });
+      if (notifErr) console.error("Error notificando vitalicia activada:", notifErr);
+    }
+  }
+
+  if (idsASinPlan.length) {
+    const { error: errBajar } = await supabase.from("perfiles").update({ plan: "sin_plan" }).in("id", idsASinPlan);
     if (errBajar) console.error("Error bajando plan de vencidos:", errBajar);
   }
 
   // 2) Recordatorio de WhatsApp a quien vence en 3 días
-  const { data: porVencer, error: errPorVencer } = await supabase
+  const { data: porVencerRaw, error: errPorVencer } = await supabase
     .from("perfiles")
-    .select("id, nombre, whatsapp, plan")
+    .select("id, nombre, whatsapp, plan, vitalicia_pendiente")
     .not("plan", "in", "(gratis,vitalicia,sin_plan)")
     .eq("fecha_vencimiento", fecha3dias);
+
+  // A quien ya ganó la Vitalicia por referidos no se le pide pagar -- se le
+  // avisa que en 3 días se activa sola, sin hacer nada.
+  const porVencer = (porVencerRaw || []).filter((p) => !p.vitalicia_pendiente);
+  for (const p of (porVencerRaw || []).filter((p) => p.vitalicia_pendiente)) {
+    if (!p.whatsapp) continue;
+    const primerNombre = (p.nombre || "").trim().split(" ")[0] || "";
+    const msg = `¡Hola ${primerNombre}! 🎉 En 3 días termina tu mes pagado y, gracias a tus 5 referidos, tu membresía pasa directo a Vitalicia. No tienes que pagar ni hacer nada.\n\nEl Club de la Gente`;
+    try {
+      await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: p.whatsapp, body: msg }),
+      });
+    } catch (e) {
+      console.error("Error enviando aviso de vitalicia por vencer a", p.whatsapp, e);
+    }
+  }
 
   if (errPorVencer) console.error("Error buscando por vencer:", errPorVencer);
 

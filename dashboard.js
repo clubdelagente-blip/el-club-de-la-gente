@@ -1422,11 +1422,10 @@ async function cargarReferidos(userId) {
     });
   });
 
-  const { count } = await supabase
-    .from("perfiles")
-    .select("id", { count: "exact", head: true })
-    .eq("referido_por", userId)
-    .in("plan", ["basica", "premium", "vitalicia"]);
+  const [{ count }, { data: miPerfil }] = await Promise.all([
+    supabase.from("perfiles").select("id", { count: "exact", head: true }).eq("referido_por", userId).in("plan", ["basica", "premium", "vitalicia"]),
+    supabase.from("perfiles").select("plan, vitalicia_pendiente, fecha_vencimiento").eq("id", userId).maybeSingle(),
+  ]);
 
   const total = count || 0;
   const pct = Math.min(total / 5 * 100, 100);
@@ -1435,7 +1434,14 @@ async function cargarReferidos(userId) {
   if (contador) contador.textContent = `${total} de 5`;
 
   if (total >= 5) {
-    if (msg) msg.textContent = "🎉 ¡Membresía vitalicia activada! Gracias por crecer el Club.";
+    if (miPerfil?.vitalicia_pendiente) {
+      const fechaFmt = miPerfil.fecha_vencimiento
+        ? new Date(miPerfil.fecha_vencimiento + "T00:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "long" })
+        : "";
+      if (msg) msg.textContent = `🎉 ¡Ya ganaste la membresía Vitalicia! Primero terminas tu mes pagado y se activa sola${fechaFmt ? " el " + fechaFmt : ""}.`;
+    } else {
+      if (msg) msg.textContent = "🎉 ¡Membresía vitalicia activada! Gracias por crecer el Club.";
+    }
     if (badge) badge.hidden = false;
   } else {
     const faltan = 5 - total;
