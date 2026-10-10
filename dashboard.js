@@ -2156,6 +2156,18 @@ async function cargarTienda() {
     supabase.from('productos').select('*, categorias_productos(nombre)').eq('activo', true).order('orden')
   ]);
 
+  const resenasPorProducto = new Map();
+  if (prods?.length) {
+    const { data: resenasRaw } = await supabase
+      .from('resenas_producto')
+      .select('id, producto_id, estrellas, comentario, miembro_id, perfiles(nombre)')
+      .in('producto_id', prods.map(p => p.id));
+    (resenasRaw || []).forEach(r => {
+      if (!resenasPorProducto.has(r.producto_id)) resenasPorProducto.set(r.producto_id, []);
+      resenasPorProducto.get(r.producto_id).push(r);
+    });
+  }
+
   if (!prods || !prods.length) {
     grid.innerHTML = `
       <div style="text-align:center;padding:48px 20px;grid-column:1/-1">
@@ -2178,6 +2190,7 @@ async function cargarTienda() {
       const imgSrc = (p.imagenes && p.imagenes[0]) || p.imagen_url;
       const descuentoPct = (p.precio_normal && p.precio_descuento && p.precio_normal > p.precio_descuento)
         ? Math.round((1 - p.precio_descuento / p.precio_normal) * 100) : null;
+      const resumenP = resumenResenas(resenasPorProducto.get(p.id) || []);
       return `<div class="tienda-card" data-ver-prod-club="${p.id}">
         <div class="tienda-card__img-wrap">
           ${imgSrc ? `<img src="${imgSrc}" class="tienda-card__img" alt="${esc(p.nombre)}">` : `<div class="tienda-card__img tienda-card__img--ph"></div>`}
@@ -2186,6 +2199,7 @@ async function cargarTienda() {
         <div class="tienda-card__body">
           ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat">${esc(p.categorias_productos.nombre)}</span>` : ''}
           <div class="tienda-card__nombre">${esc(p.nombre)}</div>
+          <div class="tienda-card__rating">${estrellasHtml(resumenP.promedio, 12)}<span>${resumenP.texto}</span></div>
           <div class="tienda-card__precios">
             <div class="tienda-card__precios-txt">
               ${precioNormal ? `<span class="tienda-card__antes">${precioNormal}</span>` : ''}
@@ -2237,6 +2251,7 @@ const ESTADO_PEDIDO_CLUB = {
 function abrirDetalleProductoClub(p) {
   const precio = p.precio_descuento ?? p.precio_normal ?? 0;
   const imgs = (p.imagenes && p.imagenes.length) ? p.imagenes : (p.imagen_url ? [p.imagen_url] : []);
+
   abrirModalTienda(p.nombre, `
     <div class="tprod-galeria">
       <div class="tprod-galeria__main" id="tpg-main">
@@ -2247,12 +2262,15 @@ function abrirDetalleProductoClub(p) {
       </div>` : ''}
     </div>
     ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat" style="display:block;margin-top:16px">${esc(p.categorias_productos.nombre)}</span>` : ''}
+    <div style="display:flex;align-items:center;gap:6px;margin:4px 0 2px" id="tpd-resumen">${estrellasHtml(0, 14)}<span style="font-size:12.5px;color:#777">Cargando reseñas…</span></div>
     <p style="font-size:14px;line-height:1.6;color:#444;margin:8px 0 16px">${p.descripcion ? esc(p.descripcion) : 'Sin descripción adicional.'}</p>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
       ${p.precio_normal && p.precio_descuento && p.precio_normal > p.precio_descuento ? `<span style="font-size:14px;color:#999;text-decoration:line-through">${COP(p.precio_normal)}</span>` : ''}
       <span style="font-size:24px;font-weight:800;color:var(--verde)">${COP(precio)}</span>
     </div>
     <button class="btn btn--primario" id="tpg-comprar" style="width:100%">Comprar</button>
+    <div style="font-size:14px;font-weight:700;margin:28px 0 12px;padding-top:20px;border-top:1px solid #eee">Reseñas de miembros</div>
+    <div id="tpd-resenas-lista">${listaResenasHtml([], p.id, _miembroId)}</div>
   `);
   if (imgs.length > 1) {
     document.querySelectorAll('[data-tpg-thumb]').forEach(t => t.addEventListener('click', () => {
@@ -2263,6 +2281,60 @@ function abrirDetalleProductoClub(p) {
     }));
   }
   document.getElementById('tpg-comprar')?.addEventListener('click', () => abrirCheckoutClub(p));
+  cargarResenasProducto(p);
+}
+
+async function cargarResenasProducto(p) {
+  const { data: resenasRaw } = await supabase
+    .from('resenas_producto')
+    .select('id, producto_id, estrellas, comentario, miembro_id, perfiles(nombre)')
+    .eq('producto_id', p.id)
+    .order('created_at', { ascending: false });
+  const resenas = resenasRaw || [];
+  const resumen = resumenResenas(resenas);
+
+  const resumenEl = document.getElementById('tpd-resumen');
+  if (resumenEl) resumenEl.innerHTML = `${estrellasHtml(resumen.promedio, 14)}<span style="font-size:12.5px;color:#777">${resumen.texto}</span>`;
+  const listaEl = document.getElementById('tpd-resenas-lista');
+  if (listaEl) listaEl.innerHTML = listaResenasHtml(resenas, p.id, _miembroId);
+  if (window.lucide) lucide.createIcons();
+  wireResenasProducto(p);
+}
+
+function wireResenasProducto(p) {
+  const cont = document.getElementById('tpd-resenas-lista');
+  if (!cont) return;
+  cont.querySelectorAll('[data-estrella]').forEach(starBtn => {
+    starBtn.addEventListener('click', () => {
+      const starsCont = starBtn.closest('[data-resena-stars]');
+      const n = +starBtn.dataset.estrella;
+      starsCont.dataset.selected = n;
+      [...starsCont.querySelectorAll('[data-estrella]')].forEach((b, idx) => {
+        const icono = b.querySelector('svg, i');
+        if (!icono) return;
+        icono.style.color = idx < n ? '#EAB749' : '#ccc';
+        icono.style.fill = idx < n ? '#EAB749' : 'none';
+      });
+    });
+  });
+  const enviarBtn = cont.querySelector('[data-enviar-resena]');
+  enviarBtn?.addEventListener('click', () => {
+    const starsCont = cont.querySelector(`[data-resena-stars="${p.id}"]`);
+    const estrellas = +(starsCont?.dataset.selected || 0);
+    if (!estrellas) { toast('Selecciona cuántas estrellas le das al producto'); return; }
+    const comentario = cont.querySelector(`[data-resena-texto="${p.id}"]`)?.value.trim() || null;
+    enviarBtn.disabled = true; enviarBtn.textContent = 'Enviando…';
+    supabase.from('resenas_producto').insert({ producto_id: p.id, miembro_id: _miembroId, estrellas, comentario })
+      .then(({ error }) => {
+        if (error) {
+          toast(error.code === '23505' ? 'Ya habías dejado una reseña de este producto' : 'Error: ' + error.message);
+          enviarBtn.disabled = false; enviarBtn.textContent = 'Enviar reseña';
+          return;
+        }
+        toast('¡Gracias por tu reseña! ✓');
+        cargarResenasProducto(p);
+      });
+  });
 }
 
 async function abrirCheckoutClub(p) {
