@@ -40,7 +40,7 @@
    ============================================================ */
 .ad-side {
   background: #080808; border-right: 1px solid var(--line);
-  display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; overflow-x: hidden;
 }
 .ad-side__brand { display: flex; align-items: center; gap: 11px; padding: 22px 20px 20px; border-bottom: 1px solid var(--line); }
 .ad-side__brand .logo__mark { width: 32px; height: 32px; flex: none; }
@@ -63,8 +63,8 @@
 .ad-side__foot { margin-top: auto; padding: 14px; border-top: 1px solid var(--line); }
 .ad-side__admin { display: flex; align-items: center; gap: 11px; padding: 8px 6px; }
 .ad-side__admin .av { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#095544,#03624C); display: grid; place-items: center; font-family: var(--display); font-size: 15px; font-weight: 600; color: #fff; flex: none; }
-.ad-side__admin .n { font-size: 12.5px; font-weight: 600; line-height: 1.2; }
-.ad-side__admin .r { font-size: 10.5px; color: var(--txt-40); }
+.ad-side__admin .n { font-size: 12.5px; font-weight: 600; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ad-side__admin .r { font-size: 10.5px; color: var(--txt-40); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ============================================================
    MAIN
