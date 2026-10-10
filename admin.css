@@ -28,9 +28,15 @@
   --violeta-soft: rgba(167,139,250,0.15);
 
   background: var(--bg); color: var(--txt);
-  min-height: 100vh;
+  height: 100vh;
   display: grid; grid-template-columns: 220px 1fr;
   font-family: var(--cuerpo);
+  /* El menú y el contenido son dos áreas de scroll independientes (cada
+     una con su propio overflow-y más abajo) -- así, scrollear la tabla a
+     la derecha nunca mueve ni cambia lo que se ve en el menú de la
+     izquierda, y viceversa. Antes dependían de position:sticky sobre el
+     scroll de toda la página, que los dejaba acoplados entre sí. */
+  overflow: hidden;
 }
 .admin * { box-sizing: border-box; }
 .ad-backdrop { display: none; }
@@ -40,7 +46,7 @@
    ============================================================ */
 .ad-side {
   background: #080808; border-right: 1px solid var(--line);
-  display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; overflow-x: hidden;
+  display: flex; flex-direction: column; height: 100vh; overflow-y: auto; overflow-x: hidden;
 }
 .ad-side__brand { display: flex; align-items: center; gap: 11px; padding: 22px 20px 20px; border-bottom: 1px solid var(--line); }
 .ad-side__brand .logo__mark { width: 32px; height: 32px; flex: none; }
@@ -69,7 +75,7 @@
 /* ============================================================
    MAIN
    ============================================================ */
-.ad-main { min-width: 0; display: flex; flex-direction: column; }
+.ad-main { min-width: 0; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; overflow-x: hidden; }
 .ad-top {
   display: flex; align-items: center; justify-content: space-between; gap: 20px;
   padding: 16px 32px; border-bottom: 1px solid var(--line);
