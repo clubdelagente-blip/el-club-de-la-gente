@@ -819,15 +819,58 @@ async function abrirAhorroMensual() {
       </g>`;
   }).join("");
 
+  const ahorroActual = meses[meses.length - 1].total;
+  const METAS = [
+    { monto: 40000, emoji: "🍽️", titulo: "Cena gratis", desc: "con uno de nuestros aliados" },
+    { monto: 100000, emoji: "👟", titulo: "Ropa y zapatos", desc: "de marca, gratis" },
+    { monto: 150000, emoji: "✈️", titulo: "Viajes", desc: "completamente gratis" },
+  ];
+  const metaMax = METAS[METAS.length - 1].monto;
+  const pctBarra = Math.min(100, (ahorroActual / metaMax) * 100);
+
+  const marcadoresHtml = METAS.map(m => {
+    const logrado = ahorroActual >= m.monto;
+    const pos = Math.min(100, (m.monto / metaMax) * 100);
+    return `<div style="position:absolute;top:-14px;left:${pos}%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;background:${logrado ? "#EAB749" : "#fff"};border:2px solid ${logrado ? "#EAB749" : "#e0cfa0"};display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.12)">${logrado ? "✓" : m.emoji}</div>`;
+  }).join("");
+
+  const etiquetasHtml = METAS.map(m => `<span style="flex:1;text-align:center">${fmtCOP(m.monto)}</span>`).join("");
+
+  const metasListaHtml = METAS.map(m => {
+    const logrado = ahorroActual >= m.monto;
+    return `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:${logrado ? "rgba(234,183,73,.18)" : "#fff"};border:1px solid ${logrado ? "#EAB749" : "#f0e4c8"}">
+      <span style="font-size:22px;flex:none">${m.emoji}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13.5px;color:#2b1d02">${m.titulo}</div>
+        <div style="font-size:11.5px;color:#8a7140">${m.desc}</div>
+      </div>
+      <span style="font-size:11px;font-weight:700;flex:none;padding:4px 10px;border-radius:100px;background:${logrado ? "#EAB749" : "#f0e4c8"};color:${logrado ? "#fff" : "#8a7140"}">${logrado ? "✓ Logrado" : fmtCOP(m.monto)}</span>
+    </div>`;
+  }).join("");
+
   abrirModalTienda("Tu ahorro mes a mes", `
     <div style="background:#021B1A;border-radius:16px;padding:22px 14px 14px;margin-bottom:20px;position:relative">
       <svg viewBox="0 0 ${ANCHO} ${ALTO}" style="width:100%;height:auto;display:block;overflow:visible" id="ahorro-chart-svg">${barsSvg}</svg>
       <div id="ahorro-chart-tooltip" style="display:none;position:absolute;transform:translate(-50%,-100%);background:#fff;color:#021B1A;font-size:12px;font-weight:700;padding:6px 10px;border-radius:8px;pointer-events:none;box-shadow:0 6px 16px rgba(0,0,0,.25);white-space:nowrap;z-index:2"></div>
     </div>
-    <div style="background:linear-gradient(135deg,#EAB749,#d99a2b);border-radius:16px;padding:22px 20px;color:#2b1d02;text-align:center">
-      <div style="font-size:30px;margin-bottom:8px">🏆 🎁 ✈️</div>
-      <div style="font-family:'Fraunces',serif;font-size:19px;font-weight:700;margin-bottom:8px;line-height:1.25">¡Pronto premiaremos a quienes más ahorran!</div>
-      <p style="font-size:13.5px;line-height:1.55;opacity:.85">Viajes, celulares, ropa de marca y muchas sorpresas más para los miembros que más aprovechen sus beneficios cada mes. Sigue ahorrando — ¡tú podrías ser el próximo ganador! 🎉</p>
+    <div style="background:linear-gradient(160deg,#fff 0%,#fdf6e8 100%);border:1px solid #f0dfb0;border-radius:16px;padding:24px 20px">
+      <div style="text-align:center;margin-bottom:4px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b9770e">Metas de ahorro este mes</div>
+        <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;margin-top:4px;color:#2b1d02">Llevas ${fmtCOP(ahorroActual)} ahorrados</div>
+      </div>
+
+      <div style="position:relative;margin:34px 6px 10px">
+        <div style="height:10px;background:#f0e4c8;border-radius:100px;overflow:hidden">
+          <div style="height:100%;width:${pctBarra}%;background:linear-gradient(90deg,#EAB749,#F5D77A);border-radius:100px;transition:width .6s ease"></div>
+        </div>
+        ${marcadoresHtml}
+      </div>
+      <div style="display:flex;justify-content:space-between;margin:0 6px 20px;font-size:10.5px;font-weight:700;color:#8a7140">${etiquetasHtml}</div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">${metasListaHtml}</div>
+
+      <p style="font-size:12px;color:#8a7140;text-align:center;margin-top:16px;line-height:1.5">Al llegar a cada meta participas por el premio — entre más ahorres, más oportunidades tienes de ganar. 🎉</p>
     </div>
     <div style="text-align:center;margin-top:22px">
       <img src="logo-club.png" alt="El Club de la Gente" style="height:34px;width:auto;opacity:.55">
