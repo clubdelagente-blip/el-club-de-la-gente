@@ -139,10 +139,14 @@
 .ad-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; height: 100%; justify-content: flex-end; }
 .ad-bar { width: 100%; max-width: 42px; border-radius: 6px 6px 2px 2px; background: var(--surface-2); border: 1px solid var(--line-2); position: relative; transition: filter .2s; min-height: 4px; }
 .ad-bar.is-now { background: linear-gradient(180deg, var(--crema, #F2F0EA), #cfcdc4); border-color: transparent; }
-.ad-bar--gratis { background: var(--azul); border-color: transparent; }
-.ad-bar--basica { background: var(--txt-60); border-color: transparent; }
-.ad-bar--premium { background: var(--dorado); border-color: transparent; }
-.ad-bar--vitalicia { background: var(--violeta); border-color: transparent; }
+/* Mismos colores que la ClubCard real de cada plan (ver .ccv2--* en
+   estilos.css) -- Vitalicia es negra con detalle dorado en la tarjeta
+   real, pero un dorado sólido se confundiría con Premium en esta barra,
+   así que se representa como degradado negro con borde dorado. */
+.ad-bar--gratis { background: #00DF81; border-color: transparent; }
+.ad-bar--basica { background: #C8CED4; border-color: transparent; }
+.ad-bar--premium { background: #EAB749; border-color: transparent; }
+.ad-bar--vitalicia { background: linear-gradient(180deg, #2a2a2a, #0d0d0d); border: 1.5px solid #EAB749; }
 .ad-bar:hover { filter: brightness(1.25); }
 .ad-bar__val { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); font-size: 10.5px; font-weight: 700; color: var(--txt-60); white-space: nowrap; opacity: 0; transition: opacity .2s; }
 .ad-bar-col:hover .ad-bar__val { opacity: 1; }
