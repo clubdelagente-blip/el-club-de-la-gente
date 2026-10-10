@@ -244,10 +244,10 @@
 /* ============================================================
    OVERLAY DE SEGMENTACIÓN
    ============================================================ */
-.seg-overlay { position: fixed; inset: 0; z-index: 400; background: var(--crema); overflow-y: auto; display: none; }
+.seg-overlay { position: fixed; inset: 0; z-index: 400; background: var(--crema); overflow-y: auto; overflow-x: hidden; touch-action: pan-y; display: none; }
 .seg-overlay.is-open { display: block; }
 .seg-grain { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .045; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
-.seg-wrap { max-width: 680px; margin: 0 auto; padding: 56px 32px 80px; position: relative; z-index: 2; }
+.seg-wrap { max-width: 680px; width: 100%; margin: 0 auto; padding: 56px 32px 80px; position: relative; z-index: 2; overflow-x: hidden; touch-action: pan-y; box-sizing: border-box; }
 .seg-logo { display: block; height: 34px; width: auto; margin: 0 auto 32px; animation: seg-pop .5s cubic-bezier(.34,1.56,.64,1); }
 .seg-progress { height: 3px; background: var(--linea); border-radius: 100px; overflow: hidden; margin-bottom: 40px; }
 .seg-progress__bar { height: 100%; background: linear-gradient(90deg, var(--verde), #00DF81); width: 25%; transition: width .5s cubic-bezier(.34,1.56,.64,1); }
@@ -298,7 +298,8 @@
 .seg-interstitial h2 { font-family: var(--display); font-size: clamp(24px, 3.4vw, 32px); font-weight: 600; margin-bottom: 14px; }
 .seg-interstitial p { font-size: 14.5px; color: var(--tinta-60); line-height: 1.6; margin-bottom: 28px; }
 .seg-interstitial__actions { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.seg-interstitial--final { margin-top: 90px; }
+.seg-interstitial--final { margin-top: 0; min-height: calc(100vh - 136px); flex-direction: column; justify-content: center; align-items: center; }
+.seg-interstitial--final:not([hidden]) { display: flex; }
 
 @keyframes seg-pop { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @keyframes seg-bounce {
