@@ -2201,6 +2201,13 @@ async function cargarTienda() {
   const hace14dias = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
   const ICON_TIENDA = `<i data-lucide="store"></i>`;
   const ICON_ALIADO = `<i data-lucide="handshake"></i>`;
+  const ICONOS_CAT_TIENDA = [
+    [/ropa|zapato|calzado|moda/i, 'shirt'], [/belleza|estetic|cuidado/i, 'sparkles'],
+    [/bienestar|salud/i, 'heart-pulse'], [/hogar|casa/i, 'home'],
+    [/tecnolog|electro/i, 'cpu'], [/deporte|gym/i, 'dumbbell'],
+    [/regalo/i, 'gift'], [/mascota/i, 'paw-print'], [/juguete|niñ/i, 'baby'],
+  ];
+  const iconoCatTienda = (nombre) => { for (const [rx, icon] of ICONOS_CAT_TIENDA) if (rx.test(nombre || '')) return icon; return 'package'; };
 
   let catActiva = 'todos';
   let orden = 'relevancia';
@@ -2235,7 +2242,7 @@ async function cargarTienda() {
             ${precioNormal ? `<span class="tienda-card__antes">${precioNormal}</span>` : ''}
             <span class="tienda-card__precio">${precioDesc || precioNormal}</span>
           </div>
-          <button class="tienda-card__cart" data-comprar="${p.id}" data-origen="${p._origen}" type="button" ${sinStock ? 'disabled' : ''}>${sinStock ? 'Agotado' : 'Comprar'}</button>
+          <button class="tienda-card__cart" data-comprar="${p.id}" data-origen="${p._origen}" type="button" ${sinStock ? 'disabled' : ''} aria-label="${sinStock ? 'Agotado' : 'Comprar'}">${ic(sinStock ? 'x' : 'shopping-cart')}</button>
         </div>
       </div>
     </div>`;
@@ -2270,12 +2277,17 @@ async function cargarTienda() {
   }
 
   if (cats && cats.length && catsEl) {
-    catsEl.innerHTML = `<button class="tienda-filtro is-on" data-cat="todos">Todos</button>` +
-      cats.map(c => `<button class="tienda-filtro" data-cat="${c.id}">${esc(c.nombre)}</button>`).join('');
+    const chip = (id, nombre, icon, activo) => `<button class="tienda-cat-ic${activo ? ' is-on' : ''}" data-cat="${id}">
+      <span class="tienda-cat-ic__circle">${ic(icon)}</span>
+      <span class="tienda-cat-ic__lbl">${esc(nombre)}</span>
+    </button>`;
+    catsEl.innerHTML = chip('todos', 'Todos', 'layout-grid', true) +
+      cats.map(c => chip(c.id, c.nombre, iconoCatTienda(c.nombre), false)).join('');
+    if (window.lucide) lucide.createIcons();
     catsEl.addEventListener('click', e => {
       const btn = e.target.closest('[data-cat]'); if (!btn) return;
       catActiva = btn.dataset.cat;
-      catsEl.querySelectorAll('.tienda-filtro').forEach(b => b.classList.toggle('is-on', b === btn));
+      catsEl.querySelectorAll('.tienda-cat-ic').forEach(b => b.classList.toggle('is-on', b === btn));
       renderGrid();
     });
   }
