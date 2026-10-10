@@ -2276,18 +2276,28 @@ async function cargarTienda() {
     }));
   }
 
-  if (cats && cats.length && catsEl) {
+  function mostrarVistaTienda(vista) {
+    const wrapPedidos = document.getElementById('mis-pedidos-club-wrap');
+    const esPedidos = vista === 'pedidos';
+    if (wrapPedidos) wrapPedidos.style.display = esPedidos ? '' : 'none';
+    grid.style.display = esPedidos ? 'none' : '';
+    if (ordenEl) ordenEl.style.display = esPedidos ? 'none' : '';
+  }
+
+  if (catsEl) {
     const chip = (id, nombre, icon, activo) => `<button class="tienda-cat-ic${activo ? ' is-on' : ''}" data-cat="${id}">
       <span class="tienda-cat-ic__circle">${ic(icon)}</span>
       <span class="tienda-cat-ic__lbl">${esc(nombre)}</span>
     </button>`;
     catsEl.innerHTML = chip('todos', 'Todos', 'layout-grid', true) +
-      cats.map(c => chip(c.id, c.nombre, iconoCatTienda(c.nombre), false)).join('');
+      (cats || []).map(c => chip(c.id, c.nombre, iconoCatTienda(c.nombre), false)).join('');
     if (window.lucide) lucide.createIcons();
     catsEl.addEventListener('click', e => {
       const btn = e.target.closest('[data-cat]'); if (!btn) return;
-      catActiva = btn.dataset.cat;
       catsEl.querySelectorAll('.tienda-cat-ic').forEach(b => b.classList.toggle('is-on', b === btn));
+      if (btn.dataset.cat === 'mis-pedidos') { mostrarVistaTienda('pedidos'); return; }
+      catActiva = btn.dataset.cat;
+      mostrarVistaTienda('productos');
       renderGrid();
     });
   }
@@ -2302,6 +2312,7 @@ async function cargarTienda() {
     });
   }
   renderGrid();
+  mostrarVistaTienda('productos');
   cargarMisPedidosClub();
 }
 
@@ -2525,14 +2536,11 @@ async function abrirCheckoutClub(p) {
 }
 
 async function cargarMisPedidosClub() {
-  const wrap = document.getElementById("mis-pedidos-club-wrap");
   const list = document.getElementById("mis-pedidos-club-list");
-  if (!wrap || !list) return;
+  if (!list) return;
   const { data } = await supabase.from("pedidos_club").select("*, productos(imagen_url, imagenes)").order("created_at", { ascending: false });
   const pedidos = data || [];
-  if (!pedidos.length) { wrap.style.display = "none"; return; }
-  wrap.style.display = "";
-  list.innerHTML = pedidos.map(p => {
+  list.innerHTML = pedidos.length ? pedidos.map(p => {
     const est = ESTADO_PEDIDO_CLUB[p.estado] || ESTADO_PEDIDO_CLUB.pendiente_pago;
     const img = p.productos?.imagen_url || (p.productos?.imagenes && p.productos.imagenes[0]);
     return `<div class="pedido-card">
@@ -2544,8 +2552,20 @@ async function cargarMisPedidosClub() {
       </div>
       <span class="pedido-card__estado" style="background:${est.bg};color:${est.c}">${est.t}</span>
     </div>`;
-  }).join("");
+  }).join("") : `<p style="font-size:13px;color:#999;text-align:center;padding:24px 0">Todavía no has hecho ningún pedido.</p>`;
   if (window.lucide) lucide.createIcons();
+
+  // Botón "Mis pedidos" en la fila de categorías -- solo aparece si ya hizo
+  // al menos un pedido, y solo se agrega una vez (no en cada refresco).
+  const catsEl = document.getElementById("tienda-cats");
+  if (catsEl && pedidos.length && !catsEl.querySelector('[data-cat="mis-pedidos"]')) {
+    const btn = document.createElement("button");
+    btn.className = "tienda-cat-ic";
+    btn.dataset.cat = "mis-pedidos";
+    btn.innerHTML = `<span class="tienda-cat-ic__circle">${ic("receipt")}</span><span class="tienda-cat-ic__lbl">Mis pedidos</span>`;
+    catsEl.insertBefore(btn, catsEl.firstChild);
+    if (window.lucide) lucide.createIcons();
+  }
 }
 
 /* ---------- Tienda de aliados (vitrina + checkout) ---------- */
