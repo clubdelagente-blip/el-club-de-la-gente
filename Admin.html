@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=55">
-  <link rel="stylesheet" href="admin.css?v=9">
+  <link rel="stylesheet" href="admin.css?v=10">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
   <style>
@@ -203,7 +203,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=6"></script>
-  <script src="admin.js?v=28"></script>
+  <script src="admin.js?v=29"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -731,7 +731,27 @@ async function cargarMiembrosReal(tab,q){
     estado:['gratis','basica','premium','vitalicia'].includes(p.plan)?'activo':'inactivo',
     ahorro:ahorroPorMiembro[p.id]||0,
   }));
+  renderChartMiembrosPlan();
   filtrarMiembrosReal(tab,q);
+}
+function renderChartMiembrosPlan(){
+  const cont=$('#m-chart');
+  if(!cont)return;
+  const PLANES_CHART=[
+    {val:'gratis',lbl:'Gratis'},
+    {val:'basica',lbl:'Básico'},
+    {val:'premium',lbl:'Premium'},
+    {val:'vitalicia',lbl:'Vitalicia'},
+  ];
+  const conteos=PLANES_CHART.map(p=>({...p,n:_miembros.filter(m=>m.plan===p.val).length}));
+  const max=Math.max(1,...conteos.map(c=>c.n));
+  cont.innerHTML=conteos.map(c=>`
+    <div class="ad-bar-col">
+      <div class="ad-bar ad-bar--${c.val}" style="height:${c.n?Math.max(6,Math.round(c.n/max*100)):2}%">
+        <span class="ad-bar__val" style="opacity:1">${c.n}</span>
+      </div>
+      <span class="ad-bar-col__lbl">${c.lbl}</span>
+    </div>`).join('');
 }
 function filtrarMiembrosReal(tab,q){
   const qn=(q||'').trim().toLowerCase();

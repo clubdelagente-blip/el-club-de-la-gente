@@ -24,6 +24,8 @@
   --dorado: #d9b25f;
   --dorado-soft: rgba(217,178,95,0.15);
   --rojo: #e2685f;
+  --violeta: #a78bfa;
+  --violeta-soft: rgba(167,139,250,0.15);
 
   background: var(--bg); color: var(--txt);
   min-height: 100vh;
@@ -125,6 +127,10 @@
 .ad-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10px; height: 100%; justify-content: flex-end; }
 .ad-bar { width: 100%; max-width: 42px; border-radius: 6px 6px 2px 2px; background: var(--surface-2); border: 1px solid var(--line-2); position: relative; transition: filter .2s; min-height: 4px; }
 .ad-bar.is-now { background: linear-gradient(180deg, var(--crema, #F2F0EA), #cfcdc4); border-color: transparent; }
+.ad-bar--gratis { background: var(--azul); border-color: transparent; }
+.ad-bar--basica { background: var(--txt-60); border-color: transparent; }
+.ad-bar--premium { background: var(--dorado); border-color: transparent; }
+.ad-bar--vitalicia { background: var(--violeta); border-color: transparent; }
 .ad-bar:hover { filter: brightness(1.25); }
 .ad-bar__val { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); font-size: 10.5px; font-weight: 700; color: var(--txt-60); white-space: nowrap; opacity: 0; transition: opacity .2s; }
 .ad-bar-col:hover .ad-bar__val { opacity: 1; }
@@ -191,6 +197,8 @@
 .ad-pill { font-size: 11px; font-weight: 700; letter-spacing: .03em; padding: 5px 11px; border-radius: 100px; display: inline-flex; align-items: center; gap: 6px; }
 .ad-pill.premium { color: var(--dorado); background: var(--dorado-soft); }
 .ad-pill.basica { color: var(--txt-60); background: rgba(241, 247, 246,.07); }
+.ad-pill.gratis { color: var(--azul); background: var(--azul-soft); }
+.ad-pill.vitalicia { color: var(--violeta); background: var(--violeta-soft); }
 .ad-pill.activo { color: var(--verde-claro); background: var(--verde-soft); }
 .ad-pill.inactivo { color: var(--rojo); background: rgba(226,104,95,.13); }
 .ad-pill.pend { color: var(--dorado); background: var(--dorado-soft); }
