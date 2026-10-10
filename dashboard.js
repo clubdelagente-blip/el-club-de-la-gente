@@ -2528,20 +2528,24 @@ async function cargarMisPedidosClub() {
   const wrap = document.getElementById("mis-pedidos-club-wrap");
   const list = document.getElementById("mis-pedidos-club-list");
   if (!wrap || !list) return;
-  const { data } = await supabase.from("pedidos_club").select("*").order("created_at", { ascending: false });
+  const { data } = await supabase.from("pedidos_club").select("*, productos(imagen_url, imagenes)").order("created_at", { ascending: false });
   const pedidos = data || [];
   if (!pedidos.length) { wrap.style.display = "none"; return; }
   wrap.style.display = "";
   list.innerHTML = pedidos.map(p => {
     const est = ESTADO_PEDIDO_CLUB[p.estado] || ESTADO_PEDIDO_CLUB.pendiente_pago;
-    return `<div style="padding:14px 0;border-bottom:1px solid #ebebeb;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-      <div style="flex:1;min-width:180px">
-        <div style="font-weight:600;font-size:14px">${esc(p.nombre_producto)} — ${COP(p.monto)}</div>
-        ${p.numero_guia ? `<div style="font-size:12px;color:#777">Guía: ${esc(p.numero_guia)}</div>` : ""}
+    const img = p.productos?.imagen_url || (p.productos?.imagenes && p.productos.imagenes[0]);
+    return `<div class="pedido-card">
+      ${img ? `<img src="${esc(img)}" class="pedido-card__img" alt="">` : `<div class="pedido-card__img pedido-card__img--ph">${ic("package")}</div>`}
+      <div class="pedido-card__body">
+        <div class="pedido-card__nombre">${esc(p.nombre_producto)}</div>
+        <div class="pedido-card__precio">${COP(p.monto)}</div>
+        ${p.numero_guia ? `<div class="pedido-card__guia">Guía: ${esc(p.numero_guia)}</div>` : ""}
       </div>
-      <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};white-space:nowrap">${est.t}</span>
+      <span class="pedido-card__estado" style="background:${est.bg};color:${est.c}">${est.t}</span>
     </div>`;
   }).join("");
+  if (window.lucide) lucide.createIcons();
 }
 
 /* ---------- Tienda de aliados (vitrina + checkout) ---------- */
