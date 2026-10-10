@@ -202,8 +202,7 @@ function renderGrid() {
   }
 
   cont.innerHTML = list.map((a, i) => `
-    <article class="dir-card${a._bloqueado ? " dir-card--bloqueada" : ""}" data-aliado="${a.id}" tabindex="0" style="${ccVars(a.categoria)};animation-delay:${Math.min(i * 45, 400)}ms">
-      ${a._bloqueado ? `<div class="dir-card__lock">${ic("lock")}<span>Mejora tu plan</span></div>` : ""}
+    <article class="dir-card" data-aliado="${a.id}" tabindex="0" style="${ccVars(a.categoria)};animation-delay:${Math.min(i * 45, 400)}ms">
       <div class="dir-card__logo">
         ${a.imagen_url
           ? `<img src="${a.imagen_url}" alt="">`
@@ -254,6 +253,7 @@ function wireResenas(a) {
     const extra = $("[data-domicilio-extra]");
     if (extra) extra.style.display = extra.style.display === "none" ? "flex" : "none";
   });
+  $$("[data-promo-bloqueada]").forEach(el => el.addEventListener("click", () => abrirModalMejorarPlan(a)));
   if (!VIEWER_USER_ID) return;
   let seleccion = a._miResena?.estrellas || 0;
   const botones = $$("#resena-stars [data-estrella]");
@@ -282,7 +282,6 @@ function wireResenas(a) {
 async function openSheet(aliadoId) {
   const a = ALIADOS.find(x => x.id === aliadoId);
   if (!a) return;
-  if (a._bloqueado) { abrirModalMejorarPlan(a); return; }
   aliadoActual = a;
   sheetInner.innerHTML = `<p style="text-align:center;padding:60px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></p>`;
   overlay.classList.add("is-open");
@@ -487,10 +486,14 @@ function sheetAliado(a) {
     ${promos.length ? promos.map((p) => {
       const fotos = (Array.isArray(p.fotos_urls) && p.fotos_urls.length) ? p.fotos_urls : (p.foto_url ? [p.foto_url] : []);
       const esFlyer = fotos.length === 1 && fotos[0].includes('flyer=1');
-      const waPromo = a.whatsapp ? `https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.descripcion || badgePromo(p)}" de ${a.nombre} que vi en El Club de la Gente`)}` : null;
+      const waPromo = (!a._bloqueado && a.whatsapp) ? `https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.descripcion || badgePromo(p)}" de ${a.nombre} que vi en El Club de la Gente`)}` : null;
       const tag = waPromo ? 'a' : 'div';
-      const attrsClick = waPromo ? ` href="${waPromo}" target="_blank" style="display:block;text-decoration:none;color:inherit;cursor:pointer"` : '';
-      const avisoWa = waPromo ? `<span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:${cc};margin-top:10px">${ICON_WA}Toca para aprovecharla por WhatsApp</span>` : '';
+      const attrsClick = waPromo
+        ? ` href="${waPromo}" target="_blank" style="display:block;text-decoration:none;color:inherit;cursor:pointer"`
+        : a._bloqueado ? ` data-promo-bloqueada style="display:block;cursor:pointer"` : '';
+      const avisoWa = waPromo
+        ? `<span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:${cc};margin-top:10px">${ICON_WA}Toca para aprovecharla por WhatsApp</span>`
+        : a._bloqueado ? `<span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#b45309;margin-top:10px">${ic('lock')}Mejora tu plan para aprovecharla</span>` : '';
       if (esFlyer) {
         return `
         <${tag} class="promo-card"${attrsClick}>
