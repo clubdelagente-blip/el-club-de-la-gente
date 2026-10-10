@@ -130,12 +130,13 @@ window.renderMarcas = renderMarcas;
    ============================================================ */
 function renderTienda() {
   $("#p-tienda").innerHTML = `
-    <div style="display:flex;gap:8px;margin-bottom:20px">
-      <button class="ad-link" data-tiendatab="club" style="width:auto;display:inline-flex" data-is-tab>Tienda del Club</button>
-      <button class="ad-link" data-tiendatab="pedidos" style="width:auto;display:inline-flex" data-is-tab>Pedidos</button>
-      <button class="ad-link" data-tiendatab="aliados" style="width:auto;display:inline-flex" data-is-tab>Tiendas de aliados</button>
+    <div class="ad-tabs" id="tienda-tabs" style="margin-bottom:20px;width:fit-content">
+      <button class="ad-tab is-on" data-tiendatab="club" data-is-tab>Tienda del Club</button>
+      <button class="ad-tab" data-tiendatab="pedidos" data-is-tab>Pedidos</button>
+      <button class="ad-tab" data-tiendatab="aliados" data-is-tab>Tiendas de aliados</button>
     </div>
     <div id="tiendatab-club">
+      <div class="ad-metrics" id="tienda-metrics" style="margin-bottom:20px;grid-template-columns:repeat(3,1fr)"></div>
       <div style="display:flex;gap:12px;margin-bottom:20px">
         <button class="ad-btn ad-btn--verde" id="cat-add">${ic("folder-plus")} Nueva categoría</button>
         <button class="ad-btn ad-btn--verde" id="prod-add">${ic("plus")} Agregar producto</button>
@@ -144,8 +145,8 @@ function renderTienda() {
         <div class="ad-card__head"><div class="ad-card__title">Categorías</div></div>
         <div class="ad-table-wrap">
           <table class="ad-table">
-            <thead><tr><th>Nombre</th><th style="text-align:right">Estado</th></tr></thead>
-            <tbody id="cats-body"><tr><td colspan="2" style="text-align:center;padding:30px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
+            <thead><tr><th>Nombre</th><th>Productos</th><th style="text-align:right">Estado</th></tr></thead>
+            <tbody id="cats-body"><tr><td colspan="3" style="text-align:center;padding:30px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -196,6 +197,7 @@ function renderTienda() {
   window.cargarTiendaAdmin?.();
   $$("[data-tiendatab]").forEach(b => b.addEventListener("click", () => {
     const tab = b.dataset.tiendatab;
+    $$("[data-tiendatab]").forEach(x => x.classList.toggle("is-on", x === b));
     $("#tiendatab-club").style.display = tab === "club" ? "" : "none";
     $("#tiendatab-pedidos").style.display = tab === "pedidos" ? "" : "none";
     $("#tiendatab-aliados").style.display = tab === "aliados" ? "" : "none";

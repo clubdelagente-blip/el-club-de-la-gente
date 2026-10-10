@@ -203,7 +203,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=6"></script>
-  <script src="admin.js?v=29"></script>
+  <script src="admin.js?v=30"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -2902,30 +2902,41 @@ document.addEventListener('DOMContentLoaded',async()=>{
     ]);
     _cats = cats || []; _prods = prods || [];
 
+    const metricsEl = $('#tienda-metrics'); if (metricsEl) {
+      const catsActivas = _cats.filter(c => c.activa).length;
+      const prodsActivos = _prods.filter(p => p.activo).length;
+      metricsEl.innerHTML = [
+        window.metric('package', String(_prods.length), 'Productos', `${prodsActivos} activos`),
+        window.metric('folder', String(_cats.length), 'Categorías', `${catsActivas} activas`),
+        window.metric('package-x', String(_prods.length - prodsActivos), 'Productos inactivos', 'no se muestran en la tienda'),
+      ].join('');
+    }
+
     const tbody = $('#cats-body'); if (tbody) {
       tbody.innerHTML = !_cats.length
-        ? `<tr><td colspan="2" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Sin categorías aún</td></tr>`
-        : _cats.map(c => `<tr>
-            <td>${c.nombre}</td>
+        ? `<tr><td colspan="3" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Sin categorías aún</td></tr>`
+        : _cats.map(c => { const nProds = _prods.filter(p => p.categoria_id === c.id).length; return `<tr>
+            <td style="text-transform:capitalize">${esc(c.nombre)}</td>
+            <td style="font-size:12px;color:rgba(242,240,234,.5)">${nProds} producto${nProds===1?'':'s'}</td>
             <td style="text-align:right"><div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
               <span class="ad-pill ${c.activa?'activo':'inactivo'}" data-tog-cat="${c.id}" data-activa="${c.activa}" style="cursor:pointer"><span class="d"></span>${c.activa?'Activa':'Inactiva'}</span>
               <button class="ad-btn" data-ed-cat="${c.id}">${ic('pencil')}</button>
               <button class="ad-btn" data-rm-cat="${c.id}">${ic('trash-2')}</button>
             </div></td>
-          </tr>`).join('');
+          </tr>`; }).join('');
     }
     const pbody = $('#prods-body'); if (pbody) {
       pbody.innerHTML = !_prods.length
         ? `<tr><td colspan="5" style="text-align:center;padding:30px;color:rgba(242,240,234,.3)">Sin productos aún</td></tr>`
         : _prods.map(p => `<tr>
             <td><div class="ad-cell-user">
-              ${p.imagen_url ? `<img src="${p.imagen_url}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<span class="ad-av">${(p.nombre||'?')[0]}</span>`}
+              ${p.imagen_url ? `<img src="${p.imagen_url}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<span class="ad-av">${esc((p.nombre||'?')[0])}</span>`}
               <div>
-                <div class="ad-cell-user__name">${p.nombre}</div>
-                <div style="font-size:11px;color:rgba(242,240,234,.4);margin-top:2px">${(p.descripcion||'').substring(0,50)}${(p.descripcion||'').length>50?'…':''}</div>
+                <div class="ad-cell-user__name">${esc(p.nombre)}</div>
+                <div style="font-size:11px;color:rgba(242,240,234,.4);margin-top:2px">${esc((p.descripcion||'').substring(0,50))}${(p.descripcion||'').length>50?'…':''}</div>
               </div>
             </div></td>
-            <td style="font-size:12px">${p.categorias_productos?.nombre || '—'}</td>
+            <td style="font-size:12px;text-transform:capitalize">${esc(p.categorias_productos?.nombre || '—')}</td>
             <td style="font-size:13px;color:rgba(242,240,234,.5);text-decoration:line-through">${COP(p.precio_normal)}</td>
             <td style="font-size:13px;font-weight:700;color:#00DF81">${COP(p.precio_descuento)}</td>
             <td style="text-align:right"><div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
