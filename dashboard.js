@@ -1267,7 +1267,10 @@ async function abrirFormProducto(p = {}) {
       <div class="cfg-campo"><label class="cfg-label">Precio con descuento (COP)</label><input class="cfg-input" id="pa-descuento" type="text" inputmode="numeric" value="${p.precio_descuento ? Number(p.precio_descuento).toLocaleString("es-CO") : ""}" placeholder="Ej: 40.000"></div>
     </div>
     <div class="cfg-campo"><label class="cfg-label">WhatsApp para atender pedidos</label><input class="cfg-input" id="pa-wa" type="tel" value="${p.whatsapp || ""}" placeholder="300 000 0000"></div>
-    <div class="cfg-campo"><label class="cfg-label">Promoción válida hasta (opcional)</label><input class="cfg-input" id="pa-fecha" type="date" value="${p.fecha_fin || ""}"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="cfg-campo"><label class="cfg-label">Promoción válida hasta (opcional)</label><input class="cfg-input" id="pa-fecha" type="date" value="${p.fecha_fin || ""}"></div>
+      <div class="cfg-campo"><label class="cfg-label">Stock <span style="font-weight:400;opacity:.6">(vacío = sin límite)</span></label><input class="cfg-input" id="pa-stock" type="number" min="0" value="${p.stock ?? ""}" placeholder="Ej: 10"></div>
+    </div>
     <div class="cfg-campo"><label class="cfg-label">Fotos del producto <span style="font-weight:400;opacity:.6">(hasta 5, la primera es la principal)</span></label>
       <div id="pa-img-grid" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px"></div>
       <input type="file" id="pa-img-input" accept="image/*" style="display:none">
@@ -1296,6 +1299,7 @@ async function abrirFormProducto(p = {}) {
         descuento: $("#pa-descuento")?.value || "",
         wa: $("#pa-wa")?.value || "",
         fecha: $("#pa-fecha")?.value || "",
+        stock: $("#pa-stock")?.value || "",
         imagenes,
       }));
     } catch {}
@@ -1311,9 +1315,10 @@ async function abrirFormProducto(p = {}) {
       if (borrador.descuento) $("#pa-descuento").value = borrador.descuento;
       if (borrador.wa) $("#pa-wa").value = borrador.wa;
       if (borrador.fecha) $("#pa-fecha").value = borrador.fecha;
+      if (borrador.stock) $("#pa-stock").value = borrador.stock;
       if (borrador.imagenes?.length) imagenes = borrador.imagenes;
     }
-    ["pa-nombre", "pa-desc", "pa-cat", "pa-precio", "pa-descuento", "pa-wa", "pa-fecha"].forEach(id => {
+    ["pa-nombre", "pa-desc", "pa-cat", "pa-precio", "pa-descuento", "pa-wa", "pa-fecha", "pa-stock"].forEach(id => {
       $("#" + id)?.addEventListener("input", guardarBorradorProducto);
       $("#" + id)?.addEventListener("change", guardarBorradorProducto);
     });
@@ -1363,6 +1368,7 @@ async function abrirFormProducto(p = {}) {
       precio_descuento: valorMoneda($("#pa-descuento")) || null,
       whatsapp: $("#pa-wa")?.value.trim() || null,
       fecha_fin: $("#pa-fecha")?.value || null,
+      stock: $("#pa-stock")?.value !== "" ? parseInt($("#pa-stock").value) : null,
       imagenes,
       imagen_url: imagenes[0] || null,
       estado: "pendiente",
@@ -1927,7 +1933,8 @@ function listaResenasHtml(resenas, eventoId, miembroId) {
           <span style="font-size:12.5px;font-weight:600;color:#333">${esc((r.perfiles?.nombre || 'Miembro').split(' ')[0])}</span>
           ${estrellasHtml(r.estrellas, 12)}
         </div>
-        ${r.comentario ? `<p style="font-size:12.5px;color:#666;line-height:1.5;margin:0">${esc(r.comentario)}</p>` : ''}
+        ${r.comentario ? `<p style="font-size:12.5px;color:#666;line-height:1.5;margin:0 0 6px">${esc(r.comentario)}</p>` : ''}
+        ${r.foto_url ? `<img src="${esc(r.foto_url)}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;cursor:pointer" data-resena-foto="${esc(r.foto_url)}">` : ''}
       </div>`).join('')
     : `<p style="font-size:12.5px;color:#999;padding:4px 0 12px">Sé el primero en dejar una reseña de este taller.</p>`;
 
@@ -2149,82 +2156,122 @@ async function cargarTienda() {
 
   const grid = document.getElementById('tienda-grid');
   const catsEl = document.getElementById('tienda-cats');
+  const ordenEl = document.getElementById('tienda-orden');
   if (!grid) return;
 
-  const [{ data: cats }, { data: prods }] = await Promise.all([
+  const hoy = new Date().toISOString().slice(0, 10);
+  const [{ data: cats }, { data: prodsClub }, { data: prodsAliado }] = await Promise.all([
     supabase.from('categorias_productos').select('id,nombre').eq('activa', true).order('orden'),
-    supabase.from('productos').select('*, categorias_productos(nombre)').eq('activo', true).order('orden')
+    supabase.from('productos').select('*, categorias_productos(nombre)').eq('activo', true).order('orden'),
+    supabase.from('productos_aliado')
+      .select('*, categorias_productos(nombre), aliados(nombre, tienda_nombre, whatsapp, maps_url, tienda_llave_pago, instagram, facebook, tiktok)')
+      .eq('estado', 'aprobado').eq('activo', true)
+      .or(`fecha_fin.is.null,fecha_fin.gte.${hoy}`),
   ]);
 
+  const club = (prodsClub || []).map(p => ({ ...p, _origen: 'club' }));
+  const aliado = (prodsAliado || []).map(p => ({ ...p, _origen: 'aliado' }));
+  const todos = [...club, ...aliado];
+
+  if (!todos.length) {
+    grid.innerHTML = `
+      <div style="text-align:center;padding:48px 20px;grid-column:1/-1">
+        <span style="display:inline-flex;width:38px;height:38px;border-radius:50%;background:var(--verde-soft);color:var(--verde);align-items:center;justify-content:center;margin-bottom:14px">${ic("package")}</span>
+        <p style="font-size:13px;color:var(--tinta-45,#888);max-width:320px;margin:0 auto 12px;line-height:1.5">Aún no hay productos disponibles. Vuelve pronto.</p>
+      </div>`;
+    if (window.lucide) lucide.createIcons();
+    cargarMisPedidosClub();
+    return;
+  }
+
+  // Las reseñas por ahora solo existen para productos del Club (resenas_producto
+  // apunta a "productos"); los productos de aliados no muestran calificación todavía.
   const resenasPorProducto = new Map();
-  if (prods?.length) {
+  if (club.length) {
     const { data: resenasRaw } = await supabase
       .from('resenas_producto')
-      .select('id, producto_id, estrellas, comentario, miembro_id, perfiles(nombre)')
-      .in('producto_id', prods.map(p => p.id));
+      .select('id, producto_id, estrellas')
+      .in('producto_id', club.map(p => p.id));
     (resenasRaw || []).forEach(r => {
       if (!resenasPorProducto.has(r.producto_id)) resenasPorProducto.set(r.producto_id, []);
       resenasPorProducto.get(r.producto_id).push(r);
     });
   }
 
-  if (!prods || !prods.length) {
-    grid.innerHTML = `
-      <div style="text-align:center;padding:48px 20px;grid-column:1/-1">
-        <span style="display:inline-flex;width:38px;height:38px;border-radius:50%;background:var(--verde-soft);color:var(--verde);align-items:center;justify-content:center;margin-bottom:14px">${ic("package")}</span>
-        <p style="font-size:13px;color:var(--tinta-45,#888);max-width:320px;margin:0 auto 12px;line-height:1.5">Aún no hay productos propios del Club disponibles. Mientras tanto, explora los descuentos de nuestros aliados.</p>
-        <a href="Directorio.html" style="font-size:12.5px;font-weight:700;color:var(--verde);text-decoration:none">Ver aliados del Club →</a>
-      </div>`;
-    if (window.lucide) lucide.createIcons();
-    cargarTiendaAliados();
-    cargarMisPedidosClub();
-    return;
-  }
+  const hace14dias = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+  const ICON_TIENDA = `<i data-lucide="store"></i>`;
+  const ICON_ALIADO = `<i data-lucide="handshake"></i>`;
 
   let catActiva = 'todos';
-  function renderGrid() {
-    const filtrados = catActiva === 'todos' ? prods : prods.filter(p => p.categoria_id === catActiva);
-    grid.innerHTML = filtrados.map(p => {
-      const precioNormal = p.precio_normal != null ? COP(p.precio_normal) : '';
-      const precioDesc   = p.precio_descuento != null ? COP(p.precio_descuento) : '';
-      const imgSrc = (p.imagenes && p.imagenes[0]) || p.imagen_url;
-      const descuentoPct = (p.precio_normal && p.precio_descuento && p.precio_normal > p.precio_descuento)
-        ? Math.round((1 - p.precio_descuento / p.precio_normal) * 100) : null;
-      const resumenP = resumenResenas(resenasPorProducto.get(p.id) || []);
-      return `<div class="tienda-card" data-ver-prod-club="${p.id}">
-        <div class="tienda-card__img-wrap">
-          ${imgSrc ? `<img src="${imgSrc}" class="tienda-card__img" alt="${esc(p.nombre)}">` : `<div class="tienda-card__img tienda-card__img--ph"></div>`}
-          ${descuentoPct ? `<span class="tienda-card__badge">-${descuentoPct}%</span>` : ''}
-        </div>
-        <div class="tienda-card__body">
-          ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat">${esc(p.categorias_productos.nombre)}</span>` : ''}
-          <div class="tienda-card__nombre">${esc(p.nombre)}</div>
-          <div class="tienda-card__rating">${estrellasHtml(resumenP.promedio, 12)}<span>${resumenP.texto}</span></div>
-          <div class="tienda-card__precios">
-            <div class="tienda-card__precios-txt">
-              ${precioNormal ? `<span class="tienda-card__antes">${precioNormal}</span>` : ''}
-              <span class="tienda-card__precio">${precioDesc || precioNormal}</span>
-            </div>
-            <button class="tienda-card__cart" data-comprar-club="${p.id}" type="button">Comprar</button>
+  let orden = 'relevancia';
+
+  function tarjeta(p) {
+    const precioNormal = p.precio_normal != null ? COP(p.precio_normal) : '';
+    const precioDesc   = p.precio_descuento != null ? COP(p.precio_descuento) : '';
+    const imgSrc = (p.imagenes && p.imagenes[0]) || p.imagen_url;
+    const descuentoPct = (p.precio_normal && p.precio_descuento && p.precio_normal > p.precio_descuento)
+      ? Math.round((1 - p.precio_descuento / p.precio_normal) * 100) : null;
+    const vendedor = p._origen === 'club' ? 'Tienda del Club' : (p.aliados?.tienda_nombre || p.aliados?.nombre || 'Aliado');
+    const esNuevo = p.created_at && new Date(p.created_at) >= hace14dias;
+    const resumenP = p._origen === 'club' ? resumenResenas(resenasPorProducto.get(p.id) || []) : null;
+    const sinStock = p.stock != null && p.stock <= 0;
+    const pocoStock = p.stock != null && p.stock > 0 && p.stock <= 5;
+
+    return `<div class="tienda-card${sinStock ? ' tienda-card--agotado' : ''}" data-ver-prod="${p.id}" data-origen="${p._origen}">
+      <div class="tienda-card__img-wrap">
+        ${imgSrc ? `<img src="${imgSrc}" class="tienda-card__img" alt="${esc(p.nombre)}">` : `<div class="tienda-card__img tienda-card__img--ph"></div>`}
+        ${sinStock ? `<span class="tienda-card__badge" style="background:#777">Agotado</span>`
+          : descuentoPct ? `<span class="tienda-card__badge">-${descuentoPct}%</span>`
+          : esNuevo ? `<span class="tienda-card__badge" style="background:#1d4ed8">Nuevo</span>` : ''}
+      </div>
+      <div class="tienda-card__body">
+        <span class="tienda-card__vendedor tienda-card__vendedor--${p._origen}">${p._origen === 'club' ? ICON_TIENDA : ICON_ALIADO}${esc(vendedor)}</span>
+        ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat">${esc(p.categorias_productos.nombre)}</span>` : ''}
+        <div class="tienda-card__nombre">${esc(p.nombre)}</div>
+        ${resumenP ? `<div class="tienda-card__rating">${estrellasHtml(resumenP.promedio, 12)}<span>${resumenP.texto}</span></div>` : ''}
+        ${pocoStock ? `<div class="tienda-card__stock">Quedan ${p.stock}</div>` : ''}
+        <div class="tienda-card__precios">
+          <div class="tienda-card__precios-txt">
+            ${precioNormal ? `<span class="tienda-card__antes">${precioNormal}</span>` : ''}
+            <span class="tienda-card__precio">${precioDesc || precioNormal}</span>
           </div>
+          <button class="tienda-card__cart" data-comprar="${p.id}" data-origen="${p._origen}" type="button" ${sinStock ? 'disabled' : ''}>${sinStock ? 'Agotado' : 'Comprar'}</button>
         </div>
-      </div>`;
-    }).join('');
-    grid.querySelectorAll('[data-ver-prod-club]').forEach(card => card.addEventListener('click', (e) => {
-      if (e.target.closest('[data-comprar-club]')) return;
-      const p = prods.find(x => x.id === card.dataset.verProdClub);
-      if (p) abrirDetalleProductoClub(p);
+      </div>
+    </div>`;
+  }
+
+  function productosFiltrados() {
+    let lista = catActiva === 'todos' ? todos : todos.filter(p => p.categoria_id === catActiva);
+    if (orden === 'precio') {
+      lista = [...lista].sort((a, b) => (a.precio_descuento ?? a.precio_normal ?? 0) - (b.precio_descuento ?? b.precio_normal ?? 0));
+    } else if (orden === 'calificacion') {
+      const prom = p => p._origen === 'club' ? resumenResenas(resenasPorProducto.get(p.id) || []).promedio : 0;
+      lista = [...lista].sort((a, b) => prom(b) - prom(a));
+    }
+    return lista;
+  }
+
+  function renderGrid() {
+    grid.innerHTML = productosFiltrados().map(tarjeta).join('');
+    if (window.lucide) lucide.createIcons();
+    grid.querySelectorAll('[data-ver-prod]').forEach(card => card.addEventListener('click', (e) => {
+      if (e.target.closest('[data-comprar]')) return;
+      const p = todos.find(x => x.id === card.dataset.verProd && x._origen === card.dataset.origen);
+      if (!p) return;
+      if (p._origen === 'club') abrirDetalleProductoClub(p); else abrirDetalleProductoAliado(p);
     }));
-    grid.querySelectorAll('[data-comprar-club]').forEach(btn => btn.addEventListener('click', (e) => {
+    grid.querySelectorAll('[data-comprar]').forEach(btn => btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const p = prods.find(x => x.id === btn.dataset.comprarClub);
-      if (p) abrirCheckoutClub(p);
+      const p = todos.find(x => x.id === btn.dataset.comprar && x._origen === btn.dataset.origen);
+      if (!p) return;
+      if (p._origen === 'club') abrirCheckoutClub(p); else abrirCheckoutProducto(p);
     }));
   }
 
   if (cats && cats.length && catsEl) {
     catsEl.innerHTML = `<button class="tienda-filtro is-on" data-cat="todos">Todos</button>` +
-      cats.map(c => `<button class="tienda-filtro" data-cat="${c.id}">${c.nombre}</button>`).join('');
+      cats.map(c => `<button class="tienda-filtro" data-cat="${c.id}">${esc(c.nombre)}</button>`).join('');
     catsEl.addEventListener('click', e => {
       const btn = e.target.closest('[data-cat]'); if (!btn) return;
       catActiva = btn.dataset.cat;
@@ -2232,8 +2279,17 @@ async function cargarTienda() {
       renderGrid();
     });
   }
+  if (ordenEl) {
+    const OPCIONES_ORDEN = [['relevancia', 'Relevancia'], ['calificacion', 'Mejor calificados'], ['precio', 'Más baratos']];
+    ordenEl.innerHTML = OPCIONES_ORDEN.map(([val, lbl], i) => `<button class="tienda-filtro${i === 0 ? ' is-on' : ''}" data-orden="${val}">${lbl}</button>`).join('');
+    ordenEl.addEventListener('click', e => {
+      const btn = e.target.closest('[data-orden]'); if (!btn) return;
+      orden = btn.dataset.orden;
+      ordenEl.querySelectorAll('.tienda-filtro').forEach(b => b.classList.toggle('is-on', b === btn));
+      renderGrid();
+    });
+  }
   renderGrid();
-  cargarTiendaAliados();
   cargarMisPedidosClub();
 }
 
@@ -2251,6 +2307,8 @@ const ESTADO_PEDIDO_CLUB = {
 function abrirDetalleProductoClub(p) {
   const precio = p.precio_descuento ?? p.precio_normal ?? 0;
   const imgs = (p.imagenes && p.imagenes.length) ? p.imagenes : (p.imagen_url ? [p.imagen_url] : []);
+  const sinStock = p.stock != null && p.stock <= 0;
+  const pocoStock = p.stock != null && p.stock > 0 && p.stock <= 5;
 
   abrirModalTienda(p.nombre, `
     <div class="tprod-galeria">
@@ -2261,14 +2319,16 @@ function abrirDetalleProductoClub(p) {
         ${imgs.map((url, i) => `<div class="tprod-galeria__thumb${i === 0 ? ' is-on' : ''}" data-tpg-thumb="${i}"><img src="${esc(url)}" alt=""></div>`).join('')}
       </div>` : ''}
     </div>
-    ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat" style="display:block;margin-top:16px">${esc(p.categorias_productos.nombre)}</span>` : ''}
+    <span class="tienda-card__vendedor tienda-card__vendedor--club" style="margin-top:16px"><i data-lucide="store"></i>Tienda del Club</span>
+    ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat" style="display:block;margin-top:4px">${esc(p.categorias_productos.nombre)}</span>` : ''}
     <div style="display:flex;align-items:center;gap:6px;margin:4px 0 2px" id="tpd-resumen">${estrellasHtml(0, 14)}<span style="font-size:12.5px;color:#777">Cargando reseñas…</span></div>
     <p style="font-size:14px;line-height:1.6;color:#444;margin:8px 0 16px">${p.descripcion ? esc(p.descripcion) : 'Sin descripción adicional.'}</p>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
       ${p.precio_normal && p.precio_descuento && p.precio_normal > p.precio_descuento ? `<span style="font-size:14px;color:#999;text-decoration:line-through">${COP(p.precio_normal)}</span>` : ''}
       <span style="font-size:24px;font-weight:800;color:var(--verde)">${COP(precio)}</span>
     </div>
-    <button class="btn btn--primario" id="tpg-comprar" style="width:100%">Comprar</button>
+    ${pocoStock ? `<div class="tienda-card__stock" style="margin-bottom:14px">Quedan ${p.stock}</div>` : '<div style="margin-bottom:18px"></div>'}
+    <button class="btn btn--primario" id="tpg-comprar" style="width:100%" ${sinStock ? 'disabled' : ''}>${sinStock ? 'Agotado' : 'Comprar'}</button>
     <div style="font-size:14px;font-weight:700;margin:28px 0 12px;padding-top:20px;border-top:1px solid #eee">Reseñas de miembros</div>
     <div id="tpd-resenas-lista">${listaResenasHtml([], p.id, _miembroId)}</div>
   `);
@@ -2280,7 +2340,7 @@ function abrirDetalleProductoClub(p) {
       document.querySelectorAll('[data-tpg-thumb]').forEach(x => x.classList.toggle('is-on', x === t));
     }));
   }
-  document.getElementById('tpg-comprar')?.addEventListener('click', () => abrirCheckoutClub(p));
+  if (!sinStock) document.getElementById('tpg-comprar')?.addEventListener('click', () => abrirCheckoutClub(p));
   cargarResenasProducto(p);
 }
 
@@ -2304,6 +2364,7 @@ async function cargarResenasProducto(p) {
 function wireResenasProducto(p) {
   const cont = document.getElementById('tpd-resenas-lista');
   if (!cont) return;
+  cont.querySelectorAll('[data-resena-foto]').forEach(img => img.addEventListener('click', () => abrirLightbox(img.dataset.resenaFoto)));
   cont.querySelectorAll('[data-estrella]').forEach(starBtn => {
     starBtn.addEventListener('click', () => {
       const starsCont = starBtn.closest('[data-resena-stars]');
@@ -2317,23 +2378,53 @@ function wireResenasProducto(p) {
       });
     });
   });
+
+  // Foto opcional en la reseña -- se inserta a mano junto al textarea para no
+  // tocar listaResenasHtml() (la comparte Educación, que no necesita esto).
+  let fotoResenaFile = null;
+  const textarea = cont.querySelector(`[data-resena-texto="${p.id}"]`);
+  if (textarea && !textarea.dataset.fotoWired) {
+    textarea.dataset.fotoWired = '1';
+    const fotoWrap = document.createElement('div');
+    fotoWrap.style.cssText = 'margin-top:8px';
+    fotoWrap.innerHTML = `
+      <button type="button" id="rp-foto-btn" style="font-size:12px;font-weight:600;color:var(--verde);background:none;border:1px dashed #ccc;border-radius:8px;padding:6px 10px;cursor:pointer">${ic('camera')} Agregar una foto (opcional)</button>
+      <input type="file" id="rp-foto-input" accept="image/*" style="display:none">
+      <div id="rp-foto-preview" style="margin-top:6px"></div>`;
+    textarea.insertAdjacentElement('afterend', fotoWrap);
+    if (window.lucide) lucide.createIcons();
+    fotoWrap.querySelector('#rp-foto-btn')?.addEventListener('click', () => fotoWrap.querySelector('#rp-foto-input')?.click());
+    fotoWrap.querySelector('#rp-foto-input')?.addEventListener('change', (e) => {
+      fotoResenaFile = e.target.files?.[0] || null;
+      const prev = fotoWrap.querySelector('#rp-foto-preview');
+      if (prev) prev.innerHTML = fotoResenaFile ? `<img src="${URL.createObjectURL(fotoResenaFile)}" style="width:56px;height:56px;object-fit:cover;border-radius:8px">` : '';
+    });
+  }
+
   const enviarBtn = cont.querySelector('[data-enviar-resena]');
-  enviarBtn?.addEventListener('click', () => {
+  enviarBtn?.addEventListener('click', async () => {
     const starsCont = cont.querySelector(`[data-resena-stars="${p.id}"]`);
     const estrellas = +(starsCont?.dataset.selected || 0);
     if (!estrellas) { toast('Selecciona cuántas estrellas le das al producto'); return; }
     const comentario = cont.querySelector(`[data-resena-texto="${p.id}"]`)?.value.trim() || null;
     enviarBtn.disabled = true; enviarBtn.textContent = 'Enviando…';
-    supabase.from('resenas_producto').insert({ producto_id: p.id, miembro_id: _miembroId, estrellas, comentario })
-      .then(({ error }) => {
-        if (error) {
-          toast(error.code === '23505' ? 'Ya habías dejado una reseña de este producto' : 'Error: ' + error.message);
-          enviarBtn.disabled = false; enviarBtn.textContent = 'Enviar reseña';
-          return;
-        }
-        toast('¡Gracias por tu reseña! ✓');
-        cargarResenasProducto(p);
-      });
+
+    let foto_url = null;
+    if (fotoResenaFile) {
+      const ext = fotoResenaFile.name.split('.').pop();
+      const path = `resena-producto-${p.id}-${_miembroId}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('contenido').upload(path, fotoResenaFile, { upsert: true });
+      if (!upErr) foto_url = supabase.storage.from('contenido').getPublicUrl(path).data.publicUrl;
+    }
+
+    const { error } = await supabase.from('resenas_producto').insert({ producto_id: p.id, miembro_id: _miembroId, estrellas, comentario, foto_url });
+    if (error) {
+      toast(error.code === '23505' ? 'Ya habías dejado una reseña de este producto' : 'Error: ' + error.message);
+      enviarBtn.disabled = false; enviarBtn.textContent = 'Enviar reseña';
+      return;
+    }
+    toast('¡Gracias por tu reseña! ✓');
+    cargarResenasProducto(p);
   });
 }
 
@@ -2442,58 +2533,12 @@ async function cargarMisPedidosClub() {
 }
 
 /* ---------- Tienda de aliados (vitrina + checkout) ---------- */
-async function cargarTiendaAliados() {
-  const grid = document.getElementById('tienda-aliados-grid');
-  const wrap = document.getElementById('tienda-aliados-wrap');
-  if (!grid || !wrap) return;
-
-  const hoy = new Date().toISOString().slice(0, 10);
-  const { data: prods } = await supabase.from('productos_aliado')
-    .select('*, categorias_productos(nombre), aliados(nombre, tienda_nombre, whatsapp, maps_url, tienda_llave_pago, instagram, facebook, tiktok)')
-    .eq('estado', 'aprobado').eq('activo', true)
-    .or(`fecha_fin.is.null,fecha_fin.gte.${hoy}`)
-    .order('created_at', { ascending: false });
-
-  const productos = prods || [];
-  if (!productos.length) { wrap.style.display = 'none'; return; }
-  wrap.style.display = '';
-
-  grid.innerHTML = productos.map(p => {
-    const precioNormal = p.precio_normal != null ? COP(p.precio_normal) : '';
-    const precioDesc   = p.precio_descuento != null ? COP(p.precio_descuento) : '';
-    const imgSrc = (p.imagenes && p.imagenes[0]) || p.imagen_url;
-    return `<div class="tienda-card" data-ver-prodal="${p.id}">
-      ${imgSrc ? `<img src="${imgSrc}" class="tienda-card__img" alt="${esc(p.nombre)}">` : `<div class="tienda-card__img tienda-card__img--ph"></div>`}
-      <div class="tienda-card__body">
-        ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat">${esc(p.categorias_productos.nombre)}</span>` : ''}
-        <div class="tienda-card__nombre">${esc(p.nombre)}</div>
-        <div style="font-size:12px;color:var(--tinta-60);margin-bottom:4px">${esc(p.aliados?.tienda_nombre || p.aliados?.nombre)}</div>
-        ${p.descripcion ? `<div class="tienda-card__desc">${esc(p.descripcion)}</div>` : ''}
-        <div class="tienda-card__precios">
-          ${precioNormal ? `<span class="tienda-card__antes">${precioNormal}</span>` : ''}
-          ${precioDesc ? `<span class="tienda-card__precio">${precioDesc}</span>` : ''}
-        </div>
-        <button class="tienda-card__btn" data-comprar-prodal="${p.id}" style="border:none;cursor:pointer;width:100%;font:inherit">Comprar</button>
-      </div>
-    </div>`;
-  }).join('');
-
-  grid.querySelectorAll('[data-ver-prodal]').forEach(card => card.addEventListener('click', (e) => {
-    if (e.target.closest('[data-comprar-prodal]')) return;
-    const p = productos.find(x => x.id === card.dataset.verProdal);
-    if (p) abrirDetalleProductoAliado(p);
-  }));
-  grid.querySelectorAll('[data-comprar-prodal]').forEach(btn => btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const p = productos.find(x => x.id === btn.dataset.comprarProdal);
-    if (p) abrirCheckoutProducto(p);
-  }));
-}
-
 function abrirDetalleProductoAliado(p) {
   const imgs = (p.imagenes && p.imagenes.length) ? p.imagenes : (p.imagen_url ? [p.imagen_url] : []);
   const precioNormal = p.precio_normal != null ? COP(p.precio_normal) : '';
   const precioDesc = p.precio_descuento != null ? COP(p.precio_descuento) : '';
+  const sinStock = p.stock != null && p.stock <= 0;
+  const pocoStock = p.stock != null && p.stock > 0 && p.stock <= 5;
   abrirModalTienda(p.nombre, `
     <div class="tprod-galeria">
       <div class="tprod-galeria__main" id="tpg2-main">
@@ -2503,14 +2548,15 @@ function abrirDetalleProductoAliado(p) {
         ${imgs.map((url, i) => `<div class="tprod-galeria__thumb${i === 0 ? ' is-on' : ''}" data-tpg2-thumb="${i}"><img src="${esc(url)}" alt=""></div>`).join('')}
       </div>` : ''}
     </div>
-    <div style="font-size:13px;color:var(--tinta-60);margin:14px 0 4px">${esc(p.aliados?.tienda_nombre || p.aliados?.nombre)}</div>
-    ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat">${esc(p.categorias_productos.nombre)}</span>` : ''}
+    <span class="tienda-card__vendedor"><i data-lucide="handshake"></i>${esc(p.aliados?.tienda_nombre || p.aliados?.nombre)}</span>
+    ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat" style="display:block;margin-top:4px">${esc(p.categorias_productos.nombre)}</span>` : ''}
     <p style="font-size:14px;line-height:1.6;color:#444;margin:8px 0 16px">${p.descripcion ? esc(p.descripcion) : 'Sin descripción adicional.'}</p>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
       ${precioNormal ? `<span style="font-size:14px;color:#999;text-decoration:line-through">${precioNormal}</span>` : ''}
       ${precioDesc ? `<span style="font-size:24px;font-weight:800;color:var(--verde)">${precioDesc}</span>` : ''}
     </div>
-    <button class="btn btn--primario" id="tpg2-comprar" style="width:100%">Comprar</button>
+    ${pocoStock ? `<div class="tienda-card__stock" style="margin-bottom:14px">Quedan ${p.stock}</div>` : '<div style="margin-bottom:18px"></div>'}
+    <button class="btn btn--primario" id="tpg2-comprar" style="width:100%" ${sinStock ? 'disabled' : ''}>${sinStock ? 'Agotado' : 'Comprar'}</button>
   `);
   if (imgs.length > 1) {
     document.querySelectorAll('[data-tpg2-thumb]').forEach(t => t.addEventListener('click', () => {
@@ -2520,7 +2566,8 @@ function abrirDetalleProductoAliado(p) {
       document.querySelectorAll('[data-tpg2-thumb]').forEach(x => x.classList.toggle('is-on', x === t));
     }));
   }
-  document.getElementById('tpg2-comprar')?.addEventListener('click', () => abrirCheckoutProducto(p));
+  if (!sinStock) document.getElementById('tpg2-comprar')?.addEventListener('click', () => abrirCheckoutProducto(p));
+  if (window.lucide) lucide.createIcons();
 }
 
 function redesSocialesHTML(aliado) {

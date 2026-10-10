@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=56">
+  <link rel="stylesheet" href="styles.css?v=57">
   <link rel="stylesheet" href="estilos.css?v=19">
   <link rel="stylesheet" href="dashboard.css?v=22">
   <link rel="stylesheet" href="agente.css?v=2">
@@ -395,11 +395,12 @@
              ============================================================ -->
         <section class="panel-view" data-panel="tienda" data-screen-label="Tienda del Club">
           <div class="dash-greet">
-            <h1>Tienda del Club</h1>
-            <p>Productos seleccionados con descuento exclusivo para miembros. Los vende y despacha directamente El Club de la Gente.</p>
+            <h1>Tienda</h1>
+            <p>Productos del Club y de nuestros aliados, todo en un solo lugar, con descuento para miembros.</p>
           </div>
-          <div id="tienda-cats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px"></div>
-          <div id="tienda-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
+          <div id="tienda-cats" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div>
+          <div id="tienda-orden" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px"></div>
+          <div id="tienda-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px">
             <div style="text-align:center;padding:60px 20px;grid-column:1/-1"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
           </div>
 
@@ -409,14 +410,6 @@
               <p>Estado de tus compras en la Tienda del Club.</p>
             </div>
             <div id="mis-pedidos-club-list"></div>
-          </div>
-
-          <div id="tienda-aliados-wrap" style="display:none;margin-top:36px">
-            <div class="dash-greet">
-              <h1 style="font-size:22px">Tienda de nuestros aliados</h1>
-              <p>Productos que venden y despachan directamente los negocios aliados (no el Club), con descuento para miembros. El pedido y la entrega quedan a cargo de cada aliado.</p>
-            </div>
-            <div id="tienda-aliados-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px"></div>
           </div>
         </section>
 
@@ -1248,7 +1241,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=140"></script>
+  <script type="module" src="dashboard.js?v=141"></script>
   <script type="module" src="agente.js?v=1"></script>
 
   <template id="__bundler_thumbnail">
