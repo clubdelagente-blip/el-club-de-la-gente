@@ -2614,8 +2614,8 @@ async function cargarMarcasCarrusel() {
   if (!data || !data.length) { if (wrap) wrap.style.display = "none"; return; }
   const items = [...data, ...data];
   track.innerHTML = items.map(m => `<div class="marcas-carrusel__item">
-    <a href="${m.link_afiliado || '#'}" target="_blank" rel="noopener" title="${m.nombre}">
-      <img src="${m.logo_url}" alt="${m.nombre}">
+    <a href="${m.link_afiliado || '#'}" target="_blank" rel="noopener" title="${esc(m.nombre)}">
+      <img src="${m.logo_url}" alt="${esc(m.nombre)}">
     </a>
     <span class="marcas-carrusel__sep">✷</span>
   </div>`).join("");

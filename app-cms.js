@@ -10,6 +10,7 @@ const supabase = createClient(
 );
 
 const ic = (n) => `<i data-lucide="${n}"></i>`;
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const ICON_WA = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.288.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.004 2C6.486 2 2 6.486 2 12.004c0 2.123.666 4.09 1.804 5.714L2.5 22l4.418-1.265A9.955 9.955 0 0 0 12.004 22C17.522 22 22 17.514 22 12.004 22 6.486 17.522 2 12.004 2zm0 18.18a8.14 8.14 0 0 1-4.15-1.136l-.298-.177-3.11.89.903-3.03-.194-.31a8.15 8.15 0 0 1-1.25-4.413c0-4.5 3.66-8.157 8.1-8.157 4.44 0 8.09 3.656 8.09 8.157 0 4.5-3.65 8.176-8.09 8.176z"/></svg>`;
 
 /* Color por categoría -- mismo mapeo que directorio.js, para que el borde
@@ -85,16 +86,16 @@ function tarjetaPlanHtml(p, i) {
   return `
     <article class="plan ${claseSlug} fade-up" data-cc-modal="${p.slug}" style="--delay:${i * 60}ms;cursor:pointer">
       ${p.recomendado ? `<span class="plan__badge-rec" id="badge-rec">Recomendado</span>` : ""}
-      <span class="plan__tag">${p.tag}</span>
-      ${p.ribbon_texto ? `<span style="display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:#095544;color:#fff;padding:7px 14px;border-radius:100px;margin-top:12px;">${p.ribbon_texto}</span>` : ""}
+      <span class="plan__tag">${esc(p.tag)}</span>
+      ${p.ribbon_texto ? `<span style="display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:#095544;color:#fff;padding:7px 14px;border-radius:100px;margin-top:12px;">${esc(p.ribbon_texto)}</span>` : ""}
       ${(p.antes_texto || p.ahorra_texto) ? `<div class="plan__precio-row">
-        ${p.antes_texto ? `<span class="plan__antes">${p.antes_texto}</span>` : ""}
-        ${p.ahorra_texto ? `<span class="plan__ahorra">${p.ahorra_texto}</span>` : ""}
+        ${p.antes_texto ? `<span class="plan__antes">${esc(p.antes_texto)}</span>` : ""}
+        ${p.ahorra_texto ? `<span class="plan__ahorra">${esc(p.ahorra_texto)}</span>` : ""}
       </div>` : ""}
-      <div class="plan__precio">${p.precio_texto}<small> ${p.precio_sufijo || ""}</small></div>
-      <div class="plan__ciclo">${p.ciclo_texto || ""}</div>
+      <div class="plan__precio">${esc(p.precio_texto)}<small> ${esc(p.precio_sufijo || "")}</small></div>
+      <div class="plan__ciclo">${esc(p.ciclo_texto || "")}</div>
       <ul class="plan__beneficios">
-        ${(p.beneficios || []).map(b => `<li><span class="dot"></span>${b}</li>`).join("")}
+        ${(p.beneficios || []).map(b => `<li><span class="dot"></span>${esc(b)}</li>`).join("")}
       </ul>
       <button type="button" class="plan__cc-toggle">Ver mi ClubCard ${ic('credit-card')}</button>
     </article>`;
@@ -201,12 +202,12 @@ async function cargarProgramasPub() {
     <div class="programa-card fade-up">
       ${p.imagen_url ? `
       <div class="programa-card__img-wrap">
-        <img src="${p.imagen_url}" alt="${p.nombre}" style="width:100%;height:180px;object-fit:cover;display:block">
-        ${p.categoria ? `<span class="programa-card__cat">${p.categoria}</span>` : ''}
+        <img src="${p.imagen_url}" alt="${esc(p.nombre)}" style="width:100%;height:180px;object-fit:cover;display:block">
+        ${p.categoria ? `<span class="programa-card__cat">${esc(p.categoria)}</span>` : ''}
       </div>` : ''}
       <div style="padding:20px">
-        <h3 style="font-family:var(--display);font-size:20px;font-weight:600;margin-bottom:8px;color:inherit">${p.nombre}</h3>
-        <p style="font-size:14px;opacity:.7;line-height:1.6">${p.descripcion || ''}</p>
+        <h3 style="font-family:var(--display);font-size:20px;font-weight:600;margin-bottom:8px;color:inherit">${esc(p.nombre)}</h3>
+        <p style="font-size:14px;opacity:.7;line-height:1.6">${esc(p.descripcion || '')}</p>
       </div>
     </div>`;
 
@@ -246,10 +247,10 @@ async function cargarProfesionalesPub() {
 
   grid.innerHTML = data.map((p, i) => `
     <div class="profe-card fade-up" style="--delay:${i * 60}ms">
-      ${p.imagen_url ? `<img src="${p.imagen_url}" alt="${p.nombre}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin-bottom:12px">` : `<span style="width:72px;height:72px;border-radius:50%;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:24px;font-weight:700;color:var(--verde)">${(p.nombre||'P')[0]}</span>`}
-      <div style="font-weight:600;font-size:15px;margin-bottom:4px">${p.nombre}</div>
-      <div style="font-size:13px;opacity:.6;margin-bottom:8px">${p.area || ''}</div>
-      <p style="font-size:13px;opacity:.6;line-height:1.5">${p.descripcion || ''}</p>
+      ${p.imagen_url ? `<img src="${p.imagen_url}" alt="${esc(p.nombre)}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin-bottom:12px">` : `<span style="width:72px;height:72px;border-radius:50%;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:24px;font-weight:700;color:var(--verde)">${esc((p.nombre||'P')[0])}</span>`}
+      <div style="font-weight:600;font-size:15px;margin-bottom:4px">${esc(p.nombre)}</div>
+      <div style="font-size:13px;opacity:.6;margin-bottom:8px">${esc(p.area || '')}</div>
+      <p style="font-size:13px;opacity:.6;line-height:1.5">${esc(p.descripcion || '')}</p>
     </div>`).join('');
 
   if (window.lucide) lucide.createIcons();
@@ -272,22 +273,22 @@ function tarjetaEvento(e, confirmados) {
   return `
     <div class="programa-card fade-up">
       <div class="programa-card__img-wrap">
-        <img src="${e.imagen_url || 'icon-club.png'}" alt="${e.titulo}" style="width:100%;height:160px;object-fit:cover;display:block">
-        ${cat ? `<span class="programa-card__cat">${cat}</span>` : ''}
+        <img src="${e.imagen_url || 'icon-club.png'}" alt="${esc(e.titulo)}" style="width:100%;height:160px;object-fit:cover;display:block">
+        ${cat ? `<span class="programa-card__cat">${esc(cat)}</span>` : ''}
       </div>
       <div style="padding:20px">
         <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:10px">
           <span style="font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;background:var(--verde-soft,#e8f5ee);color:var(--verde,#095544)">${fechaFmt}</span>
           ${badgeCupo}
         </div>
-        <h3 style="font-family:var(--display);font-size:19px;font-weight:600;margin-bottom:8px">${e.titulo}</h3>
-        ${e.descripcion ? `<p style="font-size:13.5px;opacity:.7;line-height:1.6;margin-bottom:14px">${e.descripcion}</p>` : ''}
+        <h3 style="font-family:var(--display);font-size:19px;font-weight:600;margin-bottom:8px">${esc(e.titulo)}</h3>
+        ${e.descripcion ? `<p style="font-size:13.5px;opacity:.7;line-height:1.6;margin-bottom:14px">${esc(e.descripcion)}</p>` : ''}
         ${facil?.nombre ? `
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
           ${facil.foto_url
-            ? `<img src="${facil.foto_url}" alt="${facil.nombre}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">`
-            : `<span style="width:28px;height:28px;border-radius:50%;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--verde)">${facil.nombre[0]}</span>`}
-          <span style="font-size:13px;opacity:.6">Dictado por ${facil.nombre}</span>
+            ? `<img src="${facil.foto_url}" alt="${esc(facil.nombre)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover">`
+            : `<span style="width:28px;height:28px;border-radius:50%;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--verde)">${esc(facil.nombre[0])}</span>`}
+          <span style="font-size:13px;opacity:.6">Dictado por ${esc(facil.nombre)}</span>
         </div>` : ''}
         <a href="Registro.html?modo=registro" class="btn btn--primario" style="width:100%;justify-content:center">Únete gratis para participar &rarr;</a>
       </div>
@@ -299,11 +300,11 @@ function tarjetaHistorialEvento(e) {
   return `
     <div class="historial-edu-card">
       ${e.imagen_url
-        ? `<img src="${e.imagen_url}" alt="${e.titulo}">`
-        : `<div style="height:120px;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:var(--verde)">${(e.titulo || 'E')[0]}</div>`}
+        ? `<img src="${e.imagen_url}" alt="${esc(e.titulo)}">`
+        : `<div style="height:120px;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:var(--verde)">${esc((e.titulo || 'E')[0])}</div>`}
       <div class="historial-edu-card__body">
         <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:4px">${fechaFmt}</div>
-        <div style="font-size:13.5px;font-weight:600;line-height:1.3">${e.titulo}</div>
+        <div style="font-size:13.5px;font-weight:600;line-height:1.3">${esc(e.titulo)}</div>
       </div>
     </div>`;
 }
@@ -362,10 +363,10 @@ async function cargarVacantesPub() {
 
   grid.innerHTML = data.map((v, i) => `
     <div class="profe-card fade-up" style="--delay:${i * 60}ms">
-      ${v.aliados?.imagen_url ? `<img src="${v.aliados.imagen_url}" alt="${v.aliados.nombre || ''}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;margin-bottom:12px">` : `<span style="width:56px;height:56px;border-radius:10px;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:20px;font-weight:700;color:var(--verde)">${(v.aliados?.nombre || 'V')[0]}</span>`}
-      <div style="font-weight:600;font-size:15px;margin-bottom:4px">${v.titulo}</div>
-      <div style="font-size:13px;opacity:.6;margin-bottom:8px">${v.aliados?.nombre || ''}</div>
-      ${v.descripcion ? `<p style="font-size:13px;opacity:.6;line-height:1.5;margin-bottom:14px">${v.descripcion}</p>` : ''}
+      ${v.aliados?.imagen_url ? `<img src="${v.aliados.imagen_url}" alt="${esc(v.aliados.nombre || '')}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;margin-bottom:12px">` : `<span style="width:56px;height:56px;border-radius:10px;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:20px;font-weight:700;color:var(--verde)">${esc((v.aliados?.nombre || 'V')[0])}</span>`}
+      <div style="font-weight:600;font-size:15px;margin-bottom:4px">${esc(v.titulo)}</div>
+      <div style="font-size:13px;opacity:.6;margin-bottom:8px">${esc(v.aliados?.nombre || '')}</div>
+      ${v.descripcion ? `<p style="font-size:13px;opacity:.6;line-height:1.5;margin-bottom:14px">${esc(v.descripcion)}</p>` : ''}
       <a class="btn btn--primario" style="width:100%;justify-content:center" target="_blank" href="https://wa.me/57${v.whatsapp}?text=${encodeURIComponent('Hola, vi la vacante de ' + v.titulo + ' en El Club de la Gente')}">${ICON_WA}Escribir por WhatsApp</a>
     </div>`).join('');
 
@@ -403,16 +404,16 @@ async function cargarCarruselPromos() {
     if (esFlyer) {
       return `
       <div class="promo-card" style="--pc-cc:${colorCategoria(al?.categoria)}">
-        <img class="promo-card__img" src="${p.foto_url}" alt="${p.descripcion || ''}" style="height:auto;aspect-ratio:4/5;object-fit:cover">
+        <img class="promo-card__img" src="${p.foto_url}" alt="${esc(p.descripcion || '')}" style="height:auto;aspect-ratio:4/5;object-fit:cover">
       </div>`;
     }
     return `
     <div class="promo-card" style="--pc-cc:${colorCategoria(al?.categoria)}">
-      <img class="promo-card__img" src="${p.foto_url}" alt="${p.descripcion || ''}">
+      <img class="promo-card__img" src="${p.foto_url}" alt="${esc(p.descripcion || '')}">
       <div class="promo-card__body">
-        ${al?.categoria ? `<div class="promo-card__cat">${al.categoria}</div>` : ''}
-        <div class="promo-card__nombre">${al?.nombre || ''}</div>
-        <p class="promo-card__desc">${p.descripcion || ''}</p>
+        ${al?.categoria ? `<div class="promo-card__cat">${esc(al.categoria)}</div>` : ''}
+        <div class="promo-card__nombre">${esc(al?.nombre || '')}</div>
+        <p class="promo-card__desc">${esc(p.descripcion || '')}</p>
       </div>
     </div>`;
   }).join('');
