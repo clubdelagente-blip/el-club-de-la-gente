@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=55">
   <link rel="stylesheet" href="estilos.css?v=19">
-  <link rel="stylesheet" href="dashboard.css?v=21">
+  <link rel="stylesheet" href="dashboard.css?v=22">
   <link rel="stylesheet" href="agente.css?v=2">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -220,16 +220,13 @@
           <div class="onb-wrap" id="onb-wrap" style="display:none">
             <div class="card onb-card" id="onb-card">
               <div class="onb-card__head">
-                <div class="onb-ring">
-                  <svg viewBox="0 0 44 44">
-                    <circle class="ring-bg" cx="22" cy="22" r="18"></circle>
-                    <circle class="ring-fg" id="onb-ring-fg" cx="22" cy="22" r="18" stroke-dasharray="113.1" stroke-dashoffset="113.1"></circle>
-                  </svg>
-                  <span class="onb-ring__n" id="onb-ring-n">0/4</span>
-                </div>
                 <div class="onb-card__head-txt">
-                  <span class="card__title">Primeros pasos en el Club</span>
+                  <div class="onb-card__head-row">
+                    <span class="card__title">Primeros pasos en el Club</span>
+                    <span class="onb-progress__n" id="onb-progress-n">0/4</span>
+                  </div>
                   <p>Termina esto y le sacas el jugo completo a tu membresía desde el día uno.</p>
+                  <div class="onb-progress"><div class="onb-progress__bar" id="onb-progress-bar"></div></div>
                 </div>
                 <button type="button" class="onb-card__close" id="onb-close-card" title="No volver a mostrar"><i data-lucide="x"></i></button>
               </div>
@@ -1251,7 +1248,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=136"></script>
+  <script type="module" src="dashboard.js?v=137"></script>
   <script type="module" src="agente.js?v=1"></script>
 
   <template id="__bundler_thumbnail">

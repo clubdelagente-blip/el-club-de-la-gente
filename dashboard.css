@@ -435,16 +435,14 @@
 .onb-wrap { max-height: 600px; opacity: 1; overflow: hidden; transition: max-height .5s ease, opacity .4s ease, margin .5s ease; margin-bottom: 20px; }
 .onb-wrap.is-hidden { max-height: 0; opacity: 0; margin-bottom: 0; }
 .onb-card { padding: 20px 22px 8px; }
-.onb-card__head { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
-.onb-ring { position: relative; width: 44px; height: 44px; flex: none; }
-.onb-ring svg { width: 44px; height: 44px; transform: rotate(-90deg); }
-.onb-ring circle { fill: none; stroke-width: 4; }
-.ring-bg { stroke: var(--crema-2); }
-.ring-fg { stroke: var(--verde); stroke-linecap: round; transition: stroke-dashoffset .5s cubic-bezier(.4,0,.2,1); }
-.onb-ring__n { position: absolute; inset: 0; display: grid; place-items: center; font-size: 10.5px; font-weight: 700; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.onb-card__head { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
 .onb-card__head-txt { flex: 1; min-width: 0; }
 .onb-card__head-txt .card__title { font-family: var(--display); font-weight: 600; font-size: 16.5px; text-transform: none; letter-spacing: normal; display: block; }
 .onb-card__head-txt p { font-size: 12px; color: var(--tinta-60); margin: 3px 0 0; line-height: 1.5; }
+.onb-card__head-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.onb-progress__n { font-size: 12.5px; font-weight: 700; color: var(--verde); white-space: nowrap; font-variant-numeric: tabular-nums; flex: none; }
+.onb-progress { height: 6px; background: var(--crema-2); border-radius: 100px; overflow: hidden; margin-top: 12px; }
+.onb-progress__bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--verde), #00DF81); border-radius: 100px; transition: width .5s cubic-bezier(.4,0,.2,1); }
 .onb-card__close { flex: none; background: none; border: none; color: var(--tinta-45); cursor: pointer; display: flex; padding: 4px; }
 .onb-card__close i { width: 16px; height: 16px; }
 .onb-list { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--linea); }

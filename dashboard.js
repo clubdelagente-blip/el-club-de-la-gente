@@ -1484,11 +1484,10 @@ async function cargarOnboarding(userId, perfData) {
     $("#onb-card").hidden = false;
     $("#onb-done").hidden = true;
     $$(".onb-item").forEach(btn => btn.classList.toggle("is-done", !!pasos[btn.dataset.step]));
-    const RING_LEN = 113.1;
-    const ringFg = $("#onb-ring-fg");
-    if (ringFg) ringFg.style.strokeDashoffset = RING_LEN - (RING_LEN * hechos / total);
-    const ringN = $("#onb-ring-n");
-    if (ringN) ringN.textContent = hechos + "/" + total;
+    const bar = $("#onb-progress-bar");
+    if (bar) bar.style.width = (100 * hechos / total) + "%";
+    const n = $("#onb-progress-n");
+    if (n) n.textContent = hechos + "/" + total;
   }
   if (window.lucide) lucide.createIcons();
 
