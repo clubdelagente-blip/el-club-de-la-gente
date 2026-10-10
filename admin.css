@@ -74,6 +74,12 @@
   display: flex; align-items: center; justify-content: space-between; gap: 20px;
   padding: 16px 32px; border-bottom: 1px solid var(--line);
   background: rgba(10,10,10,.8); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 30;
+  /* backdrop-filter + position:sticky tiene un bug conocido de repintado en
+     Chrome al hacer scroll rápido en contenido largo: deja "pegado" un
+     fantasma borroso de lo que había debajo un instante antes. Forzar su
+     propia capa de composición (GPU) es la corrección estándar. */
+  transform: translateZ(0);
+  will-change: transform;
 }
 .ad-top__left h1 { font-family: var(--display); font-size: 26px; font-weight: 600; line-height: 1; }
 .ad-top__left p { font-size: 12.5px; color: var(--txt-40); margin-top: 4px; }
