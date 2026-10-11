@@ -1801,6 +1801,13 @@ async function abrirReintentarComprobante() {
           body: JSON.stringify({ to: data.valor, body: `💳 Comprobante reenviado para la membresía ${planLabel} (${COP(sol.monto)}). Revísalo en Admin → Ventas.` }),
         }).catch(() => {});
       }).catch(() => {});
+
+    // Verificación automática del comprobante con IA — fire-and-forget.
+    fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/verificar-comprobante", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ solicitud_id: sol.id }),
+    }).catch(() => {});
   });
 }
 

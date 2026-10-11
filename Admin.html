@@ -305,6 +305,19 @@ document.addEventListener('click',(e)=>{
 });
 
 /* ---- VENTAS (pagos reales + solicitudes de membresía pendientes) ---- */
+// Explica por qué la verificación automática con IA no aprobó sola esta
+// solicitud -- da contexto rápido al admin antes de revisar el comprobante.
+function razonNoAutoAprobado(v){
+  if(!v)return '';
+  let motivo='No se verificó sola';
+  if(v.motivo==='monto_sobre_tope')motivo='Monto arriba del tope de auto-aprobación';
+  else if(v.motivo==='error_analisis')motivo='No se pudo analizar la imagen';
+  else if(v.es_comprobante===false)motivo='La IA no reconoció un comprobante bancario';
+  else if(v.senales_edicion===true)motivo='La IA notó posibles señales de edición';
+  else if(v.confianza&&v.confianza!=='alta')motivo='La IA no tuvo confianza suficiente';
+  else if(v.monto!=null)motivo='El monto/llave/fecha no coincidieron exacto';
+  return `<div style="font-size:11px;color:rgba(242,240,234,.4);margin-top:4px" title="${esc(JSON.stringify(v))}">🤖 ${esc(motivo)}</div>`;
+}
 let _ventasSolicitudes=[];
 async function cargarVentasReal(){
   const hoy=new Date();
@@ -312,7 +325,7 @@ async function cargarVentasReal(){
   const mesAnt=new Date(hoy.getFullYear(),hoy.getMonth()-1,1);
   const[{data:pagos},{data:solicitudes},{data:cfgLlave}]=await Promise.all([
     supabase.from('pagos').select('id,monto,plan,referencia,created_at,perfiles(nombre)').order('created_at',{ascending:false}),
-    supabase.from('solicitudes_membresia').select('id,miembro_id,plan,monto,comprobante_url,estado,created_at,perfiles(nombre,whatsapp)').eq('estado','pendiente').order('created_at',{ascending:true}),
+    supabase.from('solicitudes_membresia').select('id,miembro_id,plan,monto,comprobante_url,estado,created_at,verificacion_ia,perfiles(nombre,whatsapp)').eq('estado','pendiente').order('created_at',{ascending:true}),
     supabase.from('configuracion').select('valor').eq('clave','club_llave_pago').maybeSingle(),
   ]);
   const PG=pagos||[];
@@ -335,7 +348,7 @@ async function cargarVentasReal(){
               <td><div class="ad-cell-user"><span class="ad-av">${window.ini(s.perfiles?.nombre||'?')}</span><div><div class="ad-cell-user__name">${esc(s.perfiles?.nombre)||'—'}</div><div class="ad-table__num">${new Date(s.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}</div></div></div></td>
               <td><span class="ad-pill ${s.plan}"><span class="d"></span>${window.planLbl(s.plan)}</span></td>
               <td><span class="ad-num-strong">${COP(s.monto)}</span></td>
-              <td><a href="${esc(s.comprobante_url)}" target="_blank" style="color:#00DF81">Ver comprobante</a></td>
+              <td><a href="${esc(s.comprobante_url)}" target="_blank" style="color:#00DF81">Ver comprobante</a>${razonNoAutoAprobado(s.verificacion_ia)}</td>
               <td style="text-align:right"><div style="display:flex;gap:6px;justify-content:flex-end">
                 <button class="ad-btn ad-btn--verde" data-vt-aprobar="${s.id}">${ic('check')} Aprobar</button>
                 <button class="ad-btn" data-vt-rechazar="${s.id}">${ic('x')} Rechazar</button>

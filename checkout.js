@@ -163,7 +163,12 @@ function wirePago() {
     if (upErr) { alert("Error subiendo el comprobante"); btn.disabled = false; btn.textContent = "Confirmar pago"; return; }
     const comprobante_url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
 
+    // Id generado en el navegador (no depende de que el SELECT post-insert
+    // tenga permiso de RLS para devolverlo -- evita el mismo bug de "no se
+    // guardó" que ya salió antes con las vacantes por faltar esa política).
+    const nuevaSolicitudId = crypto.randomUUID();
     const { error } = await supabase.from("solicitudes_membresia").insert({
+      id: nuevaSolicitudId,
       miembro_id: estadoPago.miembroId,
       plan: estadoPago.plan,
       monto: estadoPago.precio,
@@ -174,6 +179,14 @@ function wirePago() {
     localStorage.setItem("ecdlg_plan", estadoPago.plan);
     btn.disabled = false; btn.textContent = "Confirmar pago";
     mostrar("view-pendiente", 4);
+
+    // Verificación automática del comprobante con IA — fire-and-forget, si
+    // todo cuadra se aprueba sola; si no, queda pendiente como siempre.
+    fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/verificar-comprobante", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ solicitud_id: nuevaSolicitudId }),
+    }).catch(() => {});
 
     // Avisar al equipo para que revise el comprobante — fire-and-forget.
     supabase.from("configuracion").select("valor").eq("clave", "numero_admin_notificaciones").maybeSingle()

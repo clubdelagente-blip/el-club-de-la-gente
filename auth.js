@@ -686,7 +686,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         const { error: upErr } = await supabase.storage.from("contenido").upload(path, pagoPendiente.file, { upsert: true });
         if (upErr) throw upErr;
         const comprobante_url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+        const nuevaSolicitudId = crypto.randomUUID();
         const { error: solErr } = await supabase.from("solicitudes_membresia").insert({
+          id: nuevaSolicitudId,
           miembro_id: data.user.id,
           plan: pagoPendiente.plan,
           monto: pagoPendiente.precio,
@@ -699,6 +701,12 @@ document.addEventListener("DOMContentLoaded", async () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ to: await numeroAdmin(), body: `💳 Nueva solicitud de membresía ${pagoPendiente.planLabel} por ${new Intl.NumberFormat("es-CO").format(pagoPendiente.precio)} COP (registro nuevo). Revísala en Admin → Ventas.` }),
+        }).catch(() => {});
+        // Verificación automática del comprobante con IA — fire-and-forget.
+        fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/verificar-comprobante", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ solicitud_id: nuevaSolicitudId }),
         }).catch(() => {});
       } catch (e) {
         console.error("Error guardando el pago pendiente:", e);
