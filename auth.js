@@ -718,9 +718,21 @@ document.addEventListener("DOMContentLoaded", async () => {
           const verifEl = $("#verif-ia-status");
           if (!verifEl) return;
           const j = await r.json().catch(() => ({}));
-          verifEl.textContent = j.aprobado
-            ? "✅ ¡Tu membresía ya quedó activa! Revisa tu perfil."
-            : "👀 Tu comprobante quedó en revisión manual del equipo.";
+          if (j.aprobado) {
+            verifEl.textContent = "✅ ¡Tu membresía ya quedó activa!";
+            // Para este flujo (pago antes de registrarse) el botón de entrar
+            // a la cuenta se deja oculto por defecto porque normalmente la
+            // aprobación tarda -- pero si la IA la aprobó sola en segundos,
+            // sí hay que dejarlo entrar ya mismo, no solo avisarle por WhatsApp.
+            const cta = $("#exito-cta");
+            if (cta) {
+              cta.setAttribute("href", "Perfil.html?bienvenida=1");
+              cta.innerHTML = `Ir a mi cuenta <span class="ar">&rarr;</span>`;
+              cta.style.display = "";
+            }
+          } else {
+            verifEl.textContent = "👀 Tu comprobante quedó en revisión manual del equipo.";
+          }
         }).catch(() => {
           const verifEl = $("#verif-ia-status");
           if (verifEl) verifEl.textContent = "👀 Tu comprobante quedó en revisión manual del equipo.";
