@@ -180,13 +180,26 @@ function wirePago() {
     btn.disabled = false; btn.textContent = "Confirmar pago";
     mostrar("view-pendiente", 4);
 
-    // Verificación automática del comprobante con IA — fire-and-forget, si
-    // todo cuadra se aprueba sola; si no, queda pendiente como siempre.
+    // Verificación automática del comprobante con IA — no bloquea nada (el
+    // miembro ya está viendo "pago pendiente"), pero sí se le muestra un
+    // aviso en vivo de qué está pasando. De paso, esto sirve para confirmar
+    // desde el celular mismo si este código se está llegando a ejecutar,
+    // sin depender de revisar logs en Supabase.
+    const verifEl = document.getElementById("verif-ia-status");
+    if (verifEl) { verifEl.textContent = "🤖 Verificando tu comprobante automáticamente…"; verifEl.style.display = "block"; }
     fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/verificar-comprobante", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ solicitud_id: nuevaSolicitudId }),
-    }).catch(() => {});
+    }).then(async (r) => {
+      if (!verifEl) return;
+      const j = await r.json().catch(() => ({}));
+      verifEl.textContent = j.aprobado
+        ? "✅ ¡Tu membresía ya quedó activa! Revisa tu perfil."
+        : "👀 Tu comprobante quedó en revisión manual del equipo.";
+    }).catch(() => {
+      if (verifEl) verifEl.textContent = "👀 Tu comprobante quedó en revisión manual del equipo.";
+    });
 
     // Avisar al equipo para que revise el comprobante — fire-and-forget.
     supabase.from("configuracion").select("valor").eq("clave", "numero_admin_notificaciones").maybeSingle()
