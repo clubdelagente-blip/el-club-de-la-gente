@@ -35,11 +35,12 @@ const TOPE_AUTO_APROBAR = 200000;
 // tendría sentido permitirlo.
 const TOLERANCIA_MONTO = 500;
 
-// Modelo de visión de Groq. Groq ha deprecado modelos antes en este mismo
-// proyecto (ver whatsapp-receive-v2.ts) -- si este deja de funcionar, hay
-// que revisar qué modelo de visión está disponible en la cuenta y
+// Modelo de visión de Groq. Groq ha cambiado su catálogo de modelos de
+// visión varias veces (ver whatsapp-receive-v2.ts para otro ejemplo de esto
+// en este mismo proyecto) -- si este deja de funcionar, hay que revisar
+// console.groq.com/docs/vision para ver qué modelo está disponible y
 // reemplazar este nombre.
-const MODELO_VISION = "meta-llama/llama-4-scout-17b-16e-instruct";
+const MODELO_VISION = "qwen/qwen3.8-27b";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
