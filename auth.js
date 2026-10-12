@@ -62,6 +62,11 @@ function irAExitoPagoPendiente({ nombre, plan, ok }) {
   if (cta) cta.style.display = "none";
   $(".stepper").style.visibility = "hidden";
   const wa = $("#exito-social"); if (wa) wa.hidden = true;
+  const verifEl = $("#verif-ia-status");
+  if (verifEl) {
+    if (ok) { verifEl.textContent = "🤖 Verificando tu comprobante automáticamente…"; verifEl.style.display = "block"; }
+    else verifEl.style.display = "none";
+  }
   mostrarVista("view-exito");
   if (window.lucide) lucide.createIcons();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -702,12 +707,24 @@ document.addEventListener("DOMContentLoaded", async () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ to: await numeroAdmin(), body: `💳 Nueva solicitud de membresía ${pagoPendiente.planLabel} por ${new Intl.NumberFormat("es-CO").format(pagoPendiente.precio)} COP (registro nuevo). Revísala en Admin → Ventas.` }),
         }).catch(() => {});
-        // Verificación automática del comprobante con IA — fire-and-forget.
+        // Verificación automática del comprobante con IA — no bloquea nada,
+        // pero actualiza el aviso visible que ya quedó mostrado en pantalla
+        // (ver irAExitoPagoPendiente).
         fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/verificar-comprobante", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ solicitud_id: nuevaSolicitudId }),
-        }).catch(() => {});
+        }).then(async (r) => {
+          const verifEl = $("#verif-ia-status");
+          if (!verifEl) return;
+          const j = await r.json().catch(() => ({}));
+          verifEl.textContent = j.aprobado
+            ? "✅ ¡Tu membresía ya quedó activa! Revisa tu perfil."
+            : "👀 Tu comprobante quedó en revisión manual del equipo.";
+        }).catch(() => {
+          const verifEl = $("#verif-ia-status");
+          if (verifEl) verifEl.textContent = "👀 Tu comprobante quedó en revisión manual del equipo.";
+        });
       } catch (e) {
         console.error("Error guardando el pago pendiente:", e);
       }
@@ -955,6 +972,7 @@ function irAExitoAliado(negocio, nombre) {
   const cta = $("#exito-cta");
   cta.setAttribute("href", "Perfil.html?rol=aliado");
   cta.innerHTML = `Ver mi panel de aliado <span class="ar">&rarr;</span>`;
+  const verifEl1 = $("#verif-ia-status"); if (verifEl1) verifEl1.style.display = "none";
   $(".stepper").style.visibility = "hidden";
   mostrarVista("view-exito");
   if (window.lucide) lucide.createIcons();
@@ -971,6 +989,7 @@ function irAExitoProfesional(nombre) {
   const cta = $("#exito-cta");
   cta.setAttribute("href", "Perfil.html");
   cta.innerHTML = `Ir a mi perfil <span class="ar">&rarr;</span>`;
+  const verifEl2 = $("#verif-ia-status"); if (verifEl2) verifEl2.style.display = "none";
   $(".stepper").style.visibility = "hidden";
   mostrarVista("view-exito");
   if (window.lucide) lucide.createIcons();
