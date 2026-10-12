@@ -47,8 +47,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
+// La llave Bre-B del Club puede ser un alias tipo "@clubdelagente" (se
+// compara tal cual, en minúscula) o un número de teléfono/cuenta (se
+// comparan solo los dígitos, sin el indicativo 57). Si llegara a quedar
+// vacía después de normalizar, NUNCA debe dar por buena la comparación --
+// antes un alias sin dígitos volvía este chequeo siempre verdadero sin
+// importar qué llave detectara la IA, anulando la protección.
 function normalizarLlave(s: string | null | undefined): string {
-  return (s || "").replace(/\D/g, "");
+  let v = (s || "").trim().toLowerCase();
+  if (!v) return "";
+  if (v.startsWith("@")) return v;
+  v = v.replace(/\D/g, "");
+  if (v.length > 10 && v.startsWith("57")) v = v.slice(2);
+  return v;
 }
 
 Deno.serve(async (req: Request) => {
@@ -144,9 +155,9 @@ Deno.serve(async (req: Request) => {
   const montoOk = analisis.monto != null
     && analisis.monto <= solicitud.monto
     && analisis.monto >= solicitud.monto - TOLERANCIA_MONTO;
-  const llaveOk = !!(analisis.llave_destino && llaveClub) &&
-    normalizarLlave(analisis.llave_destino).length >= 6 &&
-    normalizarLlave(analisis.llave_destino).endsWith(normalizarLlave(llaveClub).slice(-6));
+  const llaveClubNorm = normalizarLlave(llaveClub);
+  const llaveDetectadaNorm = normalizarLlave(analisis.llave_destino);
+  const llaveOk = llaveClubNorm.length >= 3 && llaveClubNorm === llaveDetectadaNorm;
 
   const aprobarSolo = analisis.es_comprobante === true
     && montoOk
