@@ -30,6 +30,11 @@ const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY")!;
 // si el precio real de los planes cambia.
 const TOPE_AUTO_APROBAR = 200000;
 
+// Margen de tolerancia hacia ABAJO del precio exacto (comisiones de
+// transferencia interbancaria, redondeos) -- nunca hacia arriba, eso no
+// tendría sentido permitirlo.
+const TOLERANCIA_MONTO = 500;
+
 // Modelo de visión de Groq. Groq ha deprecado modelos antes en este mismo
 // proyecto (ver whatsapp-receive-v2.ts) -- si este deja de funcionar, hay
 // que revisar qué modelo de visión está disponible en la cuenta y
@@ -136,7 +141,9 @@ Deno.serve(async (req: Request) => {
     && (hoy - fechaDetectada) <= 2 * 24 * 60 * 60 * 1000
     && (hoy - fechaDetectada) >= -24 * 60 * 60 * 1000;
 
-  const montoOk = analisis.monto === solicitud.monto;
+  const montoOk = analisis.monto != null
+    && analisis.monto <= solicitud.monto
+    && analisis.monto >= solicitud.monto - TOLERANCIA_MONTO;
   const llaveOk = !!(analisis.llave_destino && llaveClub) &&
     normalizarLlave(analisis.llave_destino).length >= 6 &&
     normalizarLlave(analisis.llave_destino).endsWith(normalizarLlave(llaveClub).slice(-6));
