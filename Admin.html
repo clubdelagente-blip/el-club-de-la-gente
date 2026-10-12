@@ -3518,8 +3518,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
       const btn=e.target.closest('#vt-llave-save');
       const llave=$('#vt-llave')?.value.trim()||null;
       btn.disabled=true;
-      await supabase.from('configuracion').upsert([{clave:'club_llave_pago',valor:llave}]);
+      const{error}=await supabase.from('configuracion').upsert([{clave:'club_llave_pago',valor:llave}],{onConflict:'clave'});
       btn.disabled=false;
+      if(error){toast('Error guardando la llave: '+error.message);console.error('Error guardando club_llave_pago:',error);return;}
       toast('Llave guardada ✓');
       return;
     }
