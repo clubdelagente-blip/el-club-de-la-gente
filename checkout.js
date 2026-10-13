@@ -2,6 +2,7 @@
    EL CLUB DE LA GENTE — Módulo 3 · Lógica de checkout
    ============================================================ */
 import { supabase } from './supabase.js';
+import { comprimirImagen } from './imagen.js';
 
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
@@ -157,9 +158,10 @@ function wirePago() {
     if (!file) { alert("Sube el comprobante de pago"); return; }
     btn.disabled = true; btn.textContent = "Enviando…";
 
-    const ext = file.name.split(".").pop();
+    const fileComprimido = await comprimirImagen(file);
+    const ext = fileComprimido.name.split(".").pop();
     const path = `comprobante-membresia-${estadoPago.miembroId}-${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+    const { error: upErr } = await supabase.storage.from("contenido").upload(path, fileComprimido, { upsert: true });
     if (upErr) { alert("Error subiendo el comprobante"); btn.disabled = false; btn.textContent = "Confirmar pago"; return; }
     const comprobante_url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
 

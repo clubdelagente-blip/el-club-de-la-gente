@@ -2,6 +2,7 @@
    EL CLUB DE LA GENTE — Módulo 2 · Autenticación con Supabase
    ============================================================ */
 import { supabase } from './supabase.js';
+import { comprimirImagen } from './imagen.js';
 
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
@@ -686,9 +687,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const pagoPendiente = pendingPago;
     if (pagoPendiente) {
       try {
-        const ext = pagoPendiente.file.name.split(".").pop();
+        const fileComprimido = await comprimirImagen(pagoPendiente.file);
+        const ext = fileComprimido.name.split(".").pop();
         const path = `comprobante-membresia-${data.user.id}-${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("contenido").upload(path, pagoPendiente.file, { upsert: true });
+        const { error: upErr } = await supabase.storage.from("contenido").upload(path, fileComprimido, { upsert: true });
         if (upErr) throw upErr;
         const comprobante_url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
         const nuevaSolicitudId = crypto.randomUUID();
@@ -852,7 +854,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         // Documentos de verificación (cédula, licencia, SOAT, certificados...)
         const documentos = [];
         for (let i = 0; i < profDocs.length; i++) {
-          const file = profDocs[i];
+          const file = await comprimirImagen(profDocs[i]);
           const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
           const path = `profesional-doc-${data.user.id}-${Date.now()}-${i}.${ext}`;
           const { error: upErr } = await supabase.storage.from("contenido").upload(path, file);

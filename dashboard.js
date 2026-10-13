@@ -2,6 +2,7 @@
    EL CLUB DE LA GENTE — Módulo 4 · Lógica de perfil/dashboard
    ============================================================ */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { comprimirImagen } from './imagen.js';
 const SUPABASE_URL = "https://egwaedadpqfwnbfosiao.supabase.co";
 const supabase = createClient(
   SUPABASE_URL,
@@ -239,9 +240,10 @@ function aplicarFoto(dataUrl) {
 async function subirFotoPerfil(file) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return;
-  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const fileComprimido = await comprimirImagen(file);
+  const ext = (fileComprimido.name.split(".").pop() || "jpg").toLowerCase();
   const path = `perfil-${session.user.id}-${Date.now()}.${ext}`;
-  const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+  const { error: upErr } = await supabase.storage.from("contenido").upload(path, fileComprimido, { upsert: true });
   if (upErr) { toast("Error subiendo la foto"); return; }
   const url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
   await supabase.from("perfiles").update({ foto_url: url }).eq("id", session.user.id);
@@ -1341,9 +1343,10 @@ async function abrirFormProducto(p = {}) {
   }
   renderImgGrid();
   $("#pa-img-input")?.addEventListener("change", async (e) => {
-    const file = e.target.files?.[0];
+    let file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+    file = await comprimirImagen(file);
     const ext = file.name.split(".").pop();
     const path = `producto-${_tiendaAliadoId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${ext}`;
     const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
@@ -1802,9 +1805,10 @@ async function abrirReintentarComprobante() {
 
   $("#rt-confirmar")?.addEventListener("click", async () => {
     const btn = $("#rt-confirmar");
-    const file = $("#rt-comprobante")?.files?.[0];
+    let file = $("#rt-comprobante")?.files?.[0];
     if (!file) { toast("Sube el comprobante de pago"); return; }
     btn.disabled = true; btn.textContent = "Enviando…";
+    file = await comprimirImagen(file);
     const ext = file.name.split(".").pop();
     const path = `comprobante-membresia-${_miembroId}-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
@@ -2470,6 +2474,7 @@ function wireResenasProducto(p) {
 
     let foto_url = null;
     if (fotoResenaFile) {
+      fotoResenaFile = await comprimirImagen(fotoResenaFile);
       const ext = fotoResenaFile.name.split('.').pop();
       const path = `resena-producto-${p.id}-${_miembroId}-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from('contenido').upload(path, fotoResenaFile, { upsert: true });
@@ -2526,7 +2531,7 @@ async function abrirCheckoutClub(p) {
     const direccion = $("#pcc-direccion")?.value.trim();
     const barrio = $("#pcc-barrio")?.value.trim();
     const telefono = $("#pcc-telefono")?.value.trim();
-    const file = $("#pcc-comprobante")?.files?.[0];
+    let file = $("#pcc-comprobante")?.files?.[0];
     if (!nombre || !direccion || !telefono) { toast("Completa nombre, dirección y teléfono"); return; }
     if (!file) { toast("Sube el comprobante de pago"); return; }
     if (!precio) { toast("Este producto no tiene un precio válido"); return; }
@@ -2536,6 +2541,7 @@ async function abrirCheckoutClub(p) {
     const miembroId = session?.user?.id;
     if (!miembroId) { toast("Debes iniciar sesión"); btn.disabled = false; return; }
 
+    file = await comprimirImagen(file);
     const ext = file.name.split(".").pop();
     const path = `comprobante-club-${miembroId}-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
@@ -2559,18 +2565,23 @@ async function abrirCheckoutClub(p) {
     });
     if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Confirmar pedido"; return; }
 
+    cerrarModalTienda();
+    toast("Pedido enviado — verificando tu comprobante…");
+    setTimeout(cargarMisPedidosClub, 800);
+
     // Verificación automática del comprobante con IA -- no bloquea nada (el
     // miembro ya ve "pedido enviado"), pero si todo cuadra marca el pago
-    // como confirmado solo.
+    // como confirmado solo. Se refresca "Mis pedidos" al terminar para que
+    // el cambio se vea sin que el miembro tenga que hacerlo a mano.
     fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/verificar-pedido-club", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pedido_id: nuevoPedidoClubId }),
+    }).then(async (r) => {
+      const j = await r.json().catch(() => ({}));
+      if (j.aprobado) toast("✅ ¡Tu pago ya quedó confirmado!");
+      cargarMisPedidosClub();
     }).catch(() => {});
-
-    cerrarModalTienda();
-    toast("Pedido enviado — te avisamos por WhatsApp en cuanto confirmemos tu pago");
-    setTimeout(cargarMisPedidosClub, 800);
 
     supabase.from("configuracion").select("valor").eq("clave", "numero_admin_notificaciones").maybeSingle()
       .then(({ data }) => {
@@ -2725,7 +2736,7 @@ function abrirCheckoutProducto(p) {
   $("#pc-confirmar")?.addEventListener("click", async () => {
     const btn = $("#pc-confirmar");
     const tipoEntrega = $("#pc-entrega")?.value || "envio";
-    const file = $("#pc-comprobante")?.files?.[0];
+    let file = $("#pc-comprobante")?.files?.[0];
     if (!file) { toast("Sube el comprobante de pago"); return; }
     const nombre = $("#pc-nombre")?.value.trim();
     const direccion = $("#pc-direccion")?.value.trim();
@@ -2733,6 +2744,7 @@ function abrirCheckoutProducto(p) {
     if (tipoEntrega === "envio" && (!nombre || !direccion)) { toast("Completa nombre y dirección"); return; }
 
     btn.disabled = true; btn.textContent = "Enviando…";
+    file = await comprimirImagen(file);
     const ext = file.name.split(".").pop();
     const path = `comprobante-${_miembroId}-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
@@ -2758,15 +2770,6 @@ function abrirCheckoutProducto(p) {
     const { error } = await supabase.from("pedidos").insert(payload);
     if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Confirmar pedido"; return; }
 
-    // Verificación automática del comprobante con IA -- no bloquea nada (el
-    // miembro ya ve "pedido enviado"), pero si todo cuadra confirma el pago
-    // solo y el aliado no tiene que revisarlo a mano.
-    fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/verificar-pedido-aliado", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pedido_id: nuevoPedidoId }),
-    }).catch(() => {});
-
     if (p.whatsapp) {
       const wa = p.whatsapp.replace(/\D/g, "");
       const nombreMiembro = leerPerfil()?.nombre || "Un miembro del Club";
@@ -2783,11 +2786,32 @@ function abrirCheckoutProducto(p) {
       <div style="text-align:center;padding:8px 0">
         <div style="font-size:44px;line-height:1">✓</div>
         <p style="font-size:14px;margin-top:12px">Gracias por tu compra en <b>${esc(p.aliados?.tienda_nombre || p.aliados?.nombre) || 'el negocio'}</b>.<br>El negocio confirmará tu pago pronto.</p>
+        <p id="pc-verif-ia" style="font-size:13px;color:#777;margin-top:10px">🤖 Verificando tu comprobante automáticamente…</p>
       </div>
       ${redesSocialesHTML(p.aliados)}
       <button class="btn btn--primario" id="pc-cerrar-exito" style="margin-top:20px;width:100%">Listo</button>
     `);
     $("#pc-cerrar-exito")?.addEventListener("click", () => cerrarModalTienda());
+
+    // Verificación automática del comprobante con IA -- no bloquea nada (el
+    // miembro ya ve "pedido enviado"), pero si todo cuadra confirma el pago
+    // solo y el aliado no tiene que revisarlo a mano. El aviso en vivo le
+    // confirma al miembro qué pasó, sin que tenga que refrescar para verlo.
+    fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/verificar-pedido-aliado", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pedido_id: nuevoPedidoId }),
+    }).then(async (r) => {
+      const verifEl = $("#pc-verif-ia");
+      if (!verifEl) return;
+      const j = await r.json().catch(() => ({}));
+      verifEl.textContent = j.aprobado
+        ? "✅ ¡Tu pago ya quedó confirmado!"
+        : "👀 Tu comprobante quedó en revisión del negocio.";
+    }).catch(() => {
+      const verifEl = $("#pc-verif-ia");
+      if (verifEl) verifEl.textContent = "👀 Tu comprobante quedó en revisión del negocio.";
+    });
   });
 }
 
@@ -3461,8 +3485,9 @@ async function cargarPanelProfesional() {
     btn.disabled = true;
 
     let imagen_url = prof.imagen_url || null;
-    const file = $("#prof-edit-img")?.files?.[0];
+    let file = $("#prof-edit-img")?.files?.[0];
     if (file) {
+      file = await comprimirImagen(file);
       const ext = file.name.split('.').pop();
       const path = `prof-${session.user.id}-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from('contenido').upload(path, file, { upsert: true });
@@ -3644,9 +3669,10 @@ async function cargarSoporte() {
 
   imgBtn?.addEventListener("click", () => imgInput.click());
   imgInput?.addEventListener("change", async () => {
-    const file = imgInput.files?.[0];
+    let file = imgInput.files?.[0];
     imgInput.value = "";
     if (!file) return;
+    file = await comprimirImagen(file);
     const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
     const path = `soporte-${session.user.id}-${Date.now()}.${ext}`;
     sendBtn.disabled = true;
