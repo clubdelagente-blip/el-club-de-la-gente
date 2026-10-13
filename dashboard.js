@@ -1359,6 +1359,11 @@ async function abrirFormProducto(p = {}) {
     if (!nombre) { toast("El nombre es obligatorio"); return; }
     btn.disabled = true; btn.textContent = "Guardando…";
     const id = btn.dataset.id;
+    // Id generado en el navegador para un producto nuevo (no depende de que
+    // el SELECT post-insert tenga permiso de RLS para devolverlo) -- mismo
+    // patrón ya usado en checkout.js/auth.js para disparar la verificación
+    // con IA justo después de guardar.
+    const nuevoProductoId = id || crypto.randomUUID();
     const payload = {
       aliado_id: _tiendaAliadoId,
       nombre,
@@ -1375,12 +1380,23 @@ async function abrirFormProducto(p = {}) {
     };
     const { error } = id
       ? await supabase.from("productos_aliado").update(payload).eq("id", id)
-      : await supabase.from("productos_aliado").insert(payload);
+      : await supabase.from("productos_aliado").insert({ id: nuevoProductoId, ...payload });
     if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = id ? "Guardar cambios" : "Agregar producto"; return; }
     if (esNuevoProducto) { try { localStorage.removeItem(BORRADOR_PRODUCTO_KEY); } catch {} }
     cerrarModalTienda();
     toast(id ? "Producto actualizado — vuelve a quedar en revisión" : "Producto agregado — queda en revisión");
     cargarMisProductos(_tiendaAliadoId);
+
+    // Verificación automática de la foto con IA -- no bloquea nada (el
+    // aliado ya ve su producto "en revisión"), pero si todo cuadra lo
+    // publica solo y se refresca la lista para que se vea el cambio.
+    if (imagenes[0]) {
+      fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/verificar-producto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ producto_id: nuevoProductoId }),
+      }).then(() => cargarMisProductos(_tiendaAliadoId)).catch(() => {});
+    }
   });
 }
 

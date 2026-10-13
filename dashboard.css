@@ -452,21 +452,21 @@
 .onb-list > .onb-item:nth-child(even) { padding-left: 16px; }
 @media (max-width: 760px) { .onb-list > .onb-item:nth-child(odd) { border-right: none; padding-right: 4px; } }
 .onb-item__check { width: 22px; height: 22px; border-radius: 50%; border: 1.6px solid var(--linea-fuerte); flex: none; display: grid; place-items: center; transition: background .2s, border-color .2s; }
-.onb-item__check i { width: 12px; height: 12px; color: #fff; opacity: 0; transition: opacity .15s; stroke-width: 3; }
+.onb-item__check i, .onb-item__check svg { width: 12px; height: 12px; color: #fff; opacity: 0; transition: opacity .15s; stroke-width: 3; }
 .onb-item.is-done .onb-item__check { background: var(--verde); border-color: var(--verde); }
-.onb-item.is-done .onb-item__check i { opacity: 1; }
+.onb-item.is-done .onb-item__check i, .onb-item.is-done .onb-item__check svg { opacity: 1; }
 .onb-item__txt { flex: 1; min-width: 0; }
 .onb-item__txt b { display: block; font-size: 12.5px; font-weight: 600; color: var(--tinta); }
 .onb-item.is-done .onb-item__txt b { color: var(--tinta-45); text-decoration: line-through; text-decoration-color: var(--linea-fuerte); text-decoration-thickness: 1.4px; }
 .onb-item__txt small { display: block; font-size: 11px; color: var(--tinta-45); margin-top: 2px; line-height: 1.4; }
 .onb-item__go { flex: none; display: flex; align-items: center; gap: 3px; font-size: 10.5px; font-weight: 700; color: var(--verde); white-space: nowrap; }
-.onb-item__go i { width: 12px; height: 12px; }
+.onb-item__go i, .onb-item__go svg { width: 12px; height: 12px; }
 .onb-item.is-done .onb-item__go { display: none; }
 .onb-done { display: flex; align-items: center; gap: 12px; background: var(--crema); border: 1px solid var(--linea); border-radius: 14px; padding: 15px 18px; }
 .onb-done__check { width: 26px; height: 26px; border-radius: 50%; background: var(--verde); display: grid; place-items: center; flex: none; }
-.onb-done__check i { width: 14px; height: 14px; color: #fff; stroke-width: 3; }
+.onb-done__check i, .onb-done__check svg { width: 14px; height: 14px; color: #fff; stroke-width: 3; }
 .onb-done__txt { flex: 1; font-size: 13px; font-weight: 600; color: var(--tinta); }
 .onb-done__close { background: none; border: none; color: var(--tinta-45); cursor: pointer; display: flex; flex: none; padding: 4px; }
-.onb-done__close i { width: 15px; height: 15px; }
+.onb-done__close i, .onb-done__close svg { width: 15px; height: 15px; }
 #card-referidos.onb-highlight { animation: onb-flash 1.4s ease; }
 @keyframes onb-flash { 0%, 100% { box-shadow: none; } 30% { box-shadow: 0 0 0 3px var(--verde-soft); } }

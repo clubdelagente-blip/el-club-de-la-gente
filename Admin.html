@@ -318,6 +318,16 @@ function razonNoAutoAprobado(v){
   else if(v.monto!=null)motivo='El monto/llave/fecha no coincidieron exacto';
   return `<div style="font-size:11px;color:rgba(242,240,234,.4);margin-top:4px" title="${esc(JSON.stringify(v))}">🤖 ${esc(motivo)}</div>`;
 }
+function razonNoAutoAprobadoProd(v){
+  if(!v)return '';
+  let motivo='No se verificó sola';
+  if(v.motivo==='error_analisis')motivo='No se pudo analizar la foto';
+  else if(v.es_foto_de_producto===false)motivo='La IA no reconoció un producto en la foto';
+  else if(v.coincide_con_nombre===false)motivo='La foto no coincide con el nombre/categoría';
+  else if(v.contenido_inapropiado===true)motivo='La IA marcó la foto como contenido inapropiado';
+  else if(v.confianza&&v.confianza!=='alta')motivo='La IA no tuvo confianza suficiente';
+  return `<div style="font-size:11px;color:rgba(242,240,234,.4);margin-top:4px" title="${esc(JSON.stringify(v))}">🤖 ${esc(motivo)}</div>`;
+}
 let _ventasSolicitudes=[];
 async function cargarVentasReal(){
   const hoy=new Date();
@@ -2967,7 +2977,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   let _prodalPendientes=[];
   async function cargarTiendasAliados(){
     const[{data:pend},{data:tiendas}]=await Promise.all([
-      supabase.from('productos_aliado').select('*,aliados(nombre,tienda_nombre)').eq('estado','pendiente').order('created_at',{ascending:true}),
+      supabase.from('productos_aliado').select('*,verificacion_ia,aliados(nombre,tienda_nombre)').eq('estado','pendiente').order('created_at',{ascending:true}),
       supabase.from('aliados').select('id,nombre,tienda_nombre').eq('tienda_activa',true).order('tienda_nombre'),
     ]);
     _prodalPendientes=pend||[];
@@ -2978,7 +2988,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
         :_prodalPendientes.map(p=>`<tr>
             <td><div class="ad-cell-user">
               ${p.imagen_url?`<img src="${p.imagen_url}" style="width:40px;height:40px;object-fit:cover;border-radius:8px;flex-shrink:0">`:`<span class="ad-av">${esc((p.nombre||'?')[0])}</span>`}
-              <div class="ad-cell-user__name">${esc(p.nombre)}</div>
+              <div><div class="ad-cell-user__name">${esc(p.nombre)}</div>${razonNoAutoAprobadoProd(p.verificacion_ia)}</div>
             </div></td>
             <td style="font-size:12px">${esc(p.aliados?.tienda_nombre||p.aliados?.nombre)||'—'}</td>
             <td style="font-size:13px;font-weight:700">${COP(p.precio_descuento||p.precio_normal)}</td>
