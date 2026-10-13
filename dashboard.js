@@ -252,6 +252,15 @@ async function subirFotoPerfil(file) {
   perfil.foto_url = url;
   localStorage.setItem("ecdlg_perfil", JSON.stringify(perfil));
   toast("Foto de perfil actualizada");
+
+  // Moderación con IA en segundo plano -- la foto ya se ve de inmediato (acá
+  // solo la ve el propio dueño), pero si resulta tener contenido obsceno se
+  // borra sola y se le avisa al miembro.
+  fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/verificar-foto-perfil", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ miembro_id: session.user.id }),
+  }).catch(() => {});
 }
 // Overlay propio (no el modal de paneles) para encuadrar la foto en 1:1
 // antes de subirla -- mismo patrón de recorte que ya usa Admin para las
