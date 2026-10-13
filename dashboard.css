@@ -4,7 +4,7 @@
    ============================================================ */
 
 .tienda-search { position: relative; margin-bottom: 14px; }
-.tienda-search input { width: 100%; box-sizing: border-box; font-family: var(--cuerpo); font-size: 14px; color: var(--tinta); padding: 11px 14px 11px 40px; border: 1px solid var(--linea); border-radius: 12px; background: var(--crema-2); transition: border-color .15s, background .15s; }
+.tienda-search input { width: 100%; box-sizing: border-box; font-family: var(--cuerpo); font-size: 16px; color: var(--tinta); padding: 11px 14px 11px 40px; border: 1px solid var(--linea); border-radius: 12px; background: var(--crema-2); transition: border-color .15s, background .15s; }
 .tienda-search input::placeholder { color: var(--tinta-45); }
 .tienda-search input:focus { outline: none; border-color: var(--verde); background: #fff; }
 .tienda-search svg, .tienda-search i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--tinta-45); pointer-events: none; }
@@ -278,7 +278,7 @@
 }
 .seg-opt:hover { border-color: var(--tinta); transform: translateY(-1px); }
 .seg-opt.is-on { background: var(--verde); color: #fff; border-color: var(--verde); transform: scale(1.04); box-shadow: 0 6px 16px -4px rgba(9,85,68,.4); }
-.seg-input { width: 100%; font-family: var(--cuerpo); font-size: 14.5px; padding: 14px 16px; border-radius: 6px; border: 1px solid var(--linea-fuerte); background: #fff; }
+.seg-input { width: 100%; font-family: var(--cuerpo); font-size: 16px; padding: 14px 16px; border-radius: 6px; border: 1px solid var(--linea-fuerte); background: #fff; }
 .seg-input:focus { outline: none; border-color: var(--verde); }
 
 /* Barra de acciones fija abajo -- en el celular no hay que bajar para
@@ -429,7 +429,7 @@
 .sop-send { background: var(--verde); color: #fff; }
 .sop-send:hover { background: var(--verde-hover); transform: scale(1.05); }
 .sop-send:disabled { opacity: .5; cursor: default; transform: none; }
-.sop-compose textarea { flex: 1; font-family: var(--cuerpo); font-size: 13.5px; color: var(--tinta); padding: 11px 16px; border: 1px solid var(--linea-fuerte); border-radius: 20px; background: var(--crema-2); resize: none; max-height: 120px; line-height: 1.45; }
+.sop-compose textarea { flex: 1; font-family: var(--cuerpo); font-size: 16px; color: var(--tinta); padding: 11px 16px; border: 1px solid var(--linea-fuerte); border-radius: 20px; background: var(--crema-2); resize: none; max-height: 120px; line-height: 1.45; }
 .sop-compose textarea:focus { outline: none; border-color: var(--verde); }
 @media (max-width: 560px) {
   .sop-chat { min-height: 320px; max-height: 50vh; padding: 16px; }
