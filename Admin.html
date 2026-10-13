@@ -400,6 +400,16 @@ async function cargarVentasReal(){
         </div>
         <button class="ad-btn ad-btn--verde" id="vt-llave-save" style="align-self:flex-start">${ic('check')} Guardar llave</button>
       </div>
+    </div>
+    <div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(242,240,234,.4);margin:24px 0 10px">Crecimiento</div>
+    <div class="ad-set">
+      <div class="ad-set__row" style="flex-direction:column;align-items:stretch;gap:10px">
+        <div>
+          <div style="font-weight:600;font-size:14px;margin-bottom:4px">🎁 Regalar membresía Vitalicia</div>
+          <label style="font-size:12px;color:rgba(242,240,234,.5);display:block">Para embajadores, sorteos o alianzas -- crea (o sube de plan) la cuenta sola y le manda el WhatsApp de bienvenida con cómo entrar, sin que tú tengas que hacer nada más.</label>
+        </div>
+        <button class="ad-btn ad-btn--verde" id="vt-regalar-vitalicia" style="align-self:flex-start">${ic('gift')} Regalar Vitalicia</button>
+      </div>
     </div>`;
   if(window.lucide)lucide.createIcons();
 }
@@ -3535,6 +3545,33 @@ document.addEventListener('DOMContentLoaded',async()=>{
       btn.disabled=false;
       if(error){toast('Error guardando la llave: '+error.message);console.error('Error guardando club_llave_pago:',error);return;}
       toast('Llave guardada ✓');
+      return;
+    }
+    if(e.target.closest('#vt-regalar-vitalicia')){
+      abrirModal('🎁 Regalar membresía Vitalicia','Crea o sube la cuenta a Vitalicia y le manda el WhatsApp de bienvenida solo.',`
+        <div class="cfg-campo"><label class="cfg-label">Nombre completo</label><input class="cfg-input" id="rv-nombre" type="text" placeholder="Ej: María Pérez"></div>
+        <div class="cfg-campo"><label class="cfg-label">WhatsApp (10 dígitos, sin indicativo)</label><input class="cfg-input" id="rv-whatsapp" type="tel" placeholder="Ej: 3001234567"></div>
+        <button class="btn btn--primario" id="rv-enviar" style="margin-top:8px;width:100%">Regalar Vitalicia</button>
+      `);
+      return;
+    }
+    if(e.target.closest('#rv-enviar')){
+      const btn=e.target.closest('#rv-enviar');
+      const nombre=$('#rv-nombre')?.value.trim();
+      const whatsapp=$('#rv-whatsapp')?.value.trim();
+      if(!nombre||!whatsapp){toast('Completa nombre y WhatsApp');return;}
+      btn.disabled=true;btn.textContent='Regalando…';
+      try{
+        const{data:sesion}=await supabase.auth.getSession();
+        const r=await fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/regalar-vitalicia',{
+          method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(sesion?.session?.access_token||'')},
+          body:JSON.stringify({nombre,whatsapp}),
+        });
+        const j=await r.json().catch(()=>({}));
+        if(!r.ok){toast('Error: '+(j.error||r.status));btn.disabled=false;btn.textContent='Regalar Vitalicia';return;}
+        window.cerrarModal?.();
+        toast(j.nuevo?'Cuenta creada y Vitalicia regalada ✓':'Cuenta subida a Vitalicia ✓');
+      }catch(err){toast('Error de red: '+err.message);btn.disabled=false;btn.textContent='Regalar Vitalicia';}
       return;
     }
     if(e.target.closest('#v-csv')){
