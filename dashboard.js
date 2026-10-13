@@ -2180,6 +2180,41 @@ function abrirLightbox(url) {
   lb.style.display = 'flex';
 }
 
+// Banner de la Tienda -- viene de "anuncios" (la misma herramienta que ya
+// usa Admin → Contenido, antes no estaba conectada a ninguna pantalla). Sin
+// anuncios publicados, se muestra el texto genérico de siempre como respaldo.
+function renderBannerTienda(anuncios) {
+  const track = document.getElementById('tienda-banner-track');
+  const dotsEl = document.getElementById('tienda-banner-dots');
+  if (!track) return;
+
+  const slide = (a) => {
+    const bg = a?.imagen_url
+      ? `linear-gradient(0deg, rgba(5,22,13,.78), rgba(5,22,13,.35)), url('${esc(a.imagen_url)}')`
+      : null;
+    return `<div class="tienda-hero${bg ? ' tienda-hero--img' : ''}"${bg ? ` style="background-image:${bg}"` : ''}>
+      <span class="tienda-hero__eyebrow">Tienda del Club</span>
+      <h2>${a ? esc(a.titulo) : 'Todo lo que necesitas,<br>con descuento de miembro.'}</h2>
+      <p>${a ? esc(a.contenido || '') : 'Productos del Club y de nuestros aliados, seleccionados para que ahorres de verdad.'}</p>
+    </div>`;
+  };
+
+  const lista = anuncios && anuncios.length ? anuncios : [null];
+  track.innerHTML = lista.map(slide).join('');
+
+  if (lista.length > 1 && dotsEl) {
+    dotsEl.innerHTML = lista.map((_, i) => `<span class="${i === 0 ? 'is-on' : ''}"></span>`).join('');
+    dotsEl.style.display = '';
+    const dots = [...dotsEl.children];
+    track.addEventListener('scroll', () => {
+      const i = Math.round(track.scrollLeft / track.clientWidth);
+      dots.forEach((d, idx) => d.classList.toggle('is-on', idx === i));
+    });
+  } else if (dotsEl) {
+    dotsEl.style.display = 'none';
+  }
+}
+
 async function cargarTienda() {
   if (_tiendaCargada) return;
   _tiendaCargada = true;
@@ -2190,14 +2225,16 @@ async function cargarTienda() {
   if (!grid) return;
 
   const hoy = new Date().toISOString().slice(0, 10);
-  const [{ data: cats }, { data: prodsClub }, { data: prodsAliado }] = await Promise.all([
+  const [{ data: cats }, { data: prodsClub }, { data: prodsAliado }, { data: anuncios }] = await Promise.all([
     supabase.from('categorias_productos').select('id,nombre').eq('activa', true).order('orden'),
     supabase.from('productos').select('*, categorias_productos(nombre)').eq('activo', true).order('orden'),
     supabase.from('productos_aliado')
       .select('*, categorias_productos(nombre), aliados(nombre, tienda_nombre, whatsapp, maps_url, tienda_llave_pago, instagram, facebook, tiktok)')
       .eq('estado', 'aprobado').eq('activo', true)
       .or(`fecha_fin.is.null,fecha_fin.gte.${hoy}`),
+    supabase.from('anuncios').select('*').order('created_at', { ascending: false }).limit(5),
   ]);
+  renderBannerTienda(anuncios || []);
 
   const club = (prodsClub || []).map(p => ({ ...p, _origen: 'club' }));
   const aliado = (prodsAliado || []).map(p => ({ ...p, _origen: 'aliado' }));
