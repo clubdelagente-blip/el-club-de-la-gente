@@ -2231,6 +2231,7 @@ async function cargarTienda() {
     const { data: resenasRaw } = await supabase
       .from('resenas_producto')
       .select('id, producto_id, estrellas')
+      .eq('estado', 'aprobado')
       .in('producto_id', club.map(p => p.id));
     (resenasRaw || []).forEach(r => {
       if (!resenasPorProducto.has(r.producto_id)) resenasPorProducto.set(r.producto_id, []);
@@ -2432,8 +2433,9 @@ function abrirDetalleProductoClub(p) {
 async function cargarResenasProducto(p) {
   const { data: resenasRaw } = await supabase
     .from('resenas_producto')
-    .select('id, producto_id, estrellas, comentario, miembro_id, perfiles(nombre)')
+    .select('id, producto_id, estrellas, comentario, foto_url, miembro_id, perfiles(nombre)')
     .eq('producto_id', p.id)
+    .eq('estado', 'aprobado')
     .order('created_at', { ascending: false });
   const resenas = resenasRaw || [];
   const resumen = resumenResenas(resenas);
@@ -2503,14 +2505,30 @@ function wireResenasProducto(p) {
       if (!upErr) foto_url = supabase.storage.from('contenido').getPublicUrl(path).data.publicUrl;
     }
 
-    const { error } = await supabase.from('resenas_producto').insert({ producto_id: p.id, miembro_id: _miembroId, estrellas, comentario, foto_url });
+    // Id generado en el navegador para disparar la verificación con IA justo
+    // después de guardar. Una reseña sin foto se publica de inmediato (nada
+    // que moderar); con foto queda "pendiente" hasta que la IA (o el admin a
+    // mano) confirme que no tiene contenido inapropiado.
+    const nuevaResenaId = crypto.randomUUID();
+    const { error } = await supabase.from('resenas_producto').insert({
+      id: nuevaResenaId, producto_id: p.id, miembro_id: _miembroId, estrellas, comentario, foto_url,
+      estado: foto_url ? 'pendiente' : 'aprobado',
+    });
     if (error) {
       toast(error.code === '23505' ? 'Ya habías dejado una reseña de este producto' : 'Error: ' + error.message);
       enviarBtn.disabled = false; enviarBtn.textContent = 'Enviar reseña';
       return;
     }
-    toast('¡Gracias por tu reseña! ✓');
+    toast(foto_url ? '¡Gracias por tu reseña! Tu foto está en revisión.' : '¡Gracias por tu reseña! ✓');
     cargarResenasProducto(p);
+
+    if (foto_url) {
+      fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/verificar-resena", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resena_id: nuevaResenaId }),
+      }).then(() => cargarResenasProducto(p)).catch(() => {});
+    }
   });
 }
 

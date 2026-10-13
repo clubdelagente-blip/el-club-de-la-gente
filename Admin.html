@@ -345,16 +345,27 @@ const TIPO_BANDEJA = {
   membresia: { t: 'Membresía', c: '#00DF81', icon: 'badge-check' },
   producto:  { t: 'Producto',  c: '#EAB749', icon: 'package' },
   pedido_club: { t: 'Pedido Club', c: '#60a5fa', icon: 'shopping-bag' },
+  resena: { t: 'Foto de reseña', c: '#e2685f', icon: 'star' },
 };
 function badgeTipoBandeja(k){
   const d=TIPO_BANDEJA[k];
   return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${d.c}22;color:${d.c};white-space:nowrap">${ic(d.icon)}${d.t}</span>`;
 }
+function razonNoAutoAprobadoResena(v){
+  if(!v)return '';
+  let motivo='No se verificó sola';
+  if(v.motivo==='error_analisis')motivo='No se pudo analizar la foto';
+  else if(v.es_foto_valida===false)motivo='La IA no pudo leer la foto con claridad';
+  else if(v.contenido_inapropiado===true)motivo='La IA marcó la foto como contenido inapropiado';
+  else if(v.confianza&&v.confianza!=='alta')motivo='La IA no tuvo confianza suficiente';
+  return `<div style="font-size:11px;color:rgba(242,240,234,.4);margin-top:4px" title="${esc(JSON.stringify(v))}">🤖 ${esc(motivo)}</div>`;
+}
 async function cargarBandejaReal(){
-  const[{data:solicitudes},{data:productos},{data:pedidosClub}]=await Promise.all([
+  const[{data:solicitudes},{data:productos},{data:pedidosClub},{data:resenas}]=await Promise.all([
     supabase.from('solicitudes_membresia').select('id,miembro_id,plan,monto,comprobante_url,estado,created_at,verificacion_ia,perfiles(nombre,whatsapp)').eq('estado','pendiente').order('created_at',{ascending:true}),
     supabase.from('productos_aliado').select('*,verificacion_ia,aliados(nombre,tienda_nombre)').eq('estado','pendiente').order('created_at',{ascending:true}),
     supabase.from('pedidos_club').select('*,verificacion_ia,perfiles(nombre,whatsapp)').eq('estado','pendiente_pago').order('created_at',{ascending:true}),
+    supabase.from('resenas_producto').select('id,comentario,foto_url,estado,created_at,verificacion_ia,perfiles(nombre),productos(nombre)').eq('estado','pendiente').order('created_at',{ascending:true}),
   ]);
   // Mismos caches que usan las pantallas originales -- así sus botones de
   // Rechazar (que buscan ahí el miembro_id/whatsapp) funcionan igual desde
@@ -369,6 +380,8 @@ async function cargarBandejaReal(){
       acciones:`<button class="ad-btn ad-btn--verde" data-aprobar-prodal="${p.id}">${ic('check')} Aprobar</button><button class="ad-btn" data-rechazar-prodal="${p.id}">${ic('x')} Rechazar</button>`})),
     ...(pedidosClub||[]).map(p=>({tipo:'pedido_club',quien:p.perfiles?.nombre,detalle:p.nombre_producto,monto:p.monto,fecha:p.created_at,razon:razonNoAutoAprobado(p.verificacion_ia),
       acciones:`${p.comprobante_url?`<a class="ad-btn" href="${esc(p.comprobante_url)}" target="_blank">${ic('receipt')} Comprobante</a>`:''}<button class="ad-btn ad-btn--verde" data-bj-pc-pago="${p.id}">${ic('check')} Confirmar pago</button><button class="ad-btn" data-bj-pc-cancelar="${p.id}">${ic('x')} Cancelar</button>`})),
+    ...(resenas||[]).map(r=>({tipo:'resena',quien:r.perfiles?.nombre,detalle:r.productos?.nombre||r.comentario||'Reseña',monto:null,fecha:r.created_at,razon:razonNoAutoAprobadoResena(r.verificacion_ia),
+      acciones:`${r.foto_url?`<a class="ad-btn" href="${esc(r.foto_url)}" target="_blank">${ic('image')} Ver foto</a>`:''}<button class="ad-btn ad-btn--verde" data-bj-resena-aprobar="${r.id}">${ic('check')} Aprobar</button><button class="ad-btn" data-bj-resena-rechazar="${r.id}">${ic('x')} Eliminar</button>`})),
   ].sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
 
   const nav=$('#bj-nav-count');
@@ -383,7 +396,7 @@ async function cargarBandejaReal(){
             <td>${badgeTipoBandeja(f.tipo)}</td>
             <td style="font-size:13px">${esc(f.quien)||'—'}</td>
             <td style="font-size:13px">${esc(f.detalle)||'—'}${f.razon}</td>
-            <td><span class="ad-num-strong">${COP(f.monto||0)}</span></td>
+            <td><span class="ad-num-strong">${f.monto!=null?COP(f.monto):'—'}</span></td>
             <td style="text-align:right"><div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">${f.acciones}</div></td>
           </tr>`).join('')}
         </tbody>
@@ -407,6 +420,21 @@ async function cargarBandejaReal(){
     const{error}=await supabase.from('pedidos_club').update({estado:'cancelado'}).eq('id',b.dataset.bjPcCancelar);
     if(error){toast('Error: '+error.message);b.disabled=false;return;}
     toast('Pedido cancelado');
+    cargarBandejaReal();
+  }));
+  $('#p-bandeja').querySelectorAll('[data-bj-resena-aprobar]').forEach(b=>b.addEventListener('click',async()=>{
+    b.disabled=true;
+    const{error}=await supabase.from('resenas_producto').update({estado:'aprobado'}).eq('id',b.dataset.bjResenaAprobar);
+    if(error){toast('Error: '+error.message);b.disabled=false;return;}
+    toast('Reseña publicada ✓');
+    cargarBandejaReal();
+  }));
+  $('#p-bandeja').querySelectorAll('[data-bj-resena-rechazar]').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('¿Eliminar esta reseña? No se puede deshacer.'))return;
+    b.disabled=true;
+    const{error}=await supabase.from('resenas_producto').delete().eq('id',b.dataset.bjResenaRechazar);
+    if(error){toast('Error: '+error.message);b.disabled=false;return;}
+    toast('Reseña eliminada');
     cargarBandejaReal();
   }));
 }
