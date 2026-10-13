@@ -1917,8 +1917,9 @@ async function cargarProgramas() {
       <p style="font-size:14px;line-height:1.6;margin-bottom:16px">${esc(p.descripcion) || ""}</p>
       <div style="font-size:12.5px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Quiero ser voluntario</div>
       <form id="form-voluntario">
+        <div class="cfg-campo"><label class="cfg-label">Tu WhatsApp</label><input class="cfg-input" id="vol-whatsapp" type="tel" required placeholder="300 000 0000"></div>
         <div class="cfg-campo"><label class="cfg-label">Motivo de participación</label><textarea class="cfg-input" id="vol-motivo" rows="3" required placeholder="Cuéntanos por qué te gustaría participar"></textarea></div>
-        <button type="submit" class="btn btn--primario" style="margin-top:6px">Quiero ser voluntario <i data-lucide="heart-handshake" style="width:15px;height:15px"></i></button>
+        <button type="submit" class="btn btn--primario" style="margin:6px auto 0;display:flex">Quiero ser voluntario <i data-lucide="heart-handshake" style="width:15px;height:15px"></i></button>
       </form>
     `);
     if (window.lucide) lucide.createIcons();
@@ -1926,14 +1927,16 @@ async function cargarProgramas() {
       e.preventDefault();
       const btn2 = e.target.querySelector("button[type=submit]");
       const u = leerPerfil();
+      const whatsapp = document.getElementById("vol-whatsapp")?.value.trim() || "";
       const motivo = document.getElementById("vol-motivo")?.value.trim() || "";
+      if (!whatsapp) { toast("Pon tu número de WhatsApp"); return; }
       supabase.from("configuracion").select("valor").eq("clave", "numero_admin_notificaciones").maybeSingle()
         .then(({ data }) => {
           if (!data?.valor) return;
           fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ to: data.valor, body: `🙋 Postulación de voluntariado\n\nPrograma: ${p.nombre}\nMiembro: ${u.nombre || "—"}\nMotivo: ${motivo}` }),
+            body: JSON.stringify({ to: data.valor, body: `🙋 Postulación de voluntariado\n\nPrograma: ${p.nombre}\nMiembro: ${u.nombre || "—"}\nWhatsApp: ${whatsapp}\nMotivo: ${motivo}` }),
           }).catch(() => {});
         }).catch(() => {});
       btn2.disabled = true;
