@@ -354,9 +354,8 @@ function badgeTipoBandeja(k){
 function razonNoAutoAprobadoResena(v){
   if(!v)return '';
   let motivo='No se verificó sola';
-  if(v.motivo==='error_analisis')motivo='No se pudo analizar la foto';
-  else if(v.es_foto_valida===false)motivo='La IA no pudo leer la foto con claridad';
-  else if(v.contenido_inapropiado===true)motivo='La IA marcó la foto como contenido inapropiado';
+  if(v.motivo==='error_analisis')motivo='No se pudo analizar';
+  else if(v.contenido_inapropiado===true)motivo='La IA marcó esto como contenido inapropiado';
   else if(v.confianza&&v.confianza!=='alta')motivo='La IA no tuvo confianza suficiente';
   return `<div style="font-size:11px;color:rgba(242,240,234,.4);margin-top:4px" title="${esc(JSON.stringify(v))}">🤖 ${esc(motivo)}</div>`;
 }

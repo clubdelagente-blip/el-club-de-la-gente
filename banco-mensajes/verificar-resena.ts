@@ -1,15 +1,16 @@
 // verificar-resena — El Club de la Gente
 // Supabase Edge Function · JWT: OFF (se llama sola desde el navegador justo
-// después de que un miembro deja una reseña con foto de un producto, sin
-// sesión de admin)
+// después de que un miembro deja una reseña de un producto, sin sesión de
+// admin)
 //
 // Las reseñas de producto se publican de inmediato -- SALVO que traigan
-// foto: ahí quedan "pendiente" hasta que esta función (o el admin a mano)
-// las revise. Un modelo de visión (Groq) analiza la foto y SOLO la publica
-// sola si no tiene ningún contenido inapropiado y el modelo tiene confianza
-// alta. Cualquier duda la deja pendiente para que el admin la revise a
-// mano -- el objetivo es bloquear contenido obsceno, no exigir que la foto
-// sea "perfecta" o que coincida con nada en particular.
+// texto y/o foto: ahí quedan "pendiente" hasta que esta función (o el admin
+// a mano) las revise. Un modelo de IA (Groq) analiza el comentario y la
+// foto (si hay) y SOLO la publica sola si no tiene ningún contenido
+// inapropiado y el modelo tiene confianza alta. Cualquier duda la deja
+// pendiente para que el admin la revise a mano -- el objetivo es bloquear
+// contenido obsceno u ofensivo, no exigir que el texto o la foto sean
+// "perfectos" ni que coincidan con nada en particular.
 //
 // POST { resena_id }
 
@@ -40,42 +41,39 @@ Deno.serve(async (req: Request) => {
 
   const { data: resena } = await supabase
     .from("resenas_producto")
-    .select("id, foto_url, estado")
+    .select("id, comentario, foto_url, estado")
     .eq("id", resena_id)
     .maybeSingle();
 
-  if (!resena || resena.estado !== "pendiente" || !resena.foto_url) {
+  if (!resena || resena.estado !== "pendiente" || (!resena.comentario && !resena.foto_url)) {
     return new Response("Nada que verificar", { status: 200, headers: corsHeaders });
   }
 
   let analisis: {
-    es_foto_valida: boolean;
     contenido_inapropiado: boolean;
     confianza: "alta" | "media" | "baja";
     razon: string | null;
   };
 
   try {
-    const prompt = `Eres un moderador de contenido para las reseñas de productos de un club de membresías. Analiza la foto y responde SOLO un JSON con esta forma exacta, sin texto adicional ni explicaciones:
-{"es_foto_valida": boolean, "contenido_inapropiado": boolean, "confianza": "alta"|"media"|"baja", "razon": string|null}
+    const prompt = `Eres un moderador de contenido para las reseñas de productos de un club de membresías. ${resena.comentario ? `El comentario de la reseña es: "${resena.comentario.replace(/"/g, "'")}"` : "La reseña no tiene comentario de texto."}${resena.foto_url ? " También se adjuntó una foto, que puedes ver en el mensaje." : ""}
 
-"es_foto_valida": true si la imagen se puede ver con claridad (no está rota, en blanco, o es irreconocible).
-"contenido_inapropiado": true si la imagen tiene CUALQUIER contenido ofensivo, violento, sexual/desnudez, odio, o que claramente no debería estar en una reseña de producto familiar. No se exige que la foto sea del producto exacto -- solo que no sea contenido obsceno.
-"confianza": "alta" solo si no tienes ninguna duda sobre los dos campos anteriores. Si algo no es claro, usa "baja" o "media".
-"razon": una frase corta en español explicando tu decisión (o null si todo está perfecto).`;
+Responde SOLO un JSON con esta forma exacta, sin texto adicional ni explicaciones:
+{"contenido_inapropiado": boolean, "confianza": "alta"|"media"|"baja", "razon": string|null}
+
+"contenido_inapropiado": true si el comentario O la foto (lo que haya) tienen CUALQUIER contenido ofensivo, violento, sexual/desnudez, insultos, discurso de odio, spam, publicidad de otra cosa, o que claramente no debería estar en una reseña de producto familiar. Una crítica negativa normal del producto ("llegó tarde", "mala calidad", "no me gustó") NO es contenido inapropiado. No se exige que la foto sea del producto exacto -- solo que no sea contenido obsceno.
+"confianza": "alta" solo si no tienes ninguna duda. Si algo no es claro, usa "baja" o "media".
+"razon": una frase corta en español explicando tu decisión (o null si todo está bien).`;
+
+    const content: Array<Record<string, unknown>> = [{ type: "text", text: prompt }];
+    if (resena.foto_url) content.push({ type: "image_url", image_url: { url: resena.foto_url } });
 
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${GROQ_API_KEY}` },
       body: JSON.stringify({
         model: MODELO_VISION,
-        messages: [{
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: resena.foto_url } },
-          ],
-        }],
+        messages: [{ role: "user", content }],
         temperature: 0,
         max_tokens: 200,
         response_format: { type: "json_object" },
@@ -95,9 +93,7 @@ Deno.serve(async (req: Request) => {
 
   await supabase.from("resenas_producto").update({ verificacion_ia: analisis }).eq("id", resena.id);
 
-  const aprobarSolo = analisis.es_foto_valida === true
-    && analisis.contenido_inapropiado === false
-    && analisis.confianza === "alta";
+  const aprobarSolo = analisis.contenido_inapropiado === false && analisis.confianza === "alta";
 
   if (!aprobarSolo) {
     console.log(`Reseña ${resena_id} NO se auto-publica:`, JSON.stringify(analisis));

@@ -2515,23 +2515,25 @@ function wireResenasProducto(p) {
     }
 
     // Id generado en el navegador para disparar la verificación con IA justo
-    // después de guardar. Una reseña sin foto se publica de inmediato (nada
-    // que moderar); con foto queda "pendiente" hasta que la IA (o el admin a
-    // mano) confirme que no tiene contenido inapropiado.
+    // después de guardar. Una reseña con texto y/o foto queda "pendiente"
+    // hasta que la IA (o el admin a mano) confirme que no tiene contenido
+    // inapropiado -- solo una reseña de puras estrellas, sin nada que
+    // moderar, se publica de inmediato.
+    const necesitaRevision = !!(comentario || foto_url);
     const nuevaResenaId = crypto.randomUUID();
     const { error } = await supabase.from('resenas_producto').insert({
       id: nuevaResenaId, producto_id: p.id, miembro_id: _miembroId, estrellas, comentario, foto_url,
-      estado: foto_url ? 'pendiente' : 'aprobado',
+      estado: necesitaRevision ? 'pendiente' : 'aprobado',
     });
     if (error) {
       toast(error.code === '23505' ? 'Ya habías dejado una reseña de este producto' : 'Error: ' + error.message);
       enviarBtn.disabled = false; enviarBtn.textContent = 'Enviar reseña';
       return;
     }
-    toast(foto_url ? '¡Gracias por tu reseña! Tu foto está en revisión.' : '¡Gracias por tu reseña! ✓');
+    toast(necesitaRevision ? '¡Gracias por tu reseña! Está en revisión.' : '¡Gracias por tu reseña! ✓');
     cargarResenasProducto(p);
 
-    if (foto_url) {
+    if (necesitaRevision) {
       fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/verificar-resena", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
