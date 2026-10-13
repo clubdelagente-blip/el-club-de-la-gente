@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /Admin.html
+Disallow: /Perfil.html
+Disallow: /Planes.html
+Disallow: /Bienvenida.html
+Disallow: /Verificar.html
+Disallow: /ConfirmarEvento.html
+
+Sitemap: https://elclubdelagente.com/sitemap.xml
