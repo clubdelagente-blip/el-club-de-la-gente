@@ -1919,7 +1919,7 @@ async function cargarProgramas() {
       <form id="form-voluntario">
         <div class="cfg-campo"><label class="cfg-label">Tu WhatsApp</label><input class="cfg-input" id="vol-whatsapp" type="tel" required placeholder="300 000 0000"></div>
         <div class="cfg-campo"><label class="cfg-label">Motivo de participación</label><textarea class="cfg-input" id="vol-motivo" rows="3" required placeholder="Cuéntanos por qué te gustaría participar"></textarea></div>
-        <div style="text-align:center;margin-top:6px"><button type="submit" class="btn btn--primario">Quiero ser voluntario <i data-lucide="heart-handshake" style="width:15px;height:15px"></i></button></div>
+        <div style="text-align:center;margin-top:6px"><button type="submit" class="btn btn--primario" style="display:inline-flex;width:fit-content;max-width:100%;flex:none">Quiero ser voluntario <i data-lucide="heart-handshake" style="width:15px;height:15px"></i></button></div>
       </form>
     `);
     if (window.lucide) lucide.createIcons();
