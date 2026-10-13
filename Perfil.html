@@ -404,8 +404,10 @@
           </div>
 
           <div id="mis-pedidos-club-wrap" style="display:none;margin-bottom:28px">
-            <div class="dash-greet" style="margin-bottom:12px">
-              <h1 style="font-size:18px">Mis pedidos</h1>
+            <button type="button" id="mis-pedidos-volver" style="display:flex;align-items:center;gap:5px;background:none;border:none;padding:0;margin-bottom:14px;color:var(--verde);font-size:13px;font-weight:600;cursor:pointer"><i data-lucide="arrow-left" style="width:16px;height:16px"></i>Volver a la tienda</button>
+            <div class="dash-greet" style="margin-bottom:14px;display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+              <h1 style="font-size:18px;margin:0">Mis pedidos</h1>
+              <span id="mis-pedidos-count" style="font-size:12px;color:var(--tinta-45)"></span>
             </div>
             <div id="mis-pedidos-club-list"></div>
           </div>
@@ -1246,7 +1248,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=156"></script>
+  <script type="module" src="dashboard.js?v=157"></script>
   <script type="module" src="agente.js?v=1"></script>
 
   <template id="__bundler_thumbnail">

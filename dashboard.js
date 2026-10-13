@@ -2331,7 +2331,14 @@ async function cargarTienda() {
     grid.style.display = esPedidos ? 'none' : '';
     if (ordenEl) ordenEl.style.display = esPedidos ? 'none' : '';
     if (buscadorEl) buscadorEl.style.display = esPedidos ? 'none' : '';
+    if (catsEl) catsEl.style.display = esPedidos ? 'none' : '';
   }
+  document.getElementById('mis-pedidos-volver')?.addEventListener('click', () => {
+    catsEl?.querySelectorAll('.tienda-cat-ic').forEach(b => b.classList.toggle('is-on', b.dataset.cat === 'todos'));
+    catActiva = 'todos';
+    mostrarVistaTienda('productos');
+    renderGrid();
+  });
 
   if (catsEl) {
     const chip = (id, nombre, icon, activo) => `<button class="tienda-cat-ic${activo ? ' is-on' : ''}" data-cat="${id}">
@@ -2645,6 +2652,8 @@ async function cargarMisPedidosClub() {
       <span class="pedido-card__estado" style="background:${est.bg};color:${est.c}">${est.t}</span>
     </div>`;
   }).join("") : `<p style="font-size:13px;color:#999;text-align:center;padding:24px 0">Todavía no has hecho ningún pedido.</p>`;
+  const countEl = document.getElementById("mis-pedidos-count");
+  if (countEl) countEl.textContent = pedidos.length ? `${pedidos.length} ${pedidos.length === 1 ? "pedido" : "pedidos"}` : "";
   if (window.lucide) lucide.createIcons();
 
   // Botón "Mis pedidos" en la fila de categorías -- solo aparece si ya hizo
