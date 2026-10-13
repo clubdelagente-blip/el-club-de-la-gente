@@ -65,33 +65,6 @@ const ADM_CONTENIDO = [
   { nombre: "Banner membresías", tipo: "Banner", icon: "image", fecha: "18 may 2026" },
 ];
 
-/* ---------- PROGRAMAS SOCIALES ---------- */
-const ADM_PROGRAMAS = [
-  {
-    nombre: "Patas que Rescatan", icon: "paw-print",
-    desc: "Rescate, atención y adopción de animales en condición de calle en Fusagasugá y el Sumapaz.",
-    cifras: [{ n: "340", l: "Animales rescatados" }, { n: "85", l: "Familias adoptantes" }, { n: "18", l: "Jornadas" }],
-    voluntarios: [{ nombre: "María Páez", wsp: "300 441 2290" }, { nombre: "Juan Cárdenas", wsp: "312 778 5510" }, { nombre: "Lucía Romero", wsp: "319 220 8841" }],
-  },
-  {
-    nombre: "Mesa Compartida", icon: "utensils-crossed",
-    desc: "Entrega de mercados y apoyo alimentario a familias vulnerables de la región.",
-    cifras: [{ n: "1.200", l: "Mercados entregados" }, { n: "300", l: "Familias apoyadas" }, { n: "24", l: "Entregas" }],
-    voluntarios: [{ nombre: "Pedro Niño", wsp: "315 664 3301" }, { nombre: "Ana Suárez", wsp: "301 990 4412" }],
-  },
-  {
-    nombre: "Aprende y Crece", icon: "graduation-cap",
-    desc: "Talleres gratuitos de educación financiera y emprendimiento para la comunidad.",
-    cifras: [{ n: "28", l: "Talleres dictados" }, { n: "540", l: "Personas formadas" }, { n: "12", l: "Aliados docentes" }],
-    voluntarios: [{ nombre: "Diego Mora", wsp: "318 112 7780" }],
-  },
-  {
-    nombre: "Manos a la Obra", icon: "hammer",
-    desc: "Mejoramiento de vivienda y espacios comunitarios con voluntarios del Club.",
-    cifras: [{ n: "12", l: "Hogares mejorados" }, { n: "60", l: "Voluntarios activos" }, { n: "6", l: "Jornadas" }],
-    voluntarios: [{ nombre: "Sofía Vargas", wsp: "313 556 9920" }, { nombre: "Mateo Gil", wsp: "300 887 1123" }, { nombre: "Karen Díaz", wsp: "317 442 6650" }],
-  },
-];
 
 /* ---------- SUSCRIPCIONES (sin conectar a datos reales todavia) ---------- */
 const ADM_SUSC_METRICAS = {

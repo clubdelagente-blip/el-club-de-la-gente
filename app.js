@@ -115,78 +115,6 @@ const ALIADOS = [
   },
 ];
 
-/* ---------- DATOS: PROGRAMAS SOCIALES ---------- */
-const PROGRAMAS = [
-  {
-    nombre: "Patas que Rescatan",
-    icon: "paw-print",
-    descBreve: "Rescate, atención y adopción de animales en condición de calle en Fusagasugá y la región del Sumapaz.",
-    cifras: [
-      { num: "340", lbl: "Animales rescatados" },
-      { num: "85", lbl: "Familias adoptantes" },
-    ],
-    descCompleta: "Con cada membresía financiamos jornadas de rescate, esterilización y adopción responsable. El programa conecta refugios locales con familias que quieren darle un hogar a un animal y cubre atención veterinaria de urgencia.",
-    impacto: [
-      { num: "340", lbl: "Animales rescatados" },
-      { num: "85", lbl: "Familias adoptantes" },
-      { num: "18", lbl: "Jornadas realizadas" },
-    ],
-    fundaciones: ["Fundación Huellas Fusa", "Refugio Sumapaz", "Red de Hogares de Paso"],
-    evento: { nombre: "Gran jornada de adopción", fecha: "14 de junio de 2026", lugar: "Parque Principal, Fusagasugá" },
-  },
-  {
-    nombre: "Mesa Compartida",
-    icon: "utensils-crossed",
-    descBreve: "Entrega de mercados y apoyo alimentario a familias vulnerables de la región.",
-    cifras: [
-      { num: "1.200", lbl: "Mercados entregados" },
-      { num: "300", lbl: "Familias apoyadas" },
-    ],
-    descCompleta: "Un porcentaje de cada membresía se transforma en mercados para familias que más lo necesitan. Trabajamos con el banco de alimentos local para llegar a las veredas y barrios con mayor necesidad.",
-    impacto: [
-      { num: "1.200", lbl: "Mercados entregados" },
-      { num: "300", lbl: "Familias apoyadas" },
-      { num: "24", lbl: "Entregas en el año" },
-    ],
-    fundaciones: ["Banco de Alimentos Fusa", "Parroquia Nuestra Señora", "Juntas de Acción Comunal"],
-    evento: { nombre: "Entrega de mercados de mitad de año", fecha: "28 de junio de 2026", lugar: "Salón Comunal Barrio Emilio Sierra" },
-  },
-  {
-    nombre: "Aprende y Crece",
-    icon: "graduation-cap",
-    descBreve: "Talleres gratuitos de educación financiera y emprendimiento para miembros y comunidad.",
-    cifras: [
-      { num: "28", lbl: "Talleres dictados" },
-      { num: "540", lbl: "Personas formadas" },
-    ],
-    descCompleta: "Creemos que ahorrar también es aprender. Ofrecemos talleres de finanzas personales, ahorro y emprendimiento dictados por aliados profesionales del Club, abiertos a toda la comunidad.",
-    impacto: [
-      { num: "28", lbl: "Talleres dictados" },
-      { num: "540", lbl: "Personas formadas" },
-      { num: "12", lbl: "Aliados docentes" },
-    ],
-    fundaciones: ["Cámara de Comercio Fusagasugá", "SENA Regional", "Aliados profesionales del Club"],
-    evento: { nombre: "Taller: cómo organizar tus finanzas", fecha: "21 de junio de 2026", lugar: "Biblioteca Municipal" },
-  },
-  {
-    nombre: "Manos a la Obra",
-    icon: "hammer",
-    descBreve: "Mejoramiento de vivienda y espacios comunitarios con voluntarios del Club.",
-    cifras: [
-      { num: "12", lbl: "Hogares mejorados" },
-      { num: "60", lbl: "Voluntarios activos" },
-    ],
-    descCompleta: "Jornadas de pintura, arreglo y adecuación de hogares y espacios comunes para familias de escasos recursos. La fuerza del Club puesta al servicio de quienes más lo necesitan.",
-    impacto: [
-      { num: "12", lbl: "Hogares mejorados" },
-      { num: "60", lbl: "Voluntarios activos" },
-      { num: "6", lbl: "Jornadas comunitarias" },
-    ],
-    fundaciones: ["Techo Colombia", "Voluntariado El Club de la Gente", "Alcaldía de Fusagasugá"],
-    evento: { nombre: "Jornada de pintura comunitaria", fecha: "5 de julio de 2026", lugar: "Vereda La Aguadita" },
-  },
-];
-
 /* ---------- DATOS: PROFESIONALES ---------- */
 const PROFESIONALES = [
   {
@@ -306,26 +234,6 @@ function renderProfesionales() {
     </article>`).join("");
 }
 
-/* ---------- RENDER PROGRAMAS ---------- */
-function renderProgramas() {
-  const cont = $("#programas-grid");
-  cont.innerHTML = PROGRAMAS.map((p, i) => `
-    <article class="programa">
-      <div class="programa__ic">${ic(p.icon)}</div>
-      <h3 class="programa__nombre">${p.nombre}</h3>
-      <p class="programa__desc">${p.descBreve}</p>
-      <div class="programa__cifras">
-        ${p.cifras.map(c => `
-          <div class="cifra">
-            <div class="cifra__num" data-count="${c.num}">0</div>
-            <div class="cifra__lbl">${c.lbl}</div>
-          </div>`).join("")}
-      </div>
-      <a class="programa__link" data-programa="${i}">Ver más + postularse &rarr;</a>
-    </article>
-  `).join("");
-}
-
 /* ---------- SHEET ---------- */
 const overlay = $("#sheet-overlay");
 const sheet = $("#sheet");
@@ -398,49 +306,6 @@ function sheetAliado(i) {
         <button class="btn btn--ghost-verde" data-aplicar="${di}">Aplicar</button>
       </div>
     `).join("")}
-  `;
-}
-
-/* Sheet de programa (Sección E) */
-function sheetPrograma(i) {
-  const p = PROGRAMAS[i];
-  return `
-    <div class="sheet__cat">Programa social</div>
-    <h2 class="sheet__nombre">${p.nombre}</h2>
-    <p class="sheet__desc" style="margin-top:22px">${p.descCompleta}</p>
-    <div class="sheet__sub">Impacto social</div>
-    <div class="impacto">
-      ${p.impacto.map(c => `
-        <div class="impacto__cel">
-          <div class="impacto__num" data-count="${c.num}">0</div>
-          <div class="impacto__lbl">${c.lbl}</div>
-        </div>`).join("")}
-    </div>
-    <div class="sheet__sub">Fundaciones y organizaciones apoyadas</div>
-    <ul class="fundaciones">
-      ${p.fundaciones.map(f => `<li><span class="dot"></span>${f}</li>`).join("")}
-    </ul>
-    <div class="evento">
-      <div class="evento__lbl">Próximo evento</div>
-      <div class="evento__nombre">${p.evento.nombre}</div>
-      <div class="evento__meta">${p.evento.fecha} · ${p.evento.lugar}</div>
-    </div>
-    <div class="sheet__sub">Quiero ser voluntario</div>
-    <form class="form" data-voluntario>
-      <div class="campo">
-        <label>Nombre completo</label>
-        <input type="text" required placeholder="Tu nombre y apellido">
-      </div>
-      <div class="campo">
-        <label>WhatsApp</label>
-        <input type="tel" required placeholder="300 000 0000">
-      </div>
-      <div class="campo">
-        <label>Motivo de participación</label>
-        <textarea required placeholder="Cuéntanos por qué te gustaría ser voluntario"></textarea>
-      </div>
-      <button type="submit" class="btn btn--primario btn--bloque">Quiero ser voluntario &rarr;</button>
-    </form>
   `;
 }
 
@@ -835,7 +700,6 @@ function observeFade() {
 
 /* ---------- INIT ---------- */
 document.addEventListener("DOMContentLoaded", () => {
-  renderProgramas();
   if (window.lucide) lucide.createIcons();
 
   // Hero entra de inmediato
@@ -870,9 +734,6 @@ document.addEventListener("DOMContentLoaded", () => {
       openSheet(sheetAliado(+i));
       return;
     }
-    const prog = e.target.closest("[data-programa]");
-    if (prog) { openSheet(sheetPrograma(+prog.dataset.programa)); return; }
-
     // Profesional
     const profe = e.target.closest("[data-profesional]");
     if (profe) { openSheet(sheetProfesional(+profe.dataset.profesional)); return; }
@@ -957,15 +818,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Envío formulario de voluntariado
   document.addEventListener("submit", (e) => {
-    if (e.target.matches("[data-voluntario]")) {
-      e.preventDefault();
-      const btn = e.target.querySelector("button[type=submit]");
-      btn.classList.add("is-aplicado");
-      btn.innerHTML = `${ic("check")} Enviado — te contactamos por WhatsApp`;
-      if (window.lucide) lucide.createIcons();
-    }
     if (e.target.matches("[data-asesoria]")) {
       e.preventDefault();
       const btn = e.target.querySelector("button[type=submit]");

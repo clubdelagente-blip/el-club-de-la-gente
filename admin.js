@@ -238,40 +238,6 @@ function renderContenido() {
 }
 
 /* ============================================================
-   RENDER: PROGRAMAS
-   ============================================================ */
-function renderProgramas() {
-  $("#p-programas").innerHTML = `
-    <div class="ad-toolbar"><div class="ad-spacer"></div>
-      <button class="ad-btn" id="prog-add">${ic("plus")} Nuevo programa</button>
-      <button class="ad-btn ad-btn--verde" id="ev-add">${ic("calendar-plus")} Crear evento</button>
-    </div>
-    ${ADM_PROGRAMAS.map((p, i) => `
-      <div class="ad-prog">
-        <div class="ad-prog__head">
-          <span class="ad-prog__ic">${ic(p.icon)}</span>
-          <div style="flex:1">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:14px">
-              <div class="ad-prog__name">${p.nombre}</div>
-              <button class="ad-btn" data-edit-prog="${i}">${ic("pencil")} Editar</button>
-            </div>
-            <p class="ad-prog__desc">${p.desc}</p>
-          </div>
-        </div>
-        <div class="ad-prog__cifras">
-          ${p.cifras.map(c => `<div class="ad-prog__cifra"><b>${c.n}</b><small>${c.l}</small></div>`).join("")}
-        </div>
-        <div class="ad-vol">
-          <div class="ad-vol__lbl">Postulaciones de voluntarios · ${p.voluntarios.length}</div>
-          <div class="ad-vol__list">
-            ${p.voluntarios.map(v => `<span class="ad-vol__item"><span class="av">${ini(v.nombre)}</span>${v.nombre} · <a href="https://wa.me/57${v.wsp.replace(/\s/g, "")}" target="_blank">${v.wsp}</a></span>`).join("")}
-          </div>
-        </div>
-      </div>`).join("")}`;
-  if (window.lucide) lucide.createIcons();
-}
-
-/* ============================================================
    RENDER: EDUCACIÓN
    ============================================================ */
 function renderEducacion() {
@@ -422,46 +388,6 @@ window.ADM_WA_PLANTILLAS = ADM_WA_PLANTILLAS;
    ============================================================ */
 function cerrarModal() { $("#ad-modal-ov").classList.remove("is-open"); desbloquearScroll(); }
 
-/* ---------- MODAL: Crear evento ---------- */
-function abrirCrearEvento() {
-  $("#modal-body").innerHTML = `
-    <div class="ad-field"><label>Programa social</label>
-      <select>${ADM_PROGRAMAS.map(p => `<option>${p.nombre}</option>`).join("")}</select>
-    </div>
-    <div class="ad-field"><label>Nombre del evento</label><input placeholder="Ej: Gran jornada de adopción"></div>
-    <div class="ad-field-2">
-      <div class="ad-field"><label>Fecha</label><input type="date"></div>
-      <div class="ad-field"><label>Lugar</label><input placeholder="Ej: Parque Principal, Fusagasugá"></div>
-    </div>
-    <div class="ad-field"><label>Descripción</label><textarea rows="3" placeholder="Detalles del evento que verán los miembros…"></textarea></div>
-    <div class="ad-toolbar" style="margin:6px 0 0"><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="ev-guardar">${ic("check")} Publicar evento</button></div>`;
-  $("#modal-title").textContent = "Crear evento";
-  $("#modal-sub").textContent = "Se mostrará en el programa social seleccionado";
-  $("#ad-modal-ov").classList.add("is-open");
-  bloquearScroll();
-  if (window.lucide) lucide.createIcons();
-}
-
-/* ---------- MODAL: Crear / editar programa social ---------- */
-function abrirPrograma(i) {
-  const p = i != null ? ADM_PROGRAMAS[i] : null;
-  const c = p ? p.cifras : [{ n: "", l: "" }, { n: "", l: "" }, { n: "", l: "" }];
-  $("#modal-body").innerHTML = `
-    <div class="ad-field"><label>Nombre del programa</label><input id="prog-nombre" value="${p ? p.nombre : ""}" placeholder="Ej: Patas que Rescatan"></div>
-    <div class="ad-field"><label>Descripción</label><textarea id="prog-desc" rows="3" placeholder="De qué se trata el programa…">${p ? p.desc : ""}</textarea></div>
-    <div class="ad-field"><label>Cifras de impacto</label>
-      <div class="ad-field-2">
-        ${c.map(cf => `<div class="ad-field"><input value="${cf.n}" placeholder="Cifra (ej: 340)"></div><div class="ad-field"><input value="${cf.l}" placeholder="Etiqueta (ej: Animales rescatados)"></div>`).join("")}
-      </div>
-    </div>
-    <div class="ad-toolbar" style="margin:6px 0 0"><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="prog-guardar">${ic("check")} ${p ? "Guardar cambios" : "Crear programa"}</button></div>`;
-  $("#modal-title").textContent = p ? "Editar programa social" : "Nuevo programa social";
-  $("#modal-sub").textContent = p ? p.nombre : "Se publicará en la web pública";
-  $("#ad-modal-ov").classList.add("is-open");
-  bloquearScroll();
-  if (window.lucide) lucide.createIcons();
-}
-
 /* ---------- TOAST ---------- */
 let toastT;
 function toast(msg) {
@@ -490,7 +416,7 @@ function irPanel(panel) {
     // referencia sin prefijo a un nombre que todavia no existe en ningun lado
     // (ni local ni en window) lanza ReferenceError y rompe TODO irPanel -- incluidos
     // paneles que no tienen nada que ver, como pasó con Dashboard.
-    const fn = ({ bandeja: renderBandeja, dashboard: renderDashboard, miembros: renderMiembros, aliados: window.renderAliados, planes: window.renderPlanes, profesionales: window.renderProfesionales, viajes: window.renderViajesUber, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: renderProgramas, educacion: renderEducacion, ventas: renderVentas, suscripciones: renderSuscripciones, contabilidad: window.renderContabilidad, config: renderConfig, agente: renderAgente, preguntas: window.renderPreguntas })[panel];
+    const fn = ({ bandeja: renderBandeja, dashboard: renderDashboard, miembros: renderMiembros, aliados: window.renderAliados, planes: window.renderPlanes, profesionales: window.renderProfesionales, viajes: window.renderViajesUber, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: window.renderProgramas, educacion: renderEducacion, ventas: renderVentas, suscripciones: renderSuscripciones, contabilidad: window.renderContabilidad, config: renderConfig, agente: renderAgente, preguntas: window.renderPreguntas })[panel];
     if (fn) { fn(); RENDERED[panel] = true; }
   }
   if (window.lucide) lucide.createIcons();
@@ -562,12 +488,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.closest("#v-csv")) { toast("Exportando CSV…"); return; }
     if (e.target.closest("#m-wa")) { toast("Mensaje masivo programado por WhatsApp"); return; }
     if (e.target.closest("#s-rem")) { toast("Recordatorios enviados a los que vencen pronto"); return; }
-    if (e.target.closest("#ev-add")) { abrirCrearEvento(); return; }
-    if (e.target.closest("#ev-guardar")) { cerrarModal(); toast("Evento publicado · visible para los miembros"); return; }
-    if (e.target.closest("#prog-add")) { abrirPrograma(); return; }
-    const editProg = e.target.closest("[data-edit-prog]");
-    if (editProg) { abrirPrograma(+editProg.dataset.editProg); return; }
-    if (e.target.closest("#prog-guardar")) { cerrarModal(); toast("Programa social guardado"); return; }
     if (e.target.closest("#cfg-save")) { toast("Configuración guardada"); return; }
 
     const tog = e.target.closest("[data-toggle]");
