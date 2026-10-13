@@ -1407,12 +1407,24 @@ const ESTADO_PEDIDO = {
   rechazado:  { c: "#c0392b", bg: "#fdecea", t: "Rechazado" },
 };
 
+function razonNoAutoConfirmadoPedido(v) {
+  if (!v) return "";
+  let motivo = "No se verificó solo";
+  if (v.motivo === "monto_sobre_tope") motivo = "Monto arriba del tope de auto-confirmación";
+  else if (v.motivo === "error_analisis") motivo = "No se pudo analizar el comprobante";
+  else if (v.es_comprobante === false) motivo = "La IA no reconoció un comprobante bancario";
+  else if (v.senales_edicion === true) motivo = "La IA notó posibles señales de edición";
+  else if (v.confianza && v.confianza !== "alta") motivo = "La IA no tuvo confianza suficiente";
+  else if (v.monto != null) motivo = "El monto/llave/fecha no coincidieron exacto";
+  return `<div style="font-size:11px;color:#999;margin-top:4px" title="${esc(JSON.stringify(v))}">🤖 ${esc(motivo)}</div>`;
+}
+
 async function cargarPedidosAliado(aliadoId) {
   const list = $("#tienda-pedidos-list");
   if (!list) return;
   const { data } = await supabase
     .from("pedidos")
-    .select("*, productos_aliado(nombre)")
+    .select("*, verificacion_ia, productos_aliado(nombre)")
     .eq("aliado_id", aliadoId)
     .order("created_at", { ascending: false });
   const pedidos = data || [];
@@ -1439,6 +1451,7 @@ async function cargarPedidosAliado(aliadoId) {
         <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};white-space:nowrap">${est.t}</span>
       </div>
       ${p.comprobante_url ? `<a href="${esc(p.comprobante_url)}" target="_blank" style="font-size:12px;color:#095544;display:inline-block;margin-top:6px">Ver comprobante ↗</a>` : ""}
+      ${p.estado === "pendiente" ? razonNoAutoConfirmadoPedido(p.verificacion_ia) : ""}
       <div style="display:flex;gap:8px;margin-top:10px">
         ${p.estado === "pendiente" ? `
           <button data-confirmar-pedido="${p.id}" class="btn btn--primario" style="padding:8px 14px;font-size:12px">Confirmar pago</button>
@@ -2529,7 +2542,11 @@ async function abrirCheckoutClub(p) {
     if (upErr) { toast("Error subiendo el comprobante"); btn.disabled = false; btn.textContent = "Confirmar pedido"; return; }
     const comprobante_url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
 
+    // Id generado en el navegador para disparar la verificación con IA justo
+    // después de guardar, sin depender de un SELECT post-insert.
+    const nuevoPedidoClubId = crypto.randomUUID();
     const { error } = await supabase.from("pedidos_club").insert({
+      id: nuevoPedidoClubId,
       producto_id: p.id, miembro_id: miembroId, nombre_producto: p.nombre, monto: precio,
       // Se guarda el precio normal y el ahorro tal como están AHORA, no se
       // recalculan después uniendo con "productos" -- si el producto cambia
@@ -2541,6 +2558,15 @@ async function abrirCheckoutClub(p) {
       estado: "pendiente_pago",
     });
     if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Confirmar pedido"; return; }
+
+    // Verificación automática del comprobante con IA -- no bloquea nada (el
+    // miembro ya ve "pedido enviado"), pero si todo cuadra marca el pago
+    // como confirmado solo.
+    fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/verificar-pedido-club", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pedido_id: nuevoPedidoClubId }),
+    }).catch(() => {});
 
     cerrarModalTienda();
     toast("Pedido enviado — te avisamos por WhatsApp en cuanto confirmemos tu pago");
@@ -2713,7 +2739,11 @@ function abrirCheckoutProducto(p) {
     if (upErr) { toast("Error subiendo el comprobante"); btn.disabled = false; btn.textContent = "Confirmar pedido"; return; }
     const comprobante_url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
 
+    // Id generado en el navegador para disparar la verificación con IA justo
+    // después de guardar, sin depender de un SELECT post-insert.
+    const nuevoPedidoId = crypto.randomUUID();
     const payload = {
+      id: nuevoPedidoId,
       producto_id: p.id,
       aliado_id: p.aliado_id,
       miembro_id: _miembroId,
@@ -2727,6 +2757,15 @@ function abrirCheckoutProducto(p) {
     };
     const { error } = await supabase.from("pedidos").insert(payload);
     if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Confirmar pedido"; return; }
+
+    // Verificación automática del comprobante con IA -- no bloquea nada (el
+    // miembro ya ve "pedido enviado"), pero si todo cuadra confirma el pago
+    // solo y el aliado no tiene que revisarlo a mano.
+    fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/verificar-pedido-aliado", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pedido_id: nuevoPedidoId }),
+    }).catch(() => {});
 
     if (p.whatsapp) {
       const wa = p.whatsapp.replace(/\D/g, "");

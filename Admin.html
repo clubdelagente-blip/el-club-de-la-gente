@@ -3042,7 +3042,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     cancelado:{c:'#f87171',t:'Cancelado'},
   };
   async function cargarPedidosClubAdmin(){
-    const{data}=await supabase.from('pedidos_club').select('*,perfiles(nombre,whatsapp)').order('created_at',{ascending:false});
+    const{data}=await supabase.from('pedidos_club').select('*,verificacion_ia,perfiles(nombre,whatsapp)').order('created_at',{ascending:false});
     _pedidosClub=data||[];
     renderPedidosClubUI();
   }
@@ -3054,7 +3054,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       :lista.map(p=>{
         const est=ESTADO_PEDIDO_CLUB[p.estado]||ESTADO_PEDIDO_CLUB.pendiente_pago;
         return `<tr>
-          <td>${esc(p.nombre_producto)}</td>
+          <td>${esc(p.nombre_producto)}${p.estado==='pendiente_pago'?razonNoAutoAprobado(p.verificacion_ia):''}</td>
           <td style="font-size:12px">${esc(p.perfiles?.nombre)||'—'}${p.perfiles?.whatsapp?` · <a href="https://wa.me/57${esc(p.perfiles.whatsapp.replace(/\D/g,''))}" target="_blank" style="color:#00DF81">WhatsApp</a>`:''}</td>
           <td style="font-size:12px">${esc(p.envio_nombre)} · ${esc(p.envio_direccion)}${p.envio_barrio?', '+esc(p.envio_barrio):''}${p.envio_telefono?' · '+esc(p.envio_telefono):''}</td>
           <td><span class="ad-num-strong">${COP(p.monto)}</span></td>
