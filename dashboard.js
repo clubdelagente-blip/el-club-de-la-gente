@@ -1881,62 +1881,40 @@ document.addEventListener("click", (e) => {
 /* ---------- Educación (talleres presenciales, gratis para todos) ---------- */
 let _educacionCargada = false;
 
-// Programas sociales que apoya el Club -- mismo contenido informativo que la
-// sección pública "Programas" de la landing (aún no hay tabla en Supabase
-// para esto, así que por ahora es contenido fijo, igual que allá).
-const PROGRAMAS_SOCIALES = [
-  {
-    nombre: "Patas que Rescatan",
-    icon: "paw-print",
-    descBreve: "Rescate, atención y adopción de animales en condición de calle en Fusagasugá y la región del Sumapaz.",
-    descCompleta: "Con cada membresía financiamos jornadas de rescate, esterilización y adopción responsable. El programa conecta refugios locales con familias que quieren darle un hogar a un animal y cubre atención veterinaria de urgencia.",
-    fundaciones: ["Fundación Huellas Fusa", "Refugio Sumapaz", "Red de Hogares de Paso"],
-  },
-  {
-    nombre: "Mesa Compartida",
-    icon: "utensils-crossed",
-    descBreve: "Entrega de mercados y apoyo alimentario a familias vulnerables de la región.",
-    descCompleta: "Un porcentaje de cada membresía se transforma en mercados para familias que más lo necesitan. Trabajamos con el banco de alimentos local para llegar a las veredas y barrios con mayor necesidad.",
-    fundaciones: ["Banco de Alimentos Fusa", "Parroquia Nuestra Señora", "Juntas de Acción Comunal"],
-  },
-  {
-    nombre: "Aprende y Crece",
-    icon: "graduation-cap",
-    descBreve: "Talleres gratuitos de educación financiera y emprendimiento para miembros y comunidad.",
-    descCompleta: "Creemos que ahorrar también es aprender. Ofrecemos talleres de finanzas personales, ahorro y emprendimiento dictados por aliados profesionales del Club, abiertos a toda la comunidad.",
-    fundaciones: ["Cámara de Comercio Fusagasugá", "SENA Regional", "Aliados profesionales del Club"],
-  },
-  {
-    nombre: "Manos a la Obra",
-    icon: "hammer",
-    descBreve: "Mejoramiento de vivienda y espacios comunitarios con voluntarios del Club.",
-    descCompleta: "Jornadas de pintura, arreglo y adecuación de hogares y espacios comunes para familias de escasos recursos. La fuerza del Club puesta al servicio de quienes más lo necesitan.",
-    fundaciones: ["Techo Colombia", "Voluntariado El Club de la Gente", "Alcaldía de Fusagasugá"],
-  },
-];
+// Programas sociales que apoya el Club -- vienen de la tabla real "programas"
+// (la misma que administra Admin → Programas sociales), no de contenido fijo.
 let _programasCargados = false;
-function cargarProgramas() {
+let _programasSociales = [];
+async function cargarProgramas() {
   if (_programasCargados) return;
   _programasCargados = true;
   const grid = document.getElementById("programas-grid-dash");
   if (!grid) return;
-  grid.innerHTML = PROGRAMAS_SOCIALES.map((p, i) => `
-    <div style="border:1px solid #ebebeb;border-radius:12px;padding:20px;background:#fff">
-      <span style="display:inline-flex;width:38px;height:38px;border-radius:50%;background:var(--verde-soft);color:var(--verde);align-items:center;justify-content:center;margin-bottom:12px">${ic(p.icon)}</span>
-      <div style="font-weight:700;font-size:15px;margin-bottom:6px">${esc(p.nombre)}</div>
-      <p style="font-size:13px;color:#666;line-height:1.5;margin-bottom:14px">${esc(p.descBreve)}</p>
-      <button type="button" class="btn btn--secundario" data-ver-programa="${i}" style="font-size:12.5px">Ver más y postularme como voluntario &rarr;</button>
+  const { data } = await supabase.from("programas").select("*").eq("activo", true).order("created_at", { ascending: false });
+  _programasSociales = data || [];
+  if (!_programasSociales.length) {
+    grid.innerHTML = `<p style="font-size:13px;color:#999;padding:20px 0">Todavía no hay programas sociales publicados.</p>`;
+    return;
+  }
+  grid.innerHTML = _programasSociales.map((p, i) => `
+    <div style="border:1px solid #ebebeb;border-radius:12px;overflow:hidden;background:#fff">
+      ${p.imagen_url
+        ? `<img src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" style="width:100%;height:140px;object-fit:cover;display:block">`
+        : `<div style="height:140px;background:var(--verde-soft);display:flex;align-items:center;justify-content:center"><span style="display:inline-flex;width:38px;height:38px;border-radius:50%;background:#fff;color:var(--verde);align-items:center;justify-content:center">${ic("heart-handshake")}</span></div>`}
+      <div style="padding:20px">
+        ${p.categoria ? `<div style="font-size:11px;font-weight:700;color:var(--verde);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">${esc(p.categoria)}</div>` : ""}
+        <div style="font-weight:700;font-size:15px;margin-bottom:6px">${esc(p.nombre)}</div>
+        <p style="font-size:13px;color:#666;line-height:1.5;margin-bottom:14px">${esc(p.descripcion) || ""}</p>
+        <button type="button" class="btn btn--secundario" data-ver-programa="${i}" style="font-size:12.5px">Ver más y postularme como voluntario &rarr;</button>
+      </div>
     </div>`).join("");
   if (window.lucide) lucide.createIcons();
   grid.querySelectorAll("[data-ver-programa]").forEach(btn => btn.addEventListener("click", () => {
-    const p = PROGRAMAS_SOCIALES[+btn.dataset.verPrograma];
+    const p = _programasSociales[+btn.dataset.verPrograma];
     if (!p) return;
     abrirModalTienda(p.nombre, `
-      <p style="font-size:14px;line-height:1.6;margin-bottom:16px">${esc(p.descCompleta)}</p>
-      <div style="font-size:12.5px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Fundaciones y organizaciones apoyadas</div>
-      <ul style="font-size:13px;color:#555;line-height:1.9;margin-bottom:20px;padding-left:18px">
-        ${p.fundaciones.map(f => `<li>${esc(f)}</li>`).join("")}
-      </ul>
+      ${p.imagen_url ? `<img src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:16px">` : ""}
+      <p style="font-size:14px;line-height:1.6;margin-bottom:16px">${esc(p.descripcion) || ""}</p>
       <div style="font-size:12.5px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Quiero ser voluntario</div>
       <form id="form-voluntario">
         <div class="cfg-campo"><label class="cfg-label">Motivo de participación</label><textarea class="cfg-input" id="vol-motivo" rows="3" required placeholder="Cuéntanos por qué te gustaría participar"></textarea></div>
