@@ -43,6 +43,7 @@ window.bloquearScroll = bloquearScroll; window.desbloquearScroll = desbloquearSc
 
 /* ---------- TÍTULOS DE PANEL ---------- */
 const PANELES = {
+  bandeja:      { t: "Bandeja de revisión", s: "Todo lo que necesita tu aprobación, en un solo lugar" },
   dashboard:    { t: "Dashboard", s: "Vista general en tiempo real" },
   miembros:     { t: "Miembros", s: "Gestión de la base de miembros" },
   aliados:      { t: "Aliados", s: "Establecimientos, fotos y descuentos" },
@@ -68,6 +69,10 @@ const PANELES = {
 function renderDashboard() {
   $("#p-dashboard").innerHTML = `<div style="text-align:center;padding:60px 20px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>`;
   window.cargarDashboardReal?.();
+}
+function renderBandeja() {
+  $("#p-bandeja").innerHTML = `<div style="text-align:center;padding:60px 20px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>`;
+  window.cargarBandejaReal?.();
 }
 function metric(icon, num, lbl, sub, chip, dir) {
   return `<div class="ad-metric">
@@ -485,7 +490,7 @@ function irPanel(panel) {
     // referencia sin prefijo a un nombre que todavia no existe en ningun lado
     // (ni local ni en window) lanza ReferenceError y rompe TODO irPanel -- incluidos
     // paneles que no tienen nada que ver, como pasó con Dashboard.
-    const fn = ({ dashboard: renderDashboard, miembros: renderMiembros, aliados: window.renderAliados, planes: window.renderPlanes, profesionales: window.renderProfesionales, viajes: window.renderViajesUber, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: renderProgramas, educacion: renderEducacion, ventas: renderVentas, suscripciones: renderSuscripciones, contabilidad: window.renderContabilidad, config: renderConfig, agente: renderAgente, preguntas: window.renderPreguntas })[panel];
+    const fn = ({ bandeja: renderBandeja, dashboard: renderDashboard, miembros: renderMiembros, aliados: window.renderAliados, planes: window.renderPlanes, profesionales: window.renderProfesionales, viajes: window.renderViajesUber, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: renderProgramas, educacion: renderEducacion, ventas: renderVentas, suscripciones: renderSuscripciones, contabilidad: window.renderContabilidad, config: renderConfig, agente: renderAgente, preguntas: window.renderPreguntas })[panel];
     if (fn) { fn(); RENDERED[panel] = true; }
   }
   if (window.lucide) lucide.createIcons();
@@ -502,6 +507,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   irPanel("dashboard");
   updateAgCount();
+  window.cargarBandejaReal?.();
+  RENDERED.bandeja = true;
 
   // Nav
   $$(".ad-link[data-panel]").forEach(l => l.addEventListener("click", () => irPanel(l.dataset.panel)));

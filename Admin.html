@@ -110,6 +110,7 @@
       </div>
 
       <nav class="ad-nav">
+        <button class="ad-link" data-panel="bandeja"><i data-lucide="inbox"></i> Bandeja de revisión <span class="ad-link__count" id="bj-nav-count"></span></button>
         <button class="ad-link" data-panel="dashboard"><i data-lucide="layout-dashboard"></i> Dashboard</button>
         <div class="ad-nav__lbl">Gestión</div>
         <button class="ad-link" data-panel="miembros"><i data-lucide="users"></i> Miembros</button>
@@ -164,6 +165,7 @@
       </header>
 
       <div class="ad-content">
+        <section class="ad-panel" id="p-bandeja" data-screen-label="Admin · Bandeja de revisión"></section>
         <section class="ad-panel" id="p-dashboard" data-screen-label="Admin · Dashboard"></section>
         <section class="ad-panel" id="p-miembros" data-screen-label="Admin · Miembros"></section>
         <section class="ad-panel" id="p-aliados" data-screen-label="Admin · Aliados"></section>
@@ -332,6 +334,84 @@ function razonNoAutoAprobadoProd(v){
   else if(v.confianza&&v.confianza!=='alta')motivo='La IA no tuvo confianza suficiente';
   return `<div style="font-size:11px;color:rgba(242,240,234,.4);margin-top:4px" title="${esc(JSON.stringify(v))}">🤖 ${esc(motivo)}</div>`;
 }
+
+/* ---- BANDEJA DE REVISIÓN (junta las 3 colas que el admin revisa: ----
+   membresías, productos de aliados y pedidos del Club -- los pedidos A un
+   aliado los revisa el aliado mismo en su panel, no el admin, así que esos
+   no van aquí. Reutiliza los MISMOS botones (data-vt-aprobar, etc.) de
+   cada tabla original, así que el mismo click-delegado de siempre los
+   maneja sin duplicar lógica -- esta función solo arma la vista conjunta. */
+const TIPO_BANDEJA = {
+  membresia: { t: 'Membresía', c: '#00DF81', icon: 'badge-check' },
+  producto:  { t: 'Producto',  c: '#EAB749', icon: 'package' },
+  pedido_club: { t: 'Pedido Club', c: '#60a5fa', icon: 'shopping-bag' },
+};
+function badgeTipoBandeja(k){
+  const d=TIPO_BANDEJA[k];
+  return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${d.c}22;color:${d.c};white-space:nowrap">${ic(d.icon)}${d.t}</span>`;
+}
+async function cargarBandejaReal(){
+  const[{data:solicitudes},{data:productos},{data:pedidosClub}]=await Promise.all([
+    supabase.from('solicitudes_membresia').select('id,miembro_id,plan,monto,comprobante_url,estado,created_at,verificacion_ia,perfiles(nombre,whatsapp)').eq('estado','pendiente').order('created_at',{ascending:true}),
+    supabase.from('productos_aliado').select('*,verificacion_ia,aliados(nombre,tienda_nombre)').eq('estado','pendiente').order('created_at',{ascending:true}),
+    supabase.from('pedidos_club').select('*,verificacion_ia,perfiles(nombre,whatsapp)').eq('estado','pendiente_pago').order('created_at',{ascending:true}),
+  ]);
+  // Mismos caches que usan las pantallas originales -- así sus botones de
+  // Rechazar (que buscan ahí el miembro_id/whatsapp) funcionan igual desde
+  // la Bandeja sin reescribir esa lógica.
+  _ventasSolicitudes=solicitudes||[];
+  _prodalPendientes=productos||[];
+
+  const filas=[
+    ...(solicitudes||[]).map(s=>({tipo:'membresia',quien:s.perfiles?.nombre,detalle:(window.planLbl?window.planLbl(s.plan):s.plan),monto:s.monto,fecha:s.created_at,razon:razonNoAutoAprobado(s.verificacion_ia),
+      acciones:`<button class="ad-btn ad-btn--verde" data-vt-aprobar="${s.id}">${ic('check')} Aprobar</button><button class="ad-btn" data-vt-rechazar="${s.id}">${ic('x')} Rechazar</button>`})),
+    ...(productos||[]).map(p=>({tipo:'producto',quien:p.aliados?.tienda_nombre||p.aliados?.nombre,detalle:p.nombre,monto:p.precio_descuento||p.precio_normal,fecha:p.created_at,razon:razonNoAutoAprobadoProd(p.verificacion_ia),
+      acciones:`<button class="ad-btn ad-btn--verde" data-aprobar-prodal="${p.id}">${ic('check')} Aprobar</button><button class="ad-btn" data-rechazar-prodal="${p.id}">${ic('x')} Rechazar</button>`})),
+    ...(pedidosClub||[]).map(p=>({tipo:'pedido_club',quien:p.perfiles?.nombre,detalle:p.nombre_producto,monto:p.monto,fecha:p.created_at,razon:razonNoAutoAprobado(p.verificacion_ia),
+      acciones:`${p.comprobante_url?`<a class="ad-btn" href="${esc(p.comprobante_url)}" target="_blank">${ic('receipt')} Comprobante</a>`:''}<button class="ad-btn ad-btn--verde" data-bj-pc-pago="${p.id}">${ic('check')} Confirmar pago</button><button class="ad-btn" data-bj-pc-cancelar="${p.id}">${ic('x')} Cancelar</button>`})),
+  ].sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+
+  const nav=$('#bj-nav-count');
+  if(nav){nav.textContent=filas.length?filas.length:'';nav.style.display=filas.length?'':'none';}
+
+  $('#p-bandeja').innerHTML=!filas.length
+    ?`<div style="text-align:center;padding:60px 20px"><span style="display:inline-flex;width:44px;height:44px;border-radius:50%;background:rgba(0,223,129,.12);color:#00DF81;align-items:center;justify-content:center;margin-bottom:14px">${ic('check-check')}</span><p style="color:rgba(242,240,234,.4)">No hay nada pendiente de revisión. Todo al día 🎉</p></div>`
+    :`<div class="ad-table-wrap"><table class="ad-table">
+        <thead><tr><th>Tipo</th><th>Quién</th><th>Detalle</th><th>Monto</th><th style="text-align:right">Acciones</th></tr></thead>
+        <tbody>
+          ${filas.map(f=>`<tr>
+            <td>${badgeTipoBandeja(f.tipo)}</td>
+            <td style="font-size:13px">${esc(f.quien)||'—'}</td>
+            <td style="font-size:13px">${esc(f.detalle)||'—'}${f.razon}</td>
+            <td><span class="ad-num-strong">${COP(f.monto||0)}</span></td>
+            <td style="text-align:right"><div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">${f.acciones}</div></td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>`;
+  if(window.lucide)lucide.createIcons();
+  // Los pedidos_club.update tienen su propio bind aquí (no pasan por el
+  // click-delegado de document) porque la tabla original de Admin → Tienda
+  // → Pedidos los liga uno por uno al renderizar, no por delegación -- usar
+  // los mismos data-attributes desde la Bandeja re-ligaría también los
+  // botones de esa otra tabla y duplicaría la acción al hacer clic ahí.
+  $('#p-bandeja').querySelectorAll('[data-bj-pc-pago]').forEach(b=>b.addEventListener('click',async()=>{
+    b.disabled=true;
+    const{error}=await supabase.from('pedidos_club').update({estado:'pagado'}).eq('id',b.dataset.bjPcPago);
+    if(error){toast('Error: '+error.message);b.disabled=false;return;}
+    toast('Pago confirmado ✓');
+    cargarBandejaReal();
+  }));
+  $('#p-bandeja').querySelectorAll('[data-bj-pc-cancelar]').forEach(b=>b.addEventListener('click',async()=>{
+    if(!confirm('¿Cancelar este pedido?'))return;
+    b.disabled=true;
+    const{error}=await supabase.from('pedidos_club').update({estado:'cancelado'}).eq('id',b.dataset.bjPcCancelar);
+    if(error){toast('Error: '+error.message);b.disabled=false;return;}
+    toast('Pedido cancelado');
+    cargarBandejaReal();
+  }));
+}
+window.cargarBandejaReal=cargarBandejaReal;
+
 let _ventasSolicitudes=[];
 async function cargarVentasReal(){
   const hoy=new Date();
@@ -3504,6 +3584,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
         if(!r.ok){toast('Error: '+(j.error||r.status));btn.disabled=false;btn.textContent='Aprobar';return;}
         toast('Membresía activada ✓');
         cargarVentasReal();
+        if($('#p-bandeja')?.classList.contains('is-active'))cargarBandejaReal();
       }catch(err){toast('Error de red: '+err.message);btn.disabled=false;btn.textContent='Aprobar';}
       return;
     }
@@ -3536,6 +3617,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       }
       toast('Solicitud rechazada');
       cargarVentasReal();
+      if($('#p-bandeja')?.classList.contains('is-active'))cargarBandejaReal();
       return;
     }
     if(e.target.closest('#vt-llave-save')){
@@ -3649,8 +3731,8 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const edIngreso=e.target.closest('[data-ed-ingreso]');if(edIngreso){const i=_ingresosManuales.find(x=>x.id===edIngreso.dataset.edIngreso);if(i){abrirModal('Editar ingreso',i.descripcion||'Ingreso',htmlFormIngreso(i));bindFormIngreso(i);}return;}
     const rmIngreso=e.target.closest('[data-rm-ingreso]');if(rmIngreso&&confirm('¿Eliminar este ingreso?')){await supabase.from('ingresos_manuales').delete().eq('id',rmIngreso.dataset.rmIngreso);cargarContabilidad();toast('Ingreso eliminado');return;}
     const verTienda=e.target.closest('[data-ver-tienda]');if(verTienda&&!e.target.closest('a')){verDetalleTienda(verTienda.dataset.verTienda,verTienda.dataset.nomTienda);return;}
-    const aprobarProdal=e.target.closest('[data-aprobar-prodal]');if(aprobarProdal){await supabase.from('productos_aliado').update({estado:'aprobado'}).eq('id',aprobarProdal.dataset.aprobarProdal);window.cargarTiendasAliados?.();toast('Producto aprobado ✓');return;}
-    const rechazarProdal=e.target.closest('[data-rechazar-prodal]');if(rechazarProdal&&confirm('¿Rechazar este producto?')){await supabase.from('productos_aliado').update({estado:'rechazado'}).eq('id',rechazarProdal.dataset.rechazarProdal);window.cargarTiendasAliados?.();toast('Producto rechazado');return;}
+    const aprobarProdal=e.target.closest('[data-aprobar-prodal]');if(aprobarProdal){await supabase.from('productos_aliado').update({estado:'aprobado'}).eq('id',aprobarProdal.dataset.aprobarProdal);window.cargarTiendasAliados?.();if($('#p-bandeja')?.classList.contains('is-active'))cargarBandejaReal();toast('Producto aprobado ✓');return;}
+    const rechazarProdal=e.target.closest('[data-rechazar-prodal]');if(rechazarProdal&&confirm('¿Rechazar este producto?')){await supabase.from('productos_aliado').update({estado:'rechazado'}).eq('id',rechazarProdal.dataset.rechazarProdal);window.cargarTiendasAliados?.();if($('#p-bandeja')?.classList.contains('is-active'))cargarBandejaReal();toast('Producto rechazado');return;}
   });
 });
   </script>
