@@ -265,7 +265,7 @@ function abrirRecorteFotoPerfil(file) {
       <div style="font-weight:700;font-size:15px;margin-bottom:4px">Ajustar foto</div>
       <p style="font-size:12px;color:#777;margin-bottom:14px">Mueve y haz zoom para encuadrar -- se recorta cuadrada, igual que se ve en tu perfil.</p>
       <div style="max-height:52vh;overflow:hidden;background:#000;border-radius:8px">
-        <img id="cfg-crop-img" src="${url}" style="max-width:100%;display:block">
+        <img id="cfg-crop-img" src="${url}" alt="Foto para recortar" style="max-width:100%;display:block">
       </div>
       <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
         <button class="btn btn--secundario" id="cfg-crop-cancel">Cancelar</button>
@@ -1190,7 +1190,7 @@ async function cargarVacantesMiembro() {
   grid.innerHTML = vacantes.map(v => `
     <div class="card" style="padding:16px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        ${v.aliados?.imagen_url ? `<img src="${v.aliados.imagen_url}" style="width:34px;height:34px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<div style="width:34px;height:34px;border-radius:8px;background:#f0faf4;flex-shrink:0"></div>`}
+        ${v.aliados?.imagen_url ? `<img src="${v.aliados.imagen_url}" alt="${esc(v.aliados?.nombre || '')}" style="width:34px;height:34px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<div style="width:34px;height:34px;border-radius:8px;background:#f0faf4;flex-shrink:0"></div>`}
         <div style="font-size:12px;color:#777;font-weight:600">${esc(v.aliados?.nombre || "")}</div>
       </div>
       <div style="font-weight:700;font-size:15px;margin-bottom:6px">${esc(v.titulo)}</div>
@@ -1218,7 +1218,7 @@ async function cargarMisProductos(aliadoId) {
     const est = ESTADO_PRODUCTO_ALIADO[p.estado] || ESTADO_PRODUCTO_ALIADO.pendiente;
     return `
     <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #ebebeb">
-      ${p.imagen_url ? `<img src="${p.imagen_url}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<div style="width:44px;height:44px;border-radius:8px;background:#f0faf4;flex-shrink:0"></div>`}
+      ${p.imagen_url ? `<img src="${p.imagen_url}" alt="${esc(p.nombre)}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<div style="width:44px;height:44px;border-radius:8px;background:#f0faf4;flex-shrink:0"></div>`}
       <div style="flex:1;min-width:0">
         <div style="font-weight:600;font-size:14px">${esc(p.nombre)}</div>
         <div style="font-size:12px;color:#777">${esc(p.categorias_productos?.nombre) || "Sin categoría"}${p.fecha_fin ? " · promo hasta " + new Date(p.fecha_fin + "T00:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "short" }) : ""}</div>
@@ -1330,8 +1330,8 @@ async function abrirFormProducto(p = {}) {
     if (!cont) return;
     cont.innerHTML = imagenes.map((url, i) => `
       <div style="position:relative;width:64px;height:64px">
-        <img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
-        <button type="button" data-rm-img="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer">×</button>
+        <img src="${url}" alt="Foto del producto ${i + 1}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
+        <button type="button" data-rm-img="${i}" aria-label="Quitar esta foto" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer">×</button>
       </div>`).join("") + (imagenes.length < 5 ? `
       <button type="button" id="pa-img-add" style="width:64px;height:64px;border:2px dashed #ccc;border-radius:8px;background:none;cursor:pointer;font-size:24px;color:#999;line-height:1">+</button>` : "");
     $("#pa-img-add")?.addEventListener("click", () => $("#pa-img-input")?.click());
@@ -1974,7 +1974,7 @@ function listaResenasHtml(resenas, eventoId, miembroId) {
           ${estrellasHtml(r.estrellas, 12)}
         </div>
         ${r.comentario ? `<p style="font-size:12.5px;color:#666;line-height:1.5;margin:0 0 6px">${esc(r.comentario)}</p>` : ''}
-        ${r.foto_url ? `<img src="${esc(r.foto_url)}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;cursor:pointer" data-resena-foto="${esc(r.foto_url)}">` : ''}
+        ${r.foto_url ? `<img src="${esc(r.foto_url)}" alt="Foto de la reseña" style="width:64px;height:64px;object-fit:cover;border-radius:8px;cursor:pointer" data-resena-foto="${esc(r.foto_url)}">` : ''}
       </div>`).join('')
     : `<p style="font-size:12.5px;color:#999;padding:4px 0 12px">Sé el primero en dejar una reseña de este taller.</p>`;
 
@@ -2068,7 +2068,7 @@ async function cargarEducacion() {
         <div style="font-weight:700;font-size:15px;margin:0 0 4px">${esc(e.titulo)}</div>
         ${e.descripcion ? `<p style="font-size:13px;color:#666;line-height:1.5;margin-bottom:10px">${esc(e.descripcion)}</p>` : ''}
         ${e.facilitadores_educacion?.nombre ? `<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#777;margin-bottom:12px">
-          ${e.facilitadores_educacion.foto_url ? `<img src="${esc(e.facilitadores_educacion.foto_url)}" style="width:22px;height:22px;border-radius:50%;object-fit:cover">` : ''}
+          ${e.facilitadores_educacion.foto_url ? `<img src="${esc(e.facilitadores_educacion.foto_url)}" alt="${esc(e.facilitadores_educacion.nombre)}" style="width:22px;height:22px;border-radius:50%;object-fit:cover">` : ''}
           Dictado por ${esc(e.facilitadores_educacion.nombre)}
         </div>` : ''}
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -2182,7 +2182,7 @@ function abrirLightbox(url) {
     lb = document.createElement('div');
     lb.id = 'img-lightbox';
     lb.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:24px;cursor:zoom-out';
-    lb.innerHTML = `<img id="img-lightbox-img" style="max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.5)">`;
+    lb.innerHTML = `<img id="img-lightbox-img" alt="Imagen ampliada" style="max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.5)">`;
     lb.addEventListener('click', () => { lb.style.display = 'none'; });
     document.body.appendChild(lb);
   }
@@ -2482,7 +2482,7 @@ function wireResenasProducto(p) {
     fotoWrap.querySelector('#rp-foto-input')?.addEventListener('change', (e) => {
       fotoResenaFile = e.target.files?.[0] || null;
       const prev = fotoWrap.querySelector('#rp-foto-preview');
-      if (prev) prev.innerHTML = fotoResenaFile ? `<img src="${URL.createObjectURL(fotoResenaFile)}" style="width:56px;height:56px;object-fit:cover;border-radius:8px">` : '';
+      if (prev) prev.innerHTML = fotoResenaFile ? `<img src="${URL.createObjectURL(fotoResenaFile)}" alt="Vista previa de tu foto" style="width:56px;height:56px;object-fit:cover;border-radius:8px">` : '';
     });
   }
 
@@ -3485,7 +3485,7 @@ async function cargarPanelProfesional() {
   const fotoEl = $("#prof-preview-foto");
   if (fotoEl) {
     fotoEl.innerHTML = prof.imagen_url
-      ? `<img src="${prof.imagen_url}" style="width:100%;height:100%;object-fit:cover">`
+      ? `<img src="${prof.imagen_url}" alt="${esc(prof.nombre || '')}" style="width:100%;height:100%;object-fit:cover">`
       : (prof.nombre || 'P')[0];
   }
   const el = (id, val) => { const e = $("#" + id); if (e) e.textContent = val || '—'; };
@@ -3528,7 +3528,7 @@ async function cargarPanelProfesional() {
     // Actualizar vista previa
     el("prof-preview-area",  payload.area);
     el("prof-preview-desc",  payload.descripcion);
-    if (fotoEl && imagen_url) fotoEl.innerHTML = `<img src="${imagen_url}" style="width:100%;height:100%;object-fit:cover">`;
+    if (fotoEl && imagen_url) fotoEl.innerHTML = `<img src="${imagen_url}" alt="${esc(prof.nombre || '')}" style="width:100%;height:100%;object-fit:cover">`;
 
     btn.disabled = false;
     const msg = $("#prof-edit-msg");
