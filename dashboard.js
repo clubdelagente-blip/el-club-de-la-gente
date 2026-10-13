@@ -2251,6 +2251,7 @@ async function cargarTienda() {
 
   let catActiva = 'todos';
   let orden = 'relevancia';
+  let queryTexto = '';
 
   function tarjeta(p) {
     const precioNormal = p.precio_normal != null ? COP(p.precio_normal) : '';
@@ -2290,6 +2291,16 @@ async function cargarTienda() {
 
   function productosFiltrados() {
     let lista = catActiva === 'todos' ? todos : todos.filter(p => p.categoria_id === catActiva);
+    const q = queryTexto.trim().toLowerCase();
+    if (q) {
+      lista = lista.filter(p => {
+        const vendedor = p._origen === 'club' ? 'tienda del club' : (p.aliados?.tienda_nombre || p.aliados?.nombre || '');
+        return (p.nombre || '').toLowerCase().includes(q)
+          || (p.descripcion || '').toLowerCase().includes(q)
+          || (p.categorias_productos?.nombre || '').toLowerCase().includes(q)
+          || vendedor.toLowerCase().includes(q);
+      });
+    }
     if (orden === 'precio') {
       lista = [...lista].sort((a, b) => (a.precio_descuento ?? a.precio_normal ?? 0) - (b.precio_descuento ?? b.precio_normal ?? 0));
     } else if (orden === 'calificacion') {
@@ -2300,7 +2311,12 @@ async function cargarTienda() {
   }
 
   function renderGrid() {
-    grid.innerHTML = productosFiltrados().map(tarjeta).join('');
+    const lista = productosFiltrados();
+    grid.innerHTML = lista.length ? lista.map(tarjeta).join('') : `
+      <div style="text-align:center;padding:48px 20px;grid-column:1/-1">
+        <span style="display:inline-flex;width:38px;height:38px;border-radius:50%;background:var(--verde-soft);color:var(--verde);align-items:center;justify-content:center;margin-bottom:14px">${ic("search-x")}</span>
+        <p style="font-size:13px;color:var(--tinta-45,#888);max-width:320px;margin:0 auto;line-height:1.5">No encontramos productos para tu búsqueda. Prueba con otra palabra o categoría.</p>
+      </div>`;
     if (window.lucide) lucide.createIcons();
     grid.querySelectorAll('[data-ver-prod]').forEach(card => card.addEventListener('click', (e) => {
       if (e.target.closest('[data-comprar]')) return;
@@ -2318,10 +2334,12 @@ async function cargarTienda() {
 
   function mostrarVistaTienda(vista) {
     const wrapPedidos = document.getElementById('mis-pedidos-club-wrap');
+    const buscadorEl = document.querySelector('.tienda-search');
     const esPedidos = vista === 'pedidos';
     if (wrapPedidos) wrapPedidos.style.display = esPedidos ? '' : 'none';
     grid.style.display = esPedidos ? 'none' : '';
     if (ordenEl) ordenEl.style.display = esPedidos ? 'none' : '';
+    if (buscadorEl) buscadorEl.style.display = esPedidos ? 'none' : '';
   }
 
   if (catsEl) {
@@ -2351,6 +2369,10 @@ async function cargarTienda() {
       renderGrid();
     });
   }
+  document.getElementById('tienda-search')?.addEventListener('input', (e) => {
+    queryTexto = e.target.value;
+    renderGrid();
+  });
   renderGrid();
   mostrarVistaTienda('productos');
   cargarMisPedidosClub();

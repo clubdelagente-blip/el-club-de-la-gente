@@ -3,6 +3,12 @@
    Hereda variables y tipografía de styles.css
    ============================================================ */
 
+.tienda-search { position: relative; margin-bottom: 14px; }
+.tienda-search input { width: 100%; box-sizing: border-box; font-family: var(--cuerpo); font-size: 14px; color: var(--tinta); padding: 11px 14px 11px 40px; border: 1px solid var(--linea); border-radius: 12px; background: var(--crema-2); transition: border-color .15s, background .15s; }
+.tienda-search input::placeholder { color: var(--tinta-45); }
+.tienda-search input:focus { outline: none; border-color: var(--verde); background: #fff; }
+.tienda-search svg, .tienda-search i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--tinta-45); pointer-events: none; }
+
 .dash-body { background: var(--crema-2); min-height: 100vh; }
 
 /* ---------- Layout ---------- */
