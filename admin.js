@@ -362,6 +362,7 @@ function renderAgente() {
       <div class="ad-spacer"></div>
       <button class="ad-btn ad-btn--verde" id="ag-broadcast">${ic("megaphone")} Difusión masiva</button>
     </div>
+    <div class="ad-metrics" id="ag-stats" style="margin-bottom:18px"></div>
     <div class="ag-wrap">
       <div class="ag-list">
         <div class="ag-list__top">

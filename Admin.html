@@ -1055,12 +1055,33 @@ let _agConvsAll=[], _agActive=null, _agQ='', _agPendingFile=null;
 let _agRecording=false, _agRecRecorder=null, _agRecCancel=null, _agRecStartTs=0, _agRecInterval=null;
 function _agTiempo(iso){return new Date(iso).toLocaleTimeString('es-CO',{hour:'numeric',minute:'2-digit',hour12:true}).toLowerCase();}
 
+// Qué tan bien está funcionando el Agente -- antes no había ninguna forma de
+// medir esto, solo se veía chat por chat. Usa los últimos 30 días de
+// "conversaciones" (ya se guardaba todo, solo faltaba resumirlo).
+function renderAgStats(C){
+  const el=$('#ag-stats');if(!el)return;
+  const hace30=new Date(Date.now()-30*24*60*60*1000);
+  const recientes=C.filter(m=>new Date(m.created_at)>=hace30);
+  const numeros=new Set(recientes.map(m=>(m.whatsapp||'').replace(/\D/g,'')).filter(Boolean));
+  const deUsuario=recientes.filter(m=>m.rol==='user');
+  const deAsistente=recientes.filter(m=>m.rol==='assistant');
+  const escaladas=deAsistente.filter(m=>m.escalado===true).length;
+  const tasaEscalado=deAsistente.length?Math.round((escaladas/deAsistente.length)*100):0;
+  const promedioMsj=numeros.size?Math.round((recientes.length/numeros.size)*10)/10:0;
+  el.innerHTML=
+    window.metric('message-circle',numeros.size,'Conversaciones','Últimos 30 días','','up')+
+    window.metric('send',deUsuario.length,'Mensajes recibidos','Últimos 30 días','','up')+
+    window.metric('user-check',`${tasaEscalado}%`,'Se escalan a una persona',`${escaladas} de ${deAsistente.length} respuestas`,'','up')+
+    window.metric('repeat',promedioMsj,'Mensajes por conversación','Promedio, últimos 30 días','','up');
+}
+
 async function cargarAgenteReal(){
   const[{data:conv},{data:perfiles}]=await Promise.all([
-    supabase.from('conversaciones').select('whatsapp,rol,contenido,media_url,media_type,created_at').order('created_at',{ascending:true}),
+    supabase.from('conversaciones').select('whatsapp,rol,contenido,media_url,media_type,escalado,created_at').order('created_at',{ascending:true}),
     supabase.from('perfiles').select('id,nombre,whatsapp,plan'),
   ]);
   const C=conv||[],P=perfiles||[];
+  renderAgStats(C);
   const porNumero={};
   C.forEach(m=>{
     const key=(m.whatsapp||'').replace(/\D/g,'');
