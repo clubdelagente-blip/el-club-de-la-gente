@@ -14,10 +14,38 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN")!;
 const TWILIO_WEBHOOK_URL = Deno.env.get("TWILIO_WEBHOOK_URL")!;
+const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID")!;
+
+// Modelo de visión de Groq (ver verificar-comprobante.ts para más contexto
+// de por qué esto se revisa aparte -- Groq cambia su catálogo seguido).
+const MODELO_VISION = "qwen/qwen3.8-27b";
+
+// Modelo de transcripción de audio (Whisper) de Groq, para notas de voz.
+const MODELO_AUDIO = "whisper-large-v3-turbo";
 
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MIN = 5;
 const MAX_MESSAGE_LENGTH = 500;
+
+// Mismas etiquetas de estado que dashboard.js (ESTADO_PEDIDO_CLUB), sin color
+// -- solo el texto, para que el Agente describa el estado con las mismas
+// palabras que ya ve el miembro en "Mis pedidos".
+const ESTADO_PEDIDO_CLUB_TXT: Record<string, string> = {
+  pendiente_pago: "Confirmando pago",
+  pagado: "Pagado, en cola para pedir",
+  pedido_proveedor: "Pedido al proveedor",
+  en_transito: "En tránsito",
+  aduana: "En aduana",
+  entregado: "Entregado",
+  cancelado: "Cancelado",
+};
+
+const ESTADO_PEDIDO_ALIADO_TXT: Record<string, string> = {
+  pendiente: "Pendiente de confirmación del negocio",
+  confirmado: "Confirmado por el negocio",
+  rechazado: "Rechazado",
+  entregado: "Entregado",
+};
 
 const INJECTION_PATTERNS = [
   /ignora\s+(las\s+)?instrucciones/i,
@@ -73,6 +101,98 @@ async function excedeLimite(supabase: ReturnType<typeof createClient>, whatsapp:
     .eq("rol", "user")
     .gte("created_at", desde);
   return (count ?? 0) >= RATE_LIMIT_MAX;
+}
+
+// ─── Media entrante (fotos y audios de WhatsApp) ────────────────────────────
+// Twilio exige Basic Auth para descargar el archivo -- Groq no puede recibir
+// esa URL directo porque Groq la descarga por su cuenta y no tiene esas
+// credenciales. Por eso se descarga aquí con la auth de Twilio. Las fotos se
+// vuelven a subir al bucket "contenido" (mismo bucket y patrón que usa
+// Admin.html para las fotos que YA se envían desde el Club) para tener una
+// URL pública que Groq sí pueda leer; los audios se transcriben directo
+// (Whisper recibe el archivo, no una URL) y TAMBIÉN se suben, para que el
+// audio original quede reproducible en el hilo de Admin → Agente WhatsApp.
+
+async function descargarMediaTwilio(mediaUrl: string): Promise<Blob | null> {
+  try {
+    const authHeader = "Basic " + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
+    const res = await fetch(mediaUrl, { headers: { Authorization: authHeader } });
+    if (!res.ok) return null;
+    return await res.blob();
+  } catch (_) {
+    return null;
+  }
+}
+
+async function subirBlobAStorage(
+  supabase: ReturnType<typeof createClient>,
+  blob: Blob,
+  contentType: string
+): Promise<string | null> {
+  try {
+    const ext = (contentType.split("/")[1] || "bin").split(";")[0];
+    const path = `wa-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+    const { error } = await supabase.storage.from("contenido").upload(path, blob, { contentType });
+    if (error) return null;
+    return supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function descargarYSubirMedia(
+  supabase: ReturnType<typeof createClient>,
+  mediaUrl: string,
+  contentType: string
+): Promise<string | null> {
+  const blob = await descargarMediaTwilio(mediaUrl);
+  if (!blob) return null;
+  return subirBlobAStorage(supabase, blob, contentType);
+}
+
+async function transcribirAudioWhatsApp(blob: Blob, contentType: string): Promise<string | null> {
+  try {
+    const ext = (contentType.split("/")[1] || "ogg").split(";")[0];
+    const form = new FormData();
+    form.append("file", blob, `audio.${ext}`);
+    form.append("model", MODELO_AUDIO);
+    form.append("language", "es");
+    const res = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${GROQ_API_KEY}` },
+      body: form,
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data?.text || "").trim() || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function describirImagenWhatsApp(imageUrl: string): Promise<string | null> {
+  try {
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${GROQ_API_KEY}` },
+      body: JSON.stringify({
+        model: MODELO_VISION,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "text", text: "Describe en español, en máximo 3 frases, qué se ve en esta imagen. Sé concreto (objeto, texto visible, contexto relevante) para que alguien que no puede verla entienda de qué se trata." },
+            { type: "image_url", image_url: { url: imageUrl } },
+          ],
+        }],
+        temperature: 0,
+        max_tokens: 200,
+      }),
+    });
+    const data = await groqRes.json();
+    return data?.choices?.[0]?.message?.content?.trim() || null;
+  } catch (_) {
+    return null;
+  }
 }
 
 // ─── Numerología ────────────────────────────────────────────────────────────
@@ -383,7 +503,11 @@ GUÍA POR SITUACIÓN:
 
 // ─── System prompt ───────────────────────────────────────────────────────────
 
-function buildSystemPrompt(perfil: Record<string, unknown>, numerologia: number, aliados: Record<string, unknown>[] = [], promos: Record<string, unknown>[] = [], config: Record<string, string | null> = {}): string {
+function formatoCOP(n: number): string {
+  return "$" + Math.round(n).toLocaleString("es-CO");
+}
+
+function buildSystemPrompt(perfil: Record<string, unknown>, numerologia: number, aliados: Record<string, unknown>[] = [], promos: Record<string, unknown>[] = [], config: Record<string, string | null> = {}, usoDescuentos = "no disponible", productosTienda: Record<string, unknown>[] = [], profesionales: Record<string, unknown>[] = [], referidosActivos = 0, tramitesPendientes = "", programas: Record<string, unknown>[] = [], anuncios: Record<string, unknown>[] = [], vacantes: Record<string, unknown>[] = [], talleresEducacion: Record<string, unknown>[] = []): string {
   const perfilNumerologico = getPerfilNumerologico(numerologia);
 
   const categorias = Array.isArray(perfil.categorias_interes)
@@ -411,6 +535,8 @@ PERFIL DEL MIEMBRO:
 - Nombre: ${perfil.nombre || "miembro"}
 - Plan actual: ${perfil.plan || "básica"}
 - Fecha de vencimiento: ${perfil.fecha_vencimiento || "no registrada"}
+- Descuentos de aliados disponibles: ${usoDescuentos}
+- Referidos activos (para Vitalicia, se necesitan 5): ${referidosActivos} de 5
 - Rol: ${perfil.rol || "miembro"}
 - Número numerológico: ${numerologia}
 - Género: ${perfil.genero || "no especificado"}
@@ -445,6 +571,71 @@ NUNCA inventes un link si no está disponible arriba — dile la verdad, que ese
       return `- ${a.nombre} (${a.categoria}): ${a.descuento} de descuento · ${a.direccion}${wa ? ` · WhatsApp: ${wa}` : ""}`;
     }).join("\n");
     base += `\n\nALIADOS DISPONIBLES:\n${aliadosList}\n\nCuando el miembro quiera contactar un aliado específico, comparte el link de WhatsApp así: "Te conecto directo con [nombre]: https://wa.me/57XXXXXXXXXX"`;
+  }
+
+  if (productosTienda.length > 0) {
+    const prodsList = productosTienda.slice(0, 40).map((p) => {
+      const precioNormal = p.precio_normal as number | null;
+      const precioDesc = p.precio_descuento as number | null;
+      const precioTxt = precioDesc != null && precioNormal != null && precioDesc < precioNormal
+        ? `${formatoCOP(precioDesc)} (antes ${formatoCOP(precioNormal)})`
+        : precioNormal != null ? formatoCOP(precioNormal) : "precio a consultar";
+      const stock = p.stock as number | null;
+      const stockTxt = stock != null && stock <= 0 ? " · AGOTADO" : "";
+      const cat = (p.categorias_productos as Record<string, unknown> | null)?.nombre as string | undefined;
+      return `- ${p.nombre}${cat ? ` (${cat})` : ""}: ${precioTxt} · vendido por ${p.vendedor}${stockTxt}`;
+    }).join("\n");
+    base += `\n\nPRODUCTOS EN LA TIENDA DEL CLUB (acceso gratis para TODOS los planes, incluido Gratis):\n${prodsList}\n\nSi preguntan qué hay en la Tienda o por un producto, responde con esta lista real -- nunca inventes productos ni precios que no estén aquí. Si preguntan por algo que no está en la lista, dile que por ahora no está disponible. La Tienda se ve completa dentro de su cuenta del Club, en la pestaña "Tienda".`;
+  }
+
+  if (profesionales.length > 0) {
+    const esPremiumProf = perfil.plan === "premium" || perfil.plan === "vitalicia";
+    const profsList = profesionales.map((p) => {
+      const servicios = (p.servicios as Record<string, unknown>[]) || [];
+      const serviciosTxt = servicios.length
+        ? servicios.map((s) => `${s.nombre}${s.es_cortesia ? " (cortesía gratis)" : s.descuento_pct ? ` (${s.descuento_pct} de descuento)` : s.tarifa ? ` (${formatoCOP(s.tarifa as number)})` : ""}`).join(", ")
+        : "aún sin servicios cargados";
+      const contacto = esPremiumProf && p.whatsapp
+        ? ` · WhatsApp: wa.me/57${String(p.whatsapp).replace(/\D/g, "")}`
+        : "";
+      return `- ${p.nombre} (${p.area || "profesional"}): ${p.descripcion || ""} · Servicios: ${serviciosTxt}${contacto}`;
+    }).join("\n");
+    base += `\n\nPROFESIONALES DEL CLUB (el directorio se puede mencionar a cualquier plan; CONTACTAR es exclusivo Premium/Vitalicia):\n${profsList}\n\n${esPremiumProf
+      ? "Este miembro SÍ es Premium/Vitalicia: si pide contactar a un profesional, dale directo el WhatsApp de arriba."
+      : 'Este miembro NO es Premium/Vitalicia: puedes contarle qué profesionales hay y qué ofrecen, pero NUNCA inventes ni compartas un número de contacto (no lo tienes en este prompt) -- dile que contactar directo a un profesional es un beneficio exclusivo Premium, y que puede subir de plan en https://elclubdelagente.com/Planes.html.'}`;
+  }
+
+  if (tramitesPendientes) {
+    base += `\n\nTRÁMITES Y PEDIDOS PENDIENTES DE ESTE MIEMBRO (datos reales, úsalos para responder directo sin escalar):\n${tramitesPendientes}`;
+  }
+
+  if (programas.length > 0) {
+    const programasList = programas.map((p) => `- ${p.nombre}${p.categoria ? ` (${p.categoria})` : ""}: ${p.descripcion || ""}`).join("\n");
+    base += `\n\nPROGRAMAS SOCIALES ACTIVOS (sin fecha fija, son iniciativas permanentes):\n${programasList}\n\nSon gratis para cualquier plan. Si el miembro quiere postularse como voluntario o saber más, dile que puede hacerlo desde la pestaña "Programas" dentro de su cuenta del Club.`;
+  }
+
+  if (talleresEducacion.length > 0) {
+    const talleresList = talleresEducacion.map((t) => {
+      const fechaFmt = t.fecha ? new Date(`${t.fecha}T00:00:00`).toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" }) : "fecha por confirmar";
+      const facilitador = (t.facilitadores_educacion as Record<string, unknown> | null)?.nombre as string | undefined;
+      const categoria = (t.categorias_educacion as Record<string, unknown> | null)?.nombre as string | undefined;
+      return `- ${t.titulo}${categoria ? ` (${categoria})` : ""} -- ${fechaFmt}${t.lugar ? ` · 📍 ${t.lugar}` : ""}${facilitador ? ` · con ${facilitador}` : ""}${t.descripcion ? `\n  ${t.descripcion}` : ""}`;
+    }).join("\n");
+    base += `\n\nPRÓXIMOS TALLERES DE EDUCACIÓN (fecha específica, gratis para todos los planes):\n${talleresList}\n\nSi preguntan qué taller hay esta semana, el próximo lunes, o por una fecha puntual, responde con esta lista real -- nunca inventes un taller ni una fecha que no esté aquí. Si no hay nada programado para cuando preguntan, dile la verdad.`;
+  }
+
+  if (anuncios.length > 0) {
+    const anunciosList = anuncios.map((a) => `- ${a.titulo}${a.contenido ? `: ${a.contenido}` : ""}`).join("\n");
+    base += `\n\nPROMOCIONES/ANUNCIOS ACTIVOS DEL CLUB:\n${anunciosList}`;
+  }
+
+  if (vacantes.length > 0) {
+    const vacantesList = vacantes.map((v) => {
+      const al = v.aliados as Record<string, unknown> | null;
+      const wa = v.whatsapp ? ` · WhatsApp: wa.me/57${String(v.whatsapp).replace(/\D/g, "")}` : "";
+      return `- ${v.titulo}${al?.nombre ? ` (${al.nombre})` : ""}: ${v.descripcion || ""}${wa}`;
+    }).join("\n");
+    base += `\n\nVACANTES ABIERTAS EN LA BOLSA DE TRABAJO:\n${vacantesList}\n\nEstas son públicas para cualquier plan -- si al miembro le interesa una, dale el contacto de WhatsApp de arriba directo.`;
   }
 
   base += `\n\nTÉCNICAS DE VENTA Y ATENCIÓN AL CLIENTE:
@@ -538,8 +729,23 @@ Deno.serve(async (req: Request) => {
 
     const from = urlParams.get("From") || "";
     const rawBody = (urlParams.get("Body") || "").trim();
+    const numMedia = parseInt(urlParams.get("NumMedia") || "0", 10);
+    const mediaUrl0 = numMedia > 0 ? urlParams.get("MediaUrl0") || "" : "";
+    const mediaType0 = numMedia > 0 ? urlParams.get("MediaContentType0") || "" : "";
+    const esImagen = mediaType0.startsWith("image/");
+    const esAudio = mediaType0.startsWith("audio/");
+    // Admin.html renderiza el hilo del Agente guardando/leyendo media_type
+    // como 'image'/'video'/'audio' (etiqueta corta), no el MIME completo que
+    // manda Twilio -- hay que normalizar para que el adjunto se vea ahí.
+    const mediaTypeCorto0 = mediaType0.startsWith("video")
+      ? "video"
+      : mediaType0.startsWith("audio")
+      ? "audio"
+      : mediaType0.startsWith("image")
+      ? "image"
+      : null;
 
-    if (!from || !rawBody) return twimlEmpty;
+    if (!from || (!rawBody && numMedia === 0)) return twimlEmpty;
 
     const { texto: messageBody, esAtaque } = sanitizar(rawBody);
     if (esAtaque) {
@@ -610,11 +816,159 @@ Deno.serve(async (req: Request) => {
       return new Response(twimlInv, { headers: { "Content-Type": "text/xml", ...corsHeaders } });
     }
 
+    // Media no soportada (video, documentos) -- todavía no lo entendemos, así
+    // que se guarda la referencia igual (queda visible en el hilo de Admin →
+    // Agente WhatsApp) pero se responde con un mensaje fijo, sin gastar una
+    // llamada a Groq que no podría usarla.
+    if (numMedia > 0 && !esImagen && !esAudio) {
+      const mediaGuardada = await descargarYSubirMedia(supabase, mediaUrl0, mediaType0);
+      const msgNoSoportado = "Por ahora solo puedo leer fotos 📷 y notas de voz 🎙️ — todavía no entiendo otro tipo de archivos. Si quieres, escríbeme el mensaje en texto.";
+      await supabase.from("conversaciones").insert({
+        whatsapp: whatsappLocal,
+        rol: "user",
+        contenido: messageBody || null,
+        media_url: mediaGuardada,
+        media_type: mediaTypeCorto0,
+      });
+      await supabase.from("conversaciones").insert({ whatsapp: whatsappLocal, rol: "assistant", contenido: msgNoSoportado });
+      const twimlNoSoportado = `<Response><Message>${msgNoSoportado}</Message></Response>`;
+      return new Response(twimlNoSoportado, { headers: { "Content-Type": "text/xml", ...corsHeaders } });
+    }
+
+    let mediaUrlFinal: string | null = null;
+
+    // Audio: se descarga una sola vez de Twilio y ese mismo archivo se usa
+    // para (a) transcribirlo con Whisper y (b) subirlo a Storage para que
+    // quede reproducible en Admin -- así no se descarga dos veces.
+    let textoMiembro = messageBody;
+    if (numMedia > 0 && esAudio) {
+      const blobAudio = await descargarMediaTwilio(mediaUrl0);
+      let audioTranscrito: string | null = null;
+      if (blobAudio) {
+        mediaUrlFinal = await subirBlobAStorage(supabase, blobAudio, mediaType0);
+        audioTranscrito = await transcribirAudioWhatsApp(blobAudio, mediaType0);
+      }
+
+      if (!audioTranscrito) {
+        const msgAudioFallido = "No logré entender tu nota de voz 🎙️ — ¿me la puedes escribir en texto?";
+        await supabase.from("conversaciones").insert({
+          whatsapp: whatsappLocal,
+          rol: "user",
+          contenido: null,
+          media_url: mediaUrlFinal,
+          media_type: mediaTypeCorto0,
+        });
+        await supabase.from("conversaciones").insert({ whatsapp: whatsappLocal, rol: "assistant", contenido: msgAudioFallido });
+        const twimlAudioFallido = `<Response><Message>${msgAudioFallido}</Message></Response>`;
+        return new Response(twimlAudioFallido, { headers: { "Content-Type": "text/xml", ...corsHeaders } });
+      }
+
+      // El texto transcrito es lo que realmente escribió/dijo el miembro --
+      // pasa por el mismo filtro antiinyección que el texto escrito a mano.
+      const { texto: audioSanitizado, esAtaque: ataqueEnAudio } = sanitizar(audioTranscrito);
+      if (ataqueEnAudio) {
+        console.warn("Prompt injection detectado (audio) desde:", from);
+        const twimlBlockAudio = `<Response><Message>Solo puedo ayudarte con temas del Club de la Gente.</Message></Response>`;
+        return new Response(twimlBlockAudio, { headers: { "Content-Type": "text/xml", ...corsHeaders } });
+      }
+      textoMiembro = audioSanitizado;
+    }
+
+    // Imagen: se descarga de Twilio (requiere su propia auth, Groq no la
+    // tiene) y se vuelve a subir a Supabase Storage para tener una URL
+    // pública que Groq sí pueda leer directo.
+    let descripcionImagen: string | null = null;
+    if (numMedia > 0 && esImagen) {
+      mediaUrlFinal = await descargarYSubirMedia(supabase, mediaUrl0, mediaType0);
+      if (mediaUrlFinal) {
+        descripcionImagen = await describirImagenWhatsApp(mediaUrlFinal);
+      }
+    }
+
     // Cargar aliados
     const { data: aliadosData } = await supabase
       .from("aliados")
       .select("nombre, categoria, descuento, whatsapp, direccion");
     const aliados = aliadosData || [];
+
+    // Cargar productos de la Tienda (Club + aliados) -- acceso gratis para
+    // todos los planes, igual que en Perfil.html (mismas tablas y filtros).
+    const hoyTienda = new Date().toISOString().slice(0, 10);
+    const [{ data: prodsClub }, { data: prodsAliado }] = await Promise.all([
+      supabase.from("productos").select("nombre, precio_normal, precio_descuento, stock, categorias_productos(nombre)").eq("activo", true),
+      supabase.from("productos_aliado")
+        .select("nombre, precio_normal, precio_descuento, stock, categorias_productos(nombre), aliados(nombre, tienda_nombre)")
+        .eq("estado", "aprobado").eq("activo", true)
+        .or(`fecha_fin.is.null,fecha_fin.gte.${hoyTienda}`),
+    ]);
+    const productosTienda = [
+      ...(prodsClub || []).map((p: Record<string, unknown>) => ({ ...p, vendedor: "Tienda del Club" })),
+      ...(prodsAliado || []).map((p: Record<string, unknown>) => {
+        const al = p.aliados as Record<string, unknown> | null;
+        return { ...p, vendedor: (al?.tienda_nombre as string) || (al?.nombre as string) || "Aliado" };
+      }),
+    ];
+
+    // Cargar profesionales del Club -- el directorio se puede mencionar a
+    // cualquier plan, pero el contacto de WhatsApp es exclusivo Premium/
+    // Vitalicia (mismo candado que ya usa Perfil.html en "Profesionales").
+    const { data: profsData } = await supabase
+      .from("profesionales")
+      .select("id, nombre, area, descripcion, whatsapp")
+      .eq("activo", true).eq("mostrar_premium", true);
+    let profesionales: Record<string, unknown>[] = profsData || [];
+    if (profesionales.length) {
+      const { data: serviciosData } = await supabase
+        .from("servicios_profesional")
+        .select("profesional_id, nombre, tarifa, es_cortesia, descuento_pct")
+        .in("profesional_id", profesionales.map((p) => p.id as string));
+      const serviciosPorProf: Record<string, Record<string, unknown>[]> = {};
+      for (const s of serviciosData || []) {
+        const pid = s.profesional_id as string;
+        (serviciosPorProf[pid] ||= []).push(s);
+      }
+      profesionales = profesionales.map((p) => ({ ...p, servicios: serviciosPorProf[p.id as string] || [] }));
+    }
+
+    // Cargar programas sociales reales (misma tabla que Admin → Programas
+    // sociales y la pestaña "Programas" del miembro).
+    const { data: programasData } = await supabase
+      .from("programas")
+      .select("nombre, descripcion, categoria")
+      .eq("activo", true);
+    const programas = programasData || [];
+
+    // Cargar próximos talleres de Educación (tabla aparte de "programas" --
+    // esta sí tiene fecha/lugar/facilitador, es la que usa el aviso
+    // automático "avisar-eventos-educacion" un día antes de cada taller).
+    const hoyEventos = new Date().toISOString().slice(0, 10);
+    const { data: eventosData } = await supabase
+      .from("eventos_educacion")
+      .select("titulo, descripcion, fecha, lugar, facilitadores_educacion(nombre), categorias_educacion(nombre)")
+      .eq("activo", true)
+      .gte("fecha", hoyEventos)
+      .order("fecha", { ascending: true })
+      .limit(10);
+    const talleresEducacion = eventosData || [];
+
+    // Cargar promociones/anuncios activos (misma tabla que alimenta el banner
+    // de la Tienda -- últimos 5, igual que Perfil.html).
+    const { data: anunciosData } = await supabase
+      .from("anuncios")
+      .select("titulo, contenido")
+      .order("created_at", { ascending: false })
+      .limit(5);
+    const anuncios = anunciosData || [];
+
+    // Cargar vacantes abiertas de la bolsa de trabajo (mismo filtro que la
+    // vista pública: aprobadas y activas).
+    const { data: vacantesData } = await supabase
+      .from("vacantes")
+      .select("titulo, descripcion, whatsapp, aliados(nombre)")
+      .eq("estado", "aprobada").eq("activo", true)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    const vacantes = vacantesData || [];
 
     // Cargar configuración (ej. links de los grupos de conductores)
     const { data: configData } = await supabase
@@ -630,7 +984,74 @@ Deno.serve(async (req: Request) => {
       numerologia = calcularNumerologia(perfil.fecha_nacimiento);
     }
 
-    const systemPrompt = buildSystemPrompt(perfil, numerologia, aliados, [], config);
+    // Descuentos usados este mes -- mismo límite y conteo que ya usa el
+    // dashboard (LIMITE_DESCUENTOS en dashboard.js: gratis 0, básica 2,
+    // premium/vitalicia ilimitado). Antes el agente no sabía esto y no podía
+    // responder "¿cuántos descuentos me quedan?" con un dato real.
+    const LIMITE_DESCUENTOS: Record<string, number> = { gratis: 0, basica: 2, premium: Infinity, vitalicia: Infinity };
+    const limiteDescuentos = LIMITE_DESCUENTOS[planActual] ?? 2;
+    let usoDescuentos = "ilimitados este mes";
+    if (limiteDescuentos !== Infinity && perfil.id) {
+      const inicioMes = new Date();
+      inicioMes.setDate(1);
+      inicioMes.setHours(0, 0, 0, 0);
+      const { count: usosMes } = await supabase
+        .from("descuentos")
+        .select("id", { count: "exact", head: true })
+        .eq("miembro_id", perfil.id as string)
+        .gte("created_at", inicioMes.toISOString());
+      const restantes = Math.max(0, limiteDescuentos - (usosMes || 0));
+      usoDescuentos = `${restantes} de ${limiteDescuentos} este mes (ya usó ${usosMes || 0})`;
+    }
+
+    // Referidos activos -- mismo conteo que usa dashboard.js para desbloquear
+    // la Vitalicia (5 referidos que ya tengan un plan pago o la vitalicia).
+    let referidosActivos = 0;
+    if (perfil.id) {
+      const { count: refCount } = await supabase
+        .from("perfiles")
+        .select("id", { count: "exact", head: true })
+        .eq("referido_por", perfil.id as string)
+        .in("plan", ["basica", "premium", "vitalicia"]);
+      referidosActivos = refCount || 0;
+    }
+
+    // Trámites y pedidos propios pendientes -- para que el Agente pueda
+    // responder "¿cómo va mi pedido/comprobante?" con el estado real, en vez
+    // de escalar una pregunta que la base de datos ya puede contestar.
+    let tramitesPendientes = "";
+    if (perfil.id) {
+      const [{ data: solPend }, { data: pedidosClubPend }, { data: pedidosAliadoPend }] = await Promise.all([
+        supabase.from("solicitudes_membresia").select("plan, estado, created_at")
+          .eq("miembro_id", perfil.id as string).in("estado", ["pendiente", "rechazado"])
+          .order("created_at", { ascending: false }).limit(1),
+        supabase.from("pedidos_club").select("nombre_producto, estado, numero_guia")
+          .eq("miembro_id", perfil.id as string).not("estado", "in", "(entregado,cancelado)")
+          .order("created_at", { ascending: false }).limit(5),
+        supabase.from("pedidos").select("estado, productos_aliado(nombre)")
+          .eq("miembro_id", perfil.id as string).not("estado", "in", "(entregado,rechazado)")
+          .order("created_at", { ascending: false }).limit(5),
+      ]);
+      const lineas: string[] = [];
+      const sol = (solPend || [])[0] as Record<string, unknown> | undefined;
+      if (sol) {
+        lineas.push(sol.estado === "rechazado"
+          ? `- Su comprobante de membresía (plan ${sol.plan}) fue RECHAZADO -- puede reintentarlo subiendo uno nuevo desde su cuenta.`
+          : `- Tiene un comprobante de membresía (plan ${sol.plan}) pendiente de revisión -- se activa en menos de 2 horas en horario hábil.`);
+      }
+      for (const p of (pedidosClubPend || []) as Record<string, unknown>[]) {
+        const estLabel = ESTADO_PEDIDO_CLUB_TXT[p.estado as string] || (p.estado as string);
+        lineas.push(`- Pedido Tienda del Club "${p.nombre_producto}": ${estLabel}${p.numero_guia ? ` (guía: ${p.numero_guia})` : ""}.`);
+      }
+      for (const p of (pedidosAliadoPend || []) as Record<string, unknown>[]) {
+        const prodAl = p.productos_aliado as Record<string, unknown> | null;
+        const estLabelA = ESTADO_PEDIDO_ALIADO_TXT[p.estado as string] || (p.estado as string);
+        lineas.push(`- Pedido a aliado "${prodAl?.nombre || "producto"}": ${estLabelA}.`);
+      }
+      tramitesPendientes = lineas.join("\n");
+    }
+
+    const systemPrompt = buildSystemPrompt(perfil, numerologia, aliados, [], config, usoDescuentos, productosTienda, profesionales, referidosActivos, tramitesPendientes, programas, anuncios, vacantes, talleresEducacion);
 
     // Cargar historial de conversación (últimos 10 mensajes)
     const { data: historial } = await supabase
@@ -642,15 +1063,33 @@ Deno.serve(async (req: Request) => {
 
     const mensajesHistorial = (historial || []).reverse().map((m: { rol: string; contenido: string }) => ({
       role: m.rol as "user" | "assistant",
-      content: m.contenido,
+      content: m.contenido || "",
     }));
 
-    // Guardar mensaje del usuario
+    // Guardar mensaje del usuario -- se guarda el texto tal cual (si venía de
+    // audio, ya es la transcripción; no la descripción generada por IA de la
+    // imagen, esa es solo para el modelo de texto, que no puede verla); el
+    // hilo de Admin ya sabe renderizar media_url/media_type como imagen/audio.
     await supabase.from("conversaciones").insert({
       whatsapp: whatsappLocal,
       rol: "user",
-      contenido: messageBody,
+      contenido: textoMiembro || null,
+      media_url: mediaUrlFinal,
+      media_type: mediaUrlFinal ? mediaTypeCorto0 : null,
     });
+
+    // Si llegó una imagen, el modelo de texto recibe su descripción en vez
+    // del archivo -- "textoMiembro" (lo que se guarda tal cual) no cambia.
+    let textoParaIA = textoMiembro;
+    if (numMedia > 0 && esImagen) {
+      textoParaIA = descripcionImagen
+        ? (textoMiembro
+            ? `${textoMiembro}\n\n[Imagen adjunta -- descripción automática: ${descripcionImagen}]`
+            : `[Envió una imagen sin texto -- descripción automática: ${descripcionImagen}]`)
+        : (textoMiembro
+            ? `${textoMiembro}\n\n[Envió una imagen pero no se pudo procesar]`
+            : `[Envió una imagen pero no se pudo procesar -- pídele que te cuente qué es en texto]`);
+    }
 
     // Llamar a Groq con historial
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -664,7 +1103,7 @@ Deno.serve(async (req: Request) => {
         messages: [
           { role: "system", content: systemPrompt },
           ...mensajesHistorial,
-          { role: "user", content: messageBody },
+          { role: "user", content: textoParaIA },
         ],
         max_tokens: 400,
         temperature: 0.6,
@@ -678,7 +1117,11 @@ Deno.serve(async (req: Request) => {
     // Escalamiento a una persona real: el modelo marca [ESCALAR] al inicio de
     // su respuesta cuando decide que la conversación necesita atención
     // humana. Se quita antes de enviarse y se avisa por WhatsApp al equipo.
-    if (/^\[ESCALAR\]/i.test(raw)) {
+    // Se guarda también en "conversaciones.escalado" -- antes esto solo
+    // quedaba en el WhatsApp puntual al admin, sin ningún registro para medir
+    // después qué tan seguido pasa.
+    const fueEscalado = /^\[ESCALAR\]/i.test(raw);
+    if (fueEscalado) {
       raw = raw.replace(/^\[ESCALAR\]\s*/i, "");
       const numAdmin = config.numero_admin_notificaciones;
       if (numAdmin) {
@@ -688,7 +1131,7 @@ Deno.serve(async (req: Request) => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             to: numAdmin,
-            body: `🔔 El Agente de WhatsApp escaló una conversación.\n\nMiembro: ${nombreMiembro}\nWhatsApp: ${whatsappLocal}\nÚltimo mensaje: "${messageBody}"\n\nRevísalo en Admin → Agente WhatsApp.`,
+            body: `🔔 El Agente de WhatsApp escaló una conversación.\n\nMiembro: ${nombreMiembro}\nWhatsApp: ${whatsappLocal}\nÚltimo mensaje: "${textoMiembro}"\n\nRevísalo en Admin → Agente WhatsApp.`,
           }),
         }).catch(() => {});
       }
@@ -702,6 +1145,7 @@ Deno.serve(async (req: Request) => {
       whatsapp: whatsappLocal,
       rol: "assistant",
       contenido: respuesta,
+      escalado: fueEscalado,
     });
 
     // Devolver TwiML — hay que escapar el texto, si no un "&" suelto (ej. en un
