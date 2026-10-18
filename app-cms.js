@@ -67,37 +67,38 @@ function promoCardHtml(p, al) {
   const dotsHtml = medios.length > 1
     ? `<div class="pm-carrusel__dots">${medios.map((_, i) => `<span class="${i === 0 ? "is-on" : ""}"></span>`).join("")}</div>`
     : "";
-  const waLink = (!al?._bloqueado && al?.whatsapp)
-    ? `https://wa.me/57${String(al.whatsapp).replace(/\D/g, "")}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.titulo || p.descripcion || badgePromo(p)}" de ${al?.nombre || ""} que vi en El Club de la Gente`)}`
-    : null;
-  const ctaHtml = waLink
-    ? `<a class="pm-wa" href="${waLink}" target="_blank" rel="noopener">${ICON_WA}WhatsApp</a>`
-    : al?._bloqueado
-      ? `<button type="button" class="pm-wa-lock" data-promo-bloqueada>${ic("lock")}Mejora tu plan</button>`
-      : "";
+  // Sin botón de WhatsApp aquí a propósito -- en la portada es solo
+  // vitrina; el botón para contactar al aliado queda en su ficha del
+  // Directorio (promoCardHtml de directorio.js).
   return `
   <div class="pm-card" style="--pm-cc:${cc}">
     <div class="pm-carrusel" data-pm-carrusel role="button" tabindex="0" aria-label="Ver fotos y videos de la promoción">
       <div class="pm-carrusel__track">${slidesHtml}</div>
       ${medios.length > 1 ? `<div class="pm-carrusel__hint">${ic("images")}</div>` : ""}
       ${dotsHtml}
-    </div>
-    <div class="pm-logo-pill">${al?.imagen_url ? `<img src="${al.imagen_url}" alt="${esc(al.nombre || "")}">` : `<span>${esc(al?.nombre || "Aliado")}</span>`}</div>
-    <div class="pm-base">
-      <div class="pm-ticket">
-        <div class="pm-ticket__band">USANDO TU CLUB CARD OBTIENES</div>
-        <div class="pm-ticket__inner">
-          <div class="pm-ticket__word">CLUBCARD</div>
-          <img class="pm-ticket__logo" src="logo-club.png" alt="">
-          <div class="pm-ticket__pct">${esc(badgePromo(p))}</div>
-          <div class="pm-ticket__benef">Beneficio: <b>DESCUENTO</b></div>
+      <div class="pm-carrusel__fade"></div>
+      <div class="pm-logo-pill">${al?.imagen_url ? `<img src="${al.imagen_url}" alt="${esc(al.nombre || "")}">` : `<span>${esc(al?.nombre || "Aliado")}</span>`}</div>
+      <div class="pm-name-pill">${esc(al?.nombre || "")}</div>
+      <div class="pm-cc ccv2--vitalicia">
+        <div class="ccv2-card ccv2-card--front">
+          <img src="marco-card.png" class="ccv2-frame-img" alt="">
+          <div class="ccv2-front__in">
+            <span class="ccv2-brand">CLUBCARD</span>
+            <div class="ccv2-mid"><img src="logo-club.png" class="ccv2-logo-img" alt=""></div>
+            <div class="ccv2-footer">
+              <div class="ccv2-name">BENEFICIO: DESCUENTO</div>
+              <div class="ccv2-codigo">
+                <span class="ccv2-codigo__lbl">Descuento</span>
+                <span class="ccv2-codigo__val">${esc(badgePromo(p))}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="pm-info">
-        <h3 class="pm-titulo">${esc(p.titulo || al?.nombre || "Promo")}</h3>
-        <p class="pm-desc">${esc(p.descripcion || "")}</p>
-        ${ctaHtml}
-      </div>
+    </div>
+    <div class="pm-base">
+      <h3 class="pm-titulo">${esc(p.titulo || al?.nombre || "Promo")}</h3>
+      <p class="pm-desc">${esc(p.descripcion || "")}</p>
       <img class="pm-logo-club" src="logo-club.png" alt="El Club de la Gente">
     </div>
   </div>`;

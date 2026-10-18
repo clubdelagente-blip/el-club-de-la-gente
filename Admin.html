@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=65">
+  <link rel="stylesheet" href="styles.css?v=66">
   <link rel="stylesheet" href="admin.css?v=16">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -2472,23 +2472,30 @@ function promoCardHtmlPreview(p,al){
       <div class="pm-carrusel__track">${slidesHtml}</div>
       ${medios.length>1?`<div class="pm-carrusel__hint">${ic('images')}</div>`:''}
       ${dotsHtml}
-    </div>
-    <div class="pm-logo-pill">${al?.imagen_url?`<img src="${al.imagen_url}" alt="${esc(al.nombre||'')}">`:`<span>${esc(al?.nombre||'Aliado')}</span>`}</div>
-    <div class="pm-base">
-      <div class="pm-ticket">
-        <div class="pm-ticket__band">USANDO TU CLUB CARD OBTIENES</div>
-        <div class="pm-ticket__inner">
-          <div class="pm-ticket__word">CLUBCARD</div>
-          <img class="pm-ticket__logo" src="logo-club.png" alt="">
-          <div class="pm-ticket__pct">${esc(pmBadgePreview(p.tipo))}</div>
-          <div class="pm-ticket__benef">Beneficio: <b>DESCUENTO</b></div>
+      <div class="pm-carrusel__fade"></div>
+      <div class="pm-logo-pill">${al?.imagen_url?`<img src="${al.imagen_url}" alt="${esc(al.nombre||'')}">`:`<span>${esc(al?.nombre||'Aliado')}</span>`}</div>
+      <div class="pm-name-pill">${esc(al?.nombre||'')}</div>
+      <div class="pm-cc ccv2--vitalicia">
+        <div class="ccv2-card ccv2-card--front">
+          <img src="marco-card.png" class="ccv2-frame-img" alt="">
+          <div class="ccv2-front__in">
+            <span class="ccv2-brand">CLUBCARD</span>
+            <div class="ccv2-mid"><img src="logo-club.png" class="ccv2-logo-img" alt=""></div>
+            <div class="ccv2-footer">
+              <div class="ccv2-name">BENEFICIO: DESCUENTO</div>
+              <div class="ccv2-codigo">
+                <span class="ccv2-codigo__lbl">Descuento</span>
+                <span class="ccv2-codigo__val">${esc(pmBadgePreview(p.tipo))}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="pm-info">
-        <h3 class="pm-titulo">${esc(p.titulo||al?.nombre||'Promo')}</h3>
-        <p class="pm-desc">${esc(p.descripcion||'')}</p>
-        ${ctaHtml}
-      </div>
+    </div>
+    <div class="pm-base">
+      <h3 class="pm-titulo">${esc(p.titulo||al?.nombre||'Promo')}</h3>
+      <p class="pm-desc">${esc(p.descripcion||'')}</p>
+      ${ctaHtml}
       <img class="pm-logo-club" src="logo-club.png" alt="El Club de la Gente">
     </div>
   </div>`;

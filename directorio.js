@@ -428,23 +428,30 @@ function promoCardHtml(p, al) {
       <div class="pm-carrusel__track">${slidesHtml}</div>
       ${medios.length > 1 ? `<div class="pm-carrusel__hint">${ic("images")}</div>` : ""}
       ${dotsHtml}
-    </div>
-    <div class="pm-logo-pill">${al?.imagen_url ? `<img src="${al.imagen_url}" alt="${esc(al.nombre || "")}">` : `<span>${esc(al?.nombre || "Aliado")}</span>`}</div>
-    <div class="pm-base">
-      <div class="pm-ticket">
-        <div class="pm-ticket__band">USANDO TU CLUB CARD OBTIENES</div>
-        <div class="pm-ticket__inner">
-          <div class="pm-ticket__word">CLUBCARD</div>
-          <img class="pm-ticket__logo" src="logo-club.png" alt="">
-          <div class="pm-ticket__pct">${esc(badgePromo(p))}</div>
-          <div class="pm-ticket__benef">Beneficio: <b>DESCUENTO</b></div>
+      <div class="pm-carrusel__fade"></div>
+      <div class="pm-logo-pill">${al?.imagen_url ? `<img src="${al.imagen_url}" alt="${esc(al.nombre || "")}">` : `<span>${esc(al?.nombre || "Aliado")}</span>`}</div>
+      <div class="pm-name-pill">${esc(al?.nombre || "")}</div>
+      <div class="pm-cc ccv2--vitalicia">
+        <div class="ccv2-card ccv2-card--front">
+          <img src="marco-card.png" class="ccv2-frame-img" alt="">
+          <div class="ccv2-front__in">
+            <span class="ccv2-brand">CLUBCARD</span>
+            <div class="ccv2-mid"><img src="logo-club.png" class="ccv2-logo-img" alt=""></div>
+            <div class="ccv2-footer">
+              <div class="ccv2-name">BENEFICIO: DESCUENTO</div>
+              <div class="ccv2-codigo">
+                <span class="ccv2-codigo__lbl">Descuento</span>
+                <span class="ccv2-codigo__val">${esc(badgePromo(p))}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="pm-info">
-        <h3 class="pm-titulo">${esc(p.titulo || al?.nombre || "Promo")}</h3>
-        <p class="pm-desc">${esc(p.descripcion || "")}</p>
-        ${ctaHtml}
-      </div>
+    </div>
+    <div class="pm-base">
+      <h3 class="pm-titulo">${esc(p.titulo || al?.nombre || "Promo")}</h3>
+      <p class="pm-desc">${esc(p.descripcion || "")}</p>
+      ${ctaHtml}
       <img class="pm-logo-club" src="logo-club.png" alt="El Club de la Gente">
     </div>
   </div>`;
@@ -570,7 +577,7 @@ function sheetAliado(a) {
     </div>` : ''}
 
     <div class="sheet__sub" id="promos-disponibles">Promociones disponibles</div>
-    <div id="promos-disponibles-grid" style="display:flex;flex-wrap:wrap;gap:16px">
+    <div id="promos-disponibles-grid" style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center">
     ${promos.length ? promos.map((p) => {
       const fotos = (Array.isArray(p.fotos_urls) && p.fotos_urls.length) ? p.fotos_urls : (p.foto_url ? [p.foto_url] : []);
       const esFlyer = fotos.length === 1 && fotos[0].includes('flyer=1');
