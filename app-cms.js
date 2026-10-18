@@ -79,6 +79,8 @@ function promoCardHtml(p, al) {
       <div class="pm-carrusel__fade"></div>
       <div class="pm-logo-pill">${al?.imagen_url ? `<img src="${al.imagen_url}" alt="${esc(al.nombre || "")}">` : `<span>${esc(al?.nombre || "Aliado")}</span>`}</div>
       <div class="pm-name-pill">${esc(al?.nombre || "")}</div>
+    </div>
+    <div class="pm-base">
       <div class="pm-cc ccv2--vitalicia">
         <div class="ccv2-card ccv2-card--front">
           <img src="marco-card.png" class="ccv2-frame-img" alt="">
@@ -95,10 +97,10 @@ function promoCardHtml(p, al) {
           </div>
         </div>
       </div>
-    </div>
-    <div class="pm-base">
-      <h3 class="pm-titulo">${esc(p.titulo || al?.nombre || "Promo")}</h3>
-      <p class="pm-desc">${esc(p.descripcion || "")}</p>
+      <div class="pm-info">
+        <h3 class="pm-titulo">${esc(p.titulo || al?.nombre || "Promo")}</h3>
+        <p class="pm-desc">${esc(p.descripcion || "")}</p>
+      </div>
       <img class="pm-logo-club" src="logo-club.png" alt="El Club de la Gente">
     </div>
   </div>`;
