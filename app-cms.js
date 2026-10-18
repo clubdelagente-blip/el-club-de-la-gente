@@ -88,19 +88,16 @@ function promoCardHtml(p, al) {
             <span class="ccv2-brand">CLUBCARD</span>
             <div class="ccv2-mid"><img src="logo-club.png" class="ccv2-logo-img" alt=""></div>
             <div class="ccv2-footer">
-              <div class="ccv2-name">BENEFICIO: DESCUENTO</div>
-              <div class="ccv2-codigo">
-                <span class="ccv2-codigo__lbl">Descuento</span>
-                <span class="ccv2-codigo__val">${esc(badgePromo(p))}</span>
-              </div>
+              <div class="ccv2-name">DESCUENTO EXCLUSIVO</div>
             </div>
           </div>
         </div>
       </div>
       <div class="pm-info">
         <h3 class="pm-titulo">${esc(p.titulo || al?.nombre || "Promo")}</h3>
-        <p class="pm-desc">${esc(p.descripcion || "")}</p>
+        <span class="pm-badge">${esc(badgePromo(p))}</span>
       </div>
+      <p class="pm-desc">${esc(p.descripcion || "")}</p>
       <img class="pm-logo-club" src="logo-club.png" alt="El Club de la Gente">
     </div>
   </div>`;

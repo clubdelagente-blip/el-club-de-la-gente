@@ -382,18 +382,21 @@ a { color: inherit; text-decoration: none; }
 .pm-base {
   position: relative;
   background: color-mix(in srgb, var(--pm-cc, var(--verde)) 13%, #fff);
-  padding: 0 16px 20px;
+  padding: 0 16px 18px;
   display: grid;
   grid-template-columns: 196px 1fr;
-  grid-template-areas: "cc info" "cc logo";
+  grid-template-areas: "cc info" "desc desc" "logo wa";
   column-gap: 14px;
+  row-gap: 10px;
+  align-items: start;
 }
 
 /* Mini ClubCard real (copia reducida de .ccv2 en estilos.css, fijada en el
    tema Vitalicia negro/dorado) -- mismo lugar que en la referencia: se
    asoma por encima del carrusel, abajo a la izquierda. Tamaños en px fijos
    (no clamp/vw como el original) porque aquí SÍ está pensada para verse
-   chica, a propósito. */
+   chica, a propósito. Ya no muestra el tipo de promo adentro -- solo
+   "Descuento exclusivo"; el % se movió junto al título (.pm-badge). */
 .pm-cc {
   grid-area: cc;
   width: 196px;
@@ -413,16 +416,20 @@ a { color: inherit; text-decoration: none; }
 .pm-cc .ccv2-brand { text-align: center; font-size: 9px; font-weight: 700; letter-spacing: .3em; color: #EAB749; text-indent: .3em; margin-top: 4%; }
 .pm-cc .ccv2-mid { flex: 1; display: flex; align-items: center; justify-content: center; }
 .pm-cc .ccv2-logo-img { width: 42%; max-height: 32px; filter: invert(1); object-fit: contain; display: block; margin: 0 auto; }
-.pm-cc .ccv2-footer { display: flex; align-items: flex-end; justify-content: space-between; gap: 4px; }
-.pm-cc .ccv2-codigo { text-align: right; flex-shrink: 0; }
-.pm-cc .ccv2-codigo__lbl { display: block; font-size: 6.5px; color: rgba(234, 183, 73, .7); }
-.pm-cc .ccv2-codigo__val { display: block; font-size: 10px; font-weight: 700; letter-spacing: .03em; color: #EAB749; }
-.pm-cc .ccv2-name { font-size: 7.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; flex: 1; min-width: 0; color: #EAB749; }
+.pm-cc .ccv2-footer { display: flex; align-items: center; justify-content: center; }
+.pm-cc .ccv2-name { font-size: 8px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; text-align: center; color: #EAB749; }
 
 .pm-info { grid-area: info; min-width: 0; padding-top: 8px; }
-.pm-titulo { font-family: "Permanent Marker", cursive; font-size: 20px; font-weight: 400; color: var(--tinta); margin: 0 0 5px; line-height: 1.1; }
-.pm-desc { font-size: 12.5px; color: var(--tinta-60); line-height: 1.5; margin: 0 0 12px; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+.pm-titulo { font-family: "Permanent Marker", cursive; font-size: 20px; font-weight: 400; color: var(--tinta); margin: 0 0 7px; line-height: 1.1; }
+.pm-badge {
+  display: inline-flex; align-items: center;
+  background: var(--pm-cc, var(--verde)); color: #fff;
+  font-weight: 800; font-size: 13px; letter-spacing: .01em;
+  padding: 5px 13px; border-radius: 100px;
+}
+.pm-desc { grid-area: desc; font-size: 12.5px; color: var(--tinta-60); line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .pm-wa, .pm-wa-lock {
+  grid-area: wa; justify-self: end;
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 12px; font-weight: 700; padding: 8px 16px; border-radius: 100px;
   text-decoration: none; border: none; cursor: pointer; font-family: inherit;
@@ -431,7 +438,7 @@ a { color: inherit; text-decoration: none; }
 .pm-wa svg { width: 15px; height: 15px; flex: none; }
 .pm-wa-lock { background: #fdecea; color: #b45309; }
 .pm-wa-lock i, .pm-wa-lock svg { width: 13px; height: 13px; flex: none; }
-.pm-logo-club { grid-area: logo; justify-self: end; align-self: end; height: 17px; opacity: .78; }
+.pm-logo-club { grid-area: logo; justify-self: start; height: 17px; opacity: .78; }
 .tienda-hero { position: relative; border-radius: 18px; padding: 26px 22px; overflow: hidden; background: radial-gradient(120% 140% at 15% 0%, #164a2c 0%, #0c2e1b 55%, #05160d 100%); background-size: cover; background-position: center; color: #fff; box-sizing: border-box; min-height: 150px; display: flex; flex-direction: column; justify-content: center; }
 .tienda-hero--img { background-blend-mode: overlay; }
 .tienda-hero__eyebrow { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #00DF81; margin-bottom: 8px; }
