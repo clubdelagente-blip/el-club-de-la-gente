@@ -90,7 +90,7 @@ function promoCardHtml(p, al) {
           <div class="pm-ticket__word">CLUBCARD</div>
           <img class="pm-ticket__logo" src="logo-club.png" alt="">
           <div class="pm-ticket__pct">${esc(badgePromo(p))}</div>
-          <div class="pm-ticket__benef">Beneficio:<br><b>DESCUENTO</b></div>
+          <div class="pm-ticket__benef">Beneficio: <b>DESCUENTO</b></div>
         </div>
       </div>
       <div class="pm-info">
