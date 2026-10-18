@@ -419,17 +419,24 @@ a { color: inherit; text-decoration: none; }
 .pm-cc .ccv2-footer { display: flex; align-items: center; justify-content: center; }
 .pm-cc .ccv2-name { font-size: 8px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; text-align: center; color: #EAB749; }
 
-.pm-info { grid-area: info; min-width: 0; padding-top: 8px; }
-.pm-titulo { font-family: "Permanent Marker", cursive; font-size: 20px; font-weight: 400; color: var(--tinta); margin: 0 0 7px; line-height: 1.1; }
+/* Sello del % -- a propósito "llamativo", sobrepuesto en la esquina de la
+   ClubCard (no adentro del todo, para que resalte como un sticker). */
 .pm-badge {
-  display: inline-flex; align-items: center;
+  position: absolute; top: -14px; right: -14px; z-index: 3;
+  display: inline-flex; align-items: center; justify-content: center;
   background: var(--pm-cc, var(--verde)); color: #fff;
-  font-weight: 800; font-size: 13px; letter-spacing: .01em;
-  padding: 5px 13px; border-radius: 100px;
+  font-weight: 800; font-size: 19px; letter-spacing: .01em;
+  padding: 9px 16px; border-radius: 14px;
+  box-shadow: 0 12px 22px -8px rgba(0, 0, 0, .55), 0 0 0 3px #fff;
+  transform: rotate(6deg);
+  white-space: nowrap;
 }
+
+.pm-info { grid-area: info; min-width: 0; padding-top: 8px; }
+.pm-titulo { font-family: "Permanent Marker", cursive; font-size: 20px; font-weight: 400; color: var(--tinta); margin: 0; line-height: 1.1; }
 .pm-desc { grid-area: desc; font-size: 12.5px; color: var(--tinta-60); line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .pm-wa, .pm-wa-lock {
-  grid-area: wa; justify-self: end;
+  grid-area: wa; justify-self: end; align-self: end;
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 12px; font-weight: 700; padding: 8px 16px; border-radius: 100px;
   text-decoration: none; border: none; cursor: pointer; font-family: inherit;
@@ -438,7 +445,7 @@ a { color: inherit; text-decoration: none; }
 .pm-wa svg { width: 15px; height: 15px; flex: none; }
 .pm-wa-lock { background: #fdecea; color: #b45309; }
 .pm-wa-lock i, .pm-wa-lock svg { width: 13px; height: 13px; flex: none; }
-.pm-logo-club { grid-area: logo; justify-self: start; height: 17px; opacity: .78; }
+.pm-logo-club { grid-area: logo; justify-self: start; align-self: end; height: 17px; opacity: .78; }
 .tienda-hero { position: relative; border-radius: 18px; padding: 26px 22px; overflow: hidden; background: radial-gradient(120% 140% at 15% 0%, #164a2c 0%, #0c2e1b 55%, #05160d 100%); background-size: cover; background-position: center; color: #fff; box-sizing: border-box; min-height: 150px; display: flex; flex-direction: column; justify-content: center; }
 .tienda-hero--img { background-blend-mode: overlay; }
 .tienda-hero__eyebrow { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #00DF81; margin-bottom: 8px; }

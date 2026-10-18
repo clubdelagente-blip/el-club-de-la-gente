@@ -92,10 +92,10 @@ function promoCardHtml(p, al) {
             </div>
           </div>
         </div>
+        <span class="pm-badge">${esc(badgePromo(p))}</span>
       </div>
       <div class="pm-info">
         <h3 class="pm-titulo">${esc(p.titulo || al?.nombre || "Promo")}</h3>
-        <span class="pm-badge">${esc(badgePromo(p))}</span>
       </div>
       <p class="pm-desc">${esc(p.descripcion || "")}</p>
       <img class="pm-logo-club" src="logo-club.png" alt="El Club de la Gente">
