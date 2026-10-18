@@ -9,7 +9,7 @@
   <title>El Club de la Gente — Backoffice</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=62">
   <link rel="stylesheet" href="admin.css?v=16">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
@@ -576,6 +576,7 @@ function dibujarCoverFlyer(ctx,img,x,y,w,h){
   ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
 }
 let _flyerState=null;
+let _promoFormAliadoId=null;
 function dibujarFlyerEnCanvas(canvas){
   if(!_flyerState)return;
   const{img1,img2,logoClub,logoAliado,color,nombre,categoriaTxt,destacado,descripcion}=_flyerState;
@@ -1832,6 +1833,9 @@ function bindFormPromocionInline(aliadoId,editId){
     $("#pr-precio-n-pct")?.addEventListener('input',updPct);$("#pr-pct")?.addEventListener('input',updPct);updPct();
     document.querySelectorAll('#pr-dias-chips .fa-chip').forEach(chip=>chip.addEventListener('click',()=>chip.classList.toggle('is-on')));
     renderFotosPromoPreview();bindFotosPromoInput();
+    const wrapPrev=$("#fa-promo-form-wrap");
+    wrapPrev?.addEventListener('input',()=>actualizarPreviewPromo(aliadoId));
+    wrapPrev?.addEventListener('change',()=>actualizarPreviewPromo(aliadoId));
     $("#pr-cancel")?.addEventListener('click',()=>{const w=$("#fa-promo-form-wrap");if(w){w.style.display='none';w.innerHTML='';}});
     const btn=$("#pr-save");
     btn?.addEventListener('click',async()=>{
@@ -2437,6 +2441,81 @@ const FECHAS_ESPECIALES=[
   {slug:'navidad',lbl:'Temporada de Navidad (17 al 24 dic)'},
   {slug:'fin_de_ano',lbl:'Promo fin de año'},
 ];
+
+/* ---- VISTA PREVIA EN VIVO de la tarjeta de promoción (PromoCard v2) ----
+   Misma tarjeta que se ve en la portada y el Directorio (duplicada a
+   propósito -- cada archivo tiene su copia), pero armada con los valores
+   que el admin va llenando en el formulario, para verla antes de guardar. */
+const ICON_WA=`<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.288.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.004 2C6.486 2 2 6.486 2 12.004c0 2.123.666 4.09 1.804 5.714L2.5 22l4.418-1.265A9.955 9.955 0 0 0 12.004 22C17.522 22 22 17.514 22 12.004 22 6.486 17.522 2 12.004 2zm0 18.18a8.14 8.14 0 0 1-4.15-1.136l-.298-.177-3.11.89.903-3.03-.194-.31a8.15 8.15 0 0 1-1.25-4.413c0-4.5 3.66-8.157 8.1-8.157 4.44 0 8.09 3.656 8.09 8.157 0 4.5-3.65 8.176-8.09 8.176z"/></svg>`;
+function pmEsVideo(u){return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u||'');}
+function pmBadgePreview(tipo){
+  if(tipo==='porcentaje'){const n=parseInt($("#pr-precio-n-pct")?.value)||0;const pct=parseInt($("#pr-pct")?.value)||0;return pct?`${pct}%`:'% dcto.';}
+  if(tipo==='2x1')return'2×1';
+  if(tipo==='monto_fijo'){const m=parseInt($("#pr-ahorro-fijo")?.value)||0;return m?('-$'+m.toLocaleString('es-CO')):'Descuento';}
+  if(tipo==='precio_especial'){const d=parseInt($("#pr-precio-d")?.value)||0;return d?('$'+d.toLocaleString('es-CO')):'Precio especial';}
+  if(tipo==='regalo')return'🎁';
+  return'Promo';
+}
+function promoCardHtmlPreview(p,al){
+  const cc=colorCategoriaFlyer(al?.categoria);
+  const medios=(p.fotos_urls||[]).slice(0,4);
+  const slidesHtml=medios.length?medios.map(u=>pmEsVideo(u)
+      ?`<div class="pm-carrusel__slide"><video src="${u}" muted playsinline preload="metadata"></video></div>`
+      :`<div class="pm-carrusel__slide"><img src="${u}" alt="" loading="lazy"></div>`).join('')
+    :`<div class="pm-carrusel__slide"><div class="pm-carrusel__ph">${ic('image')}</div></div>`;
+  const dotsHtml=medios.length>1?`<div class="pm-carrusel__dots">${medios.map((_,i)=>`<span class="${i===0?'is-on':''}"></span>`).join('')}</div>`:'';
+  const waLink=al?.whatsapp?`https://wa.me/57${String(al.whatsapp).replace(/\D/g,'')}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.titulo||p.descripcion||pmBadgePreview(p.tipo)}" de ${al?.nombre||''} que vi en El Club de la Gente`)}`:null;
+  const ctaHtml=waLink?`<a class="pm-wa" href="${waLink}" target="_blank" rel="noopener">${ICON_WA}WhatsApp</a>`:'';
+  return `
+  <div class="pm-card" style="--pm-cc:${cc}">
+    <div class="pm-carrusel" data-pm-carrusel role="button" tabindex="0" aria-label="Ver fotos y videos de la promoción">
+      <div class="pm-carrusel__track">${slidesHtml}</div>
+      ${medios.length>1?`<div class="pm-carrusel__hint">${ic('images')}</div>`:''}
+      ${dotsHtml}
+    </div>
+    <div class="pm-logo-pill">${al?.imagen_url?`<img src="${al.imagen_url}" alt="${esc(al.nombre||'')}">`:`<span>${esc(al?.nombre||'Aliado')}</span>`}</div>
+    <div class="pm-base">
+      <div class="pm-ticket">
+        <div class="pm-ticket__band">USANDO TU CLUB CARD OBTIENES</div>
+        <div class="pm-ticket__inner">
+          <div class="pm-ticket__word">CLUBCARD</div>
+          <img class="pm-ticket__logo" src="logo-club.png" alt="">
+          <div class="pm-ticket__pct">${esc(pmBadgePreview(p.tipo))}</div>
+          <div class="pm-ticket__benef">Beneficio:<br><b>DESCUENTO</b></div>
+        </div>
+      </div>
+      <div class="pm-info">
+        <h3 class="pm-titulo">${esc(p.titulo||al?.nombre||'Promo')}</h3>
+        <p class="pm-desc">${esc(p.descripcion||'')}</p>
+        ${ctaHtml}
+      </div>
+      <img class="pm-logo-club" src="logo-club.png" alt="El Club de la Gente">
+    </div>
+  </div>`;
+}
+function initPmCarruselPreview(root){
+  const slides=[...root.querySelectorAll('.pm-carrusel__slide')];
+  if(slides.length<=1)return;
+  const dots=[...root.querySelectorAll('.pm-carrusel__dots span')];
+  const track=root.querySelector('.pm-carrusel__track');
+  let idx=0,started=false,timer=null;
+  function mostrar(i){idx=i;track.style.transform=`translateX(-${i*100}%)`;dots.forEach((d,di)=>d.classList.toggle('is-on',di===i));
+    slides.forEach((s,si)=>{const v=s.querySelector('video');if(!v)return;if(si===i){v.currentTime=0;v.play().catch(()=>{});}else v.pause();});}
+  function avanzar(){mostrar((idx+1)%slides.length);programar();}
+  function programar(){clearTimeout(timer);const video=slides[idx].querySelector('video');if(video)video.onended=avanzar;else timer=setTimeout(avanzar,3000);}
+  root.addEventListener('click',()=>{root.classList.add('is-activo');if(!started){started=true;mostrar(0);programar();}});
+}
+function actualizarPreviewPromo(aliadoId){
+  const cont=$("#pr-pm-preview");if(!cont)return;
+  const al=_aliados.find(a=>a.id===aliadoId);
+  const tipo=$("#pr-tipo")?.value||'';
+  const titulo=$("#pr-tit")?.value.trim()||'';
+  const descripcion=$("#pr-desc")?.value.trim()||'';
+  let fotosUrls=[];try{fotosUrls=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){fotosUrls=[];}
+  cont.innerHTML=promoCardHtmlPreview({tipo,titulo,descripcion,fotos_urls:fotosUrls},al);
+  const carr=cont.querySelector('[data-pm-carrusel]');if(carr)initPmCarruselPreview(carr);
+  if(window.lucide)lucide.createIcons();
+}
 function renderFotosPromoPreview(){
   let urls=[];try{urls=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){urls=[];}
   const cont=$("#pr-fotos-preview");if(!cont)return;
@@ -2454,6 +2533,7 @@ function renderFotosPromoPreview(){
     const h=$("#pr-fotos-urls");if(h)h.value=JSON.stringify(arr);
     renderFotosPromoPreview();
   }));
+  actualizarPreviewPromo(_promoFormAliadoId);
 }
 function bindFotosPromoInput(){
   const input=$("#pr-foto-input");
@@ -2477,7 +2557,14 @@ function htmlFormPromocion(p={},aliadoId){
   const diasChips=DIAS.map((d,i)=>`<button type="button" class="fa-chip${diasActivos.includes(d)?' is-on':''}" data-dia="${d}">${DIAS_LBL[i]}</button>`).join('');
   const fldStyle='width:100%;font-family:var(--cuerpo);font-size:16px;color:#1a1a18;padding:10px 14px;border:1.5px solid rgba(26,26,24,.13);border-radius:8px;background:#f5f4f0';
   const pctVal=p.tipo==='porcentaje'&&p.precio_normal&&p.precio_descuento?Math.round((1-p.precio_descuento/p.precio_normal)*100):'';
+  _promoFormAliadoId=aliadoId;
   return `
+  <div class="ad-field" style="background:#f5f4f0;border-radius:14px;padding:16px;display:flex;justify-content:center">
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgba(26,26,24,.45);margin-bottom:10px;text-align:center">Así se ve en el sitio</div>
+      <div id="pr-pm-preview"></div>
+    </div>
+  </div>
   <div class="ad-field"><label>Tipo de promoción *</label>
     <select id="pr-tipo" style="${fldStyle}">
       <option value="">Selecciona…</option>
@@ -2613,6 +2700,9 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
     updPct();
     document.querySelectorAll('#pr-dias-chips .fa-chip').forEach(chip=>chip.addEventListener('click',()=>chip.classList.toggle('is-on')));
     renderFotosPromoPreview();bindFotosPromoInput();
+    const modalBodyPrev=$("#modal-body");
+    modalBodyPrev?.addEventListener('input',()=>actualizarPreviewPromo(aliadoId));
+    modalBodyPrev?.addEventListener('change',()=>actualizarPreviewPromo(aliadoId));
     $("#pr-generar-img")?.addEventListener('click',()=>generarImagenPromo(aliadoId,aliadoNombre));
     ['pr-circ-size','pr-circ-x','pr-circ-y'].forEach(id=>{
       $(`#${id}`)?.addEventListener('input',(e)=>{
