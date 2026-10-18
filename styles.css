@@ -419,10 +419,10 @@ a { color: inherit; text-decoration: none; }
 .pm-cc .ccv2-footer { display: flex; align-items: center; justify-content: center; }
 .pm-cc .ccv2-name { font-size: 8px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; text-align: center; color: #EAB749; }
 
-/* Sello del % -- a propósito "llamativo", sobrepuesto en la esquina de la
-   ClubCard (no adentro del todo, para que resalte como un sticker). */
+/* Sello del % -- llamativo, se asoma por encima del carrusel al lado
+   derecho (espejo de la ClubCard, que hace lo mismo del lado izquierdo). */
 .pm-badge {
-  position: absolute; top: -14px; right: -14px; z-index: 3;
+  position: relative; z-index: 3;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--pm-cc, var(--verde)); color: #fff;
   font-weight: 800; font-size: 19px; letter-spacing: .01em;
@@ -430,6 +430,7 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 12px 22px -8px rgba(0, 0, 0, .55), 0 0 0 3px #fff;
   transform: rotate(6deg);
   white-space: nowrap;
+  margin: -44px 0 10px;
 }
 
 .pm-info { grid-area: info; min-width: 0; padding-top: 8px; }

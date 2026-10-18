@@ -444,9 +444,9 @@ function promoCardHtml(p, al) {
             </div>
           </div>
         </div>
-        <span class="pm-badge">${esc(badgePromo(p))}</span>
       </div>
       <div class="pm-info">
+        <span class="pm-badge">${esc(badgePromo(p))}</span>
         <h3 class="pm-titulo">${esc(p.titulo || al?.nombre || "Promo")}</h3>
       </div>
       <p class="pm-desc">${esc(p.descripcion || "")}</p>
