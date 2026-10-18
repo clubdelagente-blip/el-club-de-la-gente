@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=61">
+  <link rel="stylesheet" href="styles.css?v=62">
   <link rel="stylesheet" href="admin.css?v=16">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -1835,7 +1835,7 @@ function bindFormPromocionInline(aliadoId,editId){
     $("#pr-cancel")?.addEventListener('click',()=>{const w=$("#fa-promo-form-wrap");if(w){w.style.display='none';w.innerHTML='';}});
     const btn=$("#pr-save");
     btn?.addEventListener('click',async()=>{
-      const tipo=$("#pr-tipo")?.value;const descripcion=$("#pr-desc")?.value.trim();
+      const tipo=$("#pr-tipo")?.value;const descripcion=$("#pr-desc")?.value.trim();const titulo=$("#pr-tit")?.value.trim()||null;
       if(!tipo){toast('Selecciona el tipo de promoción');return;}
       if(!descripcion){toast('La descripción es obligatoria');return;}
       btn.disabled=true;btn.innerHTML=`${ic("loader")} Guardando…`;if(window.lucide)lucide.createIcons();
@@ -1847,7 +1847,7 @@ function bindFormPromocionInline(aliadoId,editId){
       const diasActivos=[...document.querySelectorAll('#pr-dias-chips .fa-chip.is-on')].map(b=>b.dataset.dia);
       let fotosUrls=[];try{fotosUrls=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){fotosUrls=[];}
       const foto_url=fotosUrls[0]||null;
-      const payload={aliado_id:aliadoId,tipo,descripcion,
+      const payload={aliado_id:aliadoId,tipo,titulo,descripcion,
         aplica_a:$("#pr-aplica")?.value||'toda_la_tienda',
         producto_especifico:$("#pr-aplica")?.value==='producto_especifico'?($("#pr-prod")?.value.trim()||null):null,
         precio_normal,precio_descuento,ahorro_fijo,
@@ -2440,11 +2440,12 @@ const FECHAS_ESPECIALES=[
 function renderFotosPromoPreview(){
   let urls=[];try{urls=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){urls=[];}
   const cont=$("#pr-fotos-preview");if(!cont)return;
+  const esVideoPromo=u=>/\.(mp4|webm|mov|m4v)(\?|$)/i.test(u||'');
   cont.innerHTML=urls.map((url,i)=>`
     <div style="position:relative;width:64px;height:64px">
-      <img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
+      ${esVideoPromo(url)?`<video src="${url}" muted style="width:100%;height:100%;object-fit:cover;border-radius:8px;background:#111"></video>`:`<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`}
       <button type="button" class="pr-foto-rm" data-idx="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer">×</button>
-    </div>`).join('')+(urls.length<5?`
+    </div>`).join('')+(urls.length<4?`
     <button type="button" id="pr-foto-add" style="width:64px;height:64px;border:2px dashed #ccc;border-radius:8px;background:none;cursor:pointer;font-size:24px;color:#999;line-height:1">+</button>`:'');
   $("#pr-foto-add")?.addEventListener('click',()=>$("#pr-foto-input")?.click());
   cont.querySelectorAll('.pr-foto-rm').forEach(btn=>btn.addEventListener('click',()=>{
@@ -2487,6 +2488,7 @@ function htmlFormPromocion(p={},aliadoId){
       <option value="regalo"${p.tipo==='regalo'?' selected':''}>Regalo / Cortesía</option>
       <option value="personalizado"${p.tipo==='personalizado'?' selected':''}>Personalizado</option>
     </select></div>
+  <div class="ad-field"><label>Título <span style="font-weight:400;color:rgba(26,26,24,.4)">(se ve en la tarjeta de la promo, ej: "Ramos")</span></label><input id="pr-tit" type="text" value="${(p.titulo||'').replace(/"/g,'&quot;')}" placeholder="Ej: Ramos" maxlength="40"></div>
   <div class="ad-field"><label>Descripción *</label><textarea id="pr-desc" rows="2" placeholder="Ej: 20% de descuento en corte de cabello">${p.descripcion||''}</textarea></div>
   <div class="ad-field"><label>Aplica a</label>
     <select id="pr-aplica" style="${fldStyle}">
@@ -2533,9 +2535,9 @@ function htmlFormPromocion(p={},aliadoId){
     <div class="ad-field"><label>Vigencia hasta <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-fecha-fin" type="date" value="${p.fecha_fin||''}"></div>
   </div>
   <div class="ad-field"><label>Compra mínima ($) <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-min" type="number" min="0" value="${p.monto_minimo||''}" placeholder="0" style="max-width:220px"></div>
-  <div class="ad-field"><label>Fotos <span style="font-weight:400;color:rgba(26,26,24,.4)">(hasta 5 -- sube al menos 2 para poder generar el flyer automático abajo)</span></label>
+  <div class="ad-field"><label>Fotos y videos <span style="font-weight:400;color:rgba(26,26,24,.4)">(hasta 4 -- se ven en el carrusel de la tarjeta; sube al menos 2 fotos si quieres generar el flyer automático abajo)</span></label>
     <div id="pr-fotos-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px"></div>
-    <input type="file" id="pr-foto-input" accept="image/*" style="display:none">
+    <input type="file" id="pr-foto-input" accept="image/*,video/*" style="display:none">
     <input type="hidden" id="pr-fotos-urls" value="${esc(JSON.stringify(p.fotos_urls||(p.foto_url?[p.foto_url]:[])))}">
   </div>
   <div class="ad-field">
@@ -2649,6 +2651,7 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
     btn?.addEventListener('click',async()=>{
       const tipo=$("#pr-tipo")?.value;
       const descripcion=$("#pr-desc")?.value.trim();
+      const titulo=$("#pr-tit")?.value.trim()||null;
       if(!tipo){toast('Selecciona el tipo de promoción');return;}
       if(!descripcion){toast('La descripción es obligatoria');return;}
       btn.disabled=true;btn.innerHTML=`${ic("loader")} Guardando…`;if(window.lucide)lucide.createIcons();
@@ -2669,7 +2672,7 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
       const diasActivos=[...document.querySelectorAll('#pr-dias-chips .fa-chip.is-on')].map(b=>b.dataset.dia);
       let fotosUrls=[];try{fotosUrls=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){fotosUrls=[];}
       const foto_url=fotosUrls[0]||null;
-      const payload={aliado_id:aliadoId,tipo,descripcion,
+      const payload={aliado_id:aliadoId,tipo,titulo,descripcion,
         aplica_a:$("#pr-aplica")?.value||'toda_la_tienda',
         producto_especifico:$("#pr-aplica")?.value==='producto_especifico'?($("#pr-prod")?.value.trim()||null):null,
         precio_normal,precio_descuento,ahorro_fijo,

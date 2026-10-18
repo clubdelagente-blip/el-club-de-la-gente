@@ -29,6 +29,110 @@ function colorCategoria(categoria) {
   return "#095544";
 }
 
+/* Formato de pesos y texto del badge de descuento -- mismo cálculo que
+   directorio.js (duplicado a propósito, cada archivo tiene su copia). */
+const nf = new Intl.NumberFormat("es-CO");
+const fmtCOP = (n) => "$" + nf.format(Math.max(0, Math.round(n || 0)));
+function pctDerivada(p) {
+  if (p.tipo !== "porcentaje" || !p.precio_normal || !p.ahorro_fijo) return null;
+  return Math.round((p.ahorro_fijo / p.precio_normal) * 100);
+}
+function badgePromo(p) {
+  const pct = pctDerivada(p);
+  if (p.tipo === "porcentaje") return pct != null ? `${pct}%` : "% dcto.";
+  if (p.tipo === "2x1") return "2×1";
+  if (p.tipo === "monto_fijo") return p.ahorro_fijo ? `-${fmtCOP(p.ahorro_fijo)}` : "Descuento";
+  if (p.tipo === "precio_especial") return p.precio_descuento != null ? fmtCOP(p.precio_descuento) : "Precio especial";
+  if (p.tipo === "regalo") return "🎁";
+  return "Promo";
+}
+
+/* ---------- Tarjeta de promoción (PromoCard v2) ----------
+   Carrusel de hasta 4 fotos/video (quieto hasta el primer click, luego
+   rota cada 3s y deja correr el video completo antes de avanzar),
+   ClubCard de ticket con el % dinámico, y color de fondo por categoría.
+   Compartida entre el carrusel de la portada y la ficha del aliado en el
+   Directorio (duplicada a propósito -- cada archivo tiene su copia). */
+function esMediaVideo(url) {
+  return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url || "");
+}
+function promoCardHtml(p, al) {
+  const cc = colorCategoria(al?.categoria);
+  const medios = (Array.isArray(p.fotos_urls) && p.fotos_urls.length ? p.fotos_urls : (p.foto_url ? [p.foto_url] : [])).slice(0, 4);
+  const slidesHtml = medios.length
+    ? medios.map(u => esMediaVideo(u)
+        ? `<div class="pm-carrusel__slide"><video src="${u}" muted playsinline preload="metadata"></video></div>`
+        : `<div class="pm-carrusel__slide"><img src="${u}" alt="" loading="lazy"></div>`).join("")
+    : `<div class="pm-carrusel__slide"><div class="pm-carrusel__ph">${ic("image")}</div></div>`;
+  const dotsHtml = medios.length > 1
+    ? `<div class="pm-carrusel__dots">${medios.map((_, i) => `<span class="${i === 0 ? "is-on" : ""}"></span>`).join("")}</div>`
+    : "";
+  const waLink = (!al?._bloqueado && al?.whatsapp)
+    ? `https://wa.me/57${String(al.whatsapp).replace(/\D/g, "")}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.titulo || p.descripcion || badgePromo(p)}" de ${al?.nombre || ""} que vi en El Club de la Gente`)}`
+    : null;
+  const ctaHtml = waLink
+    ? `<a class="pm-wa" href="${waLink}" target="_blank" rel="noopener">${ICON_WA}WhatsApp</a>`
+    : al?._bloqueado
+      ? `<button type="button" class="pm-wa-lock" data-promo-bloqueada>${ic("lock")}Mejora tu plan</button>`
+      : "";
+  return `
+  <div class="pm-card" style="--pm-cc:${cc}">
+    <div class="pm-carrusel" data-pm-carrusel role="button" tabindex="0" aria-label="Ver fotos y videos de la promoción">
+      <div class="pm-carrusel__track">${slidesHtml}</div>
+      ${medios.length > 1 ? `<div class="pm-carrusel__hint">${ic("images")}</div>` : ""}
+      ${dotsHtml}
+    </div>
+    <div class="pm-logo-pill">${al?.imagen_url ? `<img src="${al.imagen_url}" alt="${esc(al.nombre || "")}">` : `<span>${esc(al?.nombre || "Aliado")}</span>`}</div>
+    <div class="pm-base">
+      <div class="pm-ticket">
+        <div class="pm-ticket__band">USANDO TU CLUB CARD OBTIENES</div>
+        <div class="pm-ticket__inner">
+          <div class="pm-ticket__word">CLUBCARD</div>
+          <img class="pm-ticket__logo" src="logo-club.png" alt="">
+          <div class="pm-ticket__pct">${esc(badgePromo(p))}</div>
+          <div class="pm-ticket__benef">Beneficio:<br><b>DESCUENTO</b></div>
+        </div>
+      </div>
+      <div class="pm-info">
+        <h3 class="pm-titulo">${esc(p.titulo || al?.nombre || "Promo")}</h3>
+        <p class="pm-desc">${esc(p.descripcion || "")}</p>
+        ${ctaHtml}
+      </div>
+      <img class="pm-logo-club" src="logo-club.png" alt="El Club de la Gente">
+    </div>
+  </div>`;
+}
+function initPmCarrusel(root) {
+  const slides = [...root.querySelectorAll(".pm-carrusel__slide")];
+  if (slides.length <= 1) return;
+  const dots = [...root.querySelectorAll(".pm-carrusel__dots span")];
+  const track = root.querySelector(".pm-carrusel__track");
+  let idx = 0, started = false, timer = null;
+
+  function mostrar(i) {
+    idx = i;
+    track.style.transform = `translateX(-${i * 100}%)`;
+    dots.forEach((d, di) => d.classList.toggle("is-on", di === i));
+    slides.forEach((s, si) => {
+      const v = s.querySelector("video");
+      if (!v) return;
+      if (si === i) { v.currentTime = 0; v.play().catch(() => {}); }
+      else v.pause();
+    });
+  }
+  function avanzar() { mostrar((idx + 1) % slides.length); programar(); }
+  function programar() {
+    clearTimeout(timer);
+    const video = slides[idx].querySelector("video");
+    if (video) video.onended = avanzar;
+    else timer = setTimeout(avanzar, 3000);
+  }
+  root.addEventListener("click", () => {
+    root.classList.add("is-activo");
+    if (!started) { started = true; mostrar(0); programar(); }
+  });
+}
+
 /* ---------- Aliados ---------- */
 async function cargarAliadosPub() {
   const { data, error } = await supabase
@@ -381,7 +485,7 @@ async function cargarCarruselPromos() {
     .select('*')
     .eq('en_carrusel', true)
     .eq('activa', true)
-    .not('foto_url', 'is', null)
+    .or('foto_url.not.is.null,fotos_urls.not.is.null')
     .order('created_at', { ascending: false });
 
   if (error || !promos?.length) return;
@@ -389,7 +493,7 @@ async function cargarCarruselPromos() {
   const aliadoIds = [...new Set(promos.map(p => p.aliado_id))];
   const { data: aliadosData } = await supabase
     .from('aliados')
-    .select('id, nombre, categoria')
+    .select('id, nombre, categoria, whatsapp, imagen_url')
     .in('id', aliadoIds);
   const aliadosMap = new Map((aliadosData || []).map(a => [a.id, a]));
 
@@ -407,16 +511,9 @@ async function cargarCarruselPromos() {
         <img class="promo-card__img" src="${p.foto_url}" alt="${esc(p.descripcion || '')}" style="height:auto;aspect-ratio:4/5;object-fit:cover">
       </div>`;
     }
-    return `
-    <div class="promo-card" style="--pc-cc:${colorCategoria(al?.categoria)}">
-      <img class="promo-card__img" src="${p.foto_url}" alt="${esc(p.descripcion || '')}">
-      <div class="promo-card__body">
-        ${al?.categoria ? `<div class="promo-card__cat">${esc(al.categoria)}</div>` : ''}
-        <div class="promo-card__nombre">${esc(al?.nombre || '')}</div>
-        <p class="promo-card__desc">${esc(p.descripcion || '')}</p>
-      </div>
-    </div>`;
+    return promoCardHtml(p, al);
   }).join('');
+  track.querySelectorAll('[data-pm-carrusel]').forEach(initPmCarrusel);
   wrap.style.display = 'block';
   // El elemento estaba display:none al cargar la página, así que el
   // IntersectionObserver de fade-up nunca lo pudo "ver" a tiempo -- se

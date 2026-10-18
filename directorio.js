@@ -254,6 +254,7 @@ function wireResenas(a) {
     if (extra) extra.style.display = extra.style.display === "none" ? "flex" : "none";
   });
   $$("[data-promo-bloqueada]").forEach(el => el.addEventListener("click", () => abrirModalMejorarPlan(a)));
+  $$("[data-pm-carrusel]").forEach(initPmCarrusel);
   if (!VIEWER_USER_ID) return;
   let seleccion = a._miResena?.estrellas || 0;
   const botones = $$("#resena-stars [data-estrella]");
@@ -393,6 +394,92 @@ function detallePromo(p) {
   return partes.join(" · ");
 }
 
+/* ---------- Tarjeta de promoción (PromoCard v2) ----------
+   Carrusel de hasta 4 fotos/video (quieto hasta el primer click, luego
+   rota cada 3s y deja correr el video completo antes de avanzar),
+   ClubCard de ticket con el % dinámico, y color de fondo por categoría.
+   Compartida con el carrusel de la portada (duplicada a propósito --
+   cada archivo tiene su copia). */
+function esMediaVideo(url) {
+  return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url || "");
+}
+function promoCardHtml(p, al) {
+  const cc = colorCategoria(al?.categoria);
+  const medios = (Array.isArray(p.fotos_urls) && p.fotos_urls.length ? p.fotos_urls : (p.foto_url ? [p.foto_url] : [])).slice(0, 4);
+  const slidesHtml = medios.length
+    ? medios.map(url => esMediaVideo(url)
+        ? `<div class="pm-carrusel__slide"><video src="${url}" muted playsinline preload="metadata"></video></div>`
+        : `<div class="pm-carrusel__slide"><img src="${url}" alt="" loading="lazy"></div>`).join("")
+    : `<div class="pm-carrusel__slide"><div class="pm-carrusel__ph">${ic("image")}</div></div>`;
+  const dotsHtml = medios.length > 1
+    ? `<div class="pm-carrusel__dots">${medios.map((_, i) => `<span class="${i === 0 ? "is-on" : ""}"></span>`).join("")}</div>`
+    : "";
+  const waLink = (!al?._bloqueado && al?.whatsapp)
+    ? `https://wa.me/57${String(al.whatsapp).replace(/\D/g, "")}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.titulo || p.descripcion || badgePromo(p)}" de ${al?.nombre || ""} que vi en El Club de la Gente`)}`
+    : null;
+  const ctaHtml = waLink
+    ? `<a class="pm-wa" href="${waLink}" target="_blank" rel="noopener">${ICON_WA}WhatsApp</a>`
+    : al?._bloqueado
+      ? `<button type="button" class="pm-wa-lock" data-promo-bloqueada>${ic("lock")}Mejora tu plan</button>`
+      : "";
+  return `
+  <div class="pm-card" style="--pm-cc:${cc}">
+    <div class="pm-carrusel" data-pm-carrusel role="button" tabindex="0" aria-label="Ver fotos y videos de la promoción">
+      <div class="pm-carrusel__track">${slidesHtml}</div>
+      ${medios.length > 1 ? `<div class="pm-carrusel__hint">${ic("images")}</div>` : ""}
+      ${dotsHtml}
+    </div>
+    <div class="pm-logo-pill">${al?.imagen_url ? `<img src="${al.imagen_url}" alt="${esc(al.nombre || "")}">` : `<span>${esc(al?.nombre || "Aliado")}</span>`}</div>
+    <div class="pm-base">
+      <div class="pm-ticket">
+        <div class="pm-ticket__band">USANDO TU CLUB CARD OBTIENES</div>
+        <div class="pm-ticket__inner">
+          <div class="pm-ticket__word">CLUBCARD</div>
+          <img class="pm-ticket__logo" src="logo-club.png" alt="">
+          <div class="pm-ticket__pct">${esc(badgePromo(p))}</div>
+          <div class="pm-ticket__benef">Beneficio:<br><b>DESCUENTO</b></div>
+        </div>
+      </div>
+      <div class="pm-info">
+        <h3 class="pm-titulo">${esc(p.titulo || al?.nombre || "Promo")}</h3>
+        <p class="pm-desc">${esc(p.descripcion || "")}</p>
+        ${ctaHtml}
+      </div>
+      <img class="pm-logo-club" src="logo-club.png" alt="El Club de la Gente">
+    </div>
+  </div>`;
+}
+function initPmCarrusel(root) {
+  const slides = [...root.querySelectorAll(".pm-carrusel__slide")];
+  if (slides.length <= 1) return;
+  const dots = [...root.querySelectorAll(".pm-carrusel__dots span")];
+  const track = root.querySelector(".pm-carrusel__track");
+  let idx = 0, started = false, timer = null;
+
+  function mostrar(i) {
+    idx = i;
+    track.style.transform = `translateX(-${i * 100}%)`;
+    dots.forEach((d, di) => d.classList.toggle("is-on", di === i));
+    slides.forEach((s, si) => {
+      const v = s.querySelector("video");
+      if (!v) return;
+      if (si === i) { v.currentTime = 0; v.play().catch(() => {}); }
+      else v.pause();
+    });
+  }
+  function avanzar() { mostrar((idx + 1) % slides.length); programar(); }
+  function programar() {
+    clearTimeout(timer);
+    const video = slides[idx].querySelector("video");
+    if (video) video.onended = avanzar;
+    else timer = setTimeout(avanzar, 3000);
+  }
+  root.addEventListener("click", () => {
+    root.classList.add("is-activo");
+    if (!started) { started = true; mostrar(0); programar(); }
+  });
+}
+
 function estrellasIconos(valor, size) {
   const redondeado = Math.round(valor || 0);
   return `<span style="display:inline-flex;gap:1px">${[1, 2, 3, 4, 5].map(n => `<i data-lucide="star" style="width:${size}px;height:${size}px;${n <= redondeado ? 'color:#EAB749;fill:#EAB749' : 'color:#ccc;fill:none'}"></i>`).join('')}</span>`;
@@ -483,36 +570,28 @@ function sheetAliado(a) {
     </div>` : ''}
 
     <div class="sheet__sub" id="promos-disponibles">Promociones disponibles</div>
+    <div id="promos-disponibles-grid" style="display:flex;flex-wrap:wrap;gap:16px">
     ${promos.length ? promos.map((p) => {
       const fotos = (Array.isArray(p.fotos_urls) && p.fotos_urls.length) ? p.fotos_urls : (p.foto_url ? [p.foto_url] : []);
       const esFlyer = fotos.length === 1 && fotos[0].includes('flyer=1');
-      const waPromo = (!a._bloqueado && a.whatsapp) ? `https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.descripcion || badgePromo(p)}" de ${a.nombre} que vi en El Club de la Gente`)}` : null;
-      const tag = waPromo ? 'a' : 'div';
-      const attrsClick = waPromo
-        ? ` href="${waPromo}" target="_blank" style="display:block;text-decoration:none;color:inherit;cursor:pointer"`
-        : a._bloqueado ? ` data-promo-bloqueada style="display:block;cursor:pointer"` : '';
-      const avisoWa = waPromo
-        ? `<span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:${cc};margin-top:10px">${ICON_WA}Toca para aprovecharla por WhatsApp</span>`
-        : a._bloqueado ? `<span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#b45309;margin-top:10px">${ic('lock')}Mejora tu plan para aprovecharla</span>` : '';
       if (esFlyer) {
+        const waPromo = (!a._bloqueado && a.whatsapp) ? `https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.descripcion || badgePromo(p)}" de ${a.nombre} que vi en El Club de la Gente`)}` : null;
+        const tag = waPromo ? 'a' : 'div';
+        const attrsClick = waPromo
+          ? ` href="${waPromo}" target="_blank" style="display:block;text-decoration:none;color:inherit;cursor:pointer"`
+          : a._bloqueado ? ` data-promo-bloqueada style="display:block;cursor:pointer"` : '';
+        const avisoWa = waPromo
+          ? `<span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:${cc};margin-top:10px">${ICON_WA}Toca para aprovecharla por WhatsApp</span>`
+          : a._bloqueado ? `<span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#b45309;margin-top:10px">${ic('lock')}Mejora tu plan para aprovecharla</span>` : '';
         return `
         <${tag} class="promo-card"${attrsClick}>
           <img src="${fotos[0]}" style="width:100%;height:auto;aspect-ratio:4/5;object-fit:cover;border-radius:10px">
           ${avisoWa}
         </${tag}>`;
       }
-      return `
-      <${tag} class="promo-card"${attrsClick}>
-        ${fotos.length ? `
-        <div class="promo-card__fotos">
-          ${fotos.map(url => `<img src="${url}">`).join("")}
-        </div>` : ""}
-        <span class="promo-card__badge">${ic("flame")}${badgePromo(p)}</span>
-        <p class="promo-card__desc">${p.descripcion}</p>
-        <span class="promo-card__meta">${beneficioTexto(p)}${detallePromo(p) ? " · " + detallePromo(p) : ""}</span>
-        ${avisoWa}
-      </${tag}>`;
+      return promoCardHtml(p, a);
     }).join("") : `<p style="font-size:13px;color:#888;padding:8px 0">Este aliado todavía no tiene promociones cargadas. Consulta directamente en el establecimiento.</p>`}
+    </div>
 
     <div class="sheet__sub" style="margin-top:34px">Reseñas${resenas.length ? ` · ${avgResena.toFixed(1)} (${resenas.length})` : ''}</div>
     <div style="margin-bottom:10px">${listaResenas}</div>
