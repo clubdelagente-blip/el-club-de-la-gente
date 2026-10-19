@@ -47,6 +47,22 @@ function badgePromo(p) {
   return "Promo";
 }
 
+/* Línea chica de vigencia en la tarjeta (PromoCard v2) -- solo días y fecha
+   de cierre, duplicado a propósito (mismo patrón que directorio.js). */
+const DIAS_TXT = { lunes: "lun", martes: "mar", miercoles: "mié", jueves: "jue", viernes: "vie", sabado: "sáb", domingo: "dom" };
+const MES_CORTO = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+function detalleVigencia(p) {
+  const partes = [];
+  if (p.dias_aplica && p.dias_aplica.length && p.dias_aplica.length < 7) {
+    partes.push(p.dias_aplica.map(d => DIAS_TXT[d] || d).join("/"));
+  }
+  if (p.fecha_fin) {
+    const f = new Date(p.fecha_fin + "T00:00:00");
+    partes.push(`Válido hasta el ${f.getDate()} de ${MES_CORTO[f.getMonth()]}`);
+  }
+  return partes.join(" · ");
+}
+
 /* ---------- Tarjeta de promoción (PromoCard v2) ----------
    Carrusel de hasta 4 fotos/video (quieto hasta el primer click, luego
    rota cada 3s y deja correr el video completo antes de avanzar),
@@ -96,6 +112,7 @@ function promoCardHtml(p, al) {
       <span class="pm-badge">${esc(badgePromo(p))}</span>
       <h3 class="pm-titulo">${esc(p.titulo || al?.nombre || "Promo")}</h3>
       <p class="pm-desc">${esc(p.descripcion || "")}</p>
+      ${detalleVigencia(p) ? `<p class="pm-vigencia">${esc(detalleVigencia(p))}</p>` : ""}
     </div>
     <div class="pm-footer">
       <img class="pm-logo-club" src="logo-club.png" alt="El Club de la Gente">

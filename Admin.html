@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=75">
+  <link rel="stylesheet" href="styles.css?v=76">
   <link rel="stylesheet" href="admin.css?v=16">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -1836,6 +1836,7 @@ function bindFormPromocionInline(aliadoId,editId){
     const wrapPrev=$("#fa-promo-form-wrap");
     wrapPrev?.addEventListener('input',()=>actualizarPreviewPromo(aliadoId));
     wrapPrev?.addEventListener('change',()=>actualizarPreviewPromo(aliadoId));
+    wrapPrev?.addEventListener('click',()=>setTimeout(()=>actualizarPreviewPromo(aliadoId),0));
     $("#pr-cancel")?.addEventListener('click',()=>{const w=$("#fa-promo-form-wrap");if(w){w.style.display='none';w.innerHTML='';}});
     const btn=$("#pr-save");
     btn?.addEventListener('click',async()=>{
@@ -2456,6 +2457,19 @@ function pmBadgePreview(tipo){
   if(tipo==='regalo')return'🎁';
   return'Promo';
 }
+const PM_DIAS_TXT={lunes:'lun',martes:'mar',miercoles:'mié',jueves:'jue',viernes:'vie',sabado:'sáb',domingo:'dom'};
+const PM_MES_CORTO=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function detalleVigenciaPreview(p){
+  const partes=[];
+  if(p.dias_aplica&&p.dias_aplica.length&&p.dias_aplica.length<7){
+    partes.push(p.dias_aplica.map(d=>PM_DIAS_TXT[d]||d).join('/'));
+  }
+  if(p.fecha_fin){
+    const f=new Date(p.fecha_fin+'T00:00:00');
+    partes.push(`Válido hasta el ${f.getDate()} de ${PM_MES_CORTO[f.getMonth()]}`);
+  }
+  return partes.join(' · ');
+}
 function promoCardHtmlPreview(p,al){
   const cc=colorCategoriaFlyer(al?.categoria);
   const medios=(p.fotos_urls||[]).slice(0,4);
@@ -2492,6 +2506,7 @@ function promoCardHtmlPreview(p,al){
       <span class="pm-badge">${esc(pmBadgePreview(p.tipo))}</span>
       <h3 class="pm-titulo">${esc(p.titulo||al?.nombre||'Promo')}</h3>
       <p class="pm-desc">${esc(p.descripcion||'')}</p>
+      ${detalleVigenciaPreview(p)?`<p class="pm-vigencia">${esc(detalleVigenciaPreview(p))}</p>`:''}
     </div>
     <div class="pm-footer">
       <img class="pm-logo-club" src="logo-club.png" alt="El Club de la Gente">
@@ -2518,7 +2533,9 @@ function actualizarPreviewPromo(aliadoId){
   const titulo=$("#pr-tit")?.value.trim()||'';
   const descripcion=$("#pr-desc")?.value.trim()||'';
   let fotosUrls=[];try{fotosUrls=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){fotosUrls=[];}
-  cont.innerHTML=promoCardHtmlPreview({tipo,titulo,descripcion,fotos_urls:fotosUrls},al);
+  const dias_aplica=[...document.querySelectorAll('#pr-dias-chips .fa-chip.is-on')].map(b=>b.dataset.dia);
+  const fecha_fin=$("#pr-fecha-fin")?.value||'';
+  cont.innerHTML=promoCardHtmlPreview({tipo,titulo,descripcion,fotos_urls:fotosUrls,dias_aplica,fecha_fin},al);
   const carr=cont.querySelector('[data-pm-carrusel]');if(carr)initPmCarruselPreview(carr);
   if(window.lucide)lucide.createIcons();
 }
@@ -2709,6 +2726,7 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
     const modalBodyPrev=$("#modal-body");
     modalBodyPrev?.addEventListener('input',()=>actualizarPreviewPromo(aliadoId));
     modalBodyPrev?.addEventListener('change',()=>actualizarPreviewPromo(aliadoId));
+    modalBodyPrev?.addEventListener('click',()=>setTimeout(()=>actualizarPreviewPromo(aliadoId),0));
     $("#pr-generar-img")?.addEventListener('click',()=>generarImagenPromo(aliadoId,aliadoNombre));
     ['pr-circ-size','pr-circ-x','pr-circ-y'].forEach(id=>{
       $(`#${id}`)?.addEventListener('input',(e)=>{
