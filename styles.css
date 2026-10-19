@@ -332,6 +332,13 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 20px 44px -22px rgba(2, 27, 26, .4), 0 2px 10px rgba(2, 27, 26, .08);
   font-family: var(--cuerpo);
 }
+/* Franja de color por categoría en el borde izquierdo -- mismo recurso que
+   ya usaba el flyer viejo (.promo-card::before en directorio.css), para que
+   el marco de la tarjeta nueva se sienta igual de "de marca". */
+.pm-card::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; z-index: 5;
+  background: var(--pm-cc, var(--verde)); pointer-events: none;
+}
 .pm-carrusel {
   position: relative;
   aspect-ratio: 1 / 1;
@@ -379,10 +386,25 @@ a { color: inherit; text-decoration: none; }
   max-width: 46%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* Sello del % -- llamativo, en la esquina inferior derecha del carrusel
-   (sobre la foto), lo más grande posible sin comerse el difuminado. */
+.pm-base {
+  position: relative;
+  background: color-mix(in srgb, var(--pm-cc, var(--verde)) 13%, #fff);
+  padding: 0 16px 16px;
+  display: grid;
+  grid-template-columns: 196px 1fr;
+  grid-template-areas: "cc badge" "titulo titulo" "desc desc";
+  column-gap: 14px;
+  row-gap: 6px;
+  align-items: start;
+}
+
+/* Sello del % -- llamativo, a medio camino entre el carrusel y la franja de
+   abajo (mismo recurso que la ClubCard del otro lado: margen negativo para
+   que se asome, en vez de quedar encerrado en el carrusel). */
 .pm-badge {
-  position: absolute; bottom: 16px; right: 16px; z-index: 4;
+  grid-area: badge;
+  justify-self: end;
+  margin-top: -54px;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--pm-cc, var(--verde)); color: #fff;
   font-weight: 800; font-size: 27px; letter-spacing: .01em;
@@ -390,18 +412,7 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 14px 28px -8px rgba(0, 0, 0, .6), 0 0 0 3px #fff;
   transform: rotate(6deg);
   white-space: nowrap;
-}
-
-.pm-base {
-  position: relative;
-  background: color-mix(in srgb, var(--pm-cc, var(--verde)) 13%, #fff);
-  padding: 0 16px 18px;
-  display: grid;
-  grid-template-columns: 196px 1fr;
-  grid-template-areas: "cc ." "titulo ." "desc desc" "logo wa";
-  column-gap: 14px;
-  row-gap: 8px;
-  align-items: start;
+  position: relative; z-index: 3;
 }
 
 /* Mini ClubCard real (copia reducida de .ccv2 en estilos.css, fijada en el
@@ -432,10 +443,17 @@ a { color: inherit; text-decoration: none; }
 .pm-cc .ccv2-footer { display: flex; align-items: center; justify-content: center; }
 .pm-cc .ccv2-name { font-size: 8px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; text-align: center; color: #EAB749; }
 
-.pm-titulo { grid-area: titulo; font-family: "Permanent Marker", cursive; font-size: 20px; font-weight: 400; color: var(--tinta); margin: 0; line-height: 1.1; }
-.pm-desc { grid-area: desc; font-size: 12.5px; color: var(--tinta-60); line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.pm-titulo { grid-area: titulo; text-align: center; font-family: "Permanent Marker", cursive; font-size: 20px; font-weight: 400; color: var(--tinta); margin: 0; line-height: 1.1; }
+.pm-desc { grid-area: desc; font-size: 12.5px; color: var(--tinta-60); line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Pie de la tarjeta -- a propósito "fuera" del marco de color (border-top
+   en vez de heredar el fondo con tinte de categoría), con el logo del Club
+   y el botón de WhatsApp, como el "Toca para aprovecharla" del flyer viejo. */
+.pm-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 13px 16px; border-top: 1px solid var(--linea); background: #fff;
+}
 .pm-wa, .pm-wa-lock {
-  grid-area: wa; justify-self: end; align-self: end;
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 12px; font-weight: 700; padding: 8px 16px; border-radius: 100px;
   text-decoration: none; border: none; cursor: pointer; font-family: inherit;
@@ -444,7 +462,7 @@ a { color: inherit; text-decoration: none; }
 .pm-wa svg { width: 15px; height: 15px; flex: none; }
 .pm-wa-lock { background: #fdecea; color: #b45309; }
 .pm-wa-lock i, .pm-wa-lock svg { width: 13px; height: 13px; flex: none; }
-.pm-logo-club { grid-area: logo; justify-self: start; align-self: end; height: 17px; opacity: .78; }
+.pm-logo-club { height: 17px; opacity: .78; }
 .tienda-hero { position: relative; border-radius: 18px; padding: 26px 22px; overflow: hidden; background: radial-gradient(120% 140% at 15% 0%, #164a2c 0%, #0c2e1b 55%, #05160d 100%); background-size: cover; background-position: center; color: #fff; box-sizing: border-box; min-height: 150px; display: flex; flex-direction: column; justify-content: center; }
 .tienda-hero--img { background-blend-mode: overlay; }
 .tienda-hero__eyebrow { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #00DF81; margin-bottom: 8px; }
