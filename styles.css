@@ -365,7 +365,6 @@ a { color: inherit; text-decoration: none; }
 }
 .pm-carrusel__hint svg, .pm-carrusel__hint i { width: 16px; height: 16px; animation: pm-hint-nudge 1.6s ease-in-out infinite; }
 @keyframes pm-hint-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(3px); } }
-.pm-carrusel.is-activo .pm-carrusel__hint { opacity: 0; transform: scale(.7); }
 .pm-carrusel__fade {
   position: absolute; left: 0; right: 0; bottom: 0; height: 42%; z-index: 1;
   background: linear-gradient(to bottom, transparent, rgba(2, 10, 8, .62) 85%);
