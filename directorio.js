@@ -442,7 +442,7 @@ function promoCardHtml(p, al) {
   <div class="pm-card" style="--pm-cc:${cc}">
     <div class="pm-carrusel" data-pm-carrusel role="button" tabindex="0" aria-label="Ver fotos y videos de la promoción">
       <div class="pm-carrusel__track">${slidesHtml}</div>
-      ${medios.length > 1 ? `<div class="pm-carrusel__hint">${ic("images")}</div>` : ""}
+      ${medios.length > 1 ? `<div class="pm-carrusel__hint">${ic("chevron-right")}</div>` : ""}
       ${dotsHtml}
       <div class="pm-carrusel__fade"></div>
       <div class="pm-logo-pill">${al?.imagen_url ? `<img src="${al.imagen_url}" alt="${esc(al.nombre || "")}">` : `<span>${esc(al?.nombre || "Aliado")}</span>`}</div>

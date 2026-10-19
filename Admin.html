@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=76">
+  <link rel="stylesheet" href="styles.css?v=77">
   <link rel="stylesheet" href="admin.css?v=16">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -2484,7 +2484,7 @@ function promoCardHtmlPreview(p,al){
   <div class="pm-card" style="--pm-cc:${cc}">
     <div class="pm-carrusel" data-pm-carrusel role="button" tabindex="0" aria-label="Ver fotos y videos de la promoción">
       <div class="pm-carrusel__track">${slidesHtml}</div>
-      ${medios.length>1?`<div class="pm-carrusel__hint">${ic('images')}</div>`:''}
+      ${medios.length>1?`<div class="pm-carrusel__hint">${ic('chevron-right')}</div>`:''}
       ${dotsHtml}
       <div class="pm-carrusel__fade"></div>
       <div class="pm-logo-pill">${al?.imagen_url?`<img src="${al.imagen_url}" alt="${esc(al.nombre||'')}">`:`<span>${esc(al?.nombre||'Aliado')}</span>`}</div>
