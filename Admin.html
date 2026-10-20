@@ -670,7 +670,7 @@ const ARQUETIPOS_ADMIN={
 };
 async function cargarMiembrosReal(tab,q){
   const[{data:perfiles},{data:descuentos}]=await Promise.all([
-    supabase.from('perfiles').select('id,nombre,whatsapp,plan,barrio,mision,created_at').order('created_at',{ascending:false}),
+    supabase.from('perfiles').select('id,nombre,whatsapp,plan,barrio,mision,foto_url,created_at').order('created_at',{ascending:false}),
     supabase.from('descuentos').select('miembro_id,ahorro'),
   ]);
   const ahorroPorMiembro={};
@@ -682,6 +682,7 @@ async function cargarMiembrosReal(tab,q){
     plan:p.plan||'sin_plan',
     barrio:p.barrio||'—',
     mision:p.mision||null,
+    foto:p.foto_url||null,
     fecha:new Date(p.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'}),
     fechaISO:p.created_at,
     estado:['gratis','basica','premium','vitalicia'].includes(p.plan)?'activo':'inactivo',
@@ -720,7 +721,7 @@ function filtrarMiembrosReal(tab,q){
   if(!body)return;
   body.innerHTML=list.length?list.map(u=>`
     <tr data-miembro="${u.id}">
-      <td><div class="ad-cell-user"><span class="ad-av">${esc(window.ini(u.nombre))}</span><div><div class="ad-cell-user__name">${esc(u.nombre)}</div><div class="ad-table__num">Desde ${u.fecha}</div></div></div></td>
+      <td><div class="ad-cell-user">${u.foto?`<img src="${esc(u.foto)}" style="width:36px;height:36px;object-fit:cover;border-radius:50%;flex-shrink:0">`:`<span class="ad-av">${esc(window.ini(u.nombre))}</span>`}<div><div class="ad-cell-user__name">${esc(u.nombre)}</div><div class="ad-table__num">Desde ${u.fecha}</div></div></div></td>
       <td><span class="ad-pill ${u.plan}"><span class="d"></span>${window.planLbl(u.plan)}</span></td>
       <td><span class="ad-pill ${u.estado}"><span class="d"></span>${u.estado==='activo'?'Activo':'Inactivo'}</span></td>
       <td style="text-align:right"><span class="ad-num-strong verde">${COP(u.ahorro)}</span></td>
