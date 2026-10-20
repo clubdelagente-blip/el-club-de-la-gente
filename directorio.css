@@ -132,7 +132,7 @@
   overscroll-behavior-x: contain; touch-action: pan-x;
 }
 .aliado-carrusel::-webkit-scrollbar { display: none; height: 0; }
-.aliado-carrusel img { width: 100%; flex: none; height: 220px; object-fit: cover; object-position: center; scroll-snap-align: start; background: var(--crema-2, #eee); }
+.aliado-carrusel img, .aliado-carrusel video { width: 100%; flex: none; height: 220px; object-fit: cover; object-position: center; scroll-snap-align: start; background: var(--crema-2, #eee); }
 .aliado-carrusel-dots { display: flex; justify-content: center; gap: 7px; margin-top: 10px; }
 .aliado-carrusel-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--linea-fuerte); cursor: pointer; transition: background .25s, width .25s; }
 .aliado-carrusel-dot.is-on { width: 20px; border-radius: 4px; background: var(--cc, var(--verde)); }

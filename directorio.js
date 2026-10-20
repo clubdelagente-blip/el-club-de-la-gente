@@ -228,8 +228,8 @@ function wireCarrusel() {
   if (carruselInterval) { clearInterval(carruselInterval); carruselInterval = null; }
   const cont = sheetInner.querySelector(".aliado-carrusel");
   if (!cont) return;
-  const imgs = cont.querySelectorAll("img");
-  if (imgs.length < 2) return;
+  const slides = cont.children;
+  if (slides.length < 2) return;
   const dots = [...sheetInner.querySelectorAll(".aliado-carrusel-dot")];
   let idx = 0;
   const irA = (i) => {
@@ -237,7 +237,7 @@ function wireCarrusel() {
     cont.scrollTo({ left: cont.clientWidth * idx, behavior: "smooth" });
     dots.forEach((d, di) => d.classList.toggle("is-on", di === idx));
   };
-  carruselInterval = setInterval(() => irA((idx + 1) % imgs.length), 2000);
+  carruselInterval = setInterval(() => irA((idx + 1) % slides.length), 2000);
   // Si el miembro desliza con el dedo, se respeta su control y se detiene el auto-avance
   cont.addEventListener("touchstart", () => {
     if (carruselInterval) { clearInterval(carruselInterval); carruselInterval = null; }
@@ -577,7 +577,7 @@ function sheetAliado(a) {
       if (!fotos.length) return `<div class="foto-ph" style="background:var(--cc-soft);color:${cc}"><span class="foto-ph__ic">${ic(iconoCategoria(a.categoria))}</span><span class="foto-ph__txt">${a.nombre}</span></div>`;
       return `
         <div class="aliado-carrusel-wrap">
-          <div class="aliado-carrusel">${fotos.map(url => `<img src="${url}" alt="${a.nombre}">`).join("")}</div>
+          <div class="aliado-carrusel">${fotos.map(url => esMediaVideo(url) ? `<video src="${url}" muted autoplay loop playsinline></video>` : `<img src="${url}" alt="${a.nombre}">`).join("")}</div>
           ${fotos.length > 1 ? `<div class="aliado-carrusel-dots">${fotos.map((_, i) => `<span class="aliado-carrusel-dot${i === 0 ? " is-on" : ""}" data-dot="${i}" style="--cc:${cc}"></span>`).join("")}</div>` : ""}
         </div>`;
     })()}
