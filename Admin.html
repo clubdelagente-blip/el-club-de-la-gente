@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=78">
-  <link rel="stylesheet" href="admin.css?v=16">
+  <link rel="stylesheet" href="admin.css?v=17">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
   <style>
@@ -539,10 +539,10 @@ function valorMoneda(input){return parseInt((input?.value||'').replace(/\D/g,'')
 function abrirModal(t,s,b){$("#modal-title").textContent=t;$("#modal-sub").textContent=s;$("#modal-body").innerHTML=b;$("#ad-modal-ov").classList.add("is-open");window.bloquearScroll?.();if(window.lucide)lucide.createIcons();}
 async function subirImagen(file){file=await comprimirImagen(file);const ext=file.name.split('.').pop();const path=`${Date.now()}-${Math.random().toString(36).substr(2,5)}.${ext}`;const{error}=await supabase.storage.from('contenido').upload(path,file);if(error)throw error;return supabase.storage.from('contenido').getPublicUrl(path).data.publicUrl;}
 
-/* ---- GENERADOR DE IMAGEN DE PROMO (flyer automático, plantilla de marca) ---- */
-// Mismo mapeo de colores por categoría que app-cms.js/directorio.js, para que
-// el flyer combine con el color que ya identifica a esa categoría en el resto
-// del sitio (duplicado a propósito -- cada archivo tiene su propia copia).
+// Mismo mapeo de colores por categoría que app-cms.js/directorio.js, usado
+// por la vista previa en vivo de la tarjeta de promoción (duplicado a
+// propósito -- cada archivo tiene su propia copia). El generador de flyer
+// que antes vivía en esta sección se quitó -- la tarjeta nueva lo reemplaza.
 const COLORES_CAT_FLYER=[
   [/odont/i,'#4FA8E0'],[/veterinar|mascota/i,'#F5B942'],[/turis/i,'#2FA76F'],
   [/canasta|fruver|mercado|supermercado/i,'#8BC53F'],[/ropa|moda|accesorio/i,'#9B6BD9'],
@@ -556,196 +556,7 @@ function colorCategoriaFlyer(categoria){
   for(const[rx,color]of COLORES_CAT_FLYER)if(rx.test(c))return color;
   return '#095544';
 }
-function cargarImagenCORS(src){
-  return new Promise((resolve,reject)=>{
-    const img=new Image();
-    img.crossOrigin='anonymous';
-    img.onload=()=>resolve(img);
-    img.onerror=reject;
-    img.src=src;
-  });
-}
-function hexToRgbFlyer(hex){const h=hex.replace('#','');return{r:parseInt(h.substr(0,2),16),g:parseInt(h.substr(2,2),16),b:parseInt(h.substr(4,2),16)};}
-function rgbToHexFlyer(r,g,b){return'#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');}
-function oscurecerFlyer(hex,factor){const{r,g,b}=hexToRgbFlyer(hex);return rgbToHexFlyer(r*factor,g*factor,b*factor);}
-function dibujarCoverFlyer(ctx,img,x,y,w,h){
-  const ir=img.width/img.height,dr=w/h;
-  let sx,sy,sw,sh;
-  if(ir>dr){sh=img.height;sw=sh*dr;sx=(img.width-sw)/2;sy=0;}
-  else{sw=img.width;sh=sw/dr;sx=0;sy=(img.height-sh)/2;}
-  ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
-}
-let _flyerState=null;
 let _promoFormAliadoId=null;
-function dibujarFlyerEnCanvas(canvas){
-  if(!_flyerState)return;
-  const{img1,img2,logoClub,logoAliado,color,nombre,categoriaTxt,destacado,descripcion}=_flyerState;
-  const circR=parseInt($("#pr-circ-size")?.value)||148;
-  const circX=1080*((parseInt($("#pr-circ-x")?.value)||50)/100);
-  const circY=1350*((parseInt($("#pr-circ-y")?.value)||28)/100);
-
-  const ctx=canvas.getContext('2d');
-  const W=canvas.width,H=canvas.height,fotoH=760;
-  ctx.clearRect(0,0,W,H);
-
-  if(img1)dibujarCoverFlyer(ctx,img1,0,0,W/2,fotoH);
-  if(img2)dibujarCoverFlyer(ctx,img2,W/2,0,W/2,fotoH);
-  ctx.fillStyle='rgba(2,27,26,.18)';
-  ctx.fillRect(W/2-2,0,4,fotoH);
-
-  const fundido=ctx.createLinearGradient(0,fotoH-180,0,fotoH);
-  fundido.addColorStop(0,'rgba(2,27,26,0)');
-  fundido.addColorStop(1,oscurecerFlyer(color,.22));
-  ctx.fillStyle=fundido;
-  ctx.fillRect(0,fotoH-180,W,180);
-
-  ctx.fillStyle=oscurecerFlyer(color,.22);
-  ctx.fillRect(0,fotoH,W,H-fotoH);
-
-  // Sticker de descuento: sello dentado, tamaño y posición ajustables
-  ctx.save();
-  ctx.translate(circX,circY);
-  ctx.rotate(-9*Math.PI/180);
-  ctx.fillStyle='rgba(255,255,255,.95)';
-  const puntas=20;
-  ctx.beginPath();
-  for(let i=0;i<puntas*2;i++){
-    const r=i%2===0?circR+20:circR+2;
-    const a=(Math.PI*2*i)/(puntas*2);
-    const px=Math.cos(a)*r,py=Math.sin(a)*r;
-    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
-  }
-  ctx.closePath();
-  ctx.shadowColor='rgba(0,0,0,.4)';ctx.shadowBlur=30;ctx.shadowOffsetY=12;
-  ctx.fill();
-  ctx.shadowColor='transparent';
-  ctx.beginPath();ctx.arc(0,0,circR,0,Math.PI*2);
-  ctx.fillStyle=color;ctx.fill();
-  ctx.lineWidth=6;ctx.strokeStyle='rgba(255,255,255,.95)';
-  ctx.beginPath();ctx.arc(0,0,circR-10,0,Math.PI*2);ctx.stroke();
-  ctx.fillStyle='#fff';
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  const lineasDest=destacado.split('\n');
-  let fsz=lineasDest.length>1?circR*0.5:circR*0.56;
-  ctx.font=`800 ${fsz}px 'Fraunces', serif`;
-  let maxw=0;lineasDest.forEach(l=>{maxw=Math.max(maxw,ctx.measureText(l).width);});
-  const maxTextW=circR*1.6;
-  while(maxw>maxTextW&&fsz>28){fsz-=4;ctx.font=`800 ${fsz}px 'Fraunces', serif`;maxw=0;lineasDest.forEach(l=>{maxw=Math.max(maxw,ctx.measureText(l).width);});}
-  const lh=fsz*1.02;
-  let ly=-((lineasDest.length-1)*lh)/2;
-  lineasDest.forEach(l=>{ctx.fillText(l,0,ly);ly+=lh;});
-  ctx.restore();
-
-  // Fila del aliado: monograma + nombre/categoría + logo del Club
-  ctx.textBaseline='middle';
-  ctx.save();
-  ctx.beginPath();ctx.arc(130,fotoH+90,56,0,Math.PI*2);
-  if(logoAliado){
-    ctx.save();
-    ctx.clip();
-    dibujarCoverFlyer(ctx,logoAliado,130-56,fotoH+90-56,112,112);
-    ctx.restore();
-  }else{
-    ctx.fillStyle='rgba(255,255,255,.14)';ctx.fill();
-    ctx.fillStyle='#fff';
-    ctx.font="700 42px 'Fraunces', serif";
-    ctx.textAlign='center';
-    ctx.fillText((nombre||'?')[0].toUpperCase(),130,fotoH+94);
-  }
-  ctx.restore();
-
-  ctx.fillStyle='#F1F7F6';
-  ctx.textAlign='left';
-  ctx.font="700 36px 'Inter', sans-serif";
-  let nombreFit=nombre.toUpperCase();
-  while(ctx.measureText(nombreFit).width>440&&nombreFit.length>4){nombreFit=nombreFit.slice(0,-2)+'…';}
-  ctx.fillText(nombreFit,206,fotoH+80);
-  ctx.font="500 24px 'Inter', sans-serif";
-  ctx.fillStyle='rgba(241,247,246,.7)';
-  ctx.fillText(categoriaTxt.toUpperCase(),206,fotoH+118);
-
-  if(logoClub){
-    const lh2=72,lw2=logoClub.width*(lh2/logoClub.height);
-    const padX=18,padY=14,bx=W-70-lw2-padX,by=fotoH+90-lh2/2-padY,bw=lw2+padX*2,bh=lh2+padY*2;
-    ctx.save();
-    ctx.fillStyle='rgba(255,255,255,.95)';
-    ctx.beginPath();ctx.roundRect(bx,by,bw,bh,bh/2);ctx.fill();
-    ctx.filter='brightness(0) saturate(100%)';
-    ctx.drawImage(logoClub,W-70-lw2,fotoH+90-lh2/2,lw2,lh2);
-    ctx.filter='none';
-    ctx.restore();
-  }
-
-  ctx.fillStyle='rgba(241,247,246,.2)';
-  ctx.fillRect(70,fotoH+170,W-140,2);
-
-  ctx.fillStyle='#F1F7F6';
-  ctx.textAlign='left';
-  ctx.font="500 38px 'Inter', sans-serif";
-  const maxWDesc=W-140;
-  const words=descripcion.split(' ');
-  let line='';const lineasDesc=[];
-  words.forEach(w=>{
-    const test=line?line+' '+w:w;
-    if(ctx.measureText(test).width>maxWDesc&&line){lineasDesc.push(line);line=w;}else{line=test;}
-  });
-  if(line)lineasDesc.push(line);
-  let dy=fotoH+230;
-  lineasDesc.slice(0,3).forEach(l=>{ctx.fillText(l,70,dy);dy+=52;});
-
-  ctx.textAlign='center';
-  ctx.font="italic 500 24px 'Inter', sans-serif";
-  ctx.fillStyle='rgba(241,247,246,.5)';
-  ctx.fillText('*Aplican términos y condiciones',W/2,H-50);
-  ctx.textAlign='left';
-}
-async function generarImagenPromo(aliadoId,aliadoNombre){
-  const tipo=$("#pr-tipo")?.value;
-  const descripcion=$("#pr-desc")?.value.trim();
-  if(!tipo){toast('Selecciona el tipo de promoción primero');return;}
-  if(!descripcion){toast('Escribe la descripción primero');return;}
-  let fotosActuales=[];try{fotosActuales=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){fotosActuales=[];}
-  const fotosFuente=fotosActuales.filter(u=>!u.includes('flyer=1'));
-  if(fotosFuente.length<2){toast('Sube al menos 2 fotos del producto o servicio antes de generar el flyer');return;}
-
-  const btn=$("#pr-generar-img");
-  if(btn){btn.disabled=true;btn.innerHTML=`${ic("loader")} Generando…`;if(window.lucide)lucide.createIcons();}
-  try{
-    let destacado='PROMO';
-    if(tipo==='porcentaje'){const pct=parseInt($("#pr-pct")?.value)||0;destacado=pct?`${pct}%\nOFF`:'DESCUENTO';}
-    else if(tipo==='monto_fijo'){const m=parseInt($("#pr-ahorro-fijo")?.value)||0;destacado=m?`$${Math.round(m/1000)}K\nOFF`:'DESCUENTO';}
-    else if(tipo==='precio_especial'){const d=parseInt($("#pr-precio-d")?.value)||0;destacado=d?`$${Math.round(d/1000)}K`:'PRECIO\nESPECIAL';}
-    else if(tipo==='2x1')destacado='2×1';
-    else if(tipo==='regalo')destacado='REGALO';
-    else destacado='PROMO';
-
-    await document.fonts.ready;
-
-    const aliado=_aliados.find(a=>a.id===aliadoId);
-    const color=colorCategoriaFlyer(aliado?.categoria);
-    const nombre=aliadoNombre||aliado?.nombre||'Aliado';
-    const categoriaTxt=(aliado?.categoria||'').split(',')[0].trim();
-
-    const[img1,img2,logoClub,logoAliado]=await Promise.all([
-      cargarImagenCORS(fotosFuente[0]).catch(()=>null),
-      cargarImagenCORS(fotosFuente[1]).catch(()=>null),
-      cargarImagenCORS('logo-club.png').catch(()=>null),
-      aliado?.imagen_url?cargarImagenCORS(aliado.imagen_url).catch(()=>null):Promise.resolve(null),
-    ]);
-
-    _flyerState={img1,img2,logoClub,logoAliado,color,nombre,categoriaTxt,destacado,descripcion,fotosFuente};
-
-    const canvas=$("#pr-flyer-canvas");
-    const wrap=$("#pr-flyer-preview-wrap");
-    if(wrap)wrap.style.display='block';
-    if(canvas)dibujarFlyerEnCanvas(canvas);
-    wrap?.scrollIntoView({behavior:'smooth',block:'nearest'});
-  }catch(err){
-    toast('No se pudo generar la imagen');
-  }finally{
-    if(btn){btn.disabled=false;btn.innerHTML=`${ic("sparkles")} Generar imagen de la promo`;if(window.lucide)lucide.createIcons();}
-  }
-}
 
 /* ---- DASHBOARD (datos reales) ---- */
 const MES_LBL_DASH=["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
@@ -2645,35 +2456,10 @@ function htmlFormPromocion(p={},aliadoId){
     <div class="ad-field"><label>Vigencia hasta <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-fecha-fin" type="date" value="${p.fecha_fin||''}"></div>
   </div>
   <div class="ad-field"><label>Compra mínima ($) <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-min" type="number" min="0" value="${p.monto_minimo||''}" placeholder="0" style="max-width:220px"></div>
-  <div class="ad-field"><label>Fotos y videos <span style="font-weight:400;color:rgba(26,26,24,.4)">(hasta 4 -- se ven en el carrusel de la tarjeta; sube al menos 2 fotos si quieres generar el flyer automático abajo)</span></label>
+  <div class="ad-field"><label>Fotos y videos <span style="font-weight:400;color:rgba(26,26,24,.4)">(hasta 4 -- se ven en el carrusel de la tarjeta)</span></label>
     <div id="pr-fotos-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px"></div>
     <input type="file" id="pr-foto-input" accept="image/*,video/*" style="display:none">
     <input type="hidden" id="pr-fotos-urls" value="${esc(JSON.stringify(p.fotos_urls||(p.foto_url?[p.foto_url]:[])))}">
-  </div>
-  <div class="ad-field">
-    <button type="button" class="ad-btn ad-btn--verde" id="pr-generar-img" data-aliado-id="${aliadoId}">${ic("sparkles")} Generar imagen de la promo</button>
-    <span style="font-size:11px;color:rgba(26,26,24,.4);display:block;margin-top:6px">Arma un flyer con las 2 primeras fotos de arriba, el color de la categoría del aliado, el descuento y ambos logos. Se muestra en grande para revisarla antes de publicarla -- al publicarse, solo se ve esa imagen (las fotos sueltas de arriba no quedan públicas).</span>
-  </div>
-  <div id="pr-flyer-preview-wrap" style="display:none;background:#f5f4f0;border:1px solid rgba(26,26,24,.1);border-radius:12px;padding:16px;margin-bottom:10px">
-    <div style="display:flex;justify-content:center;margin-bottom:14px">
-      <canvas id="pr-flyer-canvas" width="1080" height="1350" style="width:100%;max-width:300px;height:auto;border-radius:10px;box-shadow:0 14px 30px -16px rgba(0,0,0,.4)"></canvas>
-    </div>
-    <div class="ad-field" style="margin-bottom:10px">
-      <label style="display:flex;justify-content:space-between"><span>Tamaño del sello</span><span id="pr-circ-size-val" style="color:#095544;font-weight:600">148</span></label>
-      <input id="pr-circ-size" type="range" min="90" max="230" value="148" style="width:100%">
-    </div>
-    <div class="ad-field" style="margin-bottom:10px">
-      <label style="display:flex;justify-content:space-between"><span>Posición horizontal</span><span id="pr-circ-x-val" style="color:#095544;font-weight:600">50%</span></label>
-      <input id="pr-circ-x" type="range" min="0" max="100" value="50" style="width:100%">
-    </div>
-    <div class="ad-field" style="margin-bottom:14px">
-      <label style="display:flex;justify-content:space-between"><span>Posición vertical</span><span id="pr-circ-y-val" style="color:#095544;font-weight:600">28%</span></label>
-      <input id="pr-circ-y" type="range" min="0" max="100" value="28" style="width:100%">
-    </div>
-    <div class="ad-toolbar" style="margin:0"><div class="ad-spacer"></div>
-      <button type="button" class="ad-btn" id="pr-flyer-cancelar">Cancelar</button>
-      <button type="button" class="ad-btn ad-btn--verde" id="pr-flyer-confirmar">${ic("check")} Usar esta imagen</button>
-    </div>
   </div>
   <div style="background:rgba(234,183,73,.08);border:1px solid rgba(234,183,73,.3);border-radius:10px;padding:12px 14px;margin-bottom:10px">
     <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:rgba(26,26,24,.75);margin-bottom:8px">
@@ -2727,39 +2513,6 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
     modalBodyPrev?.addEventListener('input',()=>actualizarPreviewPromo(aliadoId));
     modalBodyPrev?.addEventListener('change',()=>actualizarPreviewPromo(aliadoId));
     modalBodyPrev?.addEventListener('click',()=>setTimeout(()=>actualizarPreviewPromo(aliadoId),0));
-    $("#pr-generar-img")?.addEventListener('click',()=>generarImagenPromo(aliadoId,aliadoNombre));
-    ['pr-circ-size','pr-circ-x','pr-circ-y'].forEach(id=>{
-      $(`#${id}`)?.addEventListener('input',(e)=>{
-        const sufijo=id==='pr-circ-size'?'':'%';
-        const val=$(`#${id}-val`);if(val)val.textContent=e.target.value+sufijo;
-        const canvas=$("#pr-flyer-canvas");if(canvas)dibujarFlyerEnCanvas(canvas);
-      });
-    });
-    $("#pr-flyer-cancelar")?.addEventListener('click',()=>{
-      const wrap=$("#pr-flyer-preview-wrap");if(wrap)wrap.style.display='none';
-      _flyerState=null;
-    });
-    $("#pr-flyer-confirmar")?.addEventListener('click',async()=>{
-      const confBtn=$("#pr-flyer-confirmar");
-      if(!_flyerState){toast('Genera la imagen primero');return;}
-      confBtn.disabled=true;confBtn.innerHTML=`${ic("loader")} Subiendo…`;if(window.lucide)lucide.createIcons();
-      try{
-        const canvas=$("#pr-flyer-canvas");
-        const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
-        if(!blob)throw new Error('No se pudo generar la imagen');
-        const file=new File([blob],`promo-${Date.now()}.png`,{type:'image/png'});
-        const url=await subirImagen(file);
-        const h=$("#pr-fotos-urls");if(h)h.value=JSON.stringify([url+'?flyer=1']);
-        renderFotosPromoPreview();
-        const wrap=$("#pr-flyer-preview-wrap");if(wrap)wrap.style.display='none';
-        _flyerState=null;
-        toast('Imagen lista -- al publicar, solo se verá esta foto ✓');
-      }catch(_){
-        toast('No se pudo subir la imagen');
-      }finally{
-        confBtn.disabled=false;confBtn.innerHTML=`${ic("check")} Usar esta imagen`;if(window.lucide)lucide.createIcons();
-      }
-    });
     $("#pr-cancel")?.addEventListener('click',()=>{cargarYMostrarPromociones(aliadoId,aliadoNombre);});
     const btn=$("#pr-save");
     btn?.addEventListener('click',async()=>{

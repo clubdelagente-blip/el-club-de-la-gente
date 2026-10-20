@@ -312,7 +312,7 @@
 .ad-modal__head {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
   padding: 24px 26px; border-bottom: 1px solid var(--modal-line);
-  position: sticky; top: 0; background: #fff;
+  position: sticky; top: 0; background: #fff; z-index: 10;
 }
 .ad-modal__head h1 { color: var(--modal-txt) !important; }
 .ad-modal__head p  { color: var(--modal-txt-60) !important; }
