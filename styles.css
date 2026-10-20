@@ -442,7 +442,7 @@ a { color: inherit; text-decoration: none; }
 .pm-cc .ccv2-footer { display: flex; align-items: center; justify-content: center; }
 .pm-cc .ccv2-name { font-size: 8px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; text-align: center; color: #EAB749; }
 
-.pm-titulo { grid-area: titulo; text-align: center; font-family: "Permanent Marker", cursive; font-size: 20px; font-weight: 400; color: var(--tinta); margin: 0; line-height: 1.1; }
+.pm-titulo { grid-area: titulo; text-align: center; font-family: var(--display); font-style: italic; font-size: 21px; font-weight: 600; color: var(--tinta); margin: 0; line-height: 1.15; }
 .pm-desc { grid-area: desc; font-size: 12.5px; color: var(--tinta-60); line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
 .pm-vigencia { grid-area: vigencia; font-size: 10.5px; color: var(--tinta-45); margin: 3px 0 0; }
 
