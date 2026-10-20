@@ -123,6 +123,7 @@
         <button class="ad-link" data-panel="contenido"><i data-lucide="image"></i> Contenido</button>
         <button class="ad-link" data-panel="programas"><i data-lucide="heart-handshake"></i> Programas sociales</button>
         <button class="ad-link" data-panel="educacion"><i data-lucide="graduation-cap"></i> Educación</button>
+        <button class="ad-link" data-panel="sorteos"><i data-lucide="gift"></i> Sorteos</button>
         <div class="ad-nav__lbl">Finanzas</div>
         <button class="ad-link" data-panel="ventas"><i data-lucide="banknote"></i> Ventas</button>
         <button class="ad-link" data-panel="suscripciones"><i data-lucide="repeat"></i> Suscripciones</button>
@@ -177,6 +178,7 @@
         <section class="ad-panel" id="p-contenido" data-screen-label="Admin · Contenido"></section>
         <section class="ad-panel" id="p-programas" data-screen-label="Admin · Programas"></section>
         <section class="ad-panel" id="p-educacion" data-screen-label="Admin · Educación"></section>
+        <section class="ad-panel" id="p-sorteos" data-screen-label="Admin · Sorteos"></section>
         <section class="ad-panel" id="p-ventas" data-screen-label="Admin · Ventas"></section>
         <section class="ad-panel" id="p-suscripciones" data-screen-label="Admin · Suscripciones"></section>
         <section class="ad-panel" id="p-contabilidad" data-screen-label="Admin · Contabilidad"></section>
@@ -208,7 +210,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=7"></script>
-  <script src="admin.js?v=31"></script>
+  <script src="admin.js?v=32"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -235,6 +237,7 @@ function clienteAislado(){
   );
 }
 let _aliados=[], _anuncios=[], _programas=[], _profesionales=[], _gastos=[], _categoriasGasto=[], _pagos=[], _contMes=null, _contGastosMes=[], _contPagosMes=[], _contConfig={iva_pct:19,ica_pct:0.92,fundador_pct:20,reserva_legal_pct:10,disponible_pct:45,renta_pct:35};
+let _sorteos=[], _sorteoFiltro='todos';
 let _ingresosManuales=[], _categoriasIngreso=[], _contIngManMes=[], _contFilasIngreso=[], _contFiltroIngreso=null;
 
 // Arranca con esta lista por defecto y se reemplaza por las opciones reales de
@@ -3316,6 +3319,85 @@ document.addEventListener('DOMContentLoaded',async()=>{
   }
 
   /* ============================================================
+     SORTEOS — registrar ganadores y validar entrega del premio
+     ============================================================ */
+  async function cargarSorteosAdmin() {
+    const { data } = await supabase.from('sorteos').select('*').order('fecha_sorteo', { ascending: false });
+    _sorteos = data || [];
+    renderSorteosUI();
+  }
+  window.cargarSorteosAdmin = cargarSorteosAdmin;
+
+  function renderSorteosUI() {
+    const body = $("#sorteos-body"); if (!body) return;
+    const lista = _sorteoFiltro === 'todos' ? _sorteos : _sorteos.filter(s => _sorteoFiltro === 'entregados' ? s.entregado : !s.entregado);
+    body.innerHTML = !lista.length
+      ? `<tr><td colspan="4" style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">${_sorteoFiltro === 'todos' ? 'Aún no hay sorteos registrados — registra el primero →' : 'Nada en esta categoría'}</td></tr>`
+      : lista.map(s => `<tr>
+        <td><div class="ad-cell-user__name">${esc(s.titulo)}</div><div style="font-size:12px;color:rgba(242,240,234,.4)">${esc(s.premio)}</div></td>
+        <td>${esc(s.ganador_nombre)}${s.ganador_whatsapp ? `<div style="font-size:12px"><a href="https://wa.me/57${esc(s.ganador_whatsapp.replace(/\D/g,''))}" target="_blank" style="color:#00DF81">WhatsApp</a></div>` : ''}</td>
+        <td style="font-size:13px">${new Date(s.fecha_sorteo+'T00:00:00').toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}</td>
+        <td style="text-align:right"><div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
+          <span class="ad-pill ${s.entregado?'activo':'inactivo'}" data-tog-sorteo="${s.id}" data-entregado="${s.entregado}" style="cursor:pointer"><span class="d"></span>${s.entregado?`Entregado${s.fecha_entrega?' · '+new Date(s.fecha_entrega+'T00:00:00').toLocaleDateString('es-CO',{day:'numeric',month:'short'}):''}`:'Pendiente'}</span>
+          <button class="ad-btn" data-ed-sorteo="${s.id}">${ic("pencil")}</button>
+          <button class="ad-btn" data-rm-sorteo="${s.id}">${ic("trash-2")}</button>
+        </div></td>
+      </tr>`).join('');
+    document.querySelectorAll('[data-sorteo-filtro]').forEach(b => b.classList.toggle('ad-btn--verde', b.dataset.sorteoFiltro === _sorteoFiltro));
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function htmlFormSorteo(s = {}) {
+    return `
+      <div class="ad-field"><label>Nombre del sorteo *</label><input id="fs-titulo" type="text" value="${(s.titulo||'').replace(/"/g,'&quot;')}" placeholder="Ej: Sorteo Día de la Madre"></div>
+      <div class="ad-field"><label>Premio *</label><input id="fs-premio" type="text" value="${(s.premio||'').replace(/"/g,'&quot;')}" placeholder="Ej: Kit de belleza"></div>
+      <div class="ad-field-2">
+        <div class="ad-field"><label>Ganador *</label><input id="fs-ganador" type="text" value="${(s.ganador_nombre||'').replace(/"/g,'&quot;')}" placeholder="Nombre del ganador"></div>
+        <div class="ad-field"><label>WhatsApp del ganador <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="fs-wa" type="text" value="${(s.ganador_whatsapp||'').replace(/"/g,'&quot;')}" placeholder="3001234567"></div>
+      </div>
+      <div class="ad-field"><label>Fecha del sorteo</label><input id="fs-fecha" type="date" value="${s.fecha_sorteo||new Date().toISOString().slice(0,10)}"></div>
+      <div style="background:rgba(234,183,73,.08);border:1px solid rgba(234,183,73,.3);border-radius:10px;padding:12px 14px;margin-bottom:10px">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:rgba(26,26,24,.75)">
+          <input id="fs-entregado" type="checkbox" style="width:16px;height:16px;accent-color:#095544" ${s.entregado?'checked':''}>
+          🎁 Ya se entregó el premio
+        </label>
+      </div>
+      <div class="ad-field"><label>Notas <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><textarea id="fs-notas" rows="2" placeholder="Ej: se le envió por domicilio el...">${(s.notas||'').replace(/</g,'&lt;')}</textarea></div>
+      <div class="ad-toolbar" style="margin:16px 0 0"><div class="ad-spacer"></div>
+        <button class="ad-btn" id="fs-cancel">Cancelar</button>
+        <button class="ad-btn ad-btn--verde" id="fs-save" data-id="${s.id||''}">${ic("check")} ${s.id?'Guardar cambios':'Registrar ganador'}</button>
+      </div>`;
+  }
+  function bindFormSorteo() {
+    setTimeout(() => {
+      $("#fs-cancel")?.addEventListener('click', () => { $("#ad-modal-ov").classList.remove("is-open"); });
+      $("#fs-save")?.addEventListener('click', async () => {
+        const titulo = $("#fs-titulo")?.value.trim();
+        const premio = $("#fs-premio")?.value.trim();
+        const ganador_nombre = $("#fs-ganador")?.value.trim();
+        if (!titulo || !premio || !ganador_nombre) { toast("Nombre del sorteo, premio y ganador son obligatorios"); return; }
+        const btn = $("#fs-save");
+        const id = btn.dataset.id;
+        const existente = id ? _sorteos.find(x => x.id === id) : null;
+        const entregado = $("#fs-entregado")?.checked || false;
+        const payload = {
+          titulo, premio, ganador_nombre,
+          ganador_whatsapp: $("#fs-wa")?.value.trim() || null,
+          fecha_sorteo: $("#fs-fecha")?.value || new Date().toISOString().slice(0,10),
+          notas: $("#fs-notas")?.value.trim() || null,
+          entregado,
+          fecha_entrega: entregado ? (existente?.fecha_entrega || new Date().toISOString().slice(0,10)) : null,
+        };
+        btn.disabled = true; btn.textContent = "Guardando…";
+        if (id) { await supabase.from('sorteos').update(payload).eq('id', id); toast("Sorteo actualizado ✓"); }
+        else { await supabase.from('sorteos').insert(payload); toast("Ganador registrado ✓"); }
+        $("#ad-modal-ov").classList.remove("is-open");
+        cargarSorteosAdmin();
+      });
+    }, 50);
+  }
+
+  /* ============================================================
      FORMULARIO DE BIENVENIDA — preguntas de segmentación editables
      ============================================================ */
   let _preguntas = [];
@@ -3603,6 +3685,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const rmM=e.target.closest('[data-rm-marca]'); if(rmM&&confirm('¿Eliminar esta marca?')){ await supabase.from('marcas_aliadas').delete().eq('id',rmM.dataset.rmMarca); cargarMarcasAdmin(); toast('Marca eliminada'); return; }
     const upM=e.target.closest('[data-marca-up]'); if(upM){ const m=_marcas.find(x=>x.id===upM.dataset.marcaUp); if(m&&m.orden>0){ await supabase.from('marcas_aliadas').update({orden:m.orden-1}).eq('id',m.id); cargarMarcasAdmin(); } return; }
     const dnM=e.target.closest('[data-marca-dn]'); if(dnM){ const m=_marcas.find(x=>x.id===dnM.dataset.marcaDn); if(m){ await supabase.from('marcas_aliadas').update({orden:m.orden+1}).eq('id',m.id); cargarMarcasAdmin(); } return; }
+    if(e.target.closest('#sorteo-add')){ abrirModal('Registrar ganador de sorteo','Para validar después la entrega del premio',htmlFormSorteo()); bindFormSorteo(); return; }
+    const edS=e.target.closest('[data-ed-sorteo]'); if(edS){ const s=_sorteos.find(x=>x.id===edS.dataset.edSorteo); if(s){ abrirModal('Editar sorteo',s.titulo,htmlFormSorteo(s)); bindFormSorteo(); } return; }
+    const togS=e.target.closest('[data-tog-sorteo]'); if(togS){ const entregado=togS.dataset.entregado!=='true'; await supabase.from('sorteos').update({entregado,fecha_entrega:entregado?new Date().toISOString().slice(0,10):null}).eq('id',togS.dataset.togSorteo); cargarSorteosAdmin(); return; }
+    const rmS=e.target.closest('[data-rm-sorteo]'); if(rmS&&confirm('¿Eliminar este sorteo?')){ await supabase.from('sorteos').delete().eq('id',rmS.dataset.rmSorteo); cargarSorteosAdmin(); toast('Sorteo eliminado'); return; }
+    const filS=e.target.closest('[data-sorteo-filtro]'); if(filS){ _sorteoFiltro=filS.dataset.sorteoFiltro; renderSorteosUI(); return; }
 
     if(e.target.closest('#btn-an-add')){abrirModal('Nuevo anuncio','Publica una novedad',htmlFormAnuncio());bindFormAnuncio();return;}
     const edAn=e.target.closest('[data-ed-an]');if(edAn){const a=_anuncios.find(x=>x.id===edAn.dataset.edAn);if(a){abrirModal('Editar anuncio',a.titulo,htmlFormAnuncio(a));bindFormAnuncio();}return;}

@@ -55,6 +55,7 @@ const PANELES = {
   contenido:    { t: "Contenido", s: "Imágenes, videos y publicaciones de la web" },
   programas:    { t: "Programas sociales", s: "Programas, fundaciones, eventos y voluntarios" },
   educacion:    { t: "Educación", s: "Talleres presenciales gratuitos para todos los miembros" },
+  sorteos:      { t: "Sorteos", s: "Registra ganadores y valida la entrega de los premios" },
   ventas:       { t: "Ventas", s: "Historial de transacciones y proyecciones" },
   suscripciones:{ t: "Suscripciones", s: "Renovaciones y cobros automáticos" },
   contabilidad: { t: "Contabilidad", s: "Ingresos, gastos y balance del Club" },
@@ -129,6 +130,31 @@ function renderMarcas() {
   window.cargarMarcasAdmin?.();
 }
 window.renderMarcas = renderMarcas;
+
+/* ============================================================
+   RENDER: SORTEOS
+   ============================================================ */
+function renderSorteos() {
+  $("#p-sorteos").innerHTML = `
+    <div class="ad-toolbar">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="ad-btn" data-sorteo-filtro="todos">Todos</button>
+        <button class="ad-btn" data-sorteo-filtro="pendientes">Por entregar</button>
+        <button class="ad-btn" data-sorteo-filtro="entregados">Entregados</button>
+      </div>
+      <div class="ad-spacer"></div>
+      <button class="ad-btn ad-btn--verde" id="sorteo-add">${ic("plus")} Registrar ganador</button>
+    </div>
+    <div class="ad-table-wrap">
+      <table class="ad-table">
+        <thead><tr><th>Sorteo / Premio</th><th>Ganador</th><th>Fecha del sorteo</th><th style="text-align:right">Entrega</th></tr></thead>
+        <tbody id="sorteos-body"><tr><td colspan="4" style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
+      </table>
+    </div>`;
+  if (window.lucide) lucide.createIcons();
+  window.cargarSorteosAdmin?.();
+}
+window.renderSorteos = renderSorteos;
 
 /* ============================================================
    RENDER: TIENDA
@@ -417,7 +443,7 @@ function irPanel(panel) {
     // referencia sin prefijo a un nombre que todavia no existe en ningun lado
     // (ni local ni en window) lanza ReferenceError y rompe TODO irPanel -- incluidos
     // paneles que no tienen nada que ver, como pasó con Dashboard.
-    const fn = ({ bandeja: renderBandeja, dashboard: renderDashboard, miembros: renderMiembros, aliados: window.renderAliados, planes: window.renderPlanes, profesionales: window.renderProfesionales, viajes: window.renderViajesUber, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: window.renderProgramas, educacion: renderEducacion, ventas: renderVentas, suscripciones: renderSuscripciones, contabilidad: window.renderContabilidad, config: renderConfig, agente: renderAgente, preguntas: window.renderPreguntas })[panel];
+    const fn = ({ bandeja: renderBandeja, dashboard: renderDashboard, miembros: renderMiembros, aliados: window.renderAliados, planes: window.renderPlanes, profesionales: window.renderProfesionales, viajes: window.renderViajesUber, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: window.renderProgramas, educacion: renderEducacion, sorteos: renderSorteos, ventas: renderVentas, suscripciones: renderSuscripciones, contabilidad: window.renderContabilidad, config: renderConfig, agente: renderAgente, preguntas: window.renderPreguntas })[panel];
     if (fn) { fn(); RENDERED[panel] = true; }
   }
   if (window.lucide) lucide.createIcons();
