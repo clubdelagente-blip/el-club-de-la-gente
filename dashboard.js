@@ -3165,11 +3165,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Rol aliado (cuenta real, no localStorage): "Mi negocio" conectado por aliado_id
     if (perfData?.rol === "aliado") {
-      const { data: negocio } = await supabase.from("aliados").select("id, nombre, categoria, whatsapp, maps_url, tienda_activa, tienda_nombre, tienda_llave_pago, instagram, facebook, tiktok").eq("user_id", userId).maybeSingle();
+      const { data: negocio } = await supabase.from("aliados").select("id, nombre, categoria, whatsapp, maps_url, tienda_activa, tienda_nombre, tienda_llave_pago, instagram, facebook, tiktok, fecha_inicio, fecha_fin, contrato_url").eq("user_id", userId).maybeSingle();
       if (negocio) {
         const li = $("#sb-negocio-li"); if (li) li.hidden = false;
         const negNombre = $("#negocio-nombre"); if (negNombre) negNombre.textContent = negocio.nombre;
         const negCat = $("#negocio-cat"); if (negCat && negocio.categoria) negCat.textContent = negocio.categoria;
+        const fmtFechaNeg = (f) => f ? new Date(f + "T00:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }) : null;
+        const negVigEl = $("#negocio-vigencia");
+        if (negVigEl) {
+          const ini = fmtFechaNeg(negocio.fecha_inicio), fin = fmtFechaNeg(negocio.fecha_fin);
+          negVigEl.textContent = (ini || fin) ? `${ini || "—"} – ${fin || "—"}` : "—";
+        }
+        if (negocio.contrato_url) {
+          const negContratoLi = $("#negocio-contrato-li"); if (negContratoLi) negContratoLi.hidden = false;
+          const negContratoLink = $("#negocio-contrato-link"); if (negContratoLink) negContratoLink.href = negocio.contrato_url;
+        }
         cargarVentasNegocio(negocio.id);
         inicializarMiTienda(negocio);
       }
