@@ -3355,6 +3355,9 @@ document.addEventListener('DOMContentLoaded',async()=>{
         <div class="ad-field"><label>Ganador *</label><input id="fs-ganador" type="text" value="${(s.ganador_nombre||'').replace(/"/g,'&quot;')}" placeholder="Nombre del ganador"></div>
         <div class="ad-field"><label>WhatsApp del ganador <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="fs-wa" type="text" value="${(s.ganador_whatsapp||'').replace(/"/g,'&quot;')}" placeholder="3001234567"></div>
       </div>
+      <div class="ad-field" style="margin-top:-6px">
+        <button type="button" class="ad-btn ad-btn--wa" id="fs-send-wa" style="width:auto">${ic('message-circle')} Enviar WhatsApp de felicitación</button>
+      </div>
       <div class="ad-field"><label>Fecha del sorteo</label><input id="fs-fecha" type="date" value="${s.fecha_sorteo||new Date().toISOString().slice(0,10)}"></div>
       <div style="background:rgba(234,183,73,.08);border:1px solid rgba(234,183,73,.3);border-radius:10px;padding:12px 14px;margin-bottom:10px">
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:rgba(26,26,24,.75)">
@@ -3371,6 +3374,28 @@ document.addEventListener('DOMContentLoaded',async()=>{
   function bindFormSorteo() {
     setTimeout(() => {
       $("#fs-cancel")?.addEventListener('click', () => { $("#ad-modal-ov").classList.remove("is-open"); });
+      $("#fs-send-wa")?.addEventListener('click', async () => {
+        const nombre = $("#fs-ganador")?.value.trim();
+        const wa = $("#fs-wa")?.value.trim();
+        const titulo = $("#fs-titulo")?.value.trim();
+        const premio = $("#fs-premio")?.value.trim();
+        if (!wa) { toast("Agrega el WhatsApp del ganador primero"); return; }
+        if (!nombre || !titulo || !premio) { toast("Completa nombre del sorteo, premio y ganador primero"); return; }
+        const waDigits = wa.replace(/\D/g,'');
+        const btn = $("#fs-send-wa");
+        btn.disabled = true; btn.innerHTML = `${ic('loader')} Enviando…`; if (window.lucide) lucide.createIcons();
+        const msg = `¡Felicitaciones ${nombre}! 🎉🌿\n\nGanaste el sorteo "${titulo}" de El Club de la Gente.\n\nTu premio: ${premio}\n\nPronto nos pondremos en contacto contigo para coordinar la entrega. ¡Gracias por ser parte del Club!`;
+        let enviado = false;
+        try {
+          const res = await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ to: waDigits, body: msg })
+          });
+          enviado = res.ok;
+        } catch(_) { enviado = false; }
+        btn.disabled = false; btn.innerHTML = `${ic('message-circle')} Enviar WhatsApp de felicitación`; if (window.lucide) lucide.createIcons();
+        toast(enviado ? "WhatsApp enviado ✓" : "No se pudo enviar el WhatsApp");
+      });
       $("#fs-save")?.addEventListener('click', async () => {
         const titulo = $("#fs-titulo")?.value.trim();
         const premio = $("#fs-premio")?.value.trim();
