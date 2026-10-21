@@ -213,7 +213,7 @@ Deno.serve(async (req: Request) => {
   if (updated?.whatsapp) {
     const primerNombre = (updated.nombre || "").split(" ")[0] || "";
     const planLabel = solicitud.plan === "premium" ? "Premium" : "Básica";
-    const msgActivacion = `✅ ¡Tu membresía ${planLabel} ya está activa${primerNombre ? `, ${primerNombre}` : ""}!\n\nYa puedes mostrar tu ClubCard en cualquier aliado del Club para empezar a ahorrar.\n\nEl Club de la Gente`;
+    const msgActivacion = `✅ ¡Tu membresía *${planLabel}* ya está activa${primerNombre ? `, *${primerNombre}*` : ""}! 💙🌿\n\nDesde hoy puedes disfrutar de tus beneficios y presentar tu ClubCard en nuestros aliados para empezar a ahorrar. 🛍️\n\nPero hay algo aún más bonito: *tu membresía no solo te beneficia a ti, también nos ayuda a impulsar programas sociales que llevarán apoyo, oportunidades y esperanza a muchos seres que lo necesitan.* ❤️\n\nPorque cuando ahorras, aprendes y haces parte de esta comunidad, también contribuyes a construir algo bueno para los demás.\n\n*¡Gracias por ser parte de El Club de la Gente! Juntos podemos hacer que ayudar sea parte de nuestra vida cotidiana.* 🧡\n\n_El Club de la Gente_`;
     try {
       const rEnvio = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
         method: "POST",
