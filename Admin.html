@@ -1517,7 +1517,7 @@ function bindFormAliado(){
         'Descuentos premium y beneficios ampliados',
         'Acceso prioritario a eventos del Club',
       ];
-      const msg=`¡Bienvenido al Club, ${nombre}! 🌿\n\nYa eres aliado de El Club de la Gente. Estos son los datos de acceso a tu cuenta:\nEmail: ${email}\nContraseña: ${password}\n\nTu cuenta ya incluye membresía Premium vitalicia y gratuita:\n${beneficiosVitalicia.map(b=>'• '+b).join('\n')}`;
+      const msg=`¡Bienvenido al Club, ${nombre}! 🌿\n\nYa eres aliado de El Club de la Gente.\n\nPara entrar a tu cuenta, ve a https://elclubdelagente.com/Registro.html?modo=login e inicia sesión con tu WhatsApp (${waDigits}) -- te llega un código, no necesitas contraseña.\n\nTu cuenta ya incluye membresía Premium vitalicia y gratuita:\n${beneficiosVitalicia.map(b=>'• '+b).join('\n')}`;
 
       let enviado=false;
       try{
