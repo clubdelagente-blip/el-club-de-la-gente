@@ -96,7 +96,7 @@ function leerPerfil() {
     primerNombre: (p.primerNombre && !p.primerNombre.includes("@")) ? p.primerNombre : "Miembro",
     fechaISO: p.fechaISO || "",
     mision: p.mision || null,
-    num: m.num || "",
+    num: p.numero_miembro || "",
     codigo: m.codigo || p.codigo || p.whatsapp || "",
     foto: p.foto_url || "",
     desde: m.desde || "",
@@ -3075,7 +3075,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("bienvenida-cerrar")?.addEventListener("click", () => cerrarModalTienda());
     }
 
-    const { data: perfData, error: perfError } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol, fecha_vencimiento, categorias_interes, respuestas_segmentacion, foto_url, tiene_mascotas, tiene_hijos").eq("id", userId).maybeSingle();
+    const { data: perfData, error: perfError } = await supabase.from("perfiles").select("plan, nombre, fecha_nacimiento, whatsapp, rol, fecha_vencimiento, categorias_interes, respuestas_segmentacion, foto_url, tiene_mascotas, tiene_hijos, numero_miembro").eq("id", userId).maybeSingle();
     if (perfError) {
       // No mostrar "activa tu membresía" cuando en realidad es un error técnico
       // (ej. una columna que falta) — sería engañoso, parecería que no pagó.
@@ -3111,6 +3111,14 @@ document.addEventListener("DOMContentLoaded", () => {
         delete perfilCache.foto_url;
         $$("[data-ini]").forEach(el => { el.textContent = iniciales(perfData?.nombre || ""); });
         const quitar = $("#cfg-foto-quitar"); if (quitar) quitar.hidden = true;
+      }
+      // Número de miembro: viene de Supabase (orden real de llegada, columna
+      // numero_miembro -- ver SQL de migración), nunca inventado en el navegador.
+      if (perfData?.numero_miembro) {
+        perfilCache.numero_miembro = perfData.numero_miembro;
+        const numTxt = "Miembro #" + perfData.numero_miembro;
+        const sbNumEl = $("#sb-num"); if (sbNumEl) sbNumEl.textContent = numTxt;
+        const perfilNumEl = $("#perfil-num"); if (perfilNumEl) perfilNumEl.textContent = numTxt;
       }
       localStorage.setItem("ecdlg_perfil", JSON.stringify(perfilCache));
     }
