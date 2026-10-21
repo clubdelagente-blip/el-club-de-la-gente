@@ -374,16 +374,6 @@
         }
 
         card.innerHTML = htmlUberExito(ahorro);
-
-        if (p.whatsapp) {
-          const TIPO_LBL = { carro: "carro", moto: "moto", domicilio: "domicilio" };
-          const msg = `✅ Aplicaste tu descuento del Club en un viaje de ${TIPO_LBL[tipo]}.\n\nMonto: ${fmtCOPUber(monto)}\nAhorraste: ${fmtCOPUber(ahorro)}\n\nEl Club de la Gente`;
-          fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ to: p.whatsapp, body: msg }),
-          }).catch(() => {});
-        }
       });
     }
 
