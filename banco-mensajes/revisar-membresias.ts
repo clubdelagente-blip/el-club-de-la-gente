@@ -123,7 +123,7 @@ Deno.serve(async (_req: Request) => {
     // ese dispositivo (checkout.js lo toma como miembroId directamente,
     // mismo nivel de confianza que ya usa Bienvenida.html?id=).
     const linkRenovar = `https://elclubdelagente.com/Planes.html?renovar=${p.plan}&id=${p.id}`;
-    const msg = `¡Hola ${primerNombre}! 🌿 Tu membresía de El Club de la Gente vence en 3 días.\n\nGracias a ti, el Club sostiene ${fraseProgramas} activos ahora mismo. 💙\n\nRenueva a tiempo para no perder tus descuentos y beneficios. Entra aquí para pagar directo:\n${linkRenovar}\n\nEl Club de la Gente`;
+    const msg = `¡Hola, *${primerNombre}*! 💙🌿\n\n¡Faltan solo 3 días para que venza tu membresía de El Club de la Gente!\n\nQueremos recordarte que ser parte de este Club va mucho más allá de ahorrar. Gracias a personas como tú, hoy seguimos impulsando *${fraseProgramas} que buscan llevar apoyo, oportunidades y esperanza a quienes más lo necesitan.* ❤️\n\nAl renovar tu membresía, sigues disfrutando de tus descuentos y beneficios, y continúas siendo parte de una comunidad que cree que juntos podemos hacer algo bueno por los demás. 🤝\n\n💙 *Renueva aquí y sigamos haciendo la diferencia:*\n${linkRenovar}\n\n¡Gracias por creer en este propósito y ayudarnos a hacerlo posible! 🧡\n\n*El Club de la Gente*`;
     try {
       const r = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
         method: "POST",
