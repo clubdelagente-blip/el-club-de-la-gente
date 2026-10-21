@@ -153,13 +153,6 @@ function elegirRol(rol) {
   $("#form-profesional").hidden = rol !== "profesional";
   if (rol === "profesional") { profDocs = []; renderProfDocsGrid(); }
 
-  // Google no aplica para aliado / profesional
-  const gBtn = $(".btn-google[data-ctx='registro']");
-  const dividerEl = gBtn?.nextElementSibling;
-  const showGoogle = rol === "miembro";
-  if (gBtn) gBtn.style.display = showGoogle ? "" : "none";
-  if (dividerEl?.classList.contains("auth-divider")) dividerEl.style.display = showGoogle ? "" : "none";
-
   if (window.lucide) lucide.createIcons();
 }
 
@@ -192,76 +185,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    if (event === "SIGNED_IN" && session) {
-      const user = session.user;
-      const proveedor = user.app_metadata?.provider;
-      const nombreGoogle = user.user_metadata?.full_name || user.email || "Miembro";
-      const primerNombreGoogle = nombreGoogle.split(" ")[0];
-
-      localStorage.setItem("ecdlg_perfil", JSON.stringify({
-        nombre: nombreGoogle, primerNombre: primerNombreGoogle, rol: "miembro", email: user.email,
-      }));
-
-      // Solo manejar el redirect si viene de Google OAuth
-      if (proveedor === "google") {
-        try {
-          // Ver si ya tenía perfil antes (usuario existente)
-          const { data: perfilExistente } = await supabase
-            .from("perfiles").select("id, plan").eq("id", user.id).single();
-
-          if (perfilExistente) {
-            // Ya es miembro → ir al perfil
-            const rol = perfilExistente.rol || "miembro";
-            localStorage.setItem("ecdlg_perfil", JSON.stringify({
-              nombre: nombreGoogle, primerNombre: primerNombreGoogle, rol, email: user.email,
-            }));
-            location.href = "Perfil.html";
-          } else {
-            // Usuario nuevo → crear perfil, ya activado en plan Gratis.
-            // Preferimos el nombre/fecha que la persona escribió en el
-            // formulario (junto al botón de Google) sobre lo que trae Google,
-            // ya que ahí puede escribirlo como aparece en su cédula.
-            const whatsapp = localStorage.getItem("ecdlg_google_wa") || "";
-            const nombreForm = localStorage.getItem("ecdlg_google_nombre") || "";
-            const fechaNacimiento = localStorage.getItem("ecdlg_google_fecha") || null;
-            localStorage.removeItem("ecdlg_google_wa");
-            localStorage.removeItem("ecdlg_google_nombre");
-            localStorage.removeItem("ecdlg_google_fecha");
-
-            const nombre = nombreForm || nombreGoogle;
-            const primerNombre = nombre.split(" ")[0];
-
-            const { error: perfError } = await supabase.from("perfiles").insert({
-              id: user.id, nombre, whatsapp, fecha_nacimiento: fechaNacimiento, rol: "miembro", plan: "gratis",
-            });
-
-            if (!perfError) {
-              localStorage.setItem("ecdlg_perfil", JSON.stringify({
-                nombre, primerNombre, rol: "miembro", email: user.email,
-              }));
-            }
-
-            // Mensaje de bienvenida por WhatsApp — el registro activa Gratis
-            // de una vez, así que va directo el mensaje con sus beneficios
-            // reales. Con keepalive porque location.href navega justo
-            // después (sin esto, el navegador cancela la petición).
-            if (!perfError && whatsapp) {
-              const msgBienvenida = `¡Hola ${primerNombre}! 🌿 Bienvenido/a a El Club de la Gente.\n\nCon tu plan Gratis ya tienes:\n\n🚗 descuentos en viajes y domicilios con nuestros conductores de confianza (moto y carro).\n🛍️ Acceso ilimitado a la Tienda del Club.\n\nA continuación te invitamos a rellenar el siguiente formulario para validar tu membresía gratuita:\nhttps://elclubdelagente.com/Bienvenida.html?id=${user.id}\n\nSi quieres acceder a promociones, sorteos, un agente personalizado 24/7 y de paso apoyar obras sociales, te invitamos a adquirir alguna de nuestras membresías con hasta 40% de descuento. Te esperamos 🌿`;
-              fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ to: whatsapp, body: msgBienvenida }),
-                keepalive: true,
-              }).catch(() => {});
-            }
-
-            location.href = "Perfil.html?bienvenida=1";
-          }
-        } catch (_) {
-          location.href = "Perfil.html";
-        }
-      }
-    }
   });
 
   const params = new URLSearchParams(location.search);
@@ -386,39 +309,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (otraInput) otraInput.style.display = e.target.value === "Otra" ? "block" : "none";
   });
 
-  // Google auth
-  $$(".btn-google").forEach(b => b.addEventListener("click", async () => {
-    if (b.dataset.ctx === "registro") {
-      const nombre = $("#campo-nombre")?.value.trim();
-      const fecha = $("#campo-fecha")?.value;
-      const wa = $("#campo-wa")?.value.trim();
-      const terminos = $("#check-terminos")?.checked;
-      if (!nombre || !wa) {
-        mostrarError("Completa tu nombre y WhatsApp antes de continuar con Google.");
-        return;
-      }
-      if (!terminos) {
-        mostrarError("Debes aceptar los Términos y Condiciones para continuar.");
-        return;
-      }
-      // Se guarda para poder crear el perfil completo desde el primer
-      // momento -- Google no entrega WhatsApp ni fecha de nacimiento, y así
-      // el mensaje de bienvenida no tiene que esperar a otro formulario.
-      localStorage.setItem("ecdlg_google_wa", normalizarWhatsapp(wa));
-      localStorage.setItem("ecdlg_google_nombre", nombre);
-      if (fecha) localStorage.setItem("ecdlg_google_fecha", fecha);
-    }
-    const emailHint = $("#login-user")?.value.trim();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: "https://elclubdelagente.com/Registro.html",
-        queryParams: emailHint ? { login_hint: emailHint } : {},
-      }
-    });
-    if (error) mostrarError("Error al conectar con Google.");
-  }));
-
   // ---------- LOGIN (2 pasos: teléfono → OTP) ----------
   let _loginPhone = "";
 
@@ -471,9 +361,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     $("#login-otp-msg").textContent = `Enviamos un código al ${masked}. Ingrésalo aquí.`;
     $("#login-step-1").style.display = "none";
     $("#login-step-2").style.display = "";
-    const gDiv = $("#login-google-divider"), gBtn = $("#login-google-btn");
-    if (gDiv) gDiv.style.display = "none";
-    if (gBtn) gBtn.style.display = "none";
     setTimeout(() => $("#login-otp")?.focus(), 50);
   });
 
@@ -529,9 +416,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     _loginPhone = "";
     $("#login-step-1").style.display = "";
     $("#login-step-2").style.display = "none";
-    const gDiv = $("#login-google-divider"), gBtn = $("#login-google-btn");
-    if (gDiv) gDiv.style.display = "";
-    if (gBtn) gBtn.style.display = "";
     if ($("#login-otp")) $("#login-otp").value = "";
   });
 
