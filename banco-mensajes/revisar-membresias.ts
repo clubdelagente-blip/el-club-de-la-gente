@@ -101,6 +101,18 @@ Deno.serve(async (_req: Request) => {
     noQuierenRenueva = new Set((prefsRenueva || []).map((r) => r.miembro_id));
   }
 
+  // Cuántos programas sociales sostiene el Club ahora mismo -- se menciona
+  // en el recordatorio de renovación para que el miembro vea que su
+  // membresía no es solo para él. Es el conteo real de "programas" activos
+  // (tabla que administra Admin -> Programas sociales), no un registro de
+  // a cuál programa en particular fue SU plata -- eso no se rastrea.
+  const { count: programasActivos } = await supabase
+    .from("programas")
+    .select("id", { count: "exact", head: true })
+    .eq("activo", true);
+  const nProgramas = programasActivos || 0;
+  const fraseProgramas = nProgramas === 1 ? "1 programa social" : `${nProgramas} programas sociales`;
+
   let recordatoriosEnviados = 0;
   for (const p of porVencer || []) {
     if (!p.whatsapp || noQuierenRenueva.has(p.id)) continue;
@@ -109,7 +121,7 @@ Deno.serve(async (_req: Request) => {
     // salta la pantalla de elegir plan y va directo a la llave Bre-B) --
     // solo funciona si sigue con sesión iniciada en el navegador.
     const linkRenovar = `https://elclubdelagente.com/Planes.html?renovar=${p.plan}`;
-    const msg = `¡Hola ${primerNombre}! 🌿 Tu membresía de El Club de la Gente vence en 3 días.\n\nRenueva a tiempo para no perder tus descuentos y beneficios. Entra aquí para pagar directo:\n${linkRenovar}\n\nEl Club de la Gente`;
+    const msg = `¡Hola ${primerNombre}! 🌿 Tu membresía de El Club de la Gente vence en 3 días.\n\nGracias a ti, el Club sostiene ${fraseProgramas} activos ahora mismo. 💙\n\nRenueva a tiempo para no perder tus descuentos y beneficios. Entra aquí para pagar directo:\n${linkRenovar}\n\nEl Club de la Gente`;
     try {
       const r = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
         method: "POST",
