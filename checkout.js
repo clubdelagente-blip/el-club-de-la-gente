@@ -91,7 +91,7 @@ async function cargarLlavePago() {
   return data?.valor || null;
 }
 
-async function abrirPagoManual(plan, card) {
+async function abrirPagoManual(plan, card, miembroIdForzado = null) {
   const p = PLANES[plan];
   const precio = Number(p?.precio);
   if (!p || !Number.isFinite(precio) || precio <= 0) {
@@ -103,8 +103,16 @@ async function abrirPagoManual(plan, card) {
   const textoOriginal = estadoEl.textContent;
   estadoEl.textContent = "Un momento…";
 
-  const { data: { session } } = await supabase.auth.getSession();
-  const miembroId = session?.user?.id;
+  // Link directo de renovación (?renovar=plan&id=miembroId, desde el
+  // recordatorio de WhatsApp): confía en el id igual que ya hace
+  // Bienvenida.html?id=, para que renueve sin depender de que su sesión
+  // del navegador siga activa en ese dispositivo -- si no viene forzado,
+  // sigue exigiendo sesión real como antes.
+  let miembroId = miembroIdForzado;
+  if (!miembroId) {
+    const { data: { session } } = await supabase.auth.getSession();
+    miembroId = session?.user?.id;
+  }
   if (!miembroId) {
     estadoEl.textContent = textoOriginal;
     alert("Debes iniciar sesión antes de pagar. Vuelve a intentarlo desde tu perfil.");
@@ -248,6 +256,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const renovarPlan = new URLSearchParams(location.search).get("renovar");
   if (renovarPlan && PLANES[renovarPlan]) {
     const card = document.querySelector(`.plan-pick[data-plan="${renovarPlan}"]`);
-    if (card) abrirPagoManual(renovarPlan, card);
+    if (card) abrirPagoManual(renovarPlan, card, urlId || null);
   }
 });

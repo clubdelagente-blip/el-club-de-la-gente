@@ -118,9 +118,11 @@ Deno.serve(async (_req: Request) => {
     if (!p.whatsapp || noQuierenRenueva.has(p.id)) continue;
     const primerNombre = (p.nombre || "").trim().split(" ")[0] || "";
     // Link directo al pago de SU plan actual (Planes.html?renovar=<plan>
-    // salta la pantalla de elegir plan y va directo a la llave Bre-B) --
-    // solo funciona si sigue con sesión iniciada en el navegador.
-    const linkRenovar = `https://elclubdelagente.com/Planes.html?renovar=${p.plan}`;
+    // salta la pantalla de elegir plan y va directo a la llave Bre-B) -- el
+    // &id=<miembroId> hace que funcione aunque no tenga sesión activa en
+    // ese dispositivo (checkout.js lo toma como miembroId directamente,
+    // mismo nivel de confianza que ya usa Bienvenida.html?id=).
+    const linkRenovar = `https://elclubdelagente.com/Planes.html?renovar=${p.plan}&id=${p.id}`;
     const msg = `¡Hola ${primerNombre}! 🌿 Tu membresía de El Club de la Gente vence en 3 días.\n\nGracias a ti, el Club sostiene ${fraseProgramas} activos ahora mismo. 💙\n\nRenueva a tiempo para no perder tus descuentos y beneficios. Entra aquí para pagar directo:\n${linkRenovar}\n\nEl Club de la Gente`;
     try {
       const r = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
