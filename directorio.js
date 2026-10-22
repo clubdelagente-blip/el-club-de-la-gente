@@ -825,29 +825,6 @@ function toast(msg, check = true) {
   toastT = setTimeout(() => t.classList.remove("is-show"), 3400);
 }
 
-/* ---------- CARRUSEL DESTACADOS (respeta el filtro de plan) ---------- */
-async function cargarDestacados() {
-  const { data } = await supabase.from("aliados").select("id,nombre,categoria,descuento,imagen_url,planes_visibles").eq("destacado", true).eq("activo", true).order("nombre");
-  const items = (data || []).filter(a => aliadoVisibleParaPlan(a.planes_visibles, PLAN_ACTUAL));
-  if (!items.length) return;
-  const wrap = document.getElementById("dest-wrap");
-  const track = document.getElementById("dest-track");
-  if (!wrap || !track) return;
-  const dupl = [...items, ...items];
-  track.innerHTML = dupl.map(a => `
-    <div class="dest-card" data-aliado-btn="${a.id}" style="${ccVars(a.categoria)}">
-      <div class="dest-card__img">
-        ${a.imagen_url ? `<img src="${a.imagen_url}" alt="${a.nombre}">` : `<span class="dest-card__av">${(a.nombre || '?')[0]}</span>`}
-      </div>
-      <div class="dest-card__body">
-        ${a.categoria ? `<span class="dest-card__cat">${a.categoria}</span>` : ''}
-        <div class="dest-card__nombre">${a.nombre}</div>
-        ${a.descuento ? `<div class="dest-card__desc">${ic("flame")}${a.descuento}</div>` : ''}
-      </div>
-    </div>`).join('');
-  wrap.style.display = 'block';
-}
-
 /* ---------- INIT ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
   PLAN_ACTUAL = await resolverPlanVisitante();
@@ -856,7 +833,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   SIN_ACCESO_ALIADOS = limite === 0;
 
   await cargarAliados();
-  cargarDestacados();
   renderFiltros();
   renderGrid();
   if (window.lucide) lucide.createIcons();
