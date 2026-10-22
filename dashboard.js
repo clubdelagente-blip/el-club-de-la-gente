@@ -825,7 +825,7 @@ async function abrirAhorroMensual() {
       <g class="ahorro-bar-g" data-valor="${fmtCOP(m.total)}" data-mes="${m.lbl}" tabindex="0">
         <rect x="${x}" y="0" width="${BAR_W}" height="${ALTO}" fill="transparent"></rect>
         <path d="${barPathTop(x, y, BAR_W, h, 4)}" fill="${color}"></path>
-        ${esActual ? `<text x="${x + BAR_W / 2}" y="${y - 8}" text-anchor="middle" font-family="Fraunces, serif" font-size="12" font-weight="700" fill="#F1F7F6">${fmtCOP(m.total)}</text>` : ""}
+        ${esActual ? `<text x="${x + BAR_W / 2}" y="${y - 8}" text-anchor="middle" font-family="Anton, sans-serif" font-size="12" font-weight="700" fill="#F1F7F6">${fmtCOP(m.total)}</text>` : ""}
         <text x="${x + BAR_W / 2}" y="${EJE_Y + 16}" text-anchor="middle" font-size="10.5" fill="rgba(241,247,246,.55)">${m.lbl}</text>
       </g>`;
   }).join("");
@@ -868,7 +868,7 @@ async function abrirAhorroMensual() {
     <div style="background:linear-gradient(160deg,#fff 0%,#fdf6e8 100%);border:1px solid #f0dfb0;border-radius:16px;padding:24px 20px">
       <div style="text-align:center;margin-bottom:4px">
         <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b9770e">Metas de ahorro este mes</div>
-        <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:700;margin-top:4px;color:#2b1d02">Llevas ${fmtCOP(ahorroActual)} ahorrados</div>
+        <div style="font-family:'Anton',sans-serif;font-size:20px;font-weight:700;margin-top:4px;color:#2b1d02">Llevas ${fmtCOP(ahorroActual)} ahorrados</div>
       </div>
 
       <div style="position:relative;margin:34px 6px 10px">

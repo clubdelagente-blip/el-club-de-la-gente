@@ -327,7 +327,7 @@ async function abrirModalMejorarPlan(aliado) {
       <button type="button" id="mp-close" style="position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:none;background:#f1f1ee;display:flex;align-items:center;justify-content:center;cursor:pointer">${ic("x")}</button>
       <div style="text-align:center;margin-bottom:20px">
         <span style="display:inline-flex;width:40px;height:40px;border-radius:50%;background:#fef3c7;color:#b45309;align-items:center;justify-content:center;margin-bottom:12px">${ic("lock")}</span>
-        <h2 style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;margin-bottom:6px">Desbloquea ${esc(aliado.nombre)}</h2>
+        <h2 style="font-family:'Anton',sans-serif;font-size:22px;font-weight:700;margin-bottom:6px">Desbloquea ${esc(aliado.nombre)}</h2>
         <p style="font-size:13.5px;color:#666;line-height:1.5">El plan Gratis no incluye descuentos de aliados. Sube de plan para acceder a este y a todos los demás.</p>
       </div>
       <div id="mp-planes" style="display:flex;flex-direction:column;gap:12px">
@@ -671,7 +671,7 @@ function sheetAliado(a) {
       }
       <div id="calc-exito" style="display:none;text-align:center;padding:24px 0 8px">
         <div style="font-size:48px;line-height:1">✓</div>
-        <div style="font-family:'Fraunces',serif;font-size:24px;font-weight:700;margin:10px 0 6px">¡Descuento aplicado!</div>
+        <div style="font-family:'Anton',sans-serif;font-size:24px;font-weight:700;margin:10px 0 6px">¡Descuento aplicado!</div>
         <p style="font-size:13px;color:#666;line-height:1.5">Gracias por tu compra en el Club.<br>Tu ahorro ya quedó registrado.</p>
       </div>
       <p class="calc__nota" id="calc-nota"></p>

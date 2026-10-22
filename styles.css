@@ -32,7 +32,7 @@
   --tinta-clara-60: rgba(241, 247, 246, 0.62);
 
   /* Tipografía */
-  --display: "Fraunces", Georgia, serif;
+  --display: "Anton", sans-serif;
   --cuerpo: "Inter", system-ui, sans-serif;
 
   --max: 1240px;
@@ -466,7 +466,7 @@ a { color: inherit; text-decoration: none; }
 .tienda-hero { position: relative; border-radius: 18px; padding: 26px 22px; overflow: hidden; background: radial-gradient(120% 140% at 15% 0%, #164a2c 0%, #0c2e1b 55%, #05160d 100%); background-size: cover; background-position: center; color: #fff; box-sizing: border-box; min-height: 150px; display: flex; flex-direction: column; justify-content: center; }
 .tienda-hero--img { background-blend-mode: overlay; }
 .tienda-hero__eyebrow { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #00DF81; margin-bottom: 8px; }
-.tienda-hero h2 { font-family: var(--display, 'Fraunces', serif); font-size: clamp(20px, 5vw, 26px); font-weight: 700; line-height: 1.15; margin: 0 0 8px; }
+.tienda-hero h2 { font-family: var(--display, 'Anton', sans-serif); font-size: clamp(20px, 5vw, 26px); font-weight: 700; line-height: 1.15; margin: 0 0 8px; }
 .tienda-hero p { font-size: 12.5px; color: rgba(255,255,255,.75); line-height: 1.5; max-width: 320px; margin: 0; }
 
 .tienda-banner-track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
