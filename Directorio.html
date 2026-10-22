@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=79">
-  <link rel="stylesheet" href="directorio.css?v=14">
+  <link rel="stylesheet" href="directorio.css?v=15">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club.png" alt=""></div>
@@ -38,10 +38,6 @@
 
       <div class="dir-top__right">
         <span class="dir-top__txt">Directorio de aliados · Fusagasugá</span>
-        <span class="dir-top__qrbadge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14" y2="14"/><line x1="21" y1="14" x2="21" y2="14"/><line x1="14" y1="21" x2="21" y2="21"/><line x1="17" y1="17" x2="17" y2="17"/></svg>
-          QR público
-        </span>
       </div>
     </div>
   </header>
@@ -51,26 +47,9 @@
        ============================================================ -->
   <section class="dir-hero">
     <div class="wrap">
-      <div class="dir-hero__masthead">
-        <span>05 — Directorio QR</span>
-        <span>Acceso libre · sin registro</span>
-      </div>
       <h1 class="display">Todos los aliados,<br>todo tu ahorro <span class="italic-verde">en un solo lugar.</span></h1>
-      <p class="dir-hero__sub">Escaneaste el código del Club. Aquí está el directorio completo de aliados de Fusagasugá: explora por categoría, busca tu favorito y <b>calcula exactamente cuánto ahorras</b> en cada compra.</p>
     </div>
   </section>
-
-  <!-- ============================================================
-       CARRUSEL ALIADOS DESTACADOS
-       ============================================================ -->
-  <div id="dest-wrap" style="display:none">
-    <div class="wrap" style="padding-top:28px;padding-bottom:4px">
-      <div style="display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:linear-gradient(120deg,#EAB749,#F5B942);padding:7px 14px 7px 11px;border-radius:100px;margin-bottom:16px;box-shadow:0 8px 18px -10px rgba(234,183,73,.6)">⭐ Aliados destacados</div>
-    </div>
-    <div class="dest-carrusel">
-      <div class="dest-carrusel__track" id="dest-track"></div>
-    </div>
-  </div>
 
   <!-- ============================================================
        BUSCADOR + FILTROS
@@ -82,6 +61,18 @@
         <input type="text" id="dir-search" placeholder="Busca por nombre o categoría…" autocomplete="off">
       </div>
       <div class="dir-filtros" id="dir-filtros"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       CARRUSEL ALIADOS DESTACADOS
+       ============================================================ -->
+  <div id="dest-wrap" style="display:none">
+    <div class="wrap" style="padding-top:28px;padding-bottom:4px">
+      <div style="display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:linear-gradient(120deg,#EAB749,#F5B942);padding:7px 14px 7px 11px;border-radius:100px;margin-bottom:16px;box-shadow:0 8px 18px -10px rgba(234,183,73,.6)">⭐ Aliados destacados</div>
+    </div>
+    <div class="dest-carrusel">
+      <div class="dest-carrusel__track" id="dest-track"></div>
     </div>
   </div>
 
