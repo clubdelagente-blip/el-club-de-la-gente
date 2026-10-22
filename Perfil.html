@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=80">
   <link rel="stylesheet" href="estilos.css?v=19">
-  <link rel="stylesheet" href="dashboard.css?v=25">
+  <link rel="stylesheet" href="dashboard.css?v=26">
   <link rel="stylesheet" href="agente.css?v=2">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -127,53 +127,48 @@
           </div>
 
           <!-- ClubCard -->
-          <div class="dash-grid" style="grid-template-columns:1fr;max-width:460px;margin-left:auto;margin-right:auto">
-            <div class="card">
-              <div class="card__head" style="justify-content:center">
-                <span class="card__title">Mi ClubCard</span>
-              </div>
-              <div class="ccv2" style="position:relative">
-                <div class="ccv2__flip" id="cc-flip-inicio">
-                  <div class="ccv2-card ccv2-card--front">
-                    <img src="marco-card.png" class="ccv2-frame-img" alt="">
-                    <div class="ccv2-front__in">
-                      <span class="ccv2-brand">CLUBCARD</span>
-                      <div class="ccv2-mid">
-                        <img src="logo-club.png" class="ccv2-logo-img" alt="El Club de la Gente">
-                      </div>
-                      <div class="ccv2-footer">
-                        <div class="ccv2-name cc-card-name">CARLOS ANDRÉS PÉREZ</div>
-                        <div class="ccv2-codigo">
-                          <span class="ccv2-codigo__lbl">Código:</span>
-                          <span class="ccv2-codigo__val cc-card-codigo">300 412 8890</span>
-                        </div>
+          <div class="cc-float-wrap">
+            <div class="ccv2" style="position:relative">
+              <div class="ccv2__flip" id="cc-flip-inicio">
+                <div class="ccv2-card ccv2-card--front">
+                  <img src="marco-card.png" class="ccv2-frame-img" alt="">
+                  <div class="ccv2-front__in">
+                    <span class="ccv2-brand">CLUBCARD</span>
+                    <div class="ccv2-mid">
+                      <img src="logo-club.png" class="ccv2-logo-img" alt="El Club de la Gente">
+                    </div>
+                    <div class="ccv2-footer">
+                      <div class="ccv2-name cc-card-name">CARLOS ANDRÉS PÉREZ</div>
+                      <div class="ccv2-codigo">
+                        <span class="ccv2-codigo__lbl">Código:</span>
+                        <span class="ccv2-codigo__val cc-card-codigo">300 412 8890</span>
                       </div>
                     </div>
                   </div>
-                  <div class="ccv2-card ccv2-card--back">
-                    <img src="marco-ornamento.png" class="ccv2-orn-img" alt="">
-                    <div class="ccv2-back__in">
-                      <div class="ccv2-back__row">
-                        <div class="ccv2-qr"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Código QR del Club"></div>
-                        <div class="ccv2-codigo-verif">
-                          <span class="ccv2-codigo-verif__lbl">Código de<br>verificación</span>
-                          <div class="ccv2-codigo-verif__row">
-                            <span class="ccv2-codigo-verif__val cc-codigo-verif">· · · ·</span>
-                            <button type="button" class="ccv2-codigo-verif__copy" data-copiar-codigo-verif><i data-lucide="copy"></i></button>
-                          </div>
+                </div>
+                <div class="ccv2-card ccv2-card--back">
+                  <img src="marco-ornamento.png" class="ccv2-orn-img" alt="">
+                  <div class="ccv2-back__in">
+                    <div class="ccv2-back__row">
+                      <div class="ccv2-qr"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Código QR del Club"></div>
+                      <div class="ccv2-codigo-verif">
+                        <span class="ccv2-codigo-verif__lbl">Código de<br>verificación</span>
+                        <div class="ccv2-codigo-verif__row">
+                          <span class="ccv2-codigo-verif__val cc-codigo-verif">· · · ·</span>
+                          <button type="button" class="ccv2-codigo-verif__copy" data-copiar-codigo-verif><i data-lucide="copy"></i></button>
                         </div>
                       </div>
-                      <div class="ccv2-renueva">Renovación: <span class="cc-card-renueva">27/06/2027</span></div>
                     </div>
+                    <div class="ccv2-renueva">Renovación: <span class="cc-card-renueva">27/06/2027</span></div>
                   </div>
                 </div>
-                <div id="cc-lock-inicio" class="cc-bloqueo" style="display:none">
-                  <i data-lucide="lock" style="width:28px;height:28px"></i>
-                  <p>Activa tu membresía<br>para usar tu ClubCard</p>
-                </div>
               </div>
-              <p style="text-align:center;font-size:11.5px;color:var(--tinta-45,#888);margin-top:12px">Voltear y escanear código</p>
+              <div id="cc-lock-inicio" class="cc-bloqueo" style="display:none">
+                <i data-lucide="lock" style="width:28px;height:28px"></i>
+                <p>Activa tu membresía<br>para usar tu ClubCard</p>
+              </div>
             </div>
+            <p class="cc-float-hint">Toca la tarjeta para voltearla y mostrar tu código</p>
           </div>
 
           <!-- Accesos rápidos -->
