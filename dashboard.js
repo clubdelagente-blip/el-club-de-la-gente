@@ -1204,7 +1204,7 @@ async function cargarVacantesMiembro() {
       </div>
       <div style="font-weight:700;font-size:15px;margin-bottom:6px">${esc(v.titulo)}</div>
       ${v.descripcion ? `<p style="font-size:13px;color:#555;line-height:1.5;margin-bottom:12px">${esc(v.descripcion)}</p>` : ""}
-      <a class="btn btn--primario" style="width:100%;justify-content:center" target="_blank" href="https://wa.me/57${v.whatsapp}?text=${encodeURIComponent("Hola, vi la vacante de " + v.titulo + " en El Club de la Gente")}">${ICON_WA}Escribir por WhatsApp</a>
+      <a class="pm-wa" style="width:100%;justify-content:center" target="_blank" href="https://wa.me/57${v.whatsapp}?text=${encodeURIComponent("Hola, vi la vacante de " + v.titulo + " en El Club de la Gente")}">${ICON_WA}Escribir por WhatsApp</a>
     </div>`).join("");
   if (window.lucide) lucide.createIcons();
 }
