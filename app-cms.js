@@ -318,22 +318,26 @@ async function cargarProgramasPub() {
   const grid = document.querySelector('#programas-grid');
   if (!grid) return;
 
+  PROGRAMAS_LANDING = Object.fromEntries(data.map(p => [p.id, p]));
+
   const LIMITE = 6;
   const tarjeta = p => `
-    <div class="programa-card fade-up">
+    <div class="programa-card fade-up" data-prog-modal="${p.id}" style="cursor:pointer">
       ${p.imagen_url ? `
       <div class="programa-card__img-wrap">
         <img src="${p.imagen_url}" alt="${esc(p.nombre)}" style="width:100%;height:180px;object-fit:cover;display:block">
         ${p.categoria ? `<span class="programa-card__cat">${esc(p.categoria)}</span>` : ''}
       </div>` : ''}
       <div style="padding:20px">
-        <h3 style="font-family:var(--display);font-size:20px;font-weight:600;margin-bottom:8px;color:inherit">${esc(p.nombre)}</h3>
-        <p style="font-size:14px;opacity:.7;line-height:1.6">${esc(p.descripcion || '')}</p>
+        <h3 style="font-family:var(--display);font-size:20px;font-weight:600;color:inherit">${esc(p.nombre)}</h3>
       </div>
     </div>`;
 
   grid.innerHTML = data.slice(0, LIMITE).map(tarjeta).join('');
   if (window.lucide) lucide.createIcons();
+  grid.querySelectorAll('[data-prog-modal]').forEach(card => {
+    card.addEventListener('click', () => abrirModalPrograma(card.dataset.progModal));
+  });
 
   if (data.length > LIMITE) {
     const btn = document.createElement('button');
@@ -344,10 +348,62 @@ async function cargarProgramasPub() {
     btn.addEventListener('click', () => {
       grid.insertAdjacentHTML('beforeend', data.slice(LIMITE).map(tarjeta).join(''));
       if (window.lucide) lucide.createIcons();
+      grid.querySelectorAll('[data-prog-modal]').forEach(card => {
+        card.addEventListener('click', () => abrirModalPrograma(card.dataset.progModal));
+      });
       btn.remove();
     });
     grid.insertAdjacentElement('afterend', btn);
   }
+}
+
+/* ---------- Modal de programa (descripción completa) ---------- */
+let PROGRAMAS_LANDING = {};
+function crearModalPrograma() {
+  if (document.getElementById('prog-modal-ov')) return;
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="cc-modal-ov" id="prog-modal-ov">
+      <div class="cc-modal prog-modal">
+        <button type="button" class="cc-modal__close" id="prog-modal-close">${ic('x')}</button>
+        <div class="prog-modal__img-wrap" id="prog-modal-img-wrap" hidden>
+          <img id="prog-modal-img" src="" alt="">
+          <span class="programa-card__cat" id="prog-modal-cat" hidden></span>
+        </div>
+        <h3 class="prog-modal__nombre" id="prog-modal-nombre"></h3>
+        <p class="prog-modal__desc" id="prog-modal-desc"></p>
+      </div>
+    </div>`);
+  if (window.lucide) lucide.createIcons();
+
+  const ov = document.getElementById('prog-modal-ov');
+  const cerrar = () => ov.classList.remove('is-open');
+  document.getElementById('prog-modal-close')?.addEventListener('click', cerrar);
+  ov.addEventListener('click', (e) => { if (e.target === ov) cerrar(); });
+}
+
+function abrirModalPrograma(id) {
+  const p = PROGRAMAS_LANDING[id];
+  if (!p) return;
+  crearModalPrograma();
+
+  const imgWrap = document.getElementById('prog-modal-img-wrap');
+  const img = document.getElementById('prog-modal-img');
+  const cat = document.getElementById('prog-modal-cat');
+  if (p.imagen_url) {
+    img.src = p.imagen_url;
+    img.alt = p.nombre || '';
+    imgWrap.hidden = false;
+  } else {
+    imgWrap.hidden = true;
+  }
+  if (cat) {
+    if (p.categoria) { cat.textContent = p.categoria; cat.hidden = false; }
+    else cat.hidden = true;
+  }
+  document.getElementById('prog-modal-nombre').textContent = p.nombre || '';
+  document.getElementById('prog-modal-desc').textContent = p.descripcion || '';
+
+  document.getElementById('prog-modal-ov')?.classList.add('is-open');
 }
 
 /* ---------- Profesionales ---------- */
