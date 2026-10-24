@@ -77,14 +77,15 @@
       --linea-clara: rgba(252, 233, 221, 0.18);
       --tinta-clara-60: rgba(252, 233, 221, 0.64);
     }
-    /* Toda la plataforma (esta página) pasa a fondo oscuro -- mismo criterio
-       de "lavado" que ya usan el hero/footer: la textura del patrón se nota
-       apenas, washeada con el grafito de marca. El texto por defecto pasa a
+    /* Toda la plataforma (esta página) pasa a fondo oscuro con el mismo
+       patrón de figuritas que ya se ve en el hero -- antes solo iba
+       "lavado" y casi no se notaba fuera del hero/footer; ahora se ve
+       igual de marcado en toda la página. El texto por defecto pasa a
        claro para leerse sobre ese fondo. */
     body {
-      background-image: linear-gradient(rgba(21,24,28,.88), rgba(21,24,28,.88)), url("patron-fondo-oscuro.png?v=1");
-      background-repeat: repeat, repeat;
-      background-size: 400px auto, 400px auto;
+      background-image: url("patron-fondo-oscuro.png?v=1");
+      background-repeat: repeat;
+      background-size: 400px auto;
       background-color: var(--negro);
       color: var(--crema-en-negro);
     }
