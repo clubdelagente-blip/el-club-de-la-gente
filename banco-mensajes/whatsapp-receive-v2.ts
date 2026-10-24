@@ -10,6 +10,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY")!;
+const GOOGLE_TTS_API_KEY = Deno.env.get("GOOGLE_TTS_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN")!;
@@ -190,6 +191,35 @@ async function describirImagenWhatsApp(imageUrl: string): Promise<string | null>
     });
     const data = await groqRes.json();
     return data?.choices?.[0]?.message?.content?.trim() || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+// Respuesta en audio: solo se usa cuando el miembro LE escribió al Agente con
+// un audio (esAudio más abajo) -- se le contesta en el mismo formato, como
+// haría una persona. OGG/Opus es el único formato que WhatsApp reproduce
+// como nota de voz real (con la forma de onda); cualquier otro formato le
+// llegaría como archivo adjunto para descargar, no como audio del chat.
+async function generarAudioTTS(texto: string): Promise<Blob | null> {
+  try {
+    const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_API_KEY}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        input: { text: texto },
+        voice: { languageCode: "es-US", name: "es-US-Wavenet-A" },
+        audioConfig: { audioEncoding: "OGG_OPUS" },
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const base64 = data?.audioContent;
+    if (!base64) return null;
+    const binario = atob(base64);
+    const bytes = new Uint8Array(binario.length);
+    for (let i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
+    return new Blob([bytes], { type: "audio/ogg" });
   } catch (_) {
     return null;
   }
@@ -1148,11 +1178,22 @@ Deno.serve(async (req: Request) => {
       escalado: fueEscalado,
     });
 
+    // Si el miembro LE escribió al Agente con un audio, se le contesta en
+    // audio también -- si algo del TTS falla (API caída, texto raro, etc.)
+    // cae al texto normal de siempre, nunca se queda sin responder.
+    let audioUrl: string | null = null;
+    if (esAudio) {
+      const audioBlob = await generarAudioTTS(respuesta);
+      if (audioBlob) audioUrl = await subirBlobAStorage(supabase, audioBlob, "audio/ogg");
+    }
+
     // Devolver TwiML — hay que escapar el texto, si no un "&" suelto (ej. en un
     // link de un grupo de WhatsApp con varios parámetros) rompe el XML y Twilio
     // no logra entregar el mensaje.
     const escapeXml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const twiml = `<Response><Message>${escapeXml(respuesta)}</Message></Response>`;
+    const twiml = audioUrl
+      ? `<Response><Message><Media>${escapeXml(audioUrl)}</Media></Message></Response>`
+      : `<Response><Message>${escapeXml(respuesta)}</Message></Response>`;
     return new Response(twiml, {
       headers: { "Content-Type": "text/xml", ...corsHeaders },
     });
