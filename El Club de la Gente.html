@@ -108,6 +108,17 @@
     .btn--secundario { color: var(--crema-en-negro); border-color: var(--linea-clara); }
     .btn--secundario:hover { background: var(--crema-en-negro); color: var(--negro); border-color: var(--crema-en-negro); }
 
+    /* ---- Cada sección (.seccion--negro) pinta su propio fondo sólido
+       encima del body, así que tapaba el patrón de figuritas aunque el
+       body ya lo tuviera -- se le pone el mismo patrón a cada sección
+       también, para que se vea parejo en toda la página. ---- */
+    .seccion--negro {
+      background-image: url("patron-fondo-oscuro.png?v=1");
+      background-repeat: repeat;
+      background-size: 400px auto;
+      background-color: var(--negro);
+    }
+
     /* ---- Párrafo principal de cada sección: fondo amarillo para que
        resalte el texto sobre el fondo oscuro, como un marcador. ---- */
     .seccion--negro .seccion__sub {
