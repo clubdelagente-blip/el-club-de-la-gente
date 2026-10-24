@@ -196,19 +196,30 @@ async function describirImagenWhatsApp(imageUrl: string): Promise<string | null>
   }
 }
 
+// Limpia el texto antes de mandarlo a hablar: *negrita*/_cursiva_ tienen
+// sentido en el chat de WhatsApp, pero en audio el TTS lee los símbolos tal
+// cual ("asterisco") -- se quitan solo para la voz, el texto guardado en
+// conversaciones (lo que ve el admin) no se toca.
+function limpiarParaVoz(texto: string): string {
+  return texto.replace(/[*_~]/g, "");
+}
+
 // Respuesta en audio: solo se usa cuando el miembro LE escribió al Agente con
 // un audio (esAudio más abajo) -- se le contesta en el mismo formato, como
 // haría una persona. OGG/Opus es el único formato que WhatsApp reproduce
 // como nota de voz real (con la forma de onda); cualquier otro formato le
 // llegaría como archivo adjunto para descargar, no como audio del chat.
+// Neural2 (en vez de Wavenet) suena bastante más natural -- Google todavía
+// la cubre en su nivel gratis (1 millón de caracteres/mes), de sobra para
+// este uso.
 async function generarAudioTTS(texto: string): Promise<Blob | null> {
   try {
     const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        input: { text: texto },
-        voice: { languageCode: "es-US", name: "es-US-Wavenet-A" },
+        input: { text: limpiarParaVoz(texto) },
+        voice: { languageCode: "es-US", name: "es-US-Neural2-A" },
         audioConfig: { audioEncoding: "OGG_OPUS" },
       }),
     });
