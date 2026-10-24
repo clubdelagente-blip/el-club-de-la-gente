@@ -47,18 +47,80 @@
   }
   </script>
   <style>
+    /* ============================================================
+       IDENTIDAD VISUAL NUEVA — solo esta página (landing pública).
+       Redefine los tokens de styles.css a nivel de :root DENTRO de este
+       <style> propio -- como ninguna otra página carga este bloque, el
+       cambio queda aislado aquí; ClubCard, Directorio, Perfil y Admin
+       siguen con la paleta de siempre.
+       Verde: #0E8A3E · Amarillo: #F5C518 · Grafito: #1E2328 · Durazno: #FCE9DD
+       --verde-claro cambia de rol: antes era el verde vivo de acento, ahora
+       ese lugar lo ocupa el amarillo (el verde de marca ya es vivo de por
+       sí); se nota sobre todo en acentos sobre fondo oscuro (hero, footer).
+       ============================================================ */
+    :root {
+      --negro: #1E2328;
+      --negro-2: #15181C;
+      --crema: #FFF8F2;
+      --crema-2: #F7E2D2;
+      --verde: #0E8A3E;
+      --verde-hover: #0B6E32;
+      --verde-claro: #F5C518;
+      --verde-soft: rgba(14, 138, 62, 0.10);
+      --tinta: #1E2328;
+      --tinta-60: rgba(30, 35, 40, 0.62);
+      --tinta-45: rgba(30, 35, 40, 0.45);
+      --linea: rgba(30, 35, 40, 0.14);
+      --linea-fuerte: rgba(30, 35, 40, 0.85);
+      --crema-en-negro: #FCE9DD;
+      --gris-ticker: #8A8580;
+      --linea-clara: rgba(252, 233, 221, 0.18);
+      --tinta-clara-60: rgba(252, 233, 221, 0.64);
+    }
     body {
       background-image: url("patron-fondo.png?v=1");
       background-repeat: repeat;
       background-size: 400px auto;
     }
     #marcas-carrusel-landing { margin-top: 0; }
-    .hero { padding-top: 0; }
     .hero__grid { align-items: start !important; }
     @media (max-width: 1000px) {
       .hero__grid { grid-template-areas: "copy" "valores" !important; }
       .hero__copy { grid-area: copy; }
       .valores { grid-area: valores; }
+    }
+
+    /* ---- Hero oscuro: mismo criterio que .seccion--negro (que ya existe
+       en styles.css), pero aplicado a mano porque el hero es un <header>
+       aparte -- los acentos pasan a amarillo (--verde-claro) para resaltar
+       sobre el fondo grafito, en vez del verde que ahí se vería apagado. */
+    .hero {
+      padding-top: 0;
+      background-image: url("patron-fondo-oscuro.png?v=1");
+      background-repeat: repeat;
+      background-size: 400px auto;
+      background-color: var(--negro);
+      color: var(--crema-en-negro);
+    }
+    .hero .masthead { color: var(--tinta-clara-60); border-bottom-color: var(--linea-clara); }
+    .hero .tag { color: var(--negro); background: var(--verde-claro); }
+    .hero .tag .dot { background: var(--negro); }
+    .hero__title { color: var(--crema-en-negro); }
+    .hero .italic-verde { color: var(--verde-claro); }
+    .hero__desc { color: var(--tinta-clara-60); }
+    .hero .valor { border-top-color: var(--linea-clara); }
+    .hero .valor:last-child { border-bottom-color: var(--linea-clara); }
+    .hero .valor::before { background: var(--verde-claro); }
+    .hero .valor__n, .hero .valor__ic { color: var(--verde-claro); }
+    .hero .valor h3 { color: var(--crema-en-negro); }
+    .hero .valor p { color: var(--tinta-clara-60); }
+
+    /* ---- Footer: ya usaba var(--negro) de fondo, se le suma la textura
+       del patrón oscuro para que combine con el hero. */
+    .footer {
+      background-image: url("patron-fondo-oscuro.png?v=1"), linear-gradient(var(--negro), var(--negro));
+      background-repeat: repeat, no-repeat;
+      background-size: 400px auto, 100% 100%;
     }
   </style>
 </head>
@@ -379,8 +441,8 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script src="app.js?v=15"></script>
-  <script type="module" src="app-cms.js?v=37"></script>
+  <script src="app.js?v=16"></script>
+  <script type="module" src="app-cms.js?v=38"></script>
 
   <!-- ============================================================
        TWEAKS PANEL — solo para edición de diseño, nunca para visitantes.

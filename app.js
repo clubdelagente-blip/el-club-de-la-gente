@@ -293,7 +293,7 @@ function sheetAliado(i) {
     ${(a.direccion || a.maps_url) ? `
     <div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px;flex-wrap:wrap;">
       ${a.direccion ? `<span style="font-size:13px;color:#666;display:flex;align-items:center;gap:5px;">${ic("map-pin")}${a.direccion}</span>` : ''}
-      ${a.maps_url ? `<a href="${a.maps_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:#e8f5ee;color:#095544;border-radius:99px;font-size:12px;font-weight:600;text-decoration:none;">${ic("navigation")}Ver en mapa</a>` : ''}
+      ${a.maps_url ? `<a href="${a.maps_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--verde-soft,#e8f5ee);color:var(--verde,#0E8A3E);border-radius:99px;font-size:12px;font-weight:600;text-decoration:none;">${ic("navigation")}Ver en mapa</a>` : ''}
     </div>` : ''}
     <div class="sheet__sub">Descuentos disponibles</div>
     ${a.descuentos.map((d, di) => `
