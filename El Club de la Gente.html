@@ -148,13 +148,23 @@
     .hero .tag .dot { background: var(--negro); }
     .hero__title { color: var(--crema-en-negro); }
     .hero .italic-verde { color: var(--verde-claro); }
-    .hero__desc { color: var(--tinta-clara-60); }
     .hero .valor { border-top-color: var(--linea-clara); }
     .hero .valor:last-child { border-bottom-color: var(--linea-clara); }
     .hero .valor::before { background: var(--verde-claro); }
     .hero .valor__n, .hero .valor__ic { color: var(--verde-claro); }
     .hero .valor h3 { color: var(--crema-en-negro); }
-    .hero .valor p { color: var(--tinta-clara-60); }
+
+    /* ---- Textos del hero con fondo amarillo, mismo criterio "marcador"
+       que ya usa .seccion__sub. ---- */
+    .hero__desc, .hero .valor p {
+      display: inline-block;
+      background: var(--verde-claro);
+      color: var(--negro);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    .hero .valor p { padding: 4px 10px; border-radius: 6px; margin-top: 6px; }
 
     /* ---- Footer: ya usaba var(--negro) de fondo, se le suma la textura
        del patrón oscuro para que combine con el hero. */
@@ -163,6 +173,12 @@
       background-repeat: repeat, no-repeat;
       background-size: 400px auto, 100% 100%;
     }
+
+    /* ---- Tarjetas de Programas sociales y Educación: siguen con fondo
+       blanco (.programa-card en styles.css), pero el texto heredaba el
+       color claro de la página oscura y casi no se veía -- se fuerza el
+       mismo grafito oscuro de siempre adentro de la tarjeta. ---- */
+    .programa-card, .historial-edu-card { color: var(--tinta); }
   </style>
 </head>
 <body>
