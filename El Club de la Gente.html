@@ -77,10 +77,15 @@
       --linea-clara: rgba(252, 233, 221, 0.18);
       --tinta-clara-60: rgba(252, 233, 221, 0.64);
     }
+    /* El patrón a todo color detrás de párrafos le quitaba legibilidad al
+       texto (se perdía contra los íconos) -- se "lava" con una capa casi
+       opaca del mismo durazno encima, dejando solo una textura sutil, no
+       el dibujo completo. Mismo criterio que .grain (textura de fondo, no
+       protagonista). */
     body {
-      background-image: url("patron-fondo.png?v=1");
-      background-repeat: repeat;
-      background-size: 400px auto;
+      background-image: linear-gradient(rgba(255,248,242,.88), rgba(255,248,242,.88)), url("patron-fondo.png?v=1");
+      background-repeat: repeat, repeat;
+      background-size: 400px auto, 400px auto;
     }
     #marcas-carrusel-landing { margin-top: 0; }
     .hero__grid { align-items: start !important; }
