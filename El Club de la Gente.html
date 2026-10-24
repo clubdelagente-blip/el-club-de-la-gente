@@ -77,17 +77,53 @@
       --linea-clara: rgba(252, 233, 221, 0.18);
       --tinta-clara-60: rgba(252, 233, 221, 0.64);
     }
-    /* El patrón a todo color detrás de párrafos le quitaba legibilidad al
-       texto (se perdía contra los íconos) -- se "lava" con una capa casi
-       opaca del mismo durazno encima, dejando solo una textura sutil, no
-       el dibujo completo. Mismo criterio que .grain (textura de fondo, no
-       protagonista). */
+    /* Toda la plataforma (esta página) pasa a fondo oscuro -- mismo criterio
+       de "lavado" que ya usan el hero/footer: la textura del patrón se nota
+       apenas, washeada con el grafito de marca. El texto por defecto pasa a
+       claro para leerse sobre ese fondo. */
     body {
-      background-image: linear-gradient(rgba(255,248,242,.88), rgba(255,248,242,.88)), url("patron-fondo.png?v=1");
+      background-image: linear-gradient(rgba(21,24,28,.88), rgba(21,24,28,.88)), url("patron-fondo-oscuro.png?v=1");
       background-repeat: repeat, repeat;
       background-size: 400px auto, 400px auto;
+      background-color: var(--negro);
+      color: var(--crema-en-negro);
     }
-    #marcas-carrusel-landing { margin-top: 0; }
+    /* El amarillo pasa a ser el único acento vivo ahora que todo el fondo es
+       oscuro (antes era verde en las zonas claras y amarillo solo en hero). */
+    .italic-verde { color: var(--verde-claro); }
+
+    /* ---- Nav oscuro ---- */
+    .nav { background: rgba(21,24,28,.72); }
+    .nav.is-scrolled { background: rgba(21,24,28,.92); border-bottom-color: var(--linea-clara); }
+    .nav__links a, .nav__links button[data-quienes-btn] { color: var(--crema-en-negro); }
+    .nav__links a.nav__login { border-color: var(--linea-clara); }
+    .nav__links a.nav__login:hover { background: var(--crema-en-negro); color: var(--negro); border-color: var(--crema-en-negro); }
+    .nav__burger span { background: var(--crema-en-negro); }
+    .nav__mobile { background-color: var(--negro); border-bottom-color: var(--linea-clara); }
+    .nav__mobile a, .nav__mobile button[data-quienes-btn] { color: var(--crema-en-negro); border-bottom-color: var(--linea-clara); }
+    .nav__mobile-login { color: var(--verde-claro) !important; }
+
+    /* ---- Botón secundario sobre fondo oscuro (modales, sheets) ---- */
+    .btn--secundario { color: var(--crema-en-negro); border-color: var(--linea-clara); }
+    .btn--secundario:hover { background: var(--crema-en-negro); color: var(--negro); border-color: var(--crema-en-negro); }
+
+    /* ---- Párrafo principal de cada sección: fondo amarillo para que
+       resalte el texto sobre el fondo oscuro, como un marcador. ---- */
+    .seccion--negro .seccion__sub {
+      display: inline-block;
+      background: var(--verde-claro);
+      color: var(--negro);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+
+    /* ---- Carrusel de marcas: fondo verde, letras blancas ---- */
+    #marcas-carrusel-landing { background: var(--verde) !important; margin-top: 0; }
+    #marcas-carrusel-landing::before { background: linear-gradient(to right, var(--verde), transparent) !important; }
+    #marcas-carrusel-landing::after { background: linear-gradient(to left, var(--verde), transparent) !important; }
+    #marcas-carrusel-landing .marcas-carrusel__cat,
+    #marcas-carrusel-landing .marcas-carrusel__sep { color: #fff !important; }
     .hero__grid { align-items: start !important; }
     @media (max-width: 1000px) {
       .hero__grid { grid-template-areas: "copy" "valores" !important; }
@@ -253,7 +289,7 @@
   <!-- ============================================================
        SECCIÓN D — ALIADOS COMERCIALES
        ============================================================ -->
-  <section class="seccion" id="aliados" data-screen-label="Aliados">
+  <section class="seccion seccion--negro" id="aliados" data-screen-label="Aliados">
     <div class="wrap">
       <div class="shead fade-up d1">
         <div class="shead__body">
@@ -274,7 +310,7 @@
   <!-- ============================================================
        SECCIÓN D2 — PROFESIONALES
        ============================================================ -->
-  <section class="seccion" id="profesionales" data-screen-label="Profesionales" style="display:none">
+  <section class="seccion seccion--negro" id="profesionales" data-screen-label="Profesionales" style="display:none">
     <div class="wrap">
       <div class="shead fade-up d1">
         <div class="shead__body">
@@ -291,7 +327,7 @@
   <!-- ============================================================
        SECCIÓN E — PROGRAMAS SOCIALES
        ============================================================ -->
-  <section class="seccion" id="programas" data-screen-label="Programas">
+  <section class="seccion seccion--negro" id="programas" data-screen-label="Programas">
     <div class="wrap">
       <div class="shead fade-up d1">
         <div class="shead__body">
@@ -307,7 +343,7 @@
   <!-- ============================================================
        SECCIÓN E-2 — EDUCACIÓN (último evento educativo)
        ============================================================ -->
-  <section class="seccion" id="educacion" data-screen-label="Educación" style="display:none">
+  <section class="seccion seccion--negro" id="educacion" data-screen-label="Educación" style="display:none">
     <div class="wrap">
       <div class="shead fade-up d1">
         <div class="shead__body">
@@ -327,7 +363,7 @@
   <!-- ============================================================
        SECCIÓN E-3 — BOLSA DE TRABAJO
        ============================================================ -->
-  <section class="seccion" id="bolsa-trabajo" data-screen-label="Bolsa de trabajo" style="display:none">
+  <section class="seccion seccion--negro" id="bolsa-trabajo" data-screen-label="Bolsa de trabajo" style="display:none">
     <div class="wrap">
       <div class="shead fade-up d1">
         <div class="shead__body">
@@ -343,7 +379,7 @@
   <!-- ============================================================
        SECCIÓN F — MEMBRESÍAS
        ============================================================ -->
-  <section class="seccion" id="membresias" data-screen-label="Membresías">
+  <section class="seccion seccion--negro" id="membresias" data-screen-label="Membresías">
     <div class="wrap">
       <div class="shead fade-up d1">
         <div class="shead__body">
