@@ -838,6 +838,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 /* ---------- PANTALLA DE ÉXITO ---------- */
+
+// Paso a paso para instalar la app como PWA -- solo aplica en celular, en
+// escritorio no existe el gesto de "agregar a inicio" así que se deja oculto.
+function mostrarPasosInstalarApp() {
+  const el = $("#exito-instalar");
+  if (!el) return;
+  const ua = navigator.userAgent || "";
+  const esIOS = /iPhone|iPad|iPod/.test(ua);
+  const esAndroid = /Android/.test(ua);
+  if (!esIOS && !esAndroid) return;
+
+  const msg = $("#exito-instalar-msg");
+  if (msg) {
+    msg.innerHTML = esIOS
+      ? `En Safari toca el ícono de <b>Compartir</b> (el cuadrito con la flecha hacia arriba) y elige <b>"Agregar a pantalla de inicio"</b>.`
+      : `Toca el menú <b>⋮</b> de Chrome (arriba a la derecha) y elige <b>"Instalar app"</b> o <b>"Agregar a pantalla de inicio"</b>.`;
+  }
+  el.hidden = false;
+}
+
 function irAExito({ nombre, fechaISO, whatsapp, login }) {
   const mision = calcularMision(fechaISO);
   const arquetipo = ARQUETIPOS[mision] || ARQUETIPOS[1];
@@ -856,6 +876,7 @@ function irAExito({ nombre, fechaISO, whatsapp, login }) {
 
   $(".stepper").style.visibility = "hidden";
   mostrarVista("view-exito");
+  mostrarPasosInstalarApp();
   if (window.lucide) lucide.createIcons();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -873,6 +894,7 @@ function irAExitoAliado(negocio, nombre) {
   const verifEl1 = $("#verif-ia-status"); if (verifEl1) verifEl1.style.display = "none";
   $(".stepper").style.visibility = "hidden";
   mostrarVista("view-exito");
+  mostrarPasosInstalarApp();
   if (window.lucide) lucide.createIcons();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -890,6 +912,7 @@ function irAExitoProfesional(nombre) {
   const verifEl2 = $("#verif-ia-status"); if (verifEl2) verifEl2.style.display = "none";
   $(".stepper").style.visibility = "hidden";
   mostrarVista("view-exito");
+  mostrarPasosInstalarApp();
   if (window.lucide) lucide.createIcons();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }

@@ -364,6 +364,15 @@
             </div>
           </div>
 
+          <!-- Solo se muestra en celular (iOS/Android) -- en escritorio no aplica. -->
+          <div class="wa-card" id="exito-instalar" hidden>
+            <div class="wa-card__ic"><i data-lucide="smartphone"></i></div>
+            <div>
+              <h4>Instala la app en tu celular</h4>
+              <p id="exito-instalar-msg"></p>
+            </div>
+          </div>
+
           <a class="btn btn--primario btn--bloque" id="exito-cta" href="Planes.html">Elegir mi plan <span class="ar">&rarr;</span></a>
 
           <div class="success__steps">
@@ -379,7 +388,7 @@
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
-  <script type="module" src="auth.js?v=52"></script>
+  <script type="module" src="auth.js?v=53"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
