@@ -177,10 +177,11 @@ Deno.serve(async (_req: Request) => {
           beneficios.push(`🎁 ${a.nombre}: ${promo.descripcion}`);
           if (a.whatsapp) {
             const waDigits = String(a.whatsapp).replace(/\D/g, "");
-            // Mensaje fijo (no interpola la descripción de la promo) -- así el
-            // link siempre pesa lo mismo, nunca se alarga según el aliado.
-            const texto = encodeURIComponent(`Hola, ¿Cómo estás? Soy miembro de El Club de la Gente y hoy es mi cumpleaños -- quisiera saber cómo puedo reclamar la cortesía, muchas gracias por tu servicio.`);
-            enlaces.push(`🎁 *${a.nombre}*: ${promo.descripcion}\nhttps://wa.me/57${waDigits}?text=${texto}`);
+            // Sin "?text=" -- el mensaje precargado se veía cortado en algunos
+            // celulares (WhatsApp trunca el texto codificado en la URL) y
+            // además alargaba mucho el link. El link solo queda así: corto,
+            // confiable, y la persona escribe su propio mensaje al abrir el chat.
+            enlaces.push(`🎁 *${a.nombre}*: ${promo.descripcion}\nhttps://wa.me/57${waDigits}`);
           }
         }
       }
