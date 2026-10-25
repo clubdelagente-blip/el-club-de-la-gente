@@ -53,6 +53,24 @@ const RASGOS_NUMEROLOGIA: Record<number, string> = {
   33: "encarna la compasión, el servicio y el amor incondicional hacia los demás.",
 };
 
+// El mensaje completo (saludo + beneficios + link) podía pasarse del límite
+// de caracteres que soporta un solo WhatsApp -- y como el link va al final
+// de todo, era justo lo que se cortaba. Acortarlo con TinyURL (gratis, sin
+// llave) baja tanto el peso del mensaje completo que ya no se corta, y de
+// paso el link se ve corto. Si el acortador falla, se manda el link largo
+// sin mensaje precargado (igual que el respaldo anterior) para no quedarse
+// sin link.
+async function acortarUrl(urlLarga: string): Promise<string> {
+  try {
+    const r = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(urlLarga)}`);
+    const corta = (await r.text()).trim();
+    if (r.ok && corta.startsWith("http")) return corta;
+  } catch (e) {
+    console.error("Error acortando URL:", e);
+  }
+  return "";
+}
+
 async function redactarMsgCumpleIA(primerNombre: string, rasgos: string, beneficios: string[], elegibleCortesias: boolean): Promise<string | null> {
   // Gratis/Básica no tienen cortesías de cumpleaños (eso es solo Premium/
   // Vitalicia) -- para esos el prompt no debe mencionar NINGÚN beneficio,
@@ -177,11 +195,10 @@ Deno.serve(async (_req: Request) => {
           beneficios.push(`🎁 ${a.nombre}: ${promo.descripcion}`);
           if (a.whatsapp) {
             const waDigits = String(a.whatsapp).replace(/\D/g, "");
-            // Sin "?text=" -- el mensaje precargado se veía cortado en algunos
-            // celulares (WhatsApp trunca el texto codificado en la URL) y
-            // además alargaba mucho el link. El link solo queda así: corto,
-            // confiable, y la persona escribe su propio mensaje al abrir el chat.
-            enlaces.push(`🎁 *${a.nombre}*: ${promo.descripcion}\nhttps://wa.me/57${waDigits}`);
+            const texto = encodeURIComponent(`Hola, ¿Cómo estás? Soy miembro de El Club de la Gente y hoy es mi cumpleaños -- quisiera saber cómo puedo reclamar la cortesía, muchas gracias por tu servicio.`);
+            const urlLarga = `https://wa.me/57${waDigits}?text=${texto}`;
+            const urlCorta = await acortarUrl(urlLarga);
+            enlaces.push(`🎁 *${a.nombre}*: ${promo.descripcion}\n${urlCorta || `https://wa.me/57${waDigits}`}`);
           }
         }
       }
