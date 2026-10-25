@@ -9,7 +9,15 @@
 .tienda-search input:focus { outline: none; border-color: var(--verde); background: #fff; }
 .tienda-search svg, .tienda-search i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--tinta-45); pointer-events: none; }
 
-.dash-body { background: var(--crema-2); min-height: 100vh; }
+/* Mismo patrón de figuritas de la portada, pero "lavado" casi del todo con
+   el crema-2 de siempre para que quede sutil y claro, no protagonista. */
+.dash-body {
+  background-image: linear-gradient(rgba(247, 226, 210, .9), rgba(247, 226, 210, .9)), url("patron-fondo.png?v=1");
+  background-repeat: repeat, repeat;
+  background-size: 400px auto, 400px auto;
+  background-color: var(--crema-2);
+  min-height: 100vh;
+}
 
 /* ---------- Layout ---------- */
 .dash { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
