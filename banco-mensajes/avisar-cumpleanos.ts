@@ -79,7 +79,10 @@ Instrucciones:
       body: JSON.stringify({
         model: "openai/gpt-oss-120b",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: "Escribe el mensaje." }],
-        max_tokens: 300,
+        // gpt-oss-120b "piensa" antes de responder y ese razonamiento también
+        // cuenta contra max_tokens -- con 300 se cortaba el mensaje a mitad
+        // de frase (el presupuesto se gastaba pensando, no en el texto final).
+        max_tokens: 700,
         temperature: 0.8,
       }),
     });
