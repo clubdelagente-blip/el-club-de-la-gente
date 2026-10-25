@@ -9,14 +9,13 @@
 .tienda-search input:focus { outline: none; border-color: var(--verde); background: #fff; }
 .tienda-search svg, .tienda-search i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--tinta-45); pointer-events: none; }
 
-/* Mismo patrón de figuritas de la portada, lavado con gris claro (menos
-   que antes) para que las figuras sí se noten pero sin competir con el
-   contenido. */
+/* Mismo patrón de la portada, pero recoloreado: fondo blanco vainilla con
+   las figuritas en gris para que resalten sin competir con el contenido. */
 .dash-body {
-  background-image: linear-gradient(rgba(232, 232, 230, .72), rgba(232, 232, 230, .72)), url("patron-fondo.png?v=1");
-  background-repeat: repeat, repeat;
-  background-size: 400px auto, 400px auto;
-  background-color: #E8E8E6;
+  background-image: url("patron-fondo-vainilla.png?v=1");
+  background-repeat: repeat;
+  background-size: 400px auto;
+  background-color: #FDFAF4;
   min-height: 100vh;
 }
 
