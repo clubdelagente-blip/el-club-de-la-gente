@@ -408,6 +408,13 @@ function cerrarSeg() {
 function mostrarPasosInstalarApp() {
   const el = $("#seg-final-instalar");
   if (!el) return;
+
+  // Ya instalada (como PWA hoy, o como app real de Play Store/App Store el
+  // día de mañana -- misma detección sirve para las dos) -- no tiene caso
+  // explicarle a alguien cómo instalar algo que ya tiene abierto.
+  const esStandalone = window.matchMedia?.("(display-mode: standalone)")?.matches || navigator.standalone === true;
+  if (esStandalone) return;
+
   const ua = navigator.userAgent || "";
   const esIOS = /iPhone|iPad|iPod/.test(ua);
   const esAndroid = /Android/.test(ua);
