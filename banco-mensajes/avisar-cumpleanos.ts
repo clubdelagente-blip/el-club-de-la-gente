@@ -135,7 +135,7 @@ Deno.serve(async (_req: Request) => {
   // Aliados activos con al menos una promoción de cumpleaños activa
   const { data: aliados, error: errAliados } = await supabase
     .from("aliados")
-    .select("id, nombre, categoria, promociones!inner(descripcion, es_cumpleanos, activa)")
+    .select("id, nombre, whatsapp, categoria, promociones!inner(descripcion, es_cumpleanos, activa)")
     .eq("activo", true)
     .eq("promociones.es_cumpleanos", true)
     .eq("promociones.activa", true);
@@ -150,13 +150,23 @@ Deno.serve(async (_req: Request) => {
       c.trim().toLowerCase()
     );
 
+    // "beneficios" es solo texto (para que la IA redacte con eso de guía) --
+    // los links de WhatsApp van aparte en "enlaces" y se pegan tal cual al
+    // final del mensaje, sin pasar por la IA, para que el link nunca salga
+    // mal escrito o parafraseado.
     const beneficios: string[] = [];
+    const enlaces: string[] = [];
     for (const a of aliados || []) {
       const catsAliado = (a.categoria || "").split(",").map((c: string) => c.trim().toLowerCase());
       const coincide = intereses.length === 0 || catsAliado.some((c: string) => intereses.includes(c));
       if (!coincide) continue;
       for (const promo of a.promociones || []) {
         beneficios.push(`🎁 ${a.nombre}: ${promo.descripcion}`);
+        if (a.whatsapp) {
+          const waDigits = String(a.whatsapp).replace(/\D/g, "");
+          const texto = encodeURIComponent(`Hola, soy miembro de El Club de la Gente y hoy es mi cumpleaños -- quiero reclamar: ${promo.descripcion}`);
+          enlaces.push(`🎁 *${a.nombre}*: ${promo.descripcion}\nhttps://wa.me/57${waDigits}?text=${texto}`);
+        }
       }
     }
 
@@ -167,7 +177,13 @@ Deno.serve(async (_req: Request) => {
     const numerologia = p.fecha_nacimiento ? calcularNumerologia(p.fecha_nacimiento) : 0;
     const rasgos = RASGOS_NUMEROLOGIA[numerologia];
     const msgIA = rasgos ? await redactarMsgCumpleIA(primerNombre, rasgos, beneficios) : null;
-    const msg = msgIA || msgRespaldo;
+    const msgBase = msgIA || msgRespaldo;
+    // Si el mensaje de respaldo ya trae los beneficios en texto, no hace
+    // falta repetir la lista -- pero el bloque de links siempre se agrega,
+    // para que pueda escribirle al aliado con un toque.
+    const msg = enlaces.length
+      ? `${msgBase}\n\n📲 Reclámalo escribiendo directo:\n\n${enlaces.join("\n\n")}`
+      : msgBase;
 
     try {
       const r = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
