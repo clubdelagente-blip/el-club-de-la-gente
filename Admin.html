@@ -750,6 +750,7 @@ function abrirMiembroReal(id){
     <div class="ad-toolbar" style="margin:6px 0 0">
       ${waDigits?`<a class="ad-btn ad-btn--wa" href="https://wa.me/57${waDigits}" target="_blank">${ic('message-circle')} Escribir por WhatsApp</a>`:''}
       <div class="ad-spacer"></div>
+      <button class="ad-btn" data-rm-miembro="${u.id}" data-nom-miembro="${esc(u.nombre)}" style="color:#e05252;border-color:#e05252">${ic('trash-2')} Eliminar miembro</button>
     </div>`;
   $("#modal-title").textContent=u.nombre;
   $("#modal-sub").textContent="Miembro del Club";
@@ -3763,6 +3764,26 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const edAl=e.target.closest('[data-ed-aliado]');if(edAl){const a=_aliados.find(x=>x.id===edAl.dataset.edAliado);if(a){abrirModal('Editar aliado',a.nombre,htmlFormAliado(a));bindFormAliado();}return;}
     const togAl=e.target.closest('[data-tog-aliado]');if(togAl){const activo=togAl.dataset.activo==='true';await supabase.from('aliados').update({activo:!activo}).eq('id',togAl.dataset.togAliado);cargarAliados();return;}
     const rmAl=e.target.closest('[data-rm-aliado]');if(rmAl&&confirm('¿Eliminar este aliado?')){const{error}=await supabase.from('aliados').delete().eq('id',rmAl.dataset.rmAliado);if(error){toast('No se pudo eliminar -- tiene productos, promociones o pedidos asociados');return;}cargarAliados();toast('Aliado eliminado');return;}
+    const rmMiembro=e.target.closest('[data-rm-miembro]');
+    if(rmMiembro){
+      const nom=rmMiembro.dataset.nomMiembro||'este miembro';
+      if(!confirm(`¿Eliminar a ${nom}? Se borra su cuenta, su ClubCard y todo su historial. Esta acción NO se puede deshacer.`))return;
+      if(!confirm(`Última confirmación: ¿de verdad quieres borrar a ${nom} para siempre?`))return;
+      rmMiembro.disabled=true;rmMiembro.textContent='Eliminando…';
+      try{
+        const{data:sesion}=await supabase.auth.getSession();
+        const r=await fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/eliminar-miembro',{
+          method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(sesion?.session?.access_token||'')},
+          body:JSON.stringify({miembro_id:rmMiembro.dataset.rmMiembro}),
+        });
+        const j=await r.json().catch(()=>({}));
+        if(!r.ok){toast('Error: '+(j.error||r.status));rmMiembro.disabled=false;rmMiembro.textContent='Eliminar miembro';return;}
+        toast('Miembro eliminado');
+        $("#ad-modal-ov")?.classList.remove("is-open");
+        cargarMiembrosReal();
+      }catch(err){toast('Error de red: '+err.message);rmMiembro.disabled=false;rmMiembro.textContent='Eliminar miembro';}
+      return;
+    }
     const edPlan=e.target.closest('[data-ed-plan]');if(edPlan){const p=_planes.find(x=>x.slug===edPlan.dataset.edPlan);if(p){abrirModal('Editar plan',p.tag,htmlFormPlan(p));bindFormPlan();}return;}
     if(e.target.closest('#gasto-add')){abrirModal('Agregar gasto','Registro manual de un gasto del Club',htmlFormGasto());bindFormGasto();return;}
     const edGasto=e.target.closest('[data-ed-gasto]');if(edGasto){const g=_gastos.find(x=>x.id===edGasto.dataset.edGasto);if(g){abrirModal('Editar gasto',g.proveedor||'Gasto',htmlFormGasto(g));bindFormGasto(g);}return;}
