@@ -53,21 +53,27 @@ const RASGOS_NUMEROLOGIA: Record<number, string> = {
   33: "encarna la compasión, el servicio y el amor incondicional hacia los demás.",
 };
 
-async function redactarMsgCumpleIA(primerNombre: string, rasgos: string, beneficios: string[]): Promise<string | null> {
+async function redactarMsgCumpleIA(primerNombre: string, rasgos: string, beneficios: string[], elegibleCortesias: boolean): Promise<string | null> {
+  // Gratis/Básica no tienen cortesías de cumpleaños (eso es solo Premium/
+  // Vitalicia) -- para esos el prompt no debe mencionar NINGÚN beneficio,
+  // ni siquiera invitarlos al Directorio, para no generar una expectativa
+  // que no les corresponde. Solo a Premium/Vitalicia sin promo de hoy se les
+  // invita a mirar el Directorio (sí tienen acceso real a esos descuentos).
   const listaBeneficios = beneficios.length
     ? beneficios.join("\n")
-    : "Hoy no hay una promoción de cumpleaños específica para sus intereses -- invítala a revisar el Directorio por si algo le interesa: https://elclubdelagente.com/Directorio.html";
+    : elegibleCortesias
+      ? "Hoy no hay una promoción de cumpleaños específica para sus intereses -- invítala a revisar el Directorio por si algo le interesa: https://elclubdelagente.com/Directorio.html"
+      : null;
+  const bloqueBeneficios = listaBeneficios
+    ? `\nBeneficios reales disponibles hoy para ella (no inventes otros, cópialos tal cual si los incluyes):\n${listaBeneficios}\n`
+    : `\nEsta persona NO tiene ninguna cortesía de cumpleaños disponible (es un beneficio exclusivo de otros planes) -- NO menciones beneficios, descuentos, promociones ni el Directorio. Es solo un saludo cálido de cumpleaños.\n`;
   const systemPrompt = `Eres parte del equipo de El Club de la Gente (Fusagasugá, Colombia) escribiendo UN mensaje de feliz cumpleaños por WhatsApp para un miembro del Club.
 
 Rasgos de personalidad de esta persona (úsalos solo como guía de TONO, nunca los menciones explícitamente ni dentro expliques que vienen de un "perfil" o "número"): es ${rasgos}
-
-Beneficios reales disponibles hoy para ella (no inventes otros, cópialos tal cual si los incluyes):
-${listaBeneficios}
-
+${bloqueBeneficios}
 Instrucciones:
 - Máximo 6 líneas, cálido y natural, nunca genérico ni de plantilla.
 - Usa el nombre "${primerNombre}".
-- Incluye los beneficios de forma natural dentro del mensaje.
 - Un par de emojis está bien, sin exagerar.
 - Firma al final con "El Club de la Gente" en una línea aparte.
 - Responde ÚNICAMENTE con el texto final del mensaje, sin comillas ni explicaciones.`;
@@ -103,10 +109,12 @@ Deno.serve(async (_req: Request) => {
   const hoyCo = new Date(Date.now() - 5 * 60 * 60 * 1000);
   const mesDia = `${String(hoyCo.getUTCMonth() + 1).padStart(2, "0")}-${String(hoyCo.getUTCDate()).padStart(2, "0")}`;
 
+  // Gratis y Básica también reciben su saludo de cumpleaños (solo que sin
+  // cortesías -- esas son exclusivas de Premium/Vitalicia, ver más abajo).
   const { data: candidatos, error: errCandidatos } = await supabase
     .from("perfiles")
     .select("id, nombre, whatsapp, plan, categorias_interes, fecha_nacimiento")
-    .in("plan", ["premium", "vitalicia"])
+    .in("plan", ["gratis", "basica", "premium", "vitalicia"])
     .not("fecha_nacimiento", "is", null)
     .not("whatsapp", "is", null);
 
@@ -150,35 +158,43 @@ Deno.serve(async (_req: Request) => {
       c.trim().toLowerCase()
     );
 
+    // Las cortesías de cumpleaños son exclusivas de Premium/Vitalicia -- a
+    // Gratis/Básica ni se les calcula (quedan sin beneficios ni enlaces).
+    const elegibleCortesias = p.plan === "premium" || p.plan === "vitalicia";
+
     // "beneficios" es solo texto (para que la IA redacte con eso de guía) --
     // los links de WhatsApp van aparte en "enlaces" y se pegan tal cual al
     // final del mensaje, sin pasar por la IA, para que el link nunca salga
     // mal escrito o parafraseado.
     const beneficios: string[] = [];
     const enlaces: string[] = [];
-    for (const a of aliados || []) {
-      const catsAliado = (a.categoria || "").split(",").map((c: string) => c.trim().toLowerCase());
-      const coincide = intereses.length === 0 || catsAliado.some((c: string) => intereses.includes(c));
-      if (!coincide) continue;
-      for (const promo of a.promociones || []) {
-        beneficios.push(`🎁 ${a.nombre}: ${promo.descripcion}`);
-        if (a.whatsapp) {
-          const waDigits = String(a.whatsapp).replace(/\D/g, "");
-          // Mensaje fijo (no interpola la descripción de la promo) -- así el
-          // link siempre pesa lo mismo, nunca se alarga según el aliado.
-          const texto = encodeURIComponent(`Hola, ¿Cómo estás? Soy miembro de El Club de la Gente y hoy es mi cumpleaños -- quisiera saber cómo puedo reclamar la cortesía, muchas gracias por tu servicio.`);
-          enlaces.push(`🎁 *${a.nombre}*: ${promo.descripcion}\nhttps://wa.me/57${waDigits}?text=${texto}`);
+    if (elegibleCortesias) {
+      for (const a of aliados || []) {
+        const catsAliado = (a.categoria || "").split(",").map((c: string) => c.trim().toLowerCase());
+        const coincide = intereses.length === 0 || catsAliado.some((c: string) => intereses.includes(c));
+        if (!coincide) continue;
+        for (const promo of a.promociones || []) {
+          beneficios.push(`🎁 ${a.nombre}: ${promo.descripcion}`);
+          if (a.whatsapp) {
+            const waDigits = String(a.whatsapp).replace(/\D/g, "");
+            // Mensaje fijo (no interpola la descripción de la promo) -- así el
+            // link siempre pesa lo mismo, nunca se alarga según el aliado.
+            const texto = encodeURIComponent(`Hola, ¿Cómo estás? Soy miembro de El Club de la Gente y hoy es mi cumpleaños -- quisiera saber cómo puedo reclamar la cortesía, muchas gracias por tu servicio.`);
+            enlaces.push(`🎁 *${a.nombre}*: ${promo.descripcion}\nhttps://wa.me/57${waDigits}?text=${texto}`);
+          }
         }
       }
     }
 
     const msgRespaldo = beneficios.length
       ? `¡Feliz cumpleaños, ${primerNombre}! 🎉🌿\n\nEl Club de la Gente te tiene estos beneficios especiales hoy:\n\n${beneficios.join("\n")}\n\n¡Que lo disfrutes!`
-      : `¡Feliz cumpleaños, ${primerNombre}! 🎉🌿\n\nHoy hay aliados del Club con beneficios especiales de cumpleaños -- revísalos en el Directorio: https://elclubdelagente.com/Directorio.html\n\n¡Que tengas un gran día!`;
+      : elegibleCortesias
+        ? `¡Feliz cumpleaños, ${primerNombre}! 🎉🌿\n\nHoy hay aliados del Club con beneficios especiales de cumpleaños -- revísalos en el Directorio: https://elclubdelagente.com/Directorio.html\n\n¡Que tengas un gran día!`
+        : `¡Feliz cumpleaños, ${primerNombre}! 🎉🌿\n\nQue tengas un día lleno de alegría, rodeado de las personas que quieres. Desde El Club de la Gente te mandamos un fuerte abrazo.\n\n¡Que lo disfrutes!`;
 
     const numerologia = p.fecha_nacimiento ? calcularNumerologia(p.fecha_nacimiento) : 0;
     const rasgos = RASGOS_NUMEROLOGIA[numerologia];
-    const msgIA = rasgos ? await redactarMsgCumpleIA(primerNombre, rasgos, beneficios) : null;
+    const msgIA = rasgos ? await redactarMsgCumpleIA(primerNombre, rasgos, beneficios, elegibleCortesias) : null;
     const msgBase = msgIA || msgRespaldo;
     // Si el mensaje de respaldo ya trae los beneficios en texto, no hace
     // falta repetir la lista -- pero el bloque de links siempre se agrega,
