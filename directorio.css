@@ -4,6 +4,16 @@
    (depende de styles.css para tokens, botones, sheet, foto-ph, toast)
    ============================================================ */
 
+/* Mismo patrón de la portada, recoloreado a blanco vainilla con figuritas
+   en gris -- lavado con una capa casi opaca para que casi no se noten,
+   solo como textura de fondo (igual criterio que Perfil). */
+body {
+  background-image: linear-gradient(rgba(253, 250, 244, .85), rgba(253, 250, 244, .85)), url("patron-fondo-vainilla.png?v=1");
+  background-repeat: repeat, repeat;
+  background-size: 400px auto, 400px auto;
+  background-color: #FDFAF4;
+}
+
 /* ---------- HEADER DEL DIRECTORIO ---------- */
 .dir-top {
   position: sticky; top: 0; z-index: 100;
