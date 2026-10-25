@@ -402,6 +402,26 @@ function cerrarSeg() {
   if (_miembroId) localStorage.setItem(`ecdlg_segmentado_${_miembroId}`, "1");
 }
 
+// Paso a paso para instalar la app como PWA -- solo aplica en celular, en
+// escritorio no existe el gesto de "agregar a inicio" así que se deja oculto.
+// (Misma función que auth.js, repetida acá porque este archivo no lo carga.)
+function mostrarPasosInstalarApp() {
+  const el = $("#seg-final-instalar");
+  if (!el) return;
+  const ua = navigator.userAgent || "";
+  const esIOS = /iPhone|iPad|iPod/.test(ua);
+  const esAndroid = /Android/.test(ua);
+  if (!esIOS && !esAndroid) return;
+
+  const msg = $("#seg-final-instalar-msg");
+  if (msg) {
+    msg.innerHTML = esIOS
+      ? `En Safari toca el ícono de <b>Compartir</b> (el cuadrito con la flecha hacia arriba) y elige <b>"Agregar a pantalla de inicio"</b>.`
+      : `Toca el menú <b>⋮</b> de Chrome (arriba a la derecha) y elige <b>"Instalar app"</b> o <b>"Agregar a pantalla de inicio"</b>.`;
+  }
+  el.hidden = false;
+}
+
 // Pantallas especiales (justificación de datos, confirmación, cierre final):
 // reemplazan temporalmente el flujo normal de preguntas sin tocar segBlock/
 // SEG_TOTAL, para no desordenar la barra de progreso ni la paginación.
@@ -3475,6 +3495,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
       mostrarSegInterstitial("seg-final-gracias");
+      mostrarPasosInstalarApp();
+      if (window.lucide) lucide.createIcons();
     } else {
       segMostrar(segSiguienteVisible(segBlock, 1));
     }

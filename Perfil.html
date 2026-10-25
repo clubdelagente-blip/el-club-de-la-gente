@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=83">
   <link rel="stylesheet" href="estilos.css?v=19">
-  <link rel="stylesheet" href="dashboard.css?v=30">
+  <link rel="stylesheet" href="dashboard.css?v=31">
   <link rel="stylesheet" href="agente.css?v=2">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -1075,6 +1075,16 @@
         <img src="logo-club.png" alt="El Club de la Gente" class="seg-interstitial__logo seg-interstitial__ic--bounce">
         <h2>¡Listo, muchas gracias!</h2>
         <p>Ya sabemos un poco más de ti — vamos a usarlo para hacer tu experiencia en el Club cada vez mejor.</p>
+
+        <!-- Solo se muestra en celular (iOS/Android) -- en escritorio no aplica. -->
+        <div class="wa-card" id="seg-final-instalar" hidden style="text-align:left;margin-bottom:18px">
+          <div class="wa-card__ic"><i data-lucide="smartphone"></i></div>
+          <div>
+            <h4>Instala la app en tu celular</h4>
+            <p id="seg-final-instalar-msg"></p>
+          </div>
+        </div>
+
         <button class="btn btn--primario" id="seg-final-cerrar">Ir a mi cuenta</button>
       </div>
     </div>
@@ -1242,7 +1252,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=162"></script>
+  <script type="module" src="dashboard.js?v=163"></script>
   <script type="module" src="agente.js?v=1"></script>
 
   <template id="__bundler_thumbnail">

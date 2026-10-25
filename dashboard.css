@@ -3,6 +3,18 @@
    Hereda variables y tipografía de styles.css
    ============================================================ */
 
+/* Tarjeta de aviso reutilizada del flujo de Registro (ahí vive en auth.css,
+   acá no se carga esa hoja, así que se repite la base mínima). */
+.wa-card {
+  display: flex; align-items: flex-start; gap: 16px; text-align: left;
+  background: #fff; border: 1px solid var(--linea); border-radius: 12px;
+  padding: 22px 24px; position: relative; overflow: hidden;
+}
+.wa-card__ic { width: 44px; height: 44px; flex: none; border-radius: 10px; background: var(--verde-soft); display: grid; place-items: center; color: var(--verde); }
+.wa-card__ic i { width: 22px; height: 22px; }
+.wa-card h4 { font-size: 14.5px; font-weight: 600; margin-bottom: 4px; }
+.wa-card p { font-size: 13px; color: var(--tinta-60); line-height: 1.5; margin: 0; }
+
 .tienda-search { position: relative; margin-bottom: 14px; }
 .tienda-search input { width: 100%; box-sizing: border-box; font-family: var(--cuerpo); font-size: 16px; color: var(--tinta); padding: 11px 14px 11px 40px; border: 1px solid var(--linea); border-radius: 12px; background: var(--crema-2); transition: border-color .15s, background .15s; }
 .tienda-search input::placeholder { color: var(--tinta-45); }
