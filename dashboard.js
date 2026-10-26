@@ -349,6 +349,7 @@ let SEG_TOTAL = 0; // se recalcula tras cargar las preguntas dinámicas (ya no h
 let _preguntasSeg = []; // preguntas activas traídas de Supabase, una por página
 let _catBlockIndex = 1; // índice de la página que contiene la pregunta "categorías" (para el botón Actualizar)
 let _respuestasSegPrevias = {}; // respuestas ya guardadas del miembro, para no perderlas al reabrir en una página puntual
+let _segEsPrimeraVez = true; // false cuando se reabre el cuestionario desde "Actualizar" -- el aviso de instalar la app solo se muestra la primera vez
 let _whatsappPrevio = ""; // whatsapp que ya tenía el perfil al abrir el formulario (para saber si este es el primero que damos)
 
 // Una pregunta oculta (condicional que no se activó) no cuenta como página
@@ -568,6 +569,7 @@ function actualizarCondicionalesSeg() {
 // Punto de entrada único para abrir el formulario: asegura que los bloques
 // dinámicos ya estén cargados antes de mostrar cualquier paso.
 async function iniciarSegmentacion(perfil, irABloque = 0) {
+  _segEsPrimeraVez = irABloque === 0;
   await cargarPreguntasSegmentacion();
   if (perfil) prepararCamposConocidos(perfil);
   let bloqueInicial = irABloque === "categorias" ? _catBlockIndex : irABloque;
@@ -3568,7 +3570,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
       mostrarSegInterstitial("seg-final-gracias");
-      mostrarPasosInstalarApp();
+      if (_segEsPrimeraVez) mostrarPasosInstalarApp();
       if (window.lucide) lucide.createIcons();
     } else {
       segMostrar(segSiguienteVisible(segBlock, 1));
