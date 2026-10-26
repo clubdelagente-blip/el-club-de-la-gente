@@ -3570,7 +3570,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
       mostrarSegInterstitial("seg-final-gracias");
-      console.log("[debug] _segEsPrimeraVez =", _segEsPrimeraVez);
+      // La tarjeta es un elemento fijo del HTML (no se redibuja cada vez) --
+      // si ya quedó visible de una vuelta anterior, hay que ocultarla a mano
+      // cuando esta vez NO toca mostrarla (no basta con no llamar a
+      // mostrarPasosInstalarApp(), eso solo la muestra, nunca la oculta).
+      const elInstalar = document.getElementById("seg-final-instalar");
+      if (elInstalar) elInstalar.hidden = true;
       if (_segEsPrimeraVez) mostrarPasosInstalarApp();
       if (window.lucide) lucide.createIcons();
     } else {
