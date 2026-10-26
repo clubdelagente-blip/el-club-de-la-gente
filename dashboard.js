@@ -3147,6 +3147,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const sbNumEl = $("#sb-num"); if (sbNumEl) sbNumEl.textContent = numTxt;
         const perfilNumEl = $("#perfil-num"); if (perfilNumEl) perfilNumEl.textContent = numTxt;
       }
+      // Código del frente de la ClubCard (= el WhatsApp): el render() inicial
+      // corre ANTES de esta carga real y usaba lo que hubiera en localStorage
+      // en ese momento -- si venía vacío (ej. primera vez en este navegador),
+      // el código se quedaba en blanco para siempre. Acá ya hay el dato real.
+      if (perfData?.whatsapp) {
+        perfilCache.whatsapp = perfData.whatsapp;
+        $$(".cc-card-codigo").forEach(el => el.textContent = perfData.whatsapp);
+      }
       localStorage.setItem("ecdlg_perfil", JSON.stringify(perfilCache));
     }
     const plan = perfData?.plan || null;
