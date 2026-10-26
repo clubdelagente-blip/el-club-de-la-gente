@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://js.sentry-cdn.com/c008db963bd16390827cbba643292144.min.js" crossorigin="anonymous"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K062DHDKP"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-K062DHDKP');</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>El Club de la Gente — Mis cortesías de cumpleaños</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --verde: #095544;
+      --verde-claro: #E3F7EE;
+      --crema: #F1F7F6;
+      --tinta: #021B1A;
+      --tinta-40: rgba(2,27,26,.4);
+      --display: 'Anton', sans-serif;
+      --sans: 'Inter', sans-serif;
+    }
+    body {
+      font-family: var(--sans);
+      background: var(--crema);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 12px;
+      text-decoration: none; color: var(--tinta);
+      margin: 20px 0 32px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 36px 28px;
+      width: 100%;
+      max-width: 440px;
+      text-align: center;
+      box-shadow: 0 2px 32px rgba(0,0,0,.07);
+      margin-bottom: 16px;
+    }
+    .estado-ic { font-size: 40px; margin-bottom: 10px; }
+    .titulo { font-family: var(--display); font-size: 26px; line-height: 1.1; margin-bottom: 6px; }
+    .sub { font-size: 13px; color: var(--tinta-40); margin-bottom: 4px; }
+    .loading, .error-msg { font-size: 14px; color: var(--tinta-40); text-align: center; }
+
+    .cortesia-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      width: 100%;
+      max-width: 440px;
+      margin-bottom: 14px;
+      text-align: left;
+      box-shadow: 0 2px 20px rgba(0,0,0,.06);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .cortesia-card__nombre { font-family: var(--display); font-size: 18px; }
+    .cortesia-card__desc { font-size: 13.5px; color: var(--tinta); opacity: .75; line-height: 1.4; }
+    .cortesia-card__btn {
+      display: block; width: 100%; padding: 13px;
+      background: #25D366; color: #fff; border-radius: 10px;
+      text-align: center; text-decoration: none;
+      font-size: 14px; font-weight: 600; letter-spacing: .02em;
+    }
+  </style>
+</head>
+<body>
+
+  <a class="logo" href="El Club de la Gente.html">
+    <img src="logo-club.png" alt="El Club de la Gente" style="height:38px;width:auto;">
+  </a>
+
+  <div class="card" id="card">
+    <p class="loading">Cargando tus cortesías...</p>
+  </div>
+
+  <div id="lista-cortesias"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script>
+    const { createClient } = supabase;
+    const supabaseClient = createClient(
+      "https://egwaedadpqfwnbfosiao.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4"
+    );
+
+    (async () => {
+      const card = document.getElementById("card");
+      const lista = document.getElementById("lista-cortesias");
+      const params = new URLSearchParams(location.search);
+      const id = params.get("id");
+
+      if (!id) {
+        card.innerHTML = `<p class="error-msg">Link inválido.</p>`;
+        return;
+      }
+
+      const { data: p, error } = await supabaseClient
+        .from("perfiles")
+        .select("nombre, plan, categorias_interes")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (error || !p) {
+        card.innerHTML = `<p class="error-msg">No pudimos cargar tus cortesías.</p>`;
+        return;
+      }
+
+      const primerNombre = (p.nombre || "").trim().split(" ")[0] || "";
+
+      if (p.plan !== "premium" && p.plan !== "vitalicia") {
+        card.innerHTML = `
+          <div class="estado-ic">🎂</div>
+          <div class="titulo">¡Feliz cumpleaños, ${primerNombre}!</div>
+          <p class="sub" style="margin-top:10px">Las cortesías de cumpleaños son exclusivas para miembros Premium y Vitalicia.</p>
+        `;
+        return;
+      }
+
+      // Misma lógica de "aliado con promo de cumpleaños que calza con sus
+      // categorías de interés" que ya usa avisar-cumpleanos.ts del lado del
+      // servidor -- duplicada a propósito, cada lugar es independiente.
+      const { data: aliados } = await supabaseClient
+        .from("aliados")
+        .select("id, nombre, whatsapp, categoria, promociones!inner(descripcion, es_cumpleanos, activa)")
+        .eq("activo", true)
+        .eq("promociones.es_cumpleanos", true)
+        .eq("promociones.activa", true);
+
+      const intereses = (Array.isArray(p.categorias_interes) ? p.categorias_interes : []).map(c => c.trim().toLowerCase());
+
+      const cortesias = [];
+      for (const a of aliados || []) {
+        const catsAliado = (a.categoria || "").split(",").map(c => c.trim().toLowerCase());
+        const coincide = intereses.length === 0 || catsAliado.some(c => intereses.includes(c));
+        if (!coincide) continue;
+        for (const promo of a.promociones || []) {
+          cortesias.push({ aliado: a.nombre, whatsapp: a.whatsapp, descripcion: promo.descripcion });
+        }
+      }
+
+      if (!cortesias.length) {
+        card.innerHTML = `
+          <div class="estado-ic">🎂</div>
+          <div class="titulo">¡Feliz cumpleaños, ${primerNombre}!</div>
+          <p class="sub" style="margin-top:10px">Hoy no hay una cortesía específica para tus intereses -- revisa el Directorio por si algo te interesa.</p>
+          <a href="Directorio.html" style="display:block;margin-top:16px;color:var(--verde);font-weight:600;text-decoration:none">Ver el Directorio →</a>
+        `;
+        return;
+      }
+
+      card.innerHTML = `
+        <div class="estado-ic">🎉</div>
+        <div class="titulo">¡Feliz cumpleaños, ${primerNombre}!</div>
+        <p class="sub" style="margin-top:10px">Toca cada aliado para reclamar tu cortesía por WhatsApp.</p>
+      `;
+
+      lista.innerHTML = cortesias.map(c => {
+        const waDigits = (c.whatsapp || "").replace(/\D/g, "");
+        const texto = encodeURIComponent(`Hola, ¿Cómo estás? Soy miembro de El Club de la Gente y hoy es mi cumpleaños -- quisiera saber cómo puedo reclamar la cortesía, muchas gracias por tu servicio.`);
+        const waUrl = waDigits ? `https://wa.me/57${waDigits}?text=${texto}` : null;
+        return `
+          <div class="cortesia-card">
+            <div class="cortesia-card__nombre">${c.aliado}</div>
+            <div class="cortesia-card__desc">🎁 ${c.descripcion}</div>
+            ${waUrl ? `<a class="cortesia-card__btn" href="${waUrl}" target="_blank" rel="noopener">Escribir por WhatsApp</a>` : ""}
+          </div>`;
+      }).join("");
+    })();
+  </script>
+</body>
+</html>

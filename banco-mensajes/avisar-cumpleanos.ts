@@ -53,24 +53,6 @@ const RASGOS_NUMEROLOGIA: Record<number, string> = {
   33: "encarna la compasión, el servicio y el amor incondicional hacia los demás.",
 };
 
-// El mensaje completo (saludo + beneficios + link) podía pasarse del límite
-// de caracteres que soporta un solo WhatsApp -- y como el link va al final
-// de todo, era justo lo que se cortaba. Acortarlo con TinyURL (gratis, sin
-// llave) baja tanto el peso del mensaje completo que ya no se corta, y de
-// paso el link se ve corto. Si el acortador falla, se manda el link largo
-// sin mensaje precargado (igual que el respaldo anterior) para no quedarse
-// sin link.
-async function acortarUrl(urlLarga: string): Promise<string> {
-  try {
-    const r = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(urlLarga)}`);
-    const corta = (await r.text()).trim();
-    if (r.ok && corta.startsWith("http")) return corta;
-  } catch (e) {
-    console.error("Error acortando URL:", e);
-  }
-  return "";
-}
-
 async function redactarMsgCumpleIA(primerNombre: string, rasgos: string, beneficios: string[], elegibleCortesias: boolean): Promise<string | null> {
   // Gratis/Básica no tienen cortesías de cumpleaños (eso es solo Premium/
   // Vitalicia) -- para esos el prompt no debe mencionar NINGÚN beneficio,
@@ -161,7 +143,7 @@ Deno.serve(async (_req: Request) => {
   // Aliados activos con al menos una promoción de cumpleaños activa
   const { data: aliados, error: errAliados } = await supabase
     .from("aliados")
-    .select("id, nombre, whatsapp, categoria, promociones!inner(descripcion, es_cumpleanos, activa)")
+    .select("id, nombre, categoria, promociones!inner(descripcion, es_cumpleanos, activa)")
     .eq("activo", true)
     .eq("promociones.es_cumpleanos", true)
     .eq("promociones.activa", true);
@@ -180,12 +162,14 @@ Deno.serve(async (_req: Request) => {
     // Gratis/Básica ni se les calcula (quedan sin beneficios ni enlaces).
     const elegibleCortesias = p.plan === "premium" || p.plan === "vitalicia";
 
-    // "beneficios" es solo texto (para que la IA redacte con eso de guía) --
-    // los links de WhatsApp van aparte en "enlaces" y se pegan tal cual al
-    // final del mensaje, sin pasar por la IA, para que el link nunca salga
-    // mal escrito o parafraseado.
+    // "beneficios" es solo texto (para que la IA redacte con eso de guía).
+    // Los links de WhatsApp de cada aliado YA NO van sueltos en el mensaje
+    // (una plantilla de WhatsApp en producción solo admite hasta 2 botones
+    // de link, y acá puede haber más de 2 cortesías el mismo día) -- en vez
+    // de eso, el mensaje lleva UN solo link fijo a MisCortesias.html, que
+    // calcula lo mismo en vivo y ahí sí muestra un botón de WhatsApp por
+    // cada aliado, sin límite (es una página normal, no una plantilla).
     const beneficios: string[] = [];
-    const enlaces: string[] = [];
     if (elegibleCortesias) {
       for (const a of aliados || []) {
         const catsAliado = (a.categoria || "").split(",").map((c: string) => c.trim().toLowerCase());
@@ -193,16 +177,10 @@ Deno.serve(async (_req: Request) => {
         if (!coincide) continue;
         for (const promo of a.promociones || []) {
           beneficios.push(`🎁 ${a.nombre}: ${promo.descripcion}`);
-          if (a.whatsapp) {
-            const waDigits = String(a.whatsapp).replace(/\D/g, "");
-            const texto = encodeURIComponent(`Hola, ¿Cómo estás? Soy miembro de El Club de la Gente y hoy es mi cumpleaños -- quisiera saber cómo puedo reclamar la cortesía, muchas gracias por tu servicio.`);
-            const urlLarga = `https://wa.me/57${waDigits}?text=${texto}`;
-            const urlCorta = await acortarUrl(urlLarga);
-            enlaces.push(`🎁 *${a.nombre}*: ${promo.descripcion}\n${urlCorta || `https://wa.me/57${waDigits}`}`);
-          }
         }
       }
     }
+    const linkCortesias = `https://elclubdelagente.com/MisCortesias.html?id=${p.id}`;
 
     const msgRespaldo = beneficios.length
       ? `¡Feliz cumpleaños, ${primerNombre}! 🎉🌿\n\nEl Club de la Gente te tiene estos beneficios especiales hoy:\n\n${beneficios.join("\n")}\n\n¡Que lo disfrutes!`
@@ -214,11 +192,10 @@ Deno.serve(async (_req: Request) => {
     const rasgos = RASGOS_NUMEROLOGIA[numerologia];
     const msgIA = rasgos ? await redactarMsgCumpleIA(primerNombre, rasgos, beneficios, elegibleCortesias) : null;
     const msgBase = msgIA || msgRespaldo;
-    // Si el mensaje de respaldo ya trae los beneficios en texto, no hace
-    // falta repetir la lista -- pero el bloque de links siempre se agrega,
-    // para que pueda escribirle al aliado con un toque.
-    const msg = enlaces.length
-      ? `${msgBase}\n\n📲 Reclámalo escribiendo directo:\n\n${enlaces.join("\n\n")}`
+    // El link a "Mis cortesías" solo tiene sentido si de verdad hay alguna --
+    // si no, el mensaje ya invita al Directorio (ver msgRespaldo/prompt de IA).
+    const msg = beneficios.length
+      ? `${msgBase}\n\n📲 Reclámalas aquí:\n${linkCortesias}`
       : msgBase;
 
     try {
