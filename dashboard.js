@@ -310,7 +310,7 @@ async function quitarFoto() {
 }
 
 /* ---------- Navegación de paneles ---------- */
-const TITULOS = { inicio: "Inicio", negocio: "Mi negocio", perfil: "Mi perfil", clubcard: "Mi ClubCard", tienda: "Tienda", educacion: "Educación", vacantes: "Bolsa de trabajo", "profesionales-club": "Profesionales", programas: "Programas", descuentos: "Mis descuentos", agente: "Mi Agente", config: "Configuración" };
+const TITULOS = { inicio: "Inicio", negocio: "Mi negocio", perfil: "Mi perfil", clubcard: "Mi ClubCard", tienda: "Tienda", educacion: "Educación", vacantes: "Bolsa de trabajo", "profesionales-club": "Profesionales", programas: "Programas", descuentos: "Mis descuentos", sellos: "Mis sellos", agente: "Mi Agente", config: "Configuración" };
 // Cambia el panel visible sin tocar el historial -- lo usa irPanel() (que sí
 // lo agrega) y el listener de popstate (para no crear una entrada nueva al
 // volver atrás, que crearía un loop).
@@ -603,6 +603,63 @@ function prepararCamposConocidos(perfil) {
   ajustar("seg-apellido", partes.slice(1).join(" "), tieneApellido);
   ajustar("seg-fecha", perfil?.fecha_nacimiento || "", tieneFecha);
   ajustar("seg-whatsapp", perfil?.whatsapp || "", tieneWhatsapp);
+}
+
+/* ---------- Sellos (tarjeta de fidelidad por aliado) ----------
+   Los sellos actuales no son un contador aparte que el navegador pueda
+   inflar: se derivan de cuántos "descuentos" tiene el miembro en ese aliado
+   DESPUÉS de su último canje (mismo criterio que usa Verificar.html del lado
+   del aliado). */
+async function cargarSellos() {
+  const wrap = document.getElementById("sellos-grid");
+  if (!wrap || !_miembroId) return;
+
+  const [{ data: descuentos }, { data: canjes }] = await Promise.all([
+    supabase.from("descuentos").select("aliado_id, created_at").eq("miembro_id", _miembroId).not("aliado_id", "is", null),
+    supabase.from("sellos_canjes").select("aliado_id, created_at").eq("miembro_id", _miembroId),
+  ]);
+
+  const idsAliados = [...new Set((descuentos || []).map(d => d.aliado_id))];
+  const sinSellos = `<p style="text-align:center;padding:40px 20px;color:var(--tinta-60)">Aún no tienes sellos — usa tus descuentos en aliados con tarjeta de sellos para empezar a sumar.</p>`;
+  if (!idsAliados.length) { wrap.innerHTML = sinSellos; return; }
+
+  const { data: aliados } = await supabase.from("aliados")
+    .select("id, nombre, imagen_url, sellos_activo, sellos_meta, sellos_premio_tipo, sellos_premio_desc")
+    .in("id", idsAliados).eq("sellos_activo", true);
+  if (!aliados?.length) { wrap.innerHTML = sinSellos; return; }
+
+  const ultimoCanjePorAliado = {};
+  (canjes || []).forEach(c => {
+    const actual = ultimoCanjePorAliado[c.aliado_id];
+    if (!actual || new Date(c.created_at) > new Date(actual)) ultimoCanjePorAliado[c.aliado_id] = c.created_at;
+  });
+
+  const tarjetas = aliados.map(a => {
+    const desde = ultimoCanjePorAliado[a.id];
+    const sellosActuales = (descuentos || []).filter(d => d.aliado_id === a.id && (!desde || new Date(d.created_at) > new Date(desde))).length;
+    return { ...a, sellosActuales };
+  }).filter(a => a.sellosActuales > 0);
+
+  if (!tarjetas.length) { wrap.innerHTML = sinSellos; return; }
+
+  wrap.innerHTML = tarjetas.map(a => {
+    const meta = a.sellos_meta || 10;
+    const completo = a.sellosActuales >= meta;
+    const premio = a.sellos_premio_desc || (a.sellos_premio_tipo === "gratis" ? "Gratis" : "Descuento");
+    return `
+    <a class="aliado-mini" href="Directorio.html?abrir=${a.id}">
+      ${a.imagen_url
+        ? `<img class="aliado-mini__ic" src="${esc(a.imagen_url)}" alt="" style="object-fit:cover">`
+        : `<span class="aliado-mini__ic">${ic("stamp")}</span>`}
+      <span>
+        <span class="aliado-mini__name">${esc(a.nombre)}</span><br>
+        <span class="aliado-mini__cat">${completo ? "¡Listo para canjear! 🎉" : `Premio: ${esc(premio)}`}</span>
+      </span>
+      <span class="aliado-mini__pct" style="${completo ? "color:#b45309" : ""}">${a.sellosActuales}/${meta}</span>
+    </a>`;
+  }).join("");
+
+  if (window.lucide) lucide.createIcons();
 }
 
 /* ---------- Descuentos reales ---------- */
@@ -3269,6 +3326,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (l.dataset.panel === 'vacantes') cargarVacantesMiembro();
     if (l.dataset.panel === 'soporte') cargarSoporte();
     if (l.dataset.panel === 'programas') cargarProgramas();
+    if (l.dataset.panel === 'sellos') cargarSellos();
   }));
 
   // Avatar del topbar: acceso directo a Configuración (foto, usuario, contraseña)

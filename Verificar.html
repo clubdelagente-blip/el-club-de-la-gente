@@ -160,6 +160,31 @@
       return `<div class="detalle"><span class="detalle__lbl">Descuento en ${aliadoInfo.nombre}</span><span class="detalle__val" style="color:var(--verde);font-weight:700">${aliadoInfo.descuento || "—"}</span></div>`;
     }
 
+    function sellosRow(aliadoInfo, sellosActuales) {
+      if (!aliadoInfo?.sellos_activo) return "";
+      const meta = aliadoInfo.sellos_meta || 10;
+      if (sellosActuales >= meta) {
+        const premio = aliadoInfo.sellos_premio_desc || (aliadoInfo.sellos_premio_tipo === "gratis" ? "Gratis" : "Descuento");
+        return `
+          <div style="background:#fef9e7;border-radius:10px;padding:14px;margin:10px 0;text-align:left">
+            <div style="font-weight:700;color:#b45309;margin-bottom:4px">🎉 ¡Completó su tarjeta de sellos!</div>
+            <div style="font-size:12px;color:#888;margin-bottom:10px">Premio: ${premio}</div>
+            <button id="btn-confirmar-canje" style="${btnStyle("#095544")}">Confirmar canje</button>
+          </div>`;
+      }
+      return `<div class="detalle"><span class="detalle__lbl">Sellos en ${aliadoInfo.nombre}</span><span class="detalle__val" style="color:var(--verde);font-weight:700">${sellosActuales}/${meta}</span></div>`;
+    }
+
+    function bindBtnConfirmarCanje(aliadoInfo) {
+      document.getElementById("btn-confirmar-canje")?.addEventListener("click", async (e) => {
+        const btn = e.target;
+        btn.disabled = true; btn.textContent = "Confirmando...";
+        const { error } = await supabaseClient.from("sellos_canjes").insert({ miembro_id: id, aliado_id: aliadoInfo.id });
+        if (error) { btn.disabled = false; btn.textContent = "Confirmar canje"; return; }
+        cargarYRenderizar();
+      });
+    }
+
     function selectorAliadoHtml(lista) {
       if (!lista || !lista.length) return "";
       const opciones = lista.map(a => `<option value="${a.id}">${a.nombre}</option>`).join("");
@@ -187,7 +212,7 @@
     const PLAN_NOMBRE = { gratis: "Gratis", basica: "Básico", premium: "Premium", vitalicia: "Vitalicia" };
     const LIMITE_DESCUENTOS = { gratis: 0, basica: 2, premium: Infinity, vitalicia: Infinity };
 
-    function renderOk(p, usos, limite, aliadoInfo, listaAliados) {
+    function renderOk(p, usos, limite, aliadoInfo, listaAliados, sellosActuales) {
       const rolLabel = { miembro: "Miembro", aliado: "Aliado comercial", profesional: "Profesional" }[p.rol] || "Miembro";
       const planNombre = PLAN_NOMBRE[p.plan] || "Básico";
       const planLabel = limite === Infinity ? `${planNombre} · Ilimitado` : `${planNombre} · ${usos}/${limite} usos este mes`;
@@ -201,6 +226,7 @@
         <div class="detalle"><span class="detalle__lbl">Estado</span><span class="badge badge--ok"><span class="dot"></span> Activo</span></div>
         <div class="detalle"><span class="detalle__lbl">Plan</span><span class="detalle__val">${planLabel}</span></div>
         ${discountRow(aliadoInfo)}
+        ${sellosRow(aliadoInfo, sellosActuales)}
         <div class="detalle"><span class="detalle__lbl">Verificado</span><span class="detalle__val">${new Date().toLocaleString("es-CO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span></div>
         <hr class="divider">
         <a href="${dirUrl}" style="${btnStyle("#095544")}">Ver aliados y descuentos &rarr;</a>
@@ -211,9 +237,10 @@
       bindSelectorAliado(() => cargarYRenderizar());
       bindBtnUber(p);
       bindBtnProfesional(p);
+      bindBtnConfirmarCanje(aliadoInfo);
     }
 
-    function renderLimite(p, limite, aliadoInfo, listaAliados) {
+    function renderLimite(p, limite, aliadoInfo, listaAliados, sellosActuales) {
       const planNombre = PLAN_NOMBRE[p.plan] || "Básico";
       const wa = (p.whatsapp||"").replace(/\D/g,"");
       const numero = wa.startsWith("57") ? wa : "57"+wa;
@@ -236,6 +263,7 @@
         <div class="detalle"><span class="detalle__lbl">Estado</span><span class="badge badge--lim"><span class="dot"></span> ${sinAcceso ? "No incluido" : `Límite ${limite}/${limite}`}</span></div>
         <div class="detalle"><span class="detalle__lbl">Descuentos usados</span><span class="detalle__val">${estadoDetalle}</span></div>
         ${discountRow(aliadoInfo)}
+        ${sellosRow(aliadoInfo, sellosActuales)}
         <hr class="divider">
         <p style="font-size:13px;color:#888;margin-bottom:12px;line-height:1.5">${parrafo}</p>
         <a href="Planes.html" style="${btnStyle("#095544")}">${sinAcceso ? "Ver membresías" : "Actualizar a Premium"} &rarr;</a>
@@ -247,6 +275,7 @@
       bindSelectorAliado(() => cargarYRenderizar());
       bindBtnUber(p);
       bindBtnProfesional(p);
+      bindBtnConfirmarCanje(aliadoInfo);
     }
 
     /* ---------- Descuento Uber (carro/moto/domicilio) ---------- */
@@ -527,8 +556,23 @@
     async function cargarAliadoInfo() {
       if (!aliadoId) return null;
       const { data } = await supabaseClient
-        .from("aliados").select("id, nombre, descuento").eq("id", aliadoId).maybeSingle();
+        .from("aliados").select("id, nombre, descuento, sellos_activo, sellos_meta, sellos_premio_tipo, sellos_premio_desc").eq("id", aliadoId).maybeSingle();
       return data || null;
+    }
+
+    // Sellos actuales = cuántos descuentos tiene este miembro en este aliado
+    // DESPUÉS de su último canje -- no hay un contador aparte que el
+    // navegador pueda inflar, se deriva de la tabla "descuentos" que ya existe.
+    async function cargarSellosActuales(miembroId, aliadoId) {
+      const { data: ultimoCanje } = await supabaseClient
+        .from("sellos_canjes").select("created_at")
+        .eq("miembro_id", miembroId).eq("aliado_id", aliadoId)
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      let q = supabaseClient.from("descuentos").select("id", { count: "exact", head: true })
+        .eq("miembro_id", miembroId).eq("aliado_id", aliadoId);
+      if (ultimoCanje?.created_at) q = q.gt("created_at", ultimoCanje.created_at);
+      const { count } = await q;
+      return count || 0;
     }
 
     async function cargarListaAliados() {
@@ -566,10 +610,12 @@
           usos = count || 0;
         }
 
+        const sellosActuales = aliadoInfo?.sellos_activo ? await cargarSellosActuales(id, aliadoInfo.id) : 0;
+
         if (limite !== Infinity && usos >= limite) {
-          renderLimite(data, limite, aliadoInfo, listaAliados);
+          renderLimite(data, limite, aliadoInfo, listaAliados, sellosActuales);
         } else {
-          renderOk(data, usos, limite, aliadoInfo, listaAliados);
+          renderOk(data, usos, limite, aliadoInfo, listaAliados, sellosActuales);
         }
       } catch (_) {
         renderNo("No se pudo verificar por un problema de conexión. Intenta de nuevo.");
