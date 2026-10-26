@@ -860,7 +860,7 @@ function mostrarPasosInstalarApp() {
   if (msg) {
     msg.innerHTML = esIOS
       ? `Toca los tres puntos <b>(•••)</b> abajo en Safari, elige el ícono de <b>Compartir</b>, luego <b>"Ver más"</b>, después <b>"Agregar al inicio"</b> y por último toca <b>"Agregar"</b> para confirmar.`
-      : `Toca el menú <b>⋮</b> de Chrome (arriba a la derecha) y elige <b>"Instalar app"</b> o <b>"Agregar a pantalla de inicio"</b>.`;
+      : `Toca el menú <b>⋮</b> de Chrome (arriba a la derecha), elige <b>"Instalar app"</b> o <b>"Agregar a pantalla de inicio"</b>, luego toca <b>"Instalar"</b> y <b>"Crear acceso"</b> para confirmar.`;
   }
   el.hidden = false;
 }
