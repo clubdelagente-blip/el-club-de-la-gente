@@ -166,7 +166,7 @@
 .qa-grid .sb-link i, .qa-grid .sb-link svg,
 .qa-btn i, .qa-btn svg { width: 20px !important; height: 20px !important; }
 .qa-ic {
-  width: 52px; height: 52px; border-radius: 50%; background: var(--cc-soft, var(--verde-soft)); color: var(--cc, var(--verde));
+  width: 52px; height: 52px; border-radius: 50%; background: var(--negro); color: var(--cc, var(--verde-claro));
   display: grid; place-items: center; flex: none; box-shadow: 0 10px 20px -12px rgba(2,27,26,.25); transition: transform .22s;
 }
 .qa-grid .sb-link:hover .qa-ic, .qa-btn:hover .qa-ic { transform: scale(1.08); }

@@ -245,7 +245,12 @@
 .ccv2-renueva { font-size: clamp(11px, 2.8vw, 13px); color: rgba(244,241,234,.78); }
 .ccv2-renueva span { font-weight: 600; color: #F4F1EA; }
 
-.ccv2-back__row { display: flex; align-items: center; justify-content: center; gap: 7%; width: 100%; }
+/* Sin width:100% -- con eso el QR (angosto) y el bloque de código (más
+   ancho) quedaban centrados como PAREJA, pero el QR en sí se veía corrido
+   a la izquierda, sobre todo en pantallas anchas con mucho espacio libre.
+   Que la fila se ajuste a su contenido y la centre el padre (.ccv2-back__in,
+   que ya tiene align-items:center) deja todo más compacto y parejo. */
+.ccv2-back__row { display: flex; align-items: center; justify-content: center; gap: 7%; width: fit-content; max-width: 100%; }
 .ccv2-codigo-verif { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .ccv2-codigo-verif__lbl { font-size: clamp(7px, 1.7vw, 9px); color: rgba(244,241,234,.6); text-transform: uppercase; letter-spacing: .06em; line-height: 1.3; }
 .ccv2-codigo-verif__row { display: flex; align-items: center; gap: 6px; }
