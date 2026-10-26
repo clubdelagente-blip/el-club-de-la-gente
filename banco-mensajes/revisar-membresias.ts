@@ -15,6 +15,76 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY")!;
+
+function calcularNumerologia(fechaNacimiento: string): number {
+  const digits = fechaNacimiento.replace(/\D/g, "");
+  let suma = digits.split("").reduce((acc, d) => acc + parseInt(d), 0);
+  while (suma > 9 && suma !== 11 && suma !== 22 && suma !== 33) {
+    suma = suma.toString().split("").reduce((acc, d) => acc + parseInt(d), 0);
+  }
+  return suma;
+}
+
+// Mismo resumen de rasgos que avisar-cumpleanos.ts -- duplicado a propósito
+// (cada función de aviso es independiente, no comparten import).
+const RASGOS_NUMEROLOGIA: Record<number, string> = {
+  1: "independiente, orientada a resultados y acción. Valora el reconocimiento directo, sin rodeos.",
+  2: "sensible, empática y valora profundamente sentirse escuchada y comprendida.",
+  3: "creativa, sociable y expresiva. Le encanta la energía positiva y sentir que pertenece a algo especial.",
+  4: "práctica, organizada y confiable. Valora la exactitud y que las cosas cumplan lo que prometen.",
+  5: "libre, aventurera y espontánea. Le gustan las novedades, la variedad y sentir que tiene opciones.",
+  6: "protectora, responsable y orientada a su familia y comunidad.",
+  7: "analítica, reflexiva e independiente intelectualmente. Valora la transparencia y la profundidad.",
+  8: "ambiciosa, orientada al éxito y valora el tiempo y los resultados concretos.",
+  9: "humanitaria, compasiva y motivada por un propósito mayor que el suyo propio.",
+  11: "altamente intuitiva, sensible e inspiradora. Se conecta con la autenticidad y el significado profundo.",
+  22: "visionaria, constructora y pragmática a la vez. Piensa en grande pero actúa con precisión.",
+  33: "encarna la compasión, el servicio y el amor incondicional hacia los demás.",
+};
+
+// Redacta solo el cuerpo del mensaje -- SIN el link de renovación, que se
+// pega aparte y tal cual después (mismo criterio que el link de WhatsApp de
+// avisar-cumpleanos.ts: nunca confiarle a la IA un link/URL funcional, podría
+// parafrasearlo o escribirlo mal).
+async function redactarMsgRenovacionIA(primerNombre: string, rasgos: string, planLabel: string, fraseProgramas: string): Promise<string | null> {
+  const systemPrompt = `Eres parte del equipo de El Club de la Gente (Fusagasugá, Colombia) escribiendo UN mensaje de WhatsApp para recordarle a un miembro que su membresía ${planLabel} vence en 3 días y que debe renovarla.
+
+Rasgos de personalidad de esta persona (úsalos solo como guía de TONO, nunca los menciones explícitamente ni expliques que vienen de un "perfil" o "número"): es ${rasgos}
+
+Contexto real para mencionar (no inventes otros datos):
+- Faltan 3 días para que venza su membresía ${planLabel}.
+- Gracias a membresías como la suya, el Club sostiene ${fraseProgramas} que llevan apoyo a quienes lo necesitan.
+- Al renovar, sigue disfrutando sus descuentos y beneficios sin interrupción.
+
+Instrucciones:
+- Máximo 5 líneas, cálido y natural, nunca genérico ni de plantilla.
+- Usa el nombre "${primerNombre}".
+- NO incluyas ningún link, URL ni firma al final -- eso se agrega aparte, después de tu mensaje.
+- Un par de emojis está bien, sin exagerar.
+- Responde ÚNICAMENTE con el texto final del mensaje, sin comillas ni explicaciones.`;
+
+  try {
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${GROQ_API_KEY}` },
+      body: JSON.stringify({
+        model: "openai/gpt-oss-120b",
+        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: "Escribe el mensaje." }],
+        // 700, no 300 -- gpt-oss-120b gasta parte del presupuesto "pensando"
+        // antes de escribir la respuesta final (ver avisar-cumpleanos.ts).
+        max_tokens: 700,
+        temperature: 0.8,
+      }),
+    });
+    const data = await groqRes.json();
+    const texto = data?.choices?.[0]?.message?.content?.trim();
+    return texto || null;
+  } catch (e) {
+    console.error("Error generando mensaje de renovación con IA:", e);
+    return null;
+  }
+}
 
 Deno.serve(async (_req: Request) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
@@ -62,7 +132,7 @@ Deno.serve(async (_req: Request) => {
   // 2) Recordatorio de WhatsApp a quien vence en 3 días
   const { data: porVencerRaw, error: errPorVencer } = await supabase
     .from("perfiles")
-    .select("id, nombre, whatsapp, plan, vitalicia_pendiente")
+    .select("id, nombre, whatsapp, plan, vitalicia_pendiente, fecha_nacimiento")
     .not("plan", "in", "(gratis,vitalicia,sin_plan)")
     .eq("fecha_vencimiento", fecha3dias);
 
@@ -123,7 +193,15 @@ Deno.serve(async (_req: Request) => {
     // ese dispositivo (checkout.js lo toma como miembroId directamente,
     // mismo nivel de confianza que ya usa Bienvenida.html?id=).
     const linkRenovar = `https://elclubdelagente.com/Planes.html?renovar=${p.plan}&id=${p.id}`;
-    const msg = `¡Hola, *${primerNombre}*! 💙🌿\n\n¡Faltan solo 3 días para que venza tu membresía de El Club de la Gente!\n\nQueremos recordarte que ser parte de este Club va mucho más allá de ahorrar. Gracias a personas como tú, hoy seguimos impulsando *${fraseProgramas} que buscan llevar apoyo, oportunidades y esperanza a quienes más lo necesitan.* ❤️\n\nAl renovar tu membresía, sigues disfrutando de tus descuentos y beneficios, y continúas siendo parte de una comunidad que cree que juntos podemos hacer algo bueno por los demás. 🤝\n\n💙 *Renueva aquí y sigamos haciendo la diferencia:*\n${linkRenovar}\n\n¡Gracias por creer en este propósito y ayudarnos a hacerlo posible! 🧡\n\n*El Club de la Gente*`;
+    const planLabel = { basica: "Básica", premium: "Premium" }[p.plan] || p.plan;
+    const msgRespaldo = `¡Hola, *${primerNombre}*! 💙🌿\n\n¡Faltan solo 3 días para que venza tu membresía de El Club de la Gente!\n\nQueremos recordarte que ser parte de este Club va mucho más allá de ahorrar. Gracias a personas como tú, hoy seguimos impulsando *${fraseProgramas} que buscan llevar apoyo, oportunidades y esperanza a quienes más lo necesitan.* ❤️\n\nAl renovar tu membresía, sigues disfrutando de tus descuentos y beneficios, y continúas siendo parte de una comunidad que cree que juntos podemos hacer algo bueno por los demás. 🤝\n\n💙 *Renueva aquí y sigamos haciendo la diferencia:*\n${linkRenovar}\n\n¡Gracias por creer en este propósito y ayudarnos a hacerlo posible! 🧡\n\n*El Club de la Gente*`;
+
+    const numerologia = p.fecha_nacimiento ? calcularNumerologia(p.fecha_nacimiento) : 0;
+    const rasgos = RASGOS_NUMEROLOGIA[numerologia];
+    const msgIA = rasgos ? await redactarMsgRenovacionIA(primerNombre, rasgos, planLabel, fraseProgramas) : null;
+    const msg = msgIA
+      ? `${msgIA}\n\n💙 *Renueva aquí y sigamos haciendo la diferencia:*\n${linkRenovar}\n\n*El Club de la Gente*`
+      : msgRespaldo;
     try {
       const r = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
         method: "POST",
