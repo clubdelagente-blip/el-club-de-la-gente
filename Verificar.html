@@ -175,6 +175,19 @@
       return `<div class="detalle"><span class="detalle__lbl">Sellos en ${aliadoInfo.nombre}</span><span class="detalle__val" style="color:var(--verde);font-weight:700">${sellosActuales}/${meta}</span></div>`;
     }
 
+    // Misma lógica de "tiene cortesía de cumpleaños en este aliado" que ya
+    // usan avisar-cumpleanos.ts y MisCortesias.html -- acá se muestra para
+    // que el aliado verifique identidad + cumpleaños en un solo paso (antes
+    // el miembro solo se lo decía por WhatsApp, sin ningún control real).
+    function cumpleRow(aliadoInfo) {
+      if (!aliadoInfo?.cortesiaCumple) return "";
+      return `
+        <div style="background:#fef9e7;border-radius:10px;padding:14px;margin:10px 0;text-align:left">
+          <div style="font-weight:700;color:#b45309;margin-bottom:4px">🎂 ¡Hoy es su cumpleaños!</div>
+          <div style="font-size:12px;color:#888">Cortesía: ${aliadoInfo.cortesiaCumple}</div>
+        </div>`;
+    }
+
     function bindBtnConfirmarCanje(aliadoInfo) {
       document.getElementById("btn-confirmar-canje")?.addEventListener("click", async (e) => {
         const btn = e.target;
@@ -226,6 +239,7 @@
         <div class="detalle"><span class="detalle__lbl">Estado</span><span class="badge badge--ok"><span class="dot"></span> Activo</span></div>
         <div class="detalle"><span class="detalle__lbl">Plan</span><span class="detalle__val">${planLabel}</span></div>
         ${discountRow(aliadoInfo)}
+        ${cumpleRow(aliadoInfo)}
         ${sellosRow(aliadoInfo, sellosActuales)}
         <div class="detalle"><span class="detalle__lbl">Verificado</span><span class="detalle__val">${new Date().toLocaleString("es-CO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span></div>
         <hr class="divider">
@@ -263,6 +277,7 @@
         <div class="detalle"><span class="detalle__lbl">Estado</span><span class="badge badge--lim"><span class="dot"></span> ${sinAcceso ? "No incluido" : `Límite ${limite}/${limite}`}</span></div>
         <div class="detalle"><span class="detalle__lbl">Descuentos usados</span><span class="detalle__val">${estadoDetalle}</span></div>
         ${discountRow(aliadoInfo)}
+        ${cumpleRow(aliadoInfo)}
         ${sellosRow(aliadoInfo, sellosActuales)}
         <hr class="divider">
         <p style="font-size:13px;color:#888;margin-bottom:12px;line-height:1.5">${parrafo}</p>
@@ -556,8 +571,28 @@
     async function cargarAliadoInfo() {
       if (!aliadoId) return null;
       const { data } = await supabaseClient
-        .from("aliados").select("id, nombre, descuento, sellos_activo, sellos_meta, sellos_premio_tipo, sellos_premio_desc").eq("id", aliadoId).maybeSingle();
+        .from("aliados")
+        .select("id, nombre, categoria, descuento, sellos_activo, sellos_meta, sellos_premio_tipo, sellos_premio_desc, promociones(descripcion, es_cumpleanos, activa)")
+        .eq("id", aliadoId).maybeSingle();
       return data || null;
+    }
+
+    // Misma condición que avisar-cumpleanos.ts/MisCortesias.html: Premium o
+    // Vitalicia, cumpleaños hoy (hora Colombia) y categoría del aliado dentro
+    // de sus intereses (o sin intereses marcados = aplica a cualquiera).
+    function calcularCortesiaCumple(miembro, aliadoInfo) {
+      if (!aliadoInfo) return null;
+      if (miembro.plan !== "premium" && miembro.plan !== "vitalicia") return null;
+      if (!miembro.fecha_nacimiento) return null;
+      const hoyCo = new Date(Date.now() - 5 * 60 * 60 * 1000);
+      const mesDia = `${String(hoyCo.getUTCMonth() + 1).padStart(2, "0")}-${String(hoyCo.getUTCDate()).padStart(2, "0")}`;
+      if (miembro.fecha_nacimiento.slice(5, 10) !== mesDia) return null;
+      const intereses = (Array.isArray(miembro.categorias_interes) ? miembro.categorias_interes : []).map(c => c.trim().toLowerCase());
+      const catsAliado = (aliadoInfo.categoria || "").split(",").map(c => c.trim().toLowerCase());
+      const coincide = intereses.length === 0 || catsAliado.some(c => intereses.includes(c));
+      if (!coincide) return null;
+      const promo = (aliadoInfo.promociones || []).find(p => p.es_cumpleanos && p.activa);
+      return promo?.descripcion || null;
     }
 
     // Sellos actuales = cuántos descuentos tiene este miembro en este aliado
@@ -584,7 +619,7 @@
     async function cargarYRenderizar() {
       try {
         const [{ data, error }, aliadoInfo, listaAliados] = await conTimeout(Promise.all([
-          supabaseClient.from("perfiles").select("nombre, rol, whatsapp, plan").eq("id", id).single(),
+          supabaseClient.from("perfiles").select("nombre, rol, whatsapp, plan, fecha_nacimiento, categorias_interes").eq("id", id).single(),
           cargarAliadoInfo(),
           aliadoId ? Promise.resolve([]) : cargarListaAliados(),
         ]), 12000);
@@ -593,6 +628,8 @@
           renderNo("Miembro no encontrado. Verifica que el QR sea válido.");
           return;
         }
+
+        if (aliadoInfo) aliadoInfo.cortesiaCumple = calcularCortesiaCumple(data, aliadoInfo);
 
         const limite = LIMITE_DESCUENTOS[data.plan] ?? 2;
         let usos = 0;
