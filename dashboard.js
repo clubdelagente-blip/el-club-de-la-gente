@@ -3570,6 +3570,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
       mostrarSegInterstitial("seg-final-gracias");
+      console.log("[debug] _segEsPrimeraVez =", _segEsPrimeraVez);
       if (_segEsPrimeraVez) mostrarPasosInstalarApp();
       if (window.lucide) lucide.createIcons();
     } else {
