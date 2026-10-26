@@ -229,7 +229,12 @@
 .ccv2-footer { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; }
 .ccv2-codigo { text-align: right; flex-shrink: 0; }
 .ccv2-codigo__lbl { display: block; font-size: clamp(8px, 2vw, 10px); color: rgba(244,241,234,.6); }
-.ccv2-codigo__val { display: block; font-size: clamp(10px, 2.6vw, 13px); font-weight: 600; letter-spacing: .04em; }
+/* mix-blend-mode:screen (en .ccv2-front__in) funde el texto claro con el
+   fondo -- en Gratis el fondo es bien oscuro y no se nota, pero en Básica
+   (gris claro) y Premium (dorado) el código prácticamente desaparecía.
+   mix-blend-mode:normal lo saca de esa mezcla para que siempre se vea con
+   su color real, sin importar el fondo. */
+.ccv2-codigo__val { display: block; font-size: clamp(10px, 2.6vw, 13px); font-weight: 600; letter-spacing: .04em; color: #F4F1EA; mix-blend-mode: normal; }
 .ccv2-name { font-size: clamp(9px, 2.4vw, 12px); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; flex: 1; min-width: 0; }
 
 /* REVERSO */
