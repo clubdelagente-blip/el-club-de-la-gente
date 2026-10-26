@@ -208,4 +208,36 @@ body {
   .dir-card__cat { font-size: 8px; margin-top: 3px; }
   .dir-card__badge { font-size: 10px; padding: 6px 11px 6px 9px; margin-top: 10px; gap: 4px; }
   .dir-card__badge svg { width: 11px; height: 11px; }
+
+  /* Deja aire abajo para que la barra fija no tape las últimas tarjetas */
+  body { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); }
+}
+
+/* ---------- Barra inferior (solo móvil) -- misma de Perfil.html/dashboard.css,
+   duplicada acá porque esta página no carga esa hoja. ---------- */
+.sb-link {
+  display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 7px;
+  font-size: 13.5px; font-weight: 500; color: var(--tinta-60); cursor: pointer;
+  transition: background .2s, color .2s; border: none; background: none; width: 100%; text-align: left; font-family: var(--cuerpo);
+}
+.sb-link i, .sb-link svg { width: 18px !important; height: 18px !important; flex: none; }
+.sb-link:hover { background: var(--crema-2); color: var(--tinta); }
+.sb-link.is-active { background: var(--negro); color: var(--crema); }
+
+.bottom-tabbar {
+  display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+  background: var(--crema); border-top: 1px solid var(--linea);
+  padding: 6px 6px calc(env(safe-area-inset-bottom, 0px) + 6px);
+  align-items: stretch; justify-content: space-between;
+  overflow: hidden; width: 100%; box-sizing: border-box;
+}
+.bottom-tabbar .sb-link {
+  flex: 1; flex-direction: column; gap: 3px; padding: 6px 4px 4px; border-radius: 10px;
+  font-size: 10.5px; font-weight: 700; text-align: center;
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bottom-tabbar .sb-link.is-active { background: none; color: var(--verde); }
+.bottom-tabbar .sb-link:hover { background: var(--crema-2); }
+@media (max-width: 860px) {
+  .bottom-tabbar { display: flex; }
 }

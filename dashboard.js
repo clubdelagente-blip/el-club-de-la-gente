@@ -3093,8 +3093,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // La primera pantalla reemplaza el historial (no lo agrega) para que el
   // gesto de "atrás" no deje a alguien atrapado en un "Inicio" fantasma
   // antes de salir de la página.
-  history.replaceState({ panel: "inicio" }, "", location.href);
-  mostrarPanel("inicio");
+  // Permite enlazar directo a un panel (ej. la barra inferior de Directorio.html
+  // apuntando a "Perfil.html?panel=soporte") -- si no viene o no es válido, cae
+  // al de siempre ("inicio").
+  const panelUrl = new URLSearchParams(location.search).get("panel");
+  const panelInicial = panelUrl && TITULOS[panelUrl] ? panelUrl : "inicio";
+  history.replaceState({ panel: panelInicial }, "", location.href);
+  mostrarPanel(panelInicial);
   // getSession() puede devolver null al reabrir la app (PWA en segundo plano)
   // -- antes eso mandaba a Login.html de una, pidiendo el código de nuevo
   // aunque la sesión siguiera siendo válida. Se reintenta varias veces (hasta
