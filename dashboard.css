@@ -197,6 +197,15 @@
 .aliado-mini__cat { font-size: 11px; color: var(--tinta-45); }
 .aliado-mini__pct { margin-left: auto; font-family: var(--display); font-size: 26px; font-weight: 600; color: var(--verde); }
 
+/* Tarjetas de "Mis sellos": fondo oscuro para que se diferencien del resto
+   de tarjetas claras del dashboard. */
+#sellos-grid .aliado-mini { background: var(--negro); border-color: var(--negro); }
+#sellos-grid .aliado-mini:hover { background: #0a2a28; border-color: #0a2a28; }
+#sellos-grid .aliado-mini__ic { background: rgba(241,247,246,.12); color: var(--crema-en-negro); }
+#sellos-grid .aliado-mini__name { color: var(--crema-en-negro); }
+#sellos-grid .aliado-mini__cat { color: rgba(241,247,246,.6); }
+#sellos-grid .aliado-mini__pct { color: var(--verde-claro); }
+
 /* actividad reciente */
 .actividad { list-style: none; display: flex; flex-direction: column; }
 .act-item { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--linea); }
