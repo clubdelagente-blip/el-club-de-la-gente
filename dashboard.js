@@ -3575,8 +3575,11 @@ document.addEventListener("DOMContentLoaded", () => {
       // cuando esta vez NO toca mostrarla (no basta con no llamar a
       // mostrarPasosInstalarApp(), eso solo la muestra, nunca la oculta).
       const elInstalar = document.getElementById("seg-final-instalar");
+      console.log("[debug] _segEsPrimeraVez =", _segEsPrimeraVez, "| elInstalar encontrado =", !!elInstalar);
       if (elInstalar) elInstalar.hidden = true;
+      console.log("[debug] elInstalar.hidden tras ocultarlo =", elInstalar?.hidden);
       if (_segEsPrimeraVez) mostrarPasosInstalarApp();
+      console.log("[debug] elInstalar.hidden al final =", elInstalar?.hidden);
       if (window.lucide) lucide.createIcons();
     } else {
       segMostrar(segSiguienteVisible(segBlock, 1));
