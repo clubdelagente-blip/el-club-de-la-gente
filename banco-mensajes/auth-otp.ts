@@ -13,6 +13,9 @@ const TWILIO_ACCOUNT_SID  = Deno.env.get("TWILIO_ACCOUNT_SID")!;
 const TWILIO_AUTH_TOKEN   = Deno.env.get("TWILIO_AUTH_TOKEN")!;
 const TWILIO_FROM         = Deno.env.get("TWILIO_WHATSAPP_FROM")!;
 const OTP_SALT            = Deno.env.get("OTP_SALT") ?? "ecdlg-otp-salt-2026";
+// Plantilla "codigo_acceso" (WhatsApp Authentication), ya aprobada por Meta --
+// reemplaza el Body de texto libre, que ya no sirve fuera del Sandbox.
+const CONTENT_SID_CODIGO_ACCESO = "HX049ba09e8379963ad6c1967d7b4adf21";
 
 const cors = {
   "Access-Control-Allow-Origin":  "*",
@@ -88,14 +91,15 @@ Deno.serve(async (req: Request) => {
       console.error("[send] Error guardando OTP:", insertErr);
       return json({ error: "Error interno. Intenta de nuevo." }, 500);
     }
-    // Enviar por WhatsApp via Twilio
-    const to   = digits.startsWith("57") ? `+${digits}` : `+57${digits}`;
-    const body = `Tu código de acceso al *Club de la Gente* es:\n\n*${otpCode}*\n\nVálido por 10 minutos. No lo compartas con nadie.`;
+    // Enviar por WhatsApp via Twilio -- plantilla Authentication aprobada en
+    // vez de Body de texto libre (fuera del Sandbox, Meta exige plantilla).
+    const to = digits.startsWith("57") ? `+${digits}` : `+57${digits}`;
 
     const formData = new URLSearchParams({
       From: `whatsapp:${TWILIO_FROM}`,
       To:   `whatsapp:${to}`,
-      Body: body,
+      ContentSid: CONTENT_SID_CODIGO_ACCESO,
+      ContentVariables: JSON.stringify({ "1": otpCode }),
     });
 
     const twilioRes = await fetch(
