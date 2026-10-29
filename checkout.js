@@ -6,6 +6,21 @@ import { comprimirImagen } from './imagen.js';
 
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
+const ic = (n) => `<i data-lucide="${n}"></i>`;
+
+// Mismo toast que ya usa directorio.js -- antes los errores de pago (el
+// momento más sensible de todo el flujo) salían con un alert() nativo del
+// navegador, frío y a veces mostrando el mensaje técnico crudo de Supabase.
+let toastT;
+function toast(msg, check = false) {
+  const t = $("#toast");
+  if (!t) return;
+  t.innerHTML = (check ? `<span class="chk">${ic("check")}</span>` : "") + `<span>${msg}</span>`;
+  if (window.lucide) lucide.createIcons();
+  t.classList.add("is-show");
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove("is-show"), 4200);
+}
 
 const PLANES_SIN_PAGO = ["gratis", "vitalicia"]; // se activan solos, no piden comprobante de pago
 const fmt = new Intl.NumberFormat("es-CO");
@@ -95,7 +110,7 @@ async function abrirPagoManual(plan, card, miembroIdForzado = null) {
   const p = PLANES[plan];
   const precio = Number(p?.precio);
   if (!p || !Number.isFinite(precio) || precio <= 0) {
-    alert("Este plan no tiene un precio configurado correctamente. Escríbenos por WhatsApp para activarlo manualmente.");
+    toast("Este plan no tiene un precio configurado correctamente. Escríbenos por WhatsApp para activarlo manualmente.");
     return;
   }
 
@@ -115,7 +130,7 @@ async function abrirPagoManual(plan, card, miembroIdForzado = null) {
   }
   if (!miembroId) {
     estadoEl.textContent = textoOriginal;
-    alert("Debes iniciar sesión antes de pagar. Vuelve a intentarlo desde tu perfil.");
+    toast("Debes iniciar sesión antes de pagar. Vuelve a intentarlo desde tu perfil.");
     return;
   }
 
@@ -163,14 +178,14 @@ function wirePago() {
   $("#pago-confirmar")?.addEventListener("click", async () => {
     const btn = $("#pago-confirmar");
     const file = $("#pago-comprobante")?.files?.[0];
-    if (!file) { alert("Sube el comprobante de pago"); return; }
+    if (!file) { toast("Sube el comprobante de pago"); return; }
     btn.disabled = true; btn.textContent = "Enviando…";
 
     const fileComprimido = await comprimirImagen(file);
     const ext = fileComprimido.name.split(".").pop();
     const path = `comprobante-membresia-${estadoPago.miembroId}-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("contenido").upload(path, fileComprimido, { upsert: true });
-    if (upErr) { alert("Error subiendo el comprobante"); btn.disabled = false; btn.textContent = "Confirmar pago"; return; }
+    if (upErr) { toast("No se pudo subir el comprobante. Revisa tu conexión e intenta de nuevo."); btn.disabled = false; btn.textContent = "Confirmar pago"; return; }
     const comprobante_url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
 
     // Id generado en el navegador (no depende de que el SELECT post-insert
@@ -184,7 +199,14 @@ function wirePago() {
       monto: estadoPago.precio,
       comprobante_url,
     });
-    if (error) { alert("Error: " + error.message); btn.disabled = false; btn.textContent = "Confirmar pago"; return; }
+    if (error) {
+      // El mensaje técnico de Supabase queda en consola para depurar, pero no
+      // se le muestra crudo al miembro en el momento más sensible del flujo.
+      console.error("Error guardando solicitud de membresía:", error);
+      toast("No se pudo confirmar el pago. Intenta de nuevo o escríbenos por WhatsApp.");
+      btn.disabled = false; btn.textContent = "Confirmar pago";
+      return;
+    }
 
     localStorage.setItem("ecdlg_plan", estadoPago.plan);
     btn.disabled = false; btn.textContent = "Confirmar pago";
