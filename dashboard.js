@@ -3729,6 +3729,25 @@ async function cargarPanelProfesional() {
 
   if (!prof) return;
 
+  // Mientras no esté activo (recién registrado, pendiente de que el admin lo
+  // apruebe/active), no debería poder editar su perfil público -- antes podía
+  // entrar y cambiar área/descripción/foto desde el minuto uno, sin que
+  // nadie lo hubiera revisado todavía.
+  const panelProf = document.querySelector("section[data-panel='profesional']");
+  let avisoPendiente = panelProf?.querySelector("#prof-pendiente-aviso");
+  if (!prof.activo && !prof.es_conductor) {
+    if (panelProf && !avisoPendiente) {
+      avisoPendiente = document.createElement("div");
+      avisoPendiente.id = "prof-pendiente-aviso";
+      avisoPendiente.className = "card";
+      avisoPendiente.style.cssText = "margin-bottom:20px;background:#fef9e7;border-color:#fde68a";
+      avisoPendiente.innerHTML = `<p style="font-size:13px;color:#92400e;line-height:1.5;margin:0">⏳ Tu perfil todavía está pendiente de aprobación. En cuanto el Club lo active vas a poder editarlo -- mientras tanto se ve tal como lo dejaste en tu postulación.</p>`;
+      panelProf.querySelector(".dash-greet")?.insertAdjacentElement("afterend", avisoPendiente);
+    }
+  } else if (avisoPendiente) {
+    avisoPendiente.remove();
+  }
+
   // Conductores Uber (moto/carro): no tiene sentido "Mi consultorio" (foto,
   // descripción, servicios fijos) — en vez de eso, ven su historial de viajes.
   // Se usa el booleano es_conductor (marcado desde Admin) en vez de comparar
@@ -3763,10 +3782,16 @@ async function cargarPanelProfesional() {
   setVal("prof-edit-desc", prof.descripcion);
   setVal("prof-edit-wa",   prof.whatsapp);
 
+  // Bloqueado hasta que el admin lo active -- ver aviso más arriba.
+  ["prof-edit-area", "prof-edit-desc", "prof-edit-wa", "prof-edit-img", "prof-edit-save"].forEach(id => {
+    const e = $("#" + id); if (e) e.disabled = !prof.activo;
+  });
+
   if (window.lucide) lucide.createIcons();
 
   // Guardar cambios
   $("#prof-edit-save")?.addEventListener("click", async () => {
+    if (!prof.activo) return;
     const btn = $("#prof-edit-save");
     btn.disabled = true;
 
@@ -3847,7 +3872,9 @@ async function cargarPanelProfesional() {
     if (form) { form.style.display = "none"; form.dataset.editId = ""; }
   }
 
-  $("#ms-agregar")?.addEventListener("click", () => abrirFormServicio());
+  const btnMsAgregar = $("#ms-agregar");
+  if (btnMsAgregar) btnMsAgregar.disabled = !prof.activo;
+  btnMsAgregar?.addEventListener("click", () => abrirFormServicio());
   $("#ms-cancelar")?.addEventListener("click", cerrarFormServicio);
   $("#ms-guardar")?.addEventListener("click", async () => {
     const nombre = $("#ms-nombre")?.value.trim();
