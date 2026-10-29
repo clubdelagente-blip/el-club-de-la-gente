@@ -86,7 +86,18 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Esta solicitud no existe o ya fue procesada" }), { status: 409, headers: corsHeaders });
   }
 
-  const fechaVencimiento = new Date();
+  // Si renueva ANTES de vencer, los días que le quedaban se suman en vez de
+  // perderse -- el nuevo mes se cuenta desde su fecha de vencimiento actual
+  // (si todavía no pasó), no desde hoy.
+  const { data: perfilActual } = await supabase
+    .from("perfiles")
+    .select("fecha_vencimiento")
+    .eq("id", solicitud.miembro_id)
+    .maybeSingle();
+  const hoy = new Date();
+  const vencimientoActual = perfilActual?.fecha_vencimiento ? new Date(perfilActual.fecha_vencimiento + "T00:00:00") : null;
+  const fechaBase = vencimientoActual && vencimientoActual > hoy ? vencimientoActual : hoy;
+  const fechaVencimiento = new Date(fechaBase);
   fechaVencimiento.setMonth(fechaVencimiento.getMonth() + 1);
 
   const { data: updated, error: updateErr } = await supabase
