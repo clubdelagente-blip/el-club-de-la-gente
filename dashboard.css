@@ -132,6 +132,9 @@
 .hero-ahorro__lbl { font-size: 12.5px; font-weight: 600; color: rgba(241,247,246,.6); letter-spacing: .04em; }
 .hero-ahorro__num { font-family: var(--display); font-size: clamp(38px, 9vw, 50px); font-weight: 600; line-height: 1; margin-top: 8px; }
 .hero-ahorro__trend { display: inline-flex; align-items: center; gap: 6px; background: var(--verde-soft); color: var(--verde-claro); font-size: 12px; font-weight: 700; padding: 6px 13px; border-radius: 999px; margin-top: 14px; }
+/* Mismo caso que .wa-card[hidden] más arriba: display:inline-flex le gana al
+   estilo por defecto del atributo "hidden" sin esto. */
+.hero-ahorro__trend[hidden] { display: none; }
 .hero-ahorro__trend i { width: 14px !important; height: 14px !important; }
 
 .stats-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
@@ -505,6 +508,9 @@
 .onb-item__go i, .onb-item__go svg { width: 12px; height: 12px; }
 .onb-item.is-done .onb-item__go { display: none; }
 .onb-done { display: flex; align-items: center; gap: 12px; background: var(--crema); border: 1px solid var(--linea); border-radius: 14px; padding: 15px 18px; }
+/* Mismo caso que .wa-card[hidden] más arriba: display:flex le gana al
+   estilo por defecto del atributo "hidden" sin esto. */
+.onb-done[hidden] { display: none; }
 .onb-done__check { width: 26px; height: 26px; border-radius: 50%; background: var(--verde); display: grid; place-items: center; flex: none; }
 .onb-done__check i, .onb-done__check svg { width: 14px; height: 14px; color: #fff; stroke-width: 3; }
 .onb-done__txt { flex: 1; font-size: 13px; font-weight: 600; color: var(--tinta); }
