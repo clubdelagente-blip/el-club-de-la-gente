@@ -1021,9 +1021,7 @@ async function cargarVentasNegocio(aliadoId) {
       .select("tipo, descripcion, precio_normal, precio_descuento, ahorro_fijo")
       .eq("aliado_id", aliadoId).eq("activa", true)
       .order("created_at", { ascending: false }).limit(1),
-    supabase.from("descuentos")
-      .select("aliado_id")
-      .gte("created_at", new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString()),
+    supabase.rpc("ranking_ventas_aliados", { p_desde: new Date(ahora.getFullYear(), ahora.getMonth(), 1).toISOString() }),
   ]);
 
   if (error) { console.error("cargarVentasNegocio:", error); return; }
@@ -1104,14 +1102,14 @@ async function cargarVentasNegocio(aliadoId) {
     if (estadoEl) estadoEl.textContent = "Crea una promoción desde el Directorio para que los miembros la vean";
   }
 
-  // Posición en usos este mes (ranking real entre todos los aliados)
+  // Posición en usos este mes (ranking real entre todos los aliados) -- la
+  // función ya devuelve los conteos agregados por aliado, no filas sueltas
+  // (no tiene sentido que un negocio vea el detalle de ventas de otro).
   const posEl = document.getElementById("negocio-posicion");
   if (posEl) {
     if (todas?.length) {
-      const conteos = {};
-      todas.forEach(r => { conteos[r.aliado_id] = (conteos[r.aliado_id] || 0) + 1; });
-      const orden = Object.entries(conteos).sort((a, b) => b[1] - a[1]);
-      const idx = orden.findIndex(([id]) => id === aliadoId);
+      const orden = [...todas].sort((a, b) => b.total - a.total);
+      const idx = orden.findIndex(r => r.aliado_id === aliadoId);
       posEl.textContent = idx >= 0 ? `#${idx + 1} del mes` : "Sin usos este mes";
     } else {
       posEl.textContent = "Sin usos este mes";

@@ -624,21 +624,6 @@
       return promo?.descripcion || null;
     }
 
-    // Sellos actuales = cuántos descuentos tiene este miembro en este aliado
-    // DESPUÉS de su último canje -- no hay un contador aparte que el
-    // navegador pueda inflar, se deriva de la tabla "descuentos" que ya existe.
-    async function cargarSellosActuales(miembroId, aliadoId) {
-      const { data: ultimoCanje } = await supabaseClient
-        .from("sellos_canjes").select("created_at")
-        .eq("miembro_id", miembroId).eq("aliado_id", aliadoId)
-        .order("created_at", { ascending: false }).limit(1).maybeSingle();
-      let q = supabaseClient.from("descuentos").select("id", { count: "exact", head: true })
-        .eq("miembro_id", miembroId).eq("aliado_id", aliadoId);
-      if (ultimoCanje?.created_at) q = q.gt("created_at", ultimoCanje.created_at);
-      const { count } = await q;
-      return count || 0;
-    }
-
     async function cargarYRenderizar() {
       try {
         const [{ data, error }, aliadoInfo] = await conTimeout(Promise.all([
@@ -654,22 +639,24 @@
         if (aliadoInfo) aliadoInfo.cortesiaCumple = calcularCortesiaCumple(data, aliadoInfo);
 
         const limite = LIMITE_DESCUENTOS[data.plan] ?? 2;
-        let usos = 0;
+        let usos = 0, sellosActuales = 0;
 
-        if (limite !== Infinity) {
-          const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
-          let query = supabaseClient
-            .from("descuentos")
-            .select("id", { count: "exact", head: true })
-            .eq("miembro_id", id)
-            .gte("created_at", inicioMes.toISOString());
-          // Si el aliado está identificado, contar solo sus usos en este establecimiento
-          if (aliadoId) query = query.eq("aliado_id", aliadoId);
-          const { count } = await query;
-          usos = count || 0;
+        // El conteo de usos/sellos de ESTE aliado con ESTE miembro se trae por
+        // una función que verifica el código del negocio server-side (RLS ya
+        // no deja leer "descuentos"/"sellos_canjes" de otra persona desde el
+        // navegador, ni siquiera para mostrar un número).
+        if (aliadoId && aliadoCodigo) {
+          const { data: estado } = await supabaseClient.rpc("estado_aliado_para_miembro", {
+            p_miembro_id: id, p_aliado_id: aliadoId, p_codigo: aliadoCodigo,
+          });
+          if (estado?.ok) {
+            usos = estado.usos_aliado || 0;
+            sellosActuales = estado.sellos_actuales || 0;
+          }
+        } else if (limite !== Infinity) {
+          const { data: total } = await supabaseClient.rpc("contar_usos_mes_miembro", { p_miembro_id: id });
+          usos = total || 0;
         }
-
-        const sellosActuales = aliadoInfo?.sellos_activo ? await cargarSellosActuales(id, aliadoInfo.id) : 0;
 
         if (limite !== Infinity && usos >= limite) {
           renderLimite(data, limite, aliadoInfo, sellosActuales);
