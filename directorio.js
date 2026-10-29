@@ -304,8 +304,18 @@ async function openSheet(aliadoId) {
   const { data } = await supabase.from("promociones").select("*").eq("aliado_id", a.id).eq("activa", true).order("created_at", { ascending: false });
   a.promociones = data || [];
 
-  const { data: resenas } = await supabase.from("aliados_resenas").select("estrellas, comentario, miembro_id, perfiles(nombre)").eq("aliado_id", a.id).order("created_at", { ascending: false });
-  a._resenas = resenas || [];
+  // El nombre de quien escribió la reseña se trae aparte (ese embed resolvía
+  // contra "perfiles", protegida por RLS, y quien ve la reseña casi nunca es
+  // quien la escribió).
+  const { data: resenasRaw } = await supabase.from("aliados_resenas").select("estrellas, comentario, miembro_id").eq("aliado_id", a.id).order("created_at", { ascending: false });
+  const resenas = resenasRaw || [];
+  const idsAutoresResena = [...new Set(resenas.map(r => r.miembro_id).filter(Boolean))];
+  if (idsAutoresResena.length) {
+    const { data: autores } = await supabase.from("perfiles_publico").select("id, nombre").in("id", idsAutoresResena);
+    const mapaAutores = new Map((autores || []).map(p => [p.id, p]));
+    resenas.forEach(r => { r.perfiles = mapaAutores.get(r.miembro_id) || null; });
+  }
+  a._resenas = resenas;
   if (VIEWER_USER_ID) {
     const { data: miResena } = await supabase.from("aliados_resenas").select("estrellas, comentario").eq("aliado_id", a.id).eq("miembro_id", VIEWER_USER_ID).maybeSingle();
     a._miResena = miResena || null;

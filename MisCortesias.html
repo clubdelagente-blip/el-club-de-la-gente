@@ -144,23 +144,35 @@
       // Misma lógica de "aliado con promo de cumpleaños que calza con sus
       // categorías de interés" que ya usa avisar-cumpleanos.ts del lado del
       // servidor -- duplicada a propósito, cada lugar es independiente.
-      const { data: aliados } = await supabaseClient
-        .from("aliados")
-        .select("id, nombre, whatsapp, categoria, promociones!inner(descripcion, es_cumpleanos, activa)")
-        .eq("activo", true)
-        .eq("promociones.es_cumpleanos", true)
-        .eq("promociones.activa", true);
+      // "promociones" y "aliados" se consultan por separado (no embebidas):
+      // el embed resolvía contra "aliados", protegida por RLS, y acá no hay
+      // sesión de por medio -- se cruzan a mano, igual que en Verificar.html.
+      const { data: promos } = await supabaseClient
+        .from("promociones")
+        .select("aliado_id, descripcion")
+        .eq("es_cumpleanos", true)
+        .eq("activa", true);
+
+      const idsAliadosCumple = [...new Set((promos || []).map(pr => pr.aliado_id).filter(Boolean))];
+      const aliadosPorId = new Map();
+      if (idsAliadosCumple.length) {
+        const { data: aliados } = await supabaseClient
+          .from("aliados_publico")
+          .select("id, nombre, whatsapp, categoria")
+          .in("id", idsAliadosCumple);
+        (aliados || []).forEach(a => aliadosPorId.set(a.id, a));
+      }
 
       const intereses = (Array.isArray(p.categorias_interes) ? p.categorias_interes : []).map(c => c.trim().toLowerCase());
 
       const cortesias = [];
-      for (const a of aliados || []) {
+      for (const promo of promos || []) {
+        const a = aliadosPorId.get(promo.aliado_id);
+        if (!a) continue;
         const catsAliado = (a.categoria || "").split(",").map(c => c.trim().toLowerCase());
         const coincide = intereses.length === 0 || catsAliado.some(c => intereses.includes(c));
         if (!coincide) continue;
-        for (const promo of a.promociones || []) {
-          cortesias.push({ aliado: a.nombre, whatsapp: a.whatsapp, descripcion: promo.descripcion });
-        }
+        cortesias.push({ aliado: a.nombre, whatsapp: a.whatsapp, descripcion: promo.descripcion });
       }
 
       if (!cortesias.length) {

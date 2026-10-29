@@ -2071,6 +2071,17 @@ function estrellasHtml(valor, size) {
   const redondeado = Math.round(valor || 0);
   return `<span style="display:inline-flex;gap:1px">${[1, 2, 3, 4, 5].map(n => `<i data-lucide="star" style="width:${size}px;height:${size}px;${n <= redondeado ? 'color:#EAB749;fill:#EAB749' : 'color:#ccc;fill:none'}"></i>`).join('')}</span>`;
 }
+// El nombre de quien escribió cada reseña se trae aparte (ese embed resolvía
+// contra "perfiles", protegida por RLS, y quien ve la reseña casi nunca es
+// quien la escribió) -- usado por reseñas de eventos y de productos.
+async function adjuntarAutoresResenas(resenas) {
+  const ids = [...new Set(resenas.map(r => r.miembro_id).filter(Boolean))];
+  if (!ids.length) return resenas;
+  const { data: autores } = await supabase.from("perfiles_publico").select("id, nombre").in("id", ids);
+  const mapa = new Map((autores || []).map(p => [p.id, p]));
+  resenas.forEach(r => { r.perfiles = mapa.get(r.miembro_id) || null; });
+  return resenas;
+}
 function resumenResenas(resenas) {
   if (!resenas.length) return { promedio: 0, texto: 'Sin reseñas aún' };
   const promedio = resenas.reduce((s, r) => s + r.estrellas, 0) / resenas.length;
@@ -2157,11 +2168,12 @@ async function cargarEducacion() {
     }
   }
 
-  const { data: resenasRaw } = await supabase
+  const { data: resenasRaw0 } = await supabase
     .from('resenas_evento')
-    .select('id, evento_id, estrellas, comentario, miembro_id, perfiles(nombre)')
+    .select('id, evento_id, estrellas, comentario, miembro_id')
     .in('evento_id', lista.map(e => e.id))
     .order('created_at', { ascending: false });
+  const resenasRaw = await adjuntarAutoresResenas(resenasRaw0 || []);
 
   const resenasPorEvento = new Map();
   (resenasRaw || []).forEach(r => {
@@ -2230,10 +2242,10 @@ async function cargarEducacion() {
   async function refrescarDetalleEvento(eventoId) {
     const { data } = await supabase
       .from('resenas_evento')
-      .select('id, evento_id, estrellas, comentario, miembro_id, perfiles(nombre)')
+      .select('id, evento_id, estrellas, comentario, miembro_id')
       .eq('evento_id', eventoId)
       .order('created_at', { ascending: false });
-    const resenasEvento = data || [];
+    const resenasEvento = await adjuntarAutoresResenas(data || []);
     const det = grid.querySelector(`[data-detalle-evento="${eventoId}"]`);
     if (det) det.innerHTML = listaResenasHtml(resenasEvento, eventoId, _miembroId);
     const resumen = grid.querySelector(`[data-resumen-resenas="${eventoId}"]`);
@@ -2625,11 +2637,11 @@ function abrirDetalleProductoClub(p) {
 async function cargarResenasProducto(p) {
   const { data: resenasRaw } = await supabase
     .from('resenas_producto')
-    .select('id, producto_id, estrellas, comentario, foto_url, miembro_id, perfiles(nombre)')
+    .select('id, producto_id, estrellas, comentario, foto_url, miembro_id')
     .eq('producto_id', p.id)
     .eq('estado', 'aprobado')
     .order('created_at', { ascending: false });
-  const resenas = resenasRaw || [];
+  const resenas = await adjuntarAutoresResenas(resenasRaw || []);
   const resumen = resumenResenas(resenas);
 
   const resumenEl = document.getElementById('tpd-resumen');
