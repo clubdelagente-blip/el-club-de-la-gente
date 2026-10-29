@@ -172,6 +172,29 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ ok: true, aprobado: false, analisis }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 
+  // SEGURIDAD/CONCURRENCIA (2026-10-29): reclama la solicitud de forma atómica
+  // antes de tocar nada más -- si el admin la aprobó manualmente justo
+  // mientras la IA analizaba (el análisis puede tardar varios segundos), esta
+  // UPDATE no encuentra la fila en "pendiente" y se corta acá, sin duplicar
+  // el pago ni el WhatsApp de confirmación. Mismo mecanismo que
+  // aprobar-membresia.ts.
+  const { data: reclamada, error: claimErr } = await supabase
+    .from("solicitudes_membresia")
+    .update({ estado: "aprobado", aprobado_por: "ia_automatica" })
+    .eq("id", solicitud.id)
+    .eq("estado", "pendiente")
+    .select("id")
+    .maybeSingle();
+
+  if (claimErr) {
+    console.error("Error reclamando la solicitud (auto-IA):", claimErr);
+    return new Response(JSON.stringify({ error: claimErr.message }), { status: 500, headers: corsHeaders });
+  }
+  if (!reclamada) {
+    console.log(`Solicitud ${solicitud_id} ya fue procesada (probablemente por el admin) -- la IA no hace nada más.`);
+    return new Response(JSON.stringify({ ok: true, aprobado: false, motivo: "ya_procesada" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+
   // ---- A partir de aquí, el mismo procedimiento que aprobar-membresia.ts ----
   const fechaVencimiento = new Date();
   fechaVencimiento.setMonth(fechaVencimiento.getMonth() + 1);
@@ -195,12 +218,6 @@ Deno.serve(async (req: Request) => {
     referencia: `AUTO-IA-${solicitud.id}`,
   });
   if (pagoError) console.error("Error registrando pago (auto-IA):", pagoError);
-
-  const { error: estadoErr } = await supabase
-    .from("solicitudes_membresia")
-    .update({ estado: "aprobado", aprobado_por: "ia_automatica" })
-    .eq("id", solicitud.id);
-  if (estadoErr) console.error("Error marcando solicitud como aprobada (auto-IA):", estadoErr);
 
   const planLabelNotif = solicitud.plan === "premium" ? "Premium" : "Básica";
   const { error: notifErr } = await supabase.from("notificaciones_miembro").insert({

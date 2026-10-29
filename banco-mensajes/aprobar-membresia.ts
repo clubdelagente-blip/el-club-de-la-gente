@@ -61,17 +61,29 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "No tienes permisos de administrador" }), { status: 403, headers: corsHeaders });
   }
 
+  // SEGURIDAD/CONCURRENCIA (2026-10-29): antes esto leía el estado acá y
+  // recién marcaba "aprobado" al final, después de activar el plan, registrar
+  // el pago y mandar el WhatsApp -- si verificar-comprobante.ts (la IA)
+  // estaba analizando esta misma solicitud al mismo tiempo, las dos pasaban
+  // esta validación y ambas terminaban duplicando el pago y la notificación.
+  // Ahora el "aprobado" se reclama de forma atómica, primero que nada: solo
+  // una de las dos llamadas puede encontrar la fila todavía en "pendiente" y
+  // actualizarla -- la otra no afecta ninguna fila y se corta acá mismo, sin
+  // haber tocado perfiles/pagos/WhatsApp.
   const { data: solicitud, error: solicitudErr } = await supabase
     .from("solicitudes_membresia")
-    .select("id, miembro_id, plan, monto, estado")
+    .update({ estado: "aprobado" })
     .eq("id", solicitud_id)
+    .eq("estado", "pendiente")
+    .select("id, miembro_id, plan, monto")
     .maybeSingle();
 
-  if (solicitudErr || !solicitud) {
-    return new Response(JSON.stringify({ error: "Solicitud no encontrada" }), { status: 404, headers: corsHeaders });
+  if (solicitudErr) {
+    console.error("Error reclamando la solicitud:", solicitudErr);
+    return new Response(JSON.stringify({ error: "Error interno" }), { status: 500, headers: corsHeaders });
   }
-  if (solicitud.estado !== "pendiente") {
-    return new Response(JSON.stringify({ error: "Esta solicitud ya fue procesada" }), { status: 409, headers: corsHeaders });
+  if (!solicitud) {
+    return new Response(JSON.stringify({ error: "Esta solicitud no existe o ya fue procesada" }), { status: 409, headers: corsHeaders });
   }
 
   const fechaVencimiento = new Date();
@@ -101,12 +113,6 @@ Deno.serve(async (req: Request) => {
     referencia: `MANUAL-${solicitud.id}`,
   });
   if (pagoError) console.error("Error registrando pago:", pagoError);
-
-  const { error: estadoErr } = await supabase
-    .from("solicitudes_membresia")
-    .update({ estado: "aprobado" })
-    .eq("id", solicitud.id);
-  if (estadoErr) console.error("Error marcando solicitud como aprobada:", estadoErr);
 
   const planLabelNotif = solicitud.plan === "premium" ? "Premium" : "Básica";
   const { error: notifErr } = await supabase.from("notificaciones_miembro").insert({
