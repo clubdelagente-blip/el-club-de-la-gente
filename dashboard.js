@@ -625,7 +625,7 @@ async function cargarSellos() {
   const sinSellos = `<p style="text-align:center;padding:40px 20px;color:var(--tinta-60)">Aún no tienes sellos — usa tus descuentos en aliados con tarjeta de sellos para empezar a sumar.</p>`;
   if (!idsAliados.length) { wrap.innerHTML = sinSellos; return; }
 
-  const { data: aliados } = await supabase.from("aliados")
+  const { data: aliados } = await supabase.from("aliados_publico")
     .select("id, nombre, imagen_url, sellos_activo, sellos_meta, sellos_premio_tipo, sellos_premio_desc")
     .in("id", idsAliados).eq("sellos_activo", true);
   if (!aliados?.length) { wrap.innerHTML = sinSellos; return; }
@@ -670,7 +670,7 @@ async function cargarDescuentos(userId, whatsapp) {
 
   const [{ data: aliadosData, error }, { data: tiendaData }, { data: uberData }, { data: profData }] = await Promise.all([
     supabase.from("descuentos")
-      .select("aliado_nombre, categoria, descuento_pct, compra, ahorro, created_at, aliados(imagen_url)")
+      .select("aliado_id, aliado_nombre, categoria, descuento_pct, compra, ahorro, created_at")
       .eq("miembro_id", userId).order("created_at", { ascending: false }),
     supabase.from("pedidos_club")
       .select("nombre_producto, monto, ahorro, created_at")
@@ -714,10 +714,20 @@ async function cargarDescuentos(userId, whatsapp) {
 
   if (error) return;
 
+  // La imagen del aliado ya no viene embebida en la misma consulta (ese join
+  // se resuelve contra la tabla "aliados" protegida por RLS y el miembro no
+  // es su dueño) -- se trae aparte desde la vista pública y se cruza por id.
+  const idsAliadosDesc = [...new Set((aliadosData || []).map(d => d.aliado_id).filter(Boolean))];
+  const imgPorAliado = new Map();
+  if (idsAliadosDesc.length) {
+    const { data: aliadosImg } = await supabase.from("aliados_publico").select("id, imagen_url").in("id", idsAliadosDesc);
+    (aliadosImg || []).forEach(a => imgPorAliado.set(a.id, a.imagen_url));
+  }
+
   const TIPO_UBER_LBL = { carro: "Carro", moto: "Moto", domicilio: "Domicilio" };
   const data = [
     ...(aliadosData || []).map(d => ({
-      tipo: "aliado", nombre: d.aliado_nombre, categoria: d.categoria, imagen_url: d.aliados?.imagen_url || null,
+      tipo: "aliado", nombre: d.aliado_nombre, categoria: d.categoria, imagen_url: imgPorAliado.get(d.aliado_id) || null,
       descuento_pct: d.descuento_pct, compra: d.compra, ahorro: d.ahorro || 0, created_at: d.created_at,
     })),
     ...(tiendaData || []).map(d => ({
@@ -1264,35 +1274,55 @@ async function cargarVacantesMiembro() {
   const grid = $("#vacantes-grid");
   if (!grid) return;
 
-  const { data } = await supabase
-    .from("vacantes")
-    .select("*, aliados(nombre, imagen_url)")
-    .eq("estado", "aprobada")
-    .eq("activo", true)
-    .order("created_at", { ascending: false });
+  // Si falla la carga (red, timeout) la bandera se resetea al final del
+  // catch -- antes quedaba en "true" para siempre y el panel se veía vacío
+  // el resto de la sesión, sin forma de reintentar.
+  try {
+    const { data, error } = await supabase
+      .from("vacantes")
+      .select("*")
+      .eq("estado", "aprobada")
+      .eq("activo", true)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
 
-  const vacantes = data || [];
-  if (!vacantes.length) {
-    grid.innerHTML = `
-      <div style="text-align:center;padding:48px 20px;grid-column:1/-1">
-        <span style="display:inline-flex;width:38px;height:38px;border-radius:50%;background:var(--verde-soft);color:var(--verde);align-items:center;justify-content:center;margin-bottom:14px">${ic("briefcase")}</span>
-        <p style="font-size:13px;color:var(--tinta-45,#888);max-width:320px;margin:0 auto;line-height:1.5">Todavía no hay vacantes publicadas. En cuanto algún aliado publique una, la verás aquí.</p>
-      </div>`;
+    const vacantes = data || [];
+
+    // El nombre/imagen del aliado se trae aparte desde la vista pública (el
+    // join directo contra "aliados" ya no es visible para un miembro que no es
+    // dueño de esa fila).
+    const idsAliadosVac = [...new Set(vacantes.map(v => v.aliado_id).filter(Boolean))];
+    if (idsAliadosVac.length) {
+      const { data: aliadosVac } = await supabase.from("aliados_publico").select("id, nombre, imagen_url").in("id", idsAliadosVac);
+      const mapaAliadosVac = new Map((aliadosVac || []).map(a => [a.id, a]));
+      vacantes.forEach(v => { v.aliados = mapaAliadosVac.get(v.aliado_id) || null; });
+    }
+    if (!vacantes.length) {
+      grid.innerHTML = `
+        <div style="text-align:center;padding:48px 20px;grid-column:1/-1">
+          <span style="display:inline-flex;width:38px;height:38px;border-radius:50%;background:var(--verde-soft);color:var(--verde);align-items:center;justify-content:center;margin-bottom:14px">${ic("briefcase")}</span>
+          <p style="font-size:13px;color:var(--tinta-45,#888);max-width:320px;margin:0 auto;line-height:1.5">Todavía no hay vacantes publicadas. En cuanto algún aliado publique una, la verás aquí.</p>
+        </div>`;
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
+
+    grid.innerHTML = vacantes.map(v => `
+      <div class="card" style="padding:16px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          ${v.aliados?.imagen_url ? `<img src="${v.aliados.imagen_url}" alt="${esc(v.aliados?.nombre || '')}" style="width:34px;height:34px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<div style="width:34px;height:34px;border-radius:8px;background:#f0faf4;flex-shrink:0"></div>`}
+          <div style="font-size:12px;color:#777;font-weight:600">${esc(v.aliados?.nombre || "")}</div>
+        </div>
+        <div style="font-weight:700;font-size:15px;margin-bottom:6px">${esc(v.titulo)}</div>
+        ${v.descripcion ? `<p style="font-size:13px;color:#555;line-height:1.5;margin-bottom:12px">${esc(v.descripcion)}</p>` : ""}
+        <a class="pm-wa" style="width:100%;justify-content:center" target="_blank" href="https://wa.me/57${v.whatsapp}?text=${encodeURIComponent("Hola, vi la vacante de " + v.titulo + " en El Club de la Gente")}">${ICON_WA}Escribir por WhatsApp</a>
+      </div>`).join("");
     if (window.lucide) lucide.createIcons();
-    return;
+  } catch (e) {
+    console.error("cargarVacantesMiembro:", e);
+    _vacantesMiembroCargadas = false;
+    grid.innerHTML = `<p style="text-align:center;padding:40px 20px;color:var(--tinta-45,#888);grid-column:1/-1;font-size:13px">No se pudieron cargar las vacantes. Cambia de pestaña y vuelve a intentarlo.</p>`;
   }
-
-  grid.innerHTML = vacantes.map(v => `
-    <div class="card" style="padding:16px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        ${v.aliados?.imagen_url ? `<img src="${v.aliados.imagen_url}" alt="${esc(v.aliados?.nombre || '')}" style="width:34px;height:34px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<div style="width:34px;height:34px;border-radius:8px;background:#f0faf4;flex-shrink:0"></div>`}
-        <div style="font-size:12px;color:#777;font-weight:600">${esc(v.aliados?.nombre || "")}</div>
-      </div>
-      <div style="font-weight:700;font-size:15px;margin-bottom:6px">${esc(v.titulo)}</div>
-      ${v.descripcion ? `<p style="font-size:13px;color:#555;line-height:1.5;margin-bottom:12px">${esc(v.descripcion)}</p>` : ""}
-      <a class="pm-wa" style="width:100%;justify-content:center" target="_blank" href="https://wa.me/57${v.whatsapp}?text=${encodeURIComponent("Hola, vi la vacante de " + v.titulo + " en El Club de la Gente")}">${ICON_WA}Escribir por WhatsApp</a>
-    </div>`).join("");
-  if (window.lucide) lucide.createIcons();
 }
 
 const ESTADO_PRODUCTO_ALIADO = {
@@ -1598,8 +1628,8 @@ async function cargarReferidos(userId) {
     });
   });
 
-  const [{ count }, { data: miPerfil }] = await Promise.all([
-    supabase.from("perfiles").select("id", { count: "exact", head: true }).eq("referido_por", userId).in("plan", ["basica", "premium", "vitalicia"]),
+  const [{ data: count }, { data: miPerfil }] = await Promise.all([
+    supabase.rpc("contar_referidos", { p_user_id: userId, p_solo_pagantes: true }),
     supabase.from("perfiles").select("plan, vitalicia_pendiente, fecha_vencimiento").eq("id", userId).maybeSingle(),
   ]);
 
@@ -1634,9 +1664,9 @@ async function cargarOnboarding(userId, perfData) {
   const pasoPerfil = Object.keys(perfData?.respuestas_segmentacion || {}).length > 0;
   const whatsapp = (perfData?.whatsapp || "").replace(/\D/g, "");
 
-  const [{ count: descCount }, { count: refCount }, convRes] = await Promise.all([
+  const [{ count: descCount }, { data: refCount }, convRes] = await Promise.all([
     supabase.from("descuentos").select("id", { count: "exact", head: true }).eq("miembro_id", userId),
-    supabase.from("perfiles").select("id", { count: "exact", head: true }).eq("referido_por", userId),
+    supabase.rpc("contar_referidos", { p_user_id: userId }),
     whatsapp
       ? supabase.from("conversaciones").select("id", { count: "exact", head: true }).eq("whatsapp", whatsapp).eq("rol", "user")
       : Promise.resolve({ count: 0 }),
@@ -1689,7 +1719,7 @@ async function cargarAliadosRecomendados(perfData) {
   if (!card || !wrap) return;
 
   const { data: aliados, error } = await supabase
-    .from("aliados")
+    .from("aliados_publico")
     .select("id, nombre, categoria, descuento, whatsapp, imagen_url")
     .eq("activo", true);
   if (error || !aliados?.length) return;
@@ -1976,7 +2006,13 @@ async function cargarProgramas() {
   _programasCargados = true;
   const grid = document.getElementById("programas-grid-dash");
   if (!grid) return;
-  const { data } = await supabase.from("programas").select("*").eq("activo", true).order("created_at", { ascending: false });
+  const { data, error } = await supabase.from("programas").select("*").eq("activo", true).order("created_at", { ascending: false });
+  if (error) {
+    console.error("cargarProgramas:", error);
+    _programasCargados = false;
+    grid.innerHTML = `<p style="font-size:13px;color:#999;padding:20px 0">No se pudieron cargar los programas. Cambia de pestaña y vuelve a intentarlo.</p>`;
+    return;
+  }
   _programasSociales = data || [];
   if (!_programasSociales.length) {
     grid.innerHTML = `<p style="font-size:13px;color:#999;padding:20px 0">Todavía no hay programas sociales publicados.</p>`;
@@ -2074,11 +2110,17 @@ async function cargarEducacion() {
   const grid = document.getElementById('educacion-grid');
   if (!grid) return;
 
-  const { data: eventos } = await supabase
+  const { data: eventos, error } = await supabase
     .from('eventos_educacion')
     .select('*, facilitadores_educacion(nombre, foto_url), categorias_educacion(nombre)')
     .eq('activo', true)
     .order('fecha', { ascending: false });
+  if (error) {
+    console.error("cargarEducacion:", error);
+    _educacionCargada = false;
+    grid.innerHTML = `<p style="text-align:center;padding:40px 20px;color:var(--tinta-45,#888);grid-column:1/-1;font-size:13px">No se pudieron cargar los talleres. Cambia de pestaña y vuelve a intentarlo.</p>`;
+    return;
+  }
 
   const lista = eventos || [];
   if (!lista.length) {
@@ -2311,19 +2353,49 @@ async function cargarTienda() {
   if (!grid) return;
 
   const hoy = new Date().toISOString().slice(0, 10);
-  const [{ data: cats }, { data: prodsClub }, { data: prodsAliado }, { data: anuncios }] = await Promise.all([
-    supabase.from('categorias_productos').select('id,nombre').eq('activa', true).order('orden'),
-    supabase.from('productos').select('*, categorias_productos(nombre)').eq('activo', true).order('orden'),
-    supabase.from('productos_aliado')
-      .select('*, categorias_productos(nombre), aliados(nombre, tienda_nombre, whatsapp, maps_url, tienda_llave_pago, instagram, facebook, tiktok)')
-      .eq('estado', 'aprobado').eq('activo', true)
-      .or(`fecha_fin.is.null,fecha_fin.gte.${hoy}`),
-    supabase.from('anuncios').select('*').order('created_at', { ascending: false }).limit(5),
-  ]);
+  // Si la carga inicial falla (red, timeout) se resetea la bandera -- antes
+  // quedaba en "true" para siempre y el panel se veía vacío el resto de la
+  // sesión, sin forma de reintentar.
+  let cats, prodsClub, prodsAliado, anuncios;
+  try {
+    const resultados = await Promise.all([
+      supabase.from('categorias_productos').select('id,nombre').eq('activa', true).order('orden'),
+      supabase.from('productos').select('*, categorias_productos(nombre)').eq('activo', true).order('orden'),
+      supabase.from('productos_aliado')
+        .select('*, categorias_productos(nombre)')
+        .eq('estado', 'aprobado').eq('activo', true)
+        .or(`fecha_fin.is.null,fecha_fin.gte.${hoy}`),
+      supabase.from('anuncios').select('*').order('created_at', { ascending: false }).limit(5),
+    ]);
+    if (resultados.some(r => r.error)) throw resultados.find(r => r.error).error;
+    ({ data: cats, } = resultados[0]);
+    ({ data: prodsClub } = resultados[1]);
+    ({ data: prodsAliado } = resultados[2]);
+    ({ data: anuncios } = resultados[3]);
+  } catch (e) {
+    console.error("cargarTienda:", e);
+    _tiendaCargada = false;
+    grid.innerHTML = `<p style="text-align:center;padding:40px 20px;color:var(--tinta-45,#888);grid-column:1/-1;font-size:13px">No se pudo cargar la tienda. Cambia de pestaña y vuelve a intentarlo.</p>`;
+    return;
+  }
   renderBannerTienda(anuncios || []);
 
   const club = (prodsClub || []).map(p => ({ ...p, _origen: 'club' }));
   const aliado = (prodsAliado || []).map(p => ({ ...p, _origen: 'aliado' }));
+
+  // Los datos del aliado (nombre, llave de pago, ubicación...) ya no vienen
+  // embebidos en la misma consulta -- ese join resuelve contra "aliados",
+  // protegida por RLS, y quien compra no es dueño de esa fila. Se traen
+  // aparte desde la vista pública y se cruzan por aliado_id.
+  const idsAliadosTienda = [...new Set(aliado.map(p => p.aliado_id).filter(Boolean))];
+  if (idsAliadosTienda.length) {
+    const { data: aliadosTienda } = await supabase.from('aliados_publico')
+      .select('id, nombre, tienda_nombre, whatsapp, maps_url, tienda_llave_pago, instagram, facebook, tiktok')
+      .in('id', idsAliadosTienda);
+    const mapaAliadosTienda = new Map((aliadosTienda || []).map(a => [a.id, a]));
+    aliado.forEach(p => { p.aliados = mapaAliadosTienda.get(p.aliado_id) || null; });
+  }
+
   const todos = [...club, ...aliado];
 
   if (!todos.length) {
@@ -2993,7 +3065,7 @@ async function cargarProfesionalesClub(plan) {
   gridEl.style.display = "grid";
 
   const [{ data: profs }, { data: servicios }] = await Promise.all([
-    supabase.from("profesionales").select("*").eq("activo", true).eq("mostrar_premium", true).order("created_at"),
+    supabase.from("profesionales_publico").select("*").eq("mostrar_premium", true).order("created_at"),
     supabase.from("servicios_profesional").select("*").order("orden"),
   ]);
 
@@ -3857,14 +3929,15 @@ async function cargarSoporte() {
   if (!chat || !form) return;
 
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return;
+  if (!session) { _sopInit = false; return; }
 
-  const { data: historial } = await supabase
+  const { data: historial, error } = await supabase
     .from("soporte_mensajes")
     .select("rol, mensaje, imagen_url, escalado, created_at")
     .eq("miembro_id", session.user.id)
     .order("created_at", { ascending: true })
     .limit(50);
+  if (error) console.error("cargarSoporte (historial):", error);
 
   if (historial && historial.length) {
     chat.innerHTML = historial.map(m => sopBurbuja(m.rol, m.mensaje, m.imagen_url, m.escalado)).join("");

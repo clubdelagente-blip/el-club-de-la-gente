@@ -117,7 +117,7 @@
     try {
       const [{ data: m, error: errM }, { data: cfg }] = await conTimeout(
         Promise.all([
-          _supabase.from("perfiles").select("id, nombre").eq("id", miembroId).maybeSingle(),
+          _supabase.rpc("perfil_publico_por_id", { p_id: miembroId }).maybeSingle(),
           _supabase.from("configuracion").select("clave, valor").in("clave", ["grupo_wa_moto", "grupo_wa_carro"]),
         ]),
         8000

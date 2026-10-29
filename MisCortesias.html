@@ -104,11 +104,26 @@
         return;
       }
 
-      const { data: p, error } = await supabaseClient
-        .from("perfiles")
-        .select("nombre, plan, categorias_interes")
-        .eq("id", id)
-        .maybeSingle();
+      // Antes no había límite de tiempo: si la conexión se quedaba colgada,
+      // esta página se quedaba en "Cargando..." para siempre (justo la que se
+      // manda por WhatsApp el día del cumpleaños).
+      function conTimeout(promesa, ms) {
+        return Promise.race([
+          promesa,
+          new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+        ]);
+      }
+
+      let p, error;
+      try {
+        ({ data: p, error } = await conTimeout(
+          supabaseClient.rpc("perfil_publico_por_id", { p_id: id }).maybeSingle(),
+          10000
+        ));
+      } catch (_) {
+        card.innerHTML = `<p class="error-msg">No se pudo conectar. Intenta de nuevo en unos segundos.</p>`;
+        return;
+      }
 
       if (error || !p) {
         card.innerHTML = `<p class="error-msg">No pudimos cargar tus cortesías.</p>`;

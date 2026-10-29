@@ -143,8 +143,16 @@
     const id = params.get("id");
     const supabaseClient = _supabase;
 
-    // El aliado se identifica una sola vez por dispositivo (queda guardado en este teléfono/tablet)
-    let aliadoId = params.get("aliado") || localStorage.getItem("ecdlg_aliado_id") || "";
+    // El aliado se identifica una sola vez por dispositivo con el código de su
+    // negocio (el mismo que ya se usa en Directorio.html) y queda guardado en
+    // este teléfono/tablet -- antes bastaba con elegir cualquier nombre de una
+    // lista sin ningún código, así que cualquiera podía "ser" cualquier aliado.
+    let aliadoId = "", aliadoCodigo = "";
+    try {
+      const guardado = JSON.parse(localStorage.getItem("ecdlg_aliado_auth") || "null");
+      if (guardado?.id && guardado?.codigo) { aliadoId = guardado.id; aliadoCodigo = guardado.codigo; }
+    } catch (_) {}
+    const aliadoIdSugerido = params.get("aliado") || "";
 
     const btnStyle = (bg, color="#fff") => `display:block;width:100%;padding:14px;background:${bg};color:${color};border-radius:12px;text-align:center;text-decoration:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;margin-top:8px;letter-spacing:.02em;border:none;cursor:pointer;`;
 
@@ -192,32 +200,47 @@
       document.getElementById("btn-confirmar-canje")?.addEventListener("click", async (e) => {
         const btn = e.target;
         btn.disabled = true; btn.textContent = "Confirmando...";
-        const { error } = await supabaseClient.from("sellos_canjes").insert({ miembro_id: id, aliado_id: aliadoInfo.id });
-        if (error) { btn.disabled = false; btn.textContent = "Confirmar canje"; return; }
+        const { data, error } = await supabaseClient.rpc("confirmar_canje_sellos", {
+          p_miembro_id: id, p_aliado_id: aliadoInfo.id, p_codigo: aliadoCodigo,
+        });
+        if (error || !data?.ok) { btn.disabled = false; btn.textContent = "Confirmar canje"; return; }
         cargarYRenderizar();
       });
     }
 
-    function selectorAliadoHtml(lista) {
-      if (!lista || !lista.length) return "";
-      const opciones = lista.map(a => `<option value="${a.id}">${a.nombre}</option>`).join("");
+    // Reemplaza el selector libre de "elige tu negocio de una lista" por el
+    // código del negocio (el mismo de 4 dígitos que ya usa Directorio.html) --
+    // así Verificar.html deja de confiar en que quien abre la página de verdad
+    // trabaja en el negocio que dice ser.
+    function selectorAliadoHtml() {
       return `
         <hr class="divider">
-        <p style="font-size:12px;color:#888;margin-bottom:10px;text-align:left">¿Cuál es tu negocio? Selecciónalo para ver el % de descuento a aplicar (se guarda en este dispositivo, no hace falta repetirlo).</p>
-        <select id="sel-aliado" style="width:100%;padding:10px 12px;border:1px solid #ebebeb;border-radius:10px;font-size:13px;margin-bottom:8px">
-          <option value="">Selecciona tu negocio…</option>
-          ${opciones}
-        </select>
+        <p style="font-size:12px;color:#888;margin-bottom:10px;text-align:left">¿Cuál es tu negocio? Escribe su código para ver el % de descuento a aplicar (se guarda en este dispositivo, no hace falta repetirlo).</p>
+        <input id="in-aliado-codigo" type="text" inputmode="numeric" placeholder="Código del negocio" autocomplete="off"
+          style="width:100%;padding:10px 12px;border:1px solid #ebebeb;border-radius:10px;font-size:14px;margin-bottom:8px;text-align:center;letter-spacing:.1em">
+        <p id="aliado-codigo-error" class="error-msg" style="display:none;margin-bottom:8px">Código incorrecto.</p>
         <button id="btn-guardar-aliado" style="${btnStyle('#095544')}">Guardar</button>
       `;
     }
 
     function bindSelectorAliado(recargar) {
-      document.getElementById("btn-guardar-aliado")?.addEventListener("click", () => {
-        const val = document.getElementById("sel-aliado")?.value;
-        if (!val) return;
-        localStorage.setItem("ecdlg_aliado_id", val);
-        aliadoId = val;
+      const input = document.getElementById("in-aliado-codigo");
+      if (aliadoIdSugerido) input?.focus();
+      document.getElementById("btn-guardar-aliado")?.addEventListener("click", async () => {
+        const codigo = (input?.value || "").trim();
+        const err = document.getElementById("aliado-codigo-error");
+        if (!codigo) return;
+        const btn = document.getElementById("btn-guardar-aliado");
+        btn.disabled = true; btn.textContent = "Verificando...";
+        const { data, error } = await supabaseClient.rpc("resolver_aliado_por_codigo", { p_codigo: codigo });
+        const encontrado = Array.isArray(data) ? data[0] : data;
+        if (error || !encontrado?.id) {
+          btn.disabled = false; btn.textContent = "Guardar";
+          if (err) err.style.display = "block";
+          return;
+        }
+        localStorage.setItem("ecdlg_aliado_auth", JSON.stringify({ id: encontrado.id, codigo }));
+        aliadoId = encontrado.id; aliadoCodigo = codigo;
         recargar();
       });
     }
@@ -225,7 +248,7 @@
     const PLAN_NOMBRE = { gratis: "Gratis", basica: "Básico", premium: "Premium", vitalicia: "Vitalicia" };
     const LIMITE_DESCUENTOS = { gratis: 0, basica: 2, premium: Infinity, vitalicia: Infinity };
 
-    function renderOk(p, usos, limite, aliadoInfo, listaAliados, sellosActuales) {
+    function renderOk(p, usos, limite, aliadoInfo, sellosActuales) {
       const rolLabel = { miembro: "Miembro", aliado: "Aliado comercial", profesional: "Profesional" }[p.rol] || "Miembro";
       const planNombre = PLAN_NOMBRE[p.plan] || "Básico";
       const planLabel = limite === Infinity ? `${planNombre} · Ilimitado` : `${planNombre} · ${usos}/${limite} usos este mes`;
@@ -246,7 +269,7 @@
         <a href="${dirUrl}" style="${btnStyle("#095544")}">Ver aliados y descuentos &rarr;</a>
         <button id="btn-uber" style="${btnStyle("#021B1A")}">🚗 Aplicar descuento Uber</button>
         ${esPremium(p) ? `<button id="btn-prof" style="${btnStyle("#021B1A")}">💼 Aplicar servicio profesional</button>` : ""}
-        ${!aliadoInfo ? selectorAliadoHtml(listaAliados) : ""}
+        ${!aliadoInfo ? selectorAliadoHtml() : ""}
       `;
       bindSelectorAliado(() => cargarYRenderizar());
       bindBtnUber(p);
@@ -254,7 +277,7 @@
       bindBtnConfirmarCanje(aliadoInfo);
     }
 
-    function renderLimite(p, limite, aliadoInfo, listaAliados, sellosActuales) {
+    function renderLimite(p, limite, aliadoInfo, sellosActuales) {
       const planNombre = PLAN_NOMBRE[p.plan] || "Básico";
       const wa = (p.whatsapp||"").replace(/\D/g,"");
       const numero = wa.startsWith("57") ? wa : "57"+wa;
@@ -285,7 +308,7 @@
         ${wa ? `<a href="${waUrl}" style="${btnStyle("#fef3c7","#b45309")}">Notificar al miembro por WhatsApp</a>` : ""}
         <button id="btn-uber" style="${btnStyle("#021B1A")}">🚗 Aplicar descuento Uber</button>
         ${esPremium(p) ? `<button id="btn-prof" style="${btnStyle("#021B1A")}">💼 Aplicar servicio profesional</button>` : ""}
-        ${!aliadoInfo ? selectorAliadoHtml(listaAliados) : ""}
+        ${!aliadoInfo ? selectorAliadoHtml() : ""}
       `;
       bindSelectorAliado(() => cargarYRenderizar());
       bindBtnUber(p);
@@ -389,10 +412,9 @@
         // es_conductor en vez de comparar el texto libre de "área", que se
         // rompe con un typo o un espacio de más.
         const { data: conductor } = await supabaseClient
-          .from("profesionales")
+          .from("profesionales_publico")
           .select("id, nombre")
           .eq("es_conductor", true)
-          .eq("activo", true)
           .eq("whatsapp", wa)
           .maybeSingle();
 
@@ -480,9 +502,8 @@
           localStorage.setItem("ecdlg_profesional_wa", wa);
 
           const { data: profesional } = await supabaseClient
-            .from("profesionales")
+            .from("profesionales_publico")
             .select("id, nombre, whatsapp")
-            .eq("activo", true)
             .eq("whatsapp", wa)
             .maybeSingle();
 
@@ -571,10 +592,18 @@
     async function cargarAliadoInfo() {
       if (!aliadoId) return null;
       const { data } = await supabaseClient
-        .from("aliados")
-        .select("id, nombre, categoria, descuento, sellos_activo, sellos_meta, sellos_premio_tipo, sellos_premio_desc, promociones(descripcion, es_cumpleanos, activa)")
+        .from("aliados_publico")
+        .select("id, nombre, categoria, descuento, sellos_activo, sellos_meta, sellos_premio_tipo, sellos_premio_desc")
         .eq("id", aliadoId).maybeSingle();
-      return data || null;
+      if (!data) return null;
+      // "promociones" no viene embebida (ese embed resuelve contra la tabla
+      // protegida y acá se está consultando la vista pública) -- se trae
+      // aparte, igual que ya hace directorio.js.
+      const { data: promos } = await supabaseClient
+        .from("promociones").select("descripcion, es_cumpleanos, activa")
+        .eq("aliado_id", aliadoId).eq("activa", true);
+      data.promociones = promos || [];
+      return data;
     }
 
     // Misma condición que avisar-cumpleanos.ts/MisCortesias.html: Premium o
@@ -610,18 +639,11 @@
       return count || 0;
     }
 
-    async function cargarListaAliados() {
-      const { data } = await supabaseClient
-        .from("aliados").select("id, nombre").eq("activo", true).order("nombre");
-      return data || [];
-    }
-
     async function cargarYRenderizar() {
       try {
-        const [{ data, error }, aliadoInfo, listaAliados] = await conTimeout(Promise.all([
-          supabaseClient.from("perfiles").select("nombre, rol, whatsapp, plan, fecha_nacimiento, categorias_interes").eq("id", id).single(),
+        const [{ data, error }, aliadoInfo] = await conTimeout(Promise.all([
+          supabaseClient.rpc("perfil_publico_por_id", { p_id: id }).single(),
           cargarAliadoInfo(),
-          aliadoId ? Promise.resolve([]) : cargarListaAliados(),
         ]), 12000);
 
         if (error || !data) {
@@ -650,9 +672,9 @@
         const sellosActuales = aliadoInfo?.sellos_activo ? await cargarSellosActuales(id, aliadoInfo.id) : 0;
 
         if (limite !== Infinity && usos >= limite) {
-          renderLimite(data, limite, aliadoInfo, listaAliados, sellosActuales);
+          renderLimite(data, limite, aliadoInfo, sellosActuales);
         } else {
-          renderOk(data, usos, limite, aliadoInfo, listaAliados, sellosActuales);
+          renderOk(data, usos, limite, aliadoInfo, sellosActuales);
         }
       } catch (_) {
         renderNo("No se pudo verificar por un problema de conexión. Intenta de nuevo.");

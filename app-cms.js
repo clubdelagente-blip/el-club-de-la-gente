@@ -152,7 +152,7 @@ function initPmCarrusel(root) {
 /* ---------- Aliados ---------- */
 async function cargarAliadosPub() {
   const { data, error } = await supabase
-    .from('aliados')
+    .from('aliados_publico')
     .select('*')
     .order('created_at', { ascending: true });
 
@@ -408,9 +408,8 @@ function abrirModalPrograma(id) {
 /* ---------- Profesionales ---------- */
 async function cargarProfesionalesPub() {
   const { data, error } = await supabase
-    .from('profesionales')
+    .from('profesionales_publico')
     .select('*')
-    .eq('activo', true)
     .eq('mostrar_landing', true)
     .order('created_at', { ascending: true });
 
@@ -530,12 +529,19 @@ async function cargarVacantesPub() {
 
   const { data, error } = await supabase
     .from('vacantes')
-    .select('*, aliados(nombre, imagen_url)')
+    .select('*')
     .eq('estado', 'aprobada')
     .eq('activo', true)
     .order('created_at', { ascending: false });
 
   if (error || !data?.length) return;
+
+  const idsAliadosVacPub = [...new Set(data.map(v => v.aliado_id).filter(Boolean))];
+  if (idsAliadosVacPub.length) {
+    const { data: aliadosVacPub } = await supabase.from('aliados_publico').select('id, nombre, imagen_url').in('id', idsAliadosVacPub);
+    const mapaVacPub = new Map((aliadosVacPub || []).map(a => [a.id, a]));
+    data.forEach(v => { v.aliados = mapaVacPub.get(v.aliado_id) || null; });
+  }
 
   grid.innerHTML = data.map((v, i) => `
     <div class="profe-card fade-up" style="--delay:${i * 60}ms">
@@ -564,7 +570,7 @@ async function cargarCarruselPromos() {
 
   const aliadoIds = [...new Set(promos.map(p => p.aliado_id))];
   const { data: aliadosData } = await supabase
-    .from('aliados')
+    .from('aliados_publico')
     .select('id, nombre, categoria, whatsapp, imagen_url')
     .in('id', aliadoIds);
   const aliadosMap = new Map((aliadosData || []).map(a => [a.id, a]));

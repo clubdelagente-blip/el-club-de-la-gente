@@ -119,7 +119,7 @@
       const [{ data: e, error: errE }, { data: m, error: errM }] = await conTimeout(
         Promise.all([
           _supabase.from("eventos_educacion").select("*, facilitadores_educacion(nombre)").eq("id", eventoId).maybeSingle(),
-          _supabase.from("perfiles").select("id, nombre").eq("id", miembroId).maybeSingle(),
+          _supabase.rpc("perfil_publico_por_id", { p_id: miembroId }).maybeSingle(),
         ]),
         8000
       );

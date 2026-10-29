@@ -125,14 +125,24 @@ async function resolverPlanVisitante() {
   return "gratis";
 }
 
-async function registrarDescuento({ aliado_id, aliado_nombre, categoria, descuento_pct, compra, ahorro }) {
+// El límite mensual y el código del negocio se revalidan DENTRO de la función
+// de Supabase (aplicar_descuento_directorio) -- antes se insertaba directo en
+// "descuentos" confiando en un límite calculado en el navegador, que se podía
+// saltar editando la URL (?usos=0). Ahora la base de datos vuelve a contar
+// los usos reales de este mes antes de dejar insertar.
+async function registrarDescuento({ aliado_id, categoria, descuento_pct, compra, ahorro, codigo }) {
   if (!MIEMBRO_ID) return { ok: false, error: null };
-  const { error } = await supabase.from("descuentos").insert({
-    miembro_id: MIEMBRO_ID, aliado_id, aliado_nombre, categoria,
-    descuento_pct, compra: compra || null, ahorro: ahorro || 0,
+  const { data, error } = await supabase.rpc("aplicar_descuento_directorio", {
+    p_miembro_id: MIEMBRO_ID, p_aliado_id: aliado_id, p_codigo: codigo,
+    p_categoria: categoria, p_descuento_pct: descuento_pct,
+    p_compra: compra || null, p_ahorro: ahorro || 0,
   });
-  if (error) console.error("registrarDescuento:", error);
-  return { ok: !error, error };
+  if (error || !data?.ok) {
+    const motivo = error?.message || { codigo_invalido: "Código incorrecto", sin_acceso: "Este plan no incluye descuentos de aliados", limite_alcanzado: "Ya se usó el límite mensual en este aliado" }[data?.error] || "desconocido";
+    console.error("registrarDescuento:", motivo);
+    return { ok: false, error: { message: motivo } };
+  }
+  return { ok: true, error: null };
 }
 
 /* ---------- ESTADO ---------- */
@@ -145,7 +155,7 @@ let ERROR_CARGA = false;
 /* ---------- CARGA DE ALIADOS (filtrados por plan) ---------- */
 async function cargarAliados() {
   // Nota: "codigo_aliado" NUNCA se pide acá a propósito — se valida server-side (RPC verificar_codigo_aliado)
-  const { data, error } = await supabase.from("aliados")
+  const { data, error } = await supabase.from("aliados_publico")
     .select("id, nombre, categoria, descuento, descripcion, whatsapp, direccion, maps_url, ofrece_domicilio, ofrece_agenda, instagram, imagen_url, fotos_carrusel, destacado, planes_visibles")
     .eq("activo", true).order("nombre");
   ERROR_CARGA = !!error;
@@ -733,11 +743,11 @@ function wireCalc(a) {
   const btnConfirmar = $("#calc-confirmar");
   const codigoError = $("#calc-codigo-error");
 
-  async function finalizarAplicacion(p, usaPorcentaje, ahorro) {
+  async function finalizarAplicacion(p, usaPorcentaje, ahorro, codigo) {
     if (MIEMBRO_ID) {
       const { ok, error } = await registrarDescuento({
-        aliado_id: a.id, aliado_nombre: a.nombre, categoria: a.categoria,
-        descuento_pct: badgePromo(p), compra: usaPorcentaje ? monto : null, ahorro,
+        aliado_id: a.id, categoria: a.categoria,
+        descuento_pct: badgePromo(p), compra: usaPorcentaje ? monto : null, ahorro, codigo,
       });
       if (!ok) {
         toast("Error: " + (error?.message || "desconocido"), false);
@@ -808,7 +818,7 @@ function wireCalc(a) {
     const p = promos[+selDesc.value];
     const usaPorcentaje = esPorcentajeUsable(p);
     const ahorro = usaPorcentaje ? Math.round(monto * (pctDerivada(p) / 100)) : (p.ahorro_fijo || 0);
-    await finalizarAplicacion(p, usaPorcentaje, ahorro);
+    await finalizarAplicacion(p, usaPorcentaje, ahorro, codigo);
   });
 
   actualizarModo();
@@ -826,13 +836,27 @@ function toast(msg, check = true) {
 }
 
 /* ---------- INIT ---------- */
-document.addEventListener("DOMContentLoaded", async () => {
-  PLAN_ACTUAL = await resolverPlanVisitante();
-  const limite = LIMITE_DESCUENTOS[PLAN_ACTUAL] ?? 1;
-  LIMITE_ALCANZADO = !!(MIEMBRO_ID && limite !== Infinity && MIEMBRO_USOS >= limite);
-  SIN_ACCESO_ALIADOS = limite === 0;
+// Sin este límite de tiempo, si la conexión se quedaba colgada el Directorio
+// se quedaba en su estado de carga inicial para siempre -- ni mostraba el
+// aviso de "no pudimos cargar" que ya existe más abajo.
+function conTimeout(promesa, ms) {
+  return Promise.race([
+    promesa,
+    new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+  ]);
+}
 
-  await cargarAliados();
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    PLAN_ACTUAL = await conTimeout(resolverPlanVisitante(), 12000);
+    const limite = LIMITE_DESCUENTOS[PLAN_ACTUAL] ?? 1;
+    LIMITE_ALCANZADO = !!(MIEMBRO_ID && limite !== Infinity && MIEMBRO_USOS >= limite);
+    SIN_ACCESO_ALIADOS = limite === 0;
+
+    await conTimeout(cargarAliados(), 12000);
+  } catch (_) {
+    ERROR_CARGA = true;
+  }
   renderFiltros();
   renderGrid();
   if (window.lucide) lucide.createIcons();
