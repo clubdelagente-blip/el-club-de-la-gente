@@ -16,6 +16,10 @@ const RATE_LIMIT_MAX = 15;
 const RATE_LIMIT_WINDOW_MIN = 5;
 const MAX_MESSAGE_LENGTH = 800;
 
+// Plantilla "escalacion_soporte_dashboard", ya aprobada por Meta -- {{1}}=nombre
+// del miembro, {{2}}=su WhatsApp, {{3}}=su mensaje.
+const CONTENT_SID_ESCALACION_SOPORTE_DASHBOARD = "HXd9da21da562e5b6cef8484c23884be5d";
+
 const INJECTION_PATTERNS = [
   /ignora\s+(las\s+)?instrucciones/i,
   /olvida\s+(todo|las\s+instrucciones)/i,
@@ -189,7 +193,12 @@ Deno.serve(async (req: Request) => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             to: numAdmin,
-            body: `🔔 Soporte técnico del dashboard escaló una conversación.\n\nMiembro: ${nombreMiembro}\nWhatsApp: ${whatsappMiembro}\nMensaje: "${mensaje}"${imagenUrl ? `\nCaptura: ${imagenUrl}` : ""}\n\nRevísalo en Admin → Miembros.`,
+            contentSid: CONTENT_SID_ESCALACION_SOPORTE_DASHBOARD,
+            contentVariables: {
+              "1": String(nombreMiembro),
+              "2": String(whatsappMiembro),
+              "3": imagenUrl ? `${mensaje}\n(Adjuntó una captura: ${imagenUrl})` : mensaje,
+            },
           }),
         }).catch(() => {});
       }
