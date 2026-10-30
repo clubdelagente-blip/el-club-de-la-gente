@@ -143,6 +143,10 @@
     const id = params.get("id");
     const supabaseClient = _supabase;
 
+    // Plantillas de WhatsApp aprobadas por Meta -- fuera del Sandbox ya no
+    // se puede mandar texto libre a un número que no escribió primero.
+    const CONTENT_SID_DESCUENTO_CONFIRMADO_PROFESIONAL = "HX5a6baa832cf328403b9c6eb5affe1f08";
+
     // El aliado se identifica una sola vez por dispositivo con el código de su
     // negocio (el mismo que ya se usa en Directorio.html) y queda guardado en
     // este teléfono/tablet -- antes bastaba con elegir cualquier nombre de una
@@ -559,11 +563,14 @@
               card.innerHTML = htmlProfExito(ahorro);
 
               if (p.whatsapp) {
-                const msg = `✅ Aplicaste tu descuento del Club con ${profesional.nombre} (${servicio.nombre}).\n\nAhorraste: ${fmtCOPProf(ahorro)}\n\nEl Club de la Gente`;
                 fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ to: p.whatsapp, body: msg }),
+                  body: JSON.stringify({
+                    to: p.whatsapp,
+                    contentSid: CONTENT_SID_DESCUENTO_CONFIRMADO_PROFESIONAL,
+                    contentVariables: { "1": profesional.nombre, "2": servicio.nombre, "3": fmtCOPProf(ahorro) },
+                  }),
                 }).catch(() => {});
               }
             });
