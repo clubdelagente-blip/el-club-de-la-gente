@@ -28,6 +28,10 @@ const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MIN = 5;
 const MAX_MESSAGE_LENGTH = 500;
 
+// Plantilla "escalacion_agente_whatsapp", ya aprobada por Meta -- {{1}}=nombre
+// del miembro, {{2}}=su WhatsApp, {{3}}=su último mensaje.
+const CONTENT_SID_ESCALACION_AGENTE_WHATSAPP = "HX08a7a8103f59f6256d3df18c2860dd1e";
+
 // Mismas etiquetas de estado que dashboard.js (ESTADO_PEDIDO_CLUB), sin color
 // -- solo el texto, para que el Agente describa el estado con las mismas
 // palabras que ya ve el miembro en "Mis pedidos".
@@ -1210,7 +1214,8 @@ Deno.serve(async (req: Request) => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             to: numAdmin,
-            body: `🔔 El Agente de WhatsApp escaló una conversación.\n\nMiembro: ${nombreMiembro}\nWhatsApp: ${whatsappLocal}\nÚltimo mensaje: "${textoMiembro}"\n\nRevísalo en Admin → Agente WhatsApp.`,
+            contentSid: CONTENT_SID_ESCALACION_AGENTE_WHATSAPP,
+            contentVariables: { "1": nombreMiembro, "2": whatsappLocal, "3": textoMiembro },
           }),
         }).catch(() => {});
       }
