@@ -21,7 +21,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const TWILIO_SID = Deno.env.get("TWILIO_ACCOUNT_SID")!;
 const TWILIO_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN")!;
-const FROM = "whatsapp:+14155238886";
+// URGENTE (2026-10-29): esto estaba fijo en el número de Sandbox
+// (+14155238886) incluso después de pasar a cuenta de pago con Sender de
+// producción aprobado (+573170142609) -- la inmensa mayoría de los mensajes
+// del Club seguían intentando salir desde el número viejo. Ahora usa la
+// misma variable de entorno que ya configuró auth-otp.ts.
+const FROM = "whatsapp:" + Deno.env.get("TWILIO_WHATSAPP_FROM")!;
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -41,13 +46,19 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
   try {
-    const { to, body, mediaUrl } = await req.json();
-    if (!to || (!body && !mediaUrl)) return new Response(JSON.stringify({ error: "Faltan datos" }), { status: 400, headers: cors });
+    // contentSid/contentVariables manda una plantilla aprobada por Meta en vez
+    // de texto libre -- necesario fuera de la ventana de 24h desde que el
+    // Sender pasó a producción (ver whatsapp-send-3 llamadas en banco-mensajes/).
+    const { to, body, mediaUrl, contentSid, contentVariables } = await req.json();
+    if (!to || (!body && !mediaUrl && !contentSid)) return new Response(JSON.stringify({ error: "Faltan datos" }), { status: 400, headers: cors });
     if (body && (typeof body !== "string" || body.length > 1000)) {
       return new Response(JSON.stringify({ error: "Mensaje inválido" }), { status: 400, headers: cors });
     }
     if (mediaUrl && (typeof mediaUrl !== "string" || !/^https:\/\//.test(mediaUrl))) {
       return new Response(JSON.stringify({ error: "Media inválida" }), { status: 400, headers: cors });
+    }
+    if (contentSid && (typeof contentSid !== "string" || !/^HX[0-9a-f]{32}$/.test(contentSid))) {
+      return new Response(JSON.stringify({ error: "contentSid inválido" }), { status: 400, headers: cors });
     }
 
     const num = to.replace(/\D/g, "");
@@ -87,7 +98,12 @@ Deno.serve(async (req) => {
     const destino = "whatsapp:+" + (num.startsWith("57") ? num : "57" + num);
 
     const formFields: Record<string, string> = { From: FROM, To: destino };
-    if (body) formFields.Body = body;
+    if (contentSid) {
+      formFields.ContentSid = contentSid;
+      if (contentVariables) formFields.ContentVariables = JSON.stringify(contentVariables);
+    } else if (body) {
+      formFields.Body = body;
+    }
     if (mediaUrl) formFields.MediaUrl = mediaUrl;
     const form = new URLSearchParams(formFields);
     const creds = btoa(`${TWILIO_SID}:${TWILIO_TOKEN}`);

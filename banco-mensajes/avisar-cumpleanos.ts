@@ -1,30 +1,39 @@
 // avisar-cumpleanos — El Club de la Gente
 // Supabase Edge Function · JWT: OFF (la llama pg_cron internamente, 1 vez al día)
 //
-// Cada día busca a los miembros Premium o Vitalicia cuyo cumpleaños es hoy,
-// cruza sus categorías de interés (perfiles.categorias_interes) con los
-// aliados que tengan una promoción activa marcada "es_cumpleanos", y les
-// manda un WhatsApp de felicitación contándoles qué beneficios tienen ese
-// día. Respeta la preferencia "descuentos" de Mi Agente (mismo criterio que
-// usan las alertas de descuentos por categoría) -- sin fila en
-// preferencias_notificacion se asume que sí quiere, solo se excluye a quien
-// la desactivó explícitamente.
+// Cada día busca a TODOS los miembros (cualquier plan) cuyo cumpleaños es
+// hoy y les manda un WhatsApp de felicitación. Respeta la preferencia
+// "descuentos" de Mi Agente (mismo criterio que usan las alertas de
+// descuentos por categoría) -- sin fila en preferencias_notificacion se
+// asume que sí quiere, solo se excluye a quien la desactivó explícitamente.
 //
-// El texto del mensaje lo redacta la IA (Groq, mismo proveedor que usa el
-// Agente de WhatsApp en whatsapp-receive-v2.ts) para que suene personal,
-// usando como guía de tono los rasgos del perfil numerológico de cada
-// persona (mismo sistema "número de misión" que ya usa el Agente -- los
-// RASGOS de abajo son un resumen propio de este archivo, duplicado a
-// propósito, no la guía completa de estilo conversacional del Agente, que
-// no aplica aquí porque esto no es una conversación). Si la IA falla o no
-// responde, cae a un mensaje fijo de respaldo para que nunca se quede sin
-// avisar a nadie.
+// MIGRACIÓN A PLANTILLAS (2026-10-29): fuera del Sandbox, Meta exige que un
+// mensaje de negocio-a-usuario fuera de la ventana de 24h use una plantilla
+// aprobada -- ya no se puede mandar el párrafo libre de 6 líneas que
+// redactaba la IA antes. Las cortesías de cumpleaños (exclusivas de
+// Premium/Vitalicia) tampoco se listan ya en este mensaje -- eso quedó para
+// cuando el miembro responda "sí" dentro de la ventana de 24h, que ahí sí
+// puede ser texto libre (ver whatsapp-receive-v2.ts).
+//
+// Dos plantillas, según el plan:
+// - Premium/Vitalicia (sí tienen cortesías): feliz_cumpleanos_v2, termina
+//   preguntando si quiere acceder a sus cortesías.
+// - Gratis/Básica (no tienen cortesías): feliz_cumpleanos_basico, mismo
+//   saludo + frase personalizada, sin la pregunta (no hay nada que ofrecer).
+// Ambas comparten {{1}}=primer nombre, {{2}}=frase corta según el número de
+// misión de la persona -- la IA la redacta en el momento (solo esa frase,
+// no el mensaje completo); si falla, cae a una de las 12 frases fijas de
+// respaldo, nunca se queda sin mandar nada.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY")!;
+
+const CONTENT_SID_CUMPLE_PREMIUM = "HXff073eb3a93c3735d92b8a7dea3be4fa"; // feliz_cumpleanos_v2
+// TODO: reemplazar por el SID real en cuanto la crees en Twilio.
+const CONTENT_SID_CUMPLE_BASICO = "HX_PENDIENTE_feliz_cumpleanos_basico"; // feliz_cumpleanos_basico
 
 function calcularNumerologia(fechaNacimiento: string): number {
   const digits = fechaNacimiento.replace(/\D/g, "");
@@ -36,8 +45,9 @@ function calcularNumerologia(fechaNacimiento: string): number {
 }
 
 // Resumen de rasgos por número (el párrafo descriptivo de cada perfil
-// numerológico completo en whatsapp-receive-v2.ts, sin las reglas de estilo
-// conversacional que no aplican a un mensaje de cumpleaños de una sola vía).
+// numerológico completo vive en whatsapp-receive-v2.ts, sin las reglas de
+// estilo conversacional que no aplican a un mensaje de una sola vía) --
+// se usa como guía de tono para la IA, no se manda tal cual.
 const RASGOS_NUMEROLOGIA: Record<number, string> = {
   1: "independiente, orientada a resultados y acción. Valora el reconocimiento directo, sin rodeos.",
   2: "sensible, empática y valora profundamente sentirse escuchada y comprendida.",
@@ -53,30 +63,38 @@ const RASGOS_NUMEROLOGIA: Record<number, string> = {
   33: "encarna la compasión, el servicio y el amor incondicional hacia los demás.",
 };
 
-async function redactarMsgCumpleIA(primerNombre: string, rasgos: string, beneficios: string[], elegibleCortesias: boolean): Promise<string | null> {
-  // Gratis/Básica no tienen cortesías de cumpleaños (eso es solo Premium/
-  // Vitalicia) -- para esos el prompt no debe mencionar NINGÚN beneficio,
-  // ni siquiera invitarlos al Directorio, para no generar una expectativa
-  // que no les corresponde. Solo a Premium/Vitalicia sin promo de hoy se les
-  // invita a mirar el Directorio (sí tienen acceso real a esos descuentos).
-  const listaBeneficios = beneficios.length
-    ? beneficios.join("\n")
-    : elegibleCortesias
-      ? "Hoy no hay una promoción de cumpleaños específica para sus intereses -- invítala a revisar el Directorio por si algo le interesa: https://elclubdelagente.com/Directorio.html"
-      : null;
-  const bloqueBeneficios = listaBeneficios
-    ? `\nBeneficios reales disponibles hoy para ella (no inventes otros, cópialos tal cual si los incluyes):\n${listaBeneficios}\n`
-    : `\nEsta persona NO tiene ninguna cortesía de cumpleaños disponible (es un beneficio exclusivo de otros planes) -- NO menciones beneficios, descuentos, promociones ni el Directorio. Es solo un saludo cálido de cumpleaños.\n`;
-  const systemPrompt = `Eres parte del equipo de El Club de la Gente (Fusagasugá, Colombia) escribiendo UN mensaje de feliz cumpleaños por WhatsApp para un miembro del Club.
+// Respaldo fijo si la IA falla o no responde -- una frase por número, mismo
+// tono/estilo que se le pide a la IA ("Que este nuevo año...").
+const FRASES_RESPALDO_NUMEROLOGIA: Record<number, string> = {
+  1: "Que este nuevo año te siga impulsando a ir tras lo que quieres, con la fuerza y la claridad que ya te caracterizan. 🚀",
+  2: "Que este nuevo año te siga rodeando de las personas que de verdad te escuchan y te valoran tal como eres. 💙",
+  3: "Que este nuevo año te traiga muchos motivos para crear, compartir y contagiar esa energía tan tuya. ✨",
+  4: "Que este nuevo año siga premiando tu constancia y tu palabra, que siempre vale lo que promete. 🌿",
+  5: "Que este nuevo año venga cargado de planes nuevos, caminos distintos y la libertad de elegir los tuyos. 🌎",
+  6: "Que este nuevo año te devuelva, multiplicado, todo el cuidado que le regalas a quienes más quieres. 🏡",
+  7: "Que este nuevo año te siga regalando espacio para pensar, entender y llegar al fondo de lo que de verdad te importa. 🌌",
+  8: "Que este nuevo año te acerque un paso más a esas metas que te has propuesto, con el mismo empuje de siempre. 💪",
+  9: "Que este nuevo año te siga conectando con esas causas que le dan sentido a todo lo que haces por los demás. 🌱",
+  11: "Que este nuevo año siga despertando esa intuición que inspira a quienes te rodean. ✨",
+  22: "Que este nuevo año te siga dando la claridad para soñar en grande y la mano firme para construirlo. 🏗️",
+  33: "Que este nuevo año te devuelva en amor todo lo que entregas con tanta generosidad a los demás. 💛",
+};
 
-Rasgos de personalidad de esta persona (úsalos solo como guía de TONO, nunca los menciones explícitamente ni dentro expliques que vienen de un "perfil" o "número"): es ${rasgos}
-${bloqueBeneficios}
+// Genera SOLO la frase corta de {{2}} -- la plantilla ya trae su propio
+// saludo y su propio cierre fijos, así que la IA no debe repetir "feliz
+// cumpleaños", ni firmar, ni mencionar cortesías/beneficios (eso ya está
+// cubierto por el texto fijo antes y después de esta variable).
+async function redactarFraseCumpleIA(rasgos: string): Promise<string | null> {
+  const systemPrompt = `Eres parte del equipo de El Club de la Gente (Fusagasugá, Colombia). Vas a escribir UNA sola frase corta (máximo 160 caracteres) para la mitad de un mensaje de cumpleaños por WhatsApp.
+
+Rasgos de personalidad de esta persona (úsalos solo como guía de TONO, nunca los menciones explícitamente ni expliques que vienen de un "perfil" o "número"): es ${rasgos}
+
 Instrucciones:
-- Máximo 6 líneas, cálido y natural, nunca genérico ni de plantilla.
-- Usa el nombre "${primerNombre}".
-- Un par de emojis está bien, sin exagerar.
-- Firma al final con "El Club de la Gente" en una línea aparte.
-- Responde ÚNICAMENTE con el texto final del mensaje, sin comillas ni explicaciones.`;
+- Empieza con "Que este nuevo año..." (mismo estilo siempre).
+- Máximo 160 caracteres, una sola frase, cálida y natural.
+- NO saludes ("feliz cumpleaños" ya está en otra parte del mensaje), NO firmes, NO menciones cortesías, descuentos ni beneficios.
+- Un emoji al final está bien.
+- Responde ÚNICAMENTE con la frase final, sin comillas ni explicaciones.`;
 
   try {
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -84,19 +102,19 @@ Instrucciones:
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${GROQ_API_KEY}` },
       body: JSON.stringify({
         model: "openai/gpt-oss-120b",
-        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: "Escribe el mensaje." }],
-        // gpt-oss-120b "piensa" antes de responder y ese razonamiento también
-        // cuenta contra max_tokens -- con 300 se cortaba el mensaje a mitad
-        // de frase (el presupuesto se gastaba pensando, no en el texto final).
-        max_tokens: 700,
+        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: "Escribe la frase." }],
+        max_tokens: 300,
         temperature: 0.8,
       }),
     });
     const data = await groqRes.json();
     const texto = data?.choices?.[0]?.message?.content?.trim();
-    return texto || null;
+    // Si por algo la IA se extiende de más, mejor usar el respaldo fijo que
+    // mandar algo que se corte a mitad de frase o rompa el límite de WhatsApp.
+    if (texto && texto.length <= 300) return texto;
+    return null;
   } catch (e) {
-    console.error("Error generando mensaje de cumpleaños con IA:", e);
+    console.error("Error generando frase de cumpleaños con IA:", e);
     return null;
   }
 }
@@ -109,11 +127,9 @@ Deno.serve(async (_req: Request) => {
   const hoyCo = new Date(Date.now() - 5 * 60 * 60 * 1000);
   const mesDia = `${String(hoyCo.getUTCMonth() + 1).padStart(2, "0")}-${String(hoyCo.getUTCDate()).padStart(2, "0")}`;
 
-  // Gratis y Básica también reciben su saludo de cumpleaños (solo que sin
-  // cortesías -- esas son exclusivas de Premium/Vitalicia, ver más abajo).
   const { data: candidatos, error: errCandidatos } = await supabase
     .from("perfiles")
-    .select("id, nombre, whatsapp, plan, categorias_interes, fecha_nacimiento")
+    .select("id, nombre, whatsapp, plan, fecha_nacimiento")
     .in("plan", ["gratis", "basica", "premium", "vitalicia"])
     .not("fecha_nacimiento", "is", null)
     .not("whatsapp", "is", null);
@@ -140,71 +156,41 @@ Deno.serve(async (_req: Request) => {
     .eq("descuentos", false);
   const noQuierenDescuentos = new Set((prefs || []).map((r) => r.miembro_id));
 
-  // Aliados activos con al menos una promoción de cumpleaños activa
-  const { data: aliados, error: errAliados } = await supabase
-    .from("aliados")
-    .select("id, nombre, categoria, promociones!inner(descripcion, es_cumpleanos, activa)")
-    .eq("activo", true)
-    .eq("promociones.es_cumpleanos", true)
-    .eq("promociones.activa", true);
-
-  if (errAliados) console.error("Error buscando aliados con promo de cumpleaños:", errAliados);
-
   let mensajesEnviados = 0;
   for (const p of cumpleanerosHoy) {
     if (noQuierenDescuentos.has(p.id)) continue;
     const primerNombre = (p.nombre || "").trim().split(" ")[0] || "";
-    const intereses = (Array.isArray(p.categorias_interes) ? p.categorias_interes : []).map((c: string) =>
-      c.trim().toLowerCase()
-    );
-
-    // Las cortesías de cumpleaños son exclusivas de Premium/Vitalicia -- a
-    // Gratis/Básica ni se les calcula (quedan sin beneficios ni enlaces).
     const elegibleCortesias = p.plan === "premium" || p.plan === "vitalicia";
-
-    // "beneficios" es solo texto (para que la IA redacte con eso de guía).
-    // Los links de WhatsApp de cada aliado YA NO van sueltos en el mensaje
-    // (una plantilla de WhatsApp en producción solo admite hasta 2 botones
-    // de link, y acá puede haber más de 2 cortesías el mismo día) -- en vez
-    // de eso, el mensaje lleva UN solo link fijo a MisCortesias.html, que
-    // calcula lo mismo en vivo y ahí sí muestra un botón de WhatsApp por
-    // cada aliado, sin límite (es una página normal, no una plantilla).
-    const beneficios: string[] = [];
-    if (elegibleCortesias) {
-      for (const a of aliados || []) {
-        const catsAliado = (a.categoria || "").split(",").map((c: string) => c.trim().toLowerCase());
-        const coincide = intereses.length === 0 || catsAliado.some((c: string) => intereses.includes(c));
-        if (!coincide) continue;
-        for (const promo of a.promociones || []) {
-          beneficios.push(`🎁 ${a.nombre}: ${promo.descripcion}`);
-        }
-      }
-    }
-    const linkCortesias = `https://elclubdelagente.com/MisCortesias.html?id=${p.id}`;
-
-    const msgRespaldo = beneficios.length
-      ? `¡Feliz cumpleaños, ${primerNombre}! 🎉🌿\n\nEl Club de la Gente te tiene estos beneficios especiales hoy:\n\n${beneficios.join("\n")}\n\n¡Que lo disfrutes!`
-      : elegibleCortesias
-        ? `¡Feliz cumpleaños, ${primerNombre}! 🎉🌿\n\nHoy hay aliados del Club con beneficios especiales de cumpleaños -- revísalos en el Directorio: https://elclubdelagente.com/Directorio.html\n\n¡Que tengas un gran día!`
-        : `¡Feliz cumpleaños, ${primerNombre}! 🎉🌿\n\nQue tengas un día lleno de alegría, rodeado de las personas que quieres. Desde El Club de la Gente te mandamos un fuerte abrazo.\n\n¡Que lo disfrutes!`;
 
     const numerologia = p.fecha_nacimiento ? calcularNumerologia(p.fecha_nacimiento) : 0;
     const rasgos = RASGOS_NUMEROLOGIA[numerologia];
-    const msgIA = rasgos ? await redactarMsgCumpleIA(primerNombre, rasgos, beneficios, elegibleCortesias) : null;
-    const msgBase = msgIA || msgRespaldo;
-    // El link a "Mis cortesías" solo tiene sentido si de verdad hay alguna --
-    // si no, el mensaje ya invita al Directorio (ver msgRespaldo/prompt de IA).
-    const msg = beneficios.length
-      ? `${msgBase}\n\n📲 Reclámalas aquí:\n${linkCortesias}`
-      : msgBase;
+    const frase = (rasgos ? await redactarFraseCumpleIA(rasgos) : null) || FRASES_RESPALDO_NUMEROLOGIA[numerologia] || FRASES_RESPALDO_NUMEROLOGIA[1];
+
+    const contentSid = elegibleCortesias ? CONTENT_SID_CUMPLE_PREMIUM : CONTENT_SID_CUMPLE_BASICO;
+    // Se guarda el texto ya armado (no la plantilla cruda) en "conversaciones"
+    // -- es lo que el Agente necesita ver en su historial para entender un
+    // "sí" que llegue como respuesta a esto (ver whatsapp-receive-v2.ts).
+    const textoRenderizado = elegibleCortesias
+      ? `¡Feliz cumpleaños, ${primerNombre}! 🎉\n\n${frase}\n\n¿Te gustaría acceder a tus cortesías de parte del Club? Respóndeme que sí y te las envió 💙`
+      : `¡Feliz cumpleaños, ${primerNombre}! 🎉\n\n${frase}\n\nEl Club de la Gente`;
 
     try {
       const r = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: p.whatsapp, body: msg }),
+        body: JSON.stringify({
+          to: p.whatsapp,
+          contentSid,
+          contentVariables: { "1": primerNombre, "2": frase },
+        }),
       });
-      if (r.ok) mensajesEnviados++;
+      if (r.ok) {
+        mensajesEnviados++;
+        const whatsappLocal = (p.whatsapp || "").replace(/\D/g, "");
+        await supabase.from("conversaciones").insert({ whatsapp: whatsappLocal, rol: "assistant", contenido: textoRenderizado });
+      } else {
+        console.error("whatsapp-send-3 rechazó la felicitación a", p.whatsapp, r.status, await r.text().catch(() => ""));
+      }
     } catch (e) {
       console.error("Error enviando felicitación a", p.whatsapp, e);
     }
