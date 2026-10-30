@@ -1216,8 +1216,11 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Quitar asteriscos/guiones bajos de markdown -- el prompt ya le pide a
+    // la IA que no los use, pero no siempre obedece (es costumbre del
+    // modelo); esto lo garantiza siempre, sin depender de que haga caso.
     // Capitalizar letra después de ¿
-    const respuesta = raw.replace(/¿([a-záéíóúüñ])/g, (_: string, l: string) => "¿" + l.toUpperCase());
+    const respuesta = raw.replace(/[*_~]/g, "").replace(/¿([a-záéíóúüñ])/g, (_: string, l: string) => "¿" + l.toUpperCase());
 
     // Guardar respuesta del agente
     await supabase.from("conversaciones").insert({
