@@ -146,6 +146,8 @@
     // Plantillas de WhatsApp aprobadas por Meta -- fuera del Sandbox ya no
     // se puede mandar texto libre a un número que no escribió primero.
     const CONTENT_SID_DESCUENTO_CONFIRMADO_PROFESIONAL = "HX5a6baa832cf328403b9c6eb5affe1f08";
+    const CONTENT_SID_DESCUENTO_CONFIRMADO_PCT = "HX97ddfc6468b5751748cb2b1abef30147";
+    const CONTENT_SID_DESCUENTO_CONFIRMADO_BENEFICIO = "HX0cd6a44f46a89233ea800c9513a48029";
 
     // El aliado se identifica una sola vez por dispositivo con el código de su
     // negocio (el mismo que ya se usa en Directorio.html) y queda guardado en
@@ -270,7 +272,8 @@
         ${sellosRow(aliadoInfo, sellosActuales)}
         <div class="detalle"><span class="detalle__lbl">Verificado</span><span class="detalle__val">${new Date().toLocaleString("es-CO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</span></div>
         <hr class="divider">
-        <a href="${dirUrl}" style="${btnStyle("#095544")}">Ver aliados y descuentos &rarr;</a>
+        ${promosAplicables(aliadoInfo).length ? `<button id="btn-aplicar-aliado" style="${btnStyle("#095544")}">🏷️ Aplicar descuento en ${aliadoInfo.nombre}</button>` : ""}
+        <a href="${dirUrl}" style="${btnStyle(promosAplicables(aliadoInfo).length ? "#EAF3EF" : "#095544", promosAplicables(aliadoInfo).length ? "#021B1A" : "#fff")}">Ver aliados y descuentos &rarr;</a>
         <button id="btn-uber" style="${btnStyle("#021B1A")}">🚗 Aplicar descuento Uber</button>
         ${esPremium(p) ? `<button id="btn-prof" style="${btnStyle("#021B1A")}">💼 Aplicar servicio profesional</button>` : ""}
         ${!aliadoInfo ? selectorAliadoHtml() : ""}
@@ -279,6 +282,7 @@
       bindBtnUber(p);
       bindBtnProfesional(p);
       bindBtnConfirmarCanje(aliadoInfo);
+      bindBtnAplicarAliado(p, aliadoInfo);
     }
 
     function renderLimite(p, limite, aliadoInfo, sellosActuales) {
@@ -447,6 +451,144 @@
       });
     }
 
+    /* ---------- Aplicar descuento del aliado actual (lo hace el aliado,
+       justo después de escanear el QR -- antes solo quedaba un link suelto
+       a todo el Directorio para que el aliado buscara su propia tarjeta
+       entre todos los demás). El código del negocio ya se conoce (quedó
+       guardado en este dispositivo al identificarse), así que no hay que
+       volver a pedirlo. */
+    function fmtCOPAliado(n) { return "$" + Number(n||0).toLocaleString("es-CO"); }
+    function pctDerivadaAliado(p) {
+      if (p.tipo !== "porcentaje") return null;
+      if (p.descuento_pct) return p.descuento_pct;
+      if (p.precio_normal && p.ahorro_fijo) return Math.round((p.ahorro_fijo / p.precio_normal) * 100);
+      return null;
+    }
+    function badgePromoAliado(p) {
+      const pct = pctDerivadaAliado(p);
+      if (p.tipo === "porcentaje") return pct != null ? `${pct}%` : "% dcto.";
+      if (p.tipo === "2x1") return "2×1";
+      if (p.tipo === "monto_fijo") return p.ahorro_fijo ? `-${fmtCOPAliado(p.ahorro_fijo)}` : "Descuento";
+      if (p.tipo === "precio_especial") return p.precio_descuento != null ? fmtCOPAliado(p.precio_descuento) : "Precio especial";
+      if (p.tipo === "regalo") return "🎁";
+      return "Promo";
+    }
+    function esPorcentajeUsableAliado(p) { return p.tipo === "porcentaje" && pctDerivadaAliado(p) != null; }
+    function necesitaAhorroManualAliado(p) { return p.tipo === "2x1" || p.tipo === "personalizado"; }
+
+    function promosAplicables(aliadoInfo) { return (aliadoInfo?.promociones || []).filter(x => !x.es_cumpleanos); }
+
+    function htmlAliadoPromoLista(aliadoInfo) {
+      const promos = promosAplicables(aliadoInfo);
+      return `
+        <div class="estado-ic" style="background:var(--verde-claro)">🏷️</div>
+        <div class="miembro-nombre" style="font-size:20px">¿Qué promo aplicas?</div>
+        <p style="font-size:12px;color:#888;margin-bottom:14px">${aliadoInfo.nombre}</p>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${promos.map(p => `<button class="aliado-promo-btn" data-promo="${p.id}" style="${btnStyle("#EAF3EF","#021B1A")}">${badgePromoAliado(p)} · ${p.descripcion}</button>`).join("")}
+        </div>
+        <button id="aliado-promo-cancelar" style="${btnStyle("#f5f4f0","#021B1A")}">Cancelar</button>
+      `;
+    }
+    function htmlAliadoDetalle(p, aliadoInfo) {
+      const usaPorcentaje = esPorcentajeUsableAliado(p);
+      const manual = necesitaAhorroManualAliado(p);
+      return `
+        <div class="estado-ic" style="background:var(--verde-claro)">🏷️</div>
+        <div class="miembro-nombre" style="font-size:20px">${badgePromoAliado(p)} · ${aliadoInfo.nombre}</div>
+        <p style="font-size:12px;color:#888;margin-bottom:14px">${p.descripcion}</p>
+        ${usaPorcentaje ? `
+          <input id="aliado-monto" type="text" inputmode="numeric" placeholder="Valor de la compra" style="width:100%;padding:12px 14px;border:1px solid #ebebeb;border-radius:10px;font-size:16px;margin-bottom:12px;text-align:center">
+          <div class="detalle"><span class="detalle__lbl">Ahorra</span><span class="detalle__val" id="aliado-ahorro-prev" style="color:var(--verde)">$0</span></div>
+        ` : manual ? `
+          <p style="font-size:12px;color:#888;margin-bottom:10px">Escribe cuánto ahorró el miembro con este beneficio, para que quede reflejado en su ahorro total.</p>
+          <input id="aliado-monto" type="text" inputmode="numeric" placeholder="¿Cuánto ahorró?" style="width:100%;padding:12px 14px;border:1px solid #ebebeb;border-radius:10px;font-size:16px;margin-bottom:12px;text-align:center">
+        ` : `
+          <p style="font-size:13px;color:#555;background:#f5f4f0;border-radius:8px;padding:12px 14px;margin-bottom:12px">${p.descripcion}</p>
+        `}
+        <p id="aliado-error" class="error-msg" style="display:none;margin:10px 0;font-size:13px"></p>
+        <button id="aliado-confirmar" style="${btnStyle("#095544")}">Aplicar descuento</button>
+        <button id="aliado-cancelar" style="${btnStyle("#f5f4f0","#021B1A")}">Cancelar</button>
+      `;
+    }
+    function htmlAliadoExito(ahorro) {
+      return `
+        <div class="estado-ic estado-ic--ok">✓</div>
+        <div class="estado-lbl estado-lbl--ok">¡Descuento aplicado!</div>
+        <div class="miembro-nombre" style="font-size:24px">${ahorro ? fmtCOPAliado(ahorro) : "Registrado"}</div>
+        <p style="font-size:13px;color:#888;margin-top:10px">Se le avisó al miembro por WhatsApp y ya queda en su historial de ahorro.</p>
+      `;
+    }
+
+    function abrirAliadoDetalle(p, miembro, aliadoInfo) {
+      card.innerHTML = htmlAliadoDetalle(p, aliadoInfo);
+      const usaPorcentaje = esPorcentajeUsableAliado(p);
+      const manual = necesitaAhorroManualAliado(p);
+      const montoInput = document.getElementById("aliado-monto");
+      let monto = 0;
+      montoInput?.addEventListener("input", () => {
+        const digits = montoInput.value.replace(/\D/g, "");
+        montoInput.value = digits ? Number(digits).toLocaleString("es-CO") : "";
+        monto = parseInt(digits) || 0;
+        if (usaPorcentaje) {
+          const pct = pctDerivadaAliado(p) / 100;
+          const el = document.getElementById("aliado-ahorro-prev");
+          if (el) el.textContent = fmtCOPAliado(Math.round(monto * pct));
+        }
+      });
+      document.getElementById("aliado-cancelar")?.addEventListener("click", () => cargarYRenderizar());
+      document.getElementById("aliado-confirmar")?.addEventListener("click", async () => {
+        const errEl = document.getElementById("aliado-error");
+        if (errEl) errEl.style.display = "none";
+        if (usaPorcentaje && !monto) { if (errEl) { errEl.textContent = "Ingresa el valor de la compra."; errEl.style.display = "block"; } return; }
+        if (manual && !monto) { if (errEl) { errEl.textContent = "Escribe cuánto ahorró."; errEl.style.display = "block"; } return; }
+
+        const ahorro = usaPorcentaje ? Math.round(monto * (pctDerivadaAliado(p) / 100)) : manual ? monto : (p.ahorro_fijo || 0);
+
+        const btn = document.getElementById("aliado-confirmar");
+        btn.disabled = true; btn.textContent = "Aplicando...";
+
+        const { data: res, error } = await supabaseClient.rpc("aplicar_descuento_directorio", {
+          p_miembro_id: id, p_aliado_id: aliadoInfo.id, p_codigo: aliadoCodigo,
+          p_categoria: aliadoInfo.categoria, p_descuento_pct: badgePromoAliado(p),
+          p_compra: usaPorcentaje ? monto : null, p_ahorro: ahorro || 0,
+        });
+
+        if (error || !res?.ok) {
+          if (errEl) { errEl.textContent = "No se pudo aplicar el descuento. Intenta de nuevo."; errEl.style.display = "block"; }
+          btn.disabled = false; btn.textContent = "Aplicar descuento";
+          return;
+        }
+
+        if (miembro.whatsapp) {
+          const bodyPayload = usaPorcentaje
+            ? { to: miembro.whatsapp, contentSid: CONTENT_SID_DESCUENTO_CONFIRMADO_PCT, contentVariables: { "1": aliadoInfo.nombre, "2": fmtCOPAliado(ahorro), "3": fmtCOPAliado(monto) } }
+            : { to: miembro.whatsapp, contentSid: CONTENT_SID_DESCUENTO_CONFIRMADO_BENEFICIO, contentVariables: { "1": aliadoInfo.nombre, "2": p.descripcion } };
+          fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(bodyPayload),
+          }).catch(() => {});
+        }
+
+        card.innerHTML = htmlAliadoExito(ahorro);
+      });
+    }
+
+    function bindBtnAplicarAliado(miembro, aliadoInfo) {
+      document.getElementById("btn-aplicar-aliado")?.addEventListener("click", () => {
+        const promos = promosAplicables(aliadoInfo);
+        if (!promos.length) return;
+        if (promos.length === 1) { abrirAliadoDetalle(promos[0], miembro, aliadoInfo); return; }
+        card.innerHTML = htmlAliadoPromoLista(aliadoInfo);
+        document.getElementById("aliado-promo-cancelar")?.addEventListener("click", () => cargarYRenderizar());
+        document.querySelectorAll(".aliado-promo-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const promo = promos.find(x => String(x.id) === btn.dataset.promo);
+            if (promo) abrirAliadoDetalle(promo, miembro, aliadoInfo);
+          });
+        });
+      });
+    }
+
     /* ---------- Descuento con un profesional (Premium/Vitalicia) ---------- */
     function esPremium(p) { return p.plan === "premium" || p.plan === "vitalicia"; }
     function fmtCOPProf(n) { return "$" + Number(n||0).toLocaleString("es-CO"); }
@@ -607,7 +749,7 @@
       // protegida y acá se está consultando la vista pública) -- se trae
       // aparte, igual que ya hace directorio.js.
       const { data: promos } = await supabaseClient
-        .from("promociones").select("descripcion, es_cumpleanos, activa")
+        .from("promociones").select("id, tipo, descripcion, precio_normal, precio_descuento, ahorro_fijo, descuento_pct, es_cumpleanos, activa")
         .eq("aliado_id", aliadoId).eq("activa", true);
       data.promociones = promos || [];
       return data;
