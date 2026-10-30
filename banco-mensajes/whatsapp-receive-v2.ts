@@ -651,7 +651,7 @@ NUNCA inventes un link si no está disponible arriba — dile la verdad, que ese
   }
 
   if (esCumpleHoyElegible) {
-    base += `\n\nCORTESÍA DE CUMPLEAÑOS DE HOY: hoy es el cumpleaños de este miembro y ya le llegó un mensaje de WhatsApp preguntándole si quiere acceder a sus cortesías de cumpleaños. Si responde afirmativamente ("sí", "si", "claro", "dale", "obvio", etc.) o pregunta directamente por sus cortesías, usa ESTOS datos reales -- nunca inventes nombres de aliados ni beneficios que no estén aquí:\n${cortesiaCumpleHoy || "Hoy no hay ninguna cortesía de cumpleaños que calce con sus categorías de interés -- dile eso con calidez e invítala a revisar el Directorio por si algo le interesa: https://elclubdelagente.com/Directorio.html"}`;
+    base += `\n\nCORTESÍA DE CUMPLEAÑOS DE HOY: hoy es el cumpleaños de este miembro y ya le llegó un mensaje de WhatsApp preguntándole si quiere acceder a sus cortesías de cumpleaños. Si responde afirmativamente ("sí", "si", "claro", "dale", "obvio", etc.) o pregunta directamente por sus cortesías, usa ESTOS datos reales -- nunca inventes nombres de aliados ni beneficios que no estén aquí:\n${cortesiaCumpleHoy || "Hoy no hay ninguna cortesía de cumpleaños que calce con sus categorías de interés -- dile eso con calidez e invítala a revisar el Directorio por si algo le interesa: https://elclubdelagente.com/Directorio.html"}${cortesiaCumpleHoy ? `\n\nSi hay más de una cortesía en la lista, manda también este link como respaldo para que las vea todas juntas con un botón de WhatsApp para cada una: https://elclubdelagente.com/MisCortesias.html?id=${miembroId}` : ""}`;
   }
 
   if (programas.length > 0) {
