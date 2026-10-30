@@ -10,6 +10,7 @@ const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 // Plantillas de WhatsApp aprobadas por Meta -- fuera del Sandbox ya no se
 // puede mandar texto libre a un número que no escribió primero.
 const CONTENT_SID_AVISO_POSTULACION_ALIADO = "HXd5578c55b4ee0dccb632819a4b1d6edc";
+const CONTENT_SID_AVISO_POSTULACION_PROFESIONAL = "HXb0b7bbf56754ab37b19affc01eb8139d";
 
 // Deja siempre el número de celular en 10 dígitos, sin el indicativo "57"
 // -- si esto no fuera consistente entre el registro y el login, el correo
@@ -794,7 +795,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: await numeroAdmin(), body: `📋 Nueva postulación de PROFESIONAL\n\nNombre: ${nombre}\nÁrea: ${area}\nWhatsApp: ${wa}\nCorreo: ${email}\n\nRevísala en Admin → Profesionales.` }),
+      body: JSON.stringify({
+        to: await numeroAdmin(),
+        contentSid: CONTENT_SID_AVISO_POSTULACION_PROFESIONAL,
+        contentVariables: { "1": nombre, "2": area, "3": wa, "4": email },
+      }),
     }).catch(() => {});
 
     localStorage.setItem("ecdlg_perfil", JSON.stringify({ nombre, primerNombre: nombre.split(" ")[0], rol: "profesional" }));
