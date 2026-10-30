@@ -548,7 +548,7 @@ function formatoCOP(n: number): string {
   return "$" + Math.round(n).toLocaleString("es-CO");
 }
 
-function buildSystemPrompt(perfil: Record<string, unknown>, numerologia: number, aliados: Record<string, unknown>[] = [], promos: Record<string, unknown>[] = [], config: Record<string, string | null> = {}, usoDescuentos = "no disponible", productosTienda: Record<string, unknown>[] = [], profesionales: Record<string, unknown>[] = [], referidosActivos = 0, tramitesPendientes = "", programas: Record<string, unknown>[] = [], anuncios: Record<string, unknown>[] = [], vacantes: Record<string, unknown>[] = [], talleresEducacion: Record<string, unknown>[] = []): string {
+function buildSystemPrompt(perfil: Record<string, unknown>, numerologia: number, aliados: Record<string, unknown>[] = [], promos: Record<string, unknown>[] = [], config: Record<string, string | null> = {}, usoDescuentos = "no disponible", productosTienda: Record<string, unknown>[] = [], profesionales: Record<string, unknown>[] = [], referidosActivos = 0, tramitesPendientes = "", programas: Record<string, unknown>[] = [], anuncios: Record<string, unknown>[] = [], vacantes: Record<string, unknown>[] = [], talleresEducacion: Record<string, unknown>[] = [], esCumpleHoyElegible = false, cortesiaCumpleHoy = ""): string {
   const perfilNumerologico = getPerfilNumerologico(numerologia);
 
   const categorias = Array.isArray(perfil.categorias_interes)
@@ -648,6 +648,10 @@ NUNCA inventes un link si no está disponible arriba — dile la verdad, que ese
 
   if (tramitesPendientes) {
     base += `\n\nTRÁMITES Y PEDIDOS PENDIENTES DE ESTE MIEMBRO (datos reales, úsalos para responder directo sin escalar):\n${tramitesPendientes}`;
+  }
+
+  if (esCumpleHoyElegible) {
+    base += `\n\nCORTESÍA DE CUMPLEAÑOS DE HOY: hoy es el cumpleaños de este miembro y ya le llegó un mensaje de WhatsApp preguntándole si quiere acceder a sus cortesías de cumpleaños. Si responde afirmativamente ("sí", "si", "claro", "dale", "obvio", etc.) o pregunta directamente por sus cortesías, usa ESTOS datos reales -- nunca inventes nombres de aliados ni beneficios que no estén aquí:\n${cortesiaCumpleHoy || "Hoy no hay ninguna cortesía de cumpleaños que calce con sus categorías de interés -- dile eso con calidez e invítala a revisar el Directorio por si algo le interesa: https://elclubdelagente.com/Directorio.html"}`;
   }
 
   if (programas.length > 0) {
@@ -1092,7 +1096,41 @@ Deno.serve(async (req: Request) => {
       tramitesPendientes = lineas.join("\n");
     }
 
-    const systemPrompt = buildSystemPrompt(perfil, numerologia, aliados, [], config, usoDescuentos, productosTienda, profesionales, referidosActivos, tramitesPendientes, programas, anuncios, vacantes, talleresEducacion);
+    // Cortesía de cumpleaños -- solo si hoy es el cumpleaños de este miembro
+    // Y es Premium/Vitalicia (mismo criterio que avisar-cumpleanos.ts,
+    // Verificar.html y MisCortesias.html, duplicado a propósito). El mensaje
+    // proactivo de cumpleaños (avisar-cumpleanos.ts) ya NO lista las
+    // cortesías -- le pregunta al miembro si las quiere y, si responde que
+    // sí, es ACÁ donde el Agente necesita el dato real para no inventar
+    // ningún nombre de aliado ni beneficio.
+    let esCumpleHoyElegible = false;
+    let cortesiaCumpleHoy = "";
+    if (perfil.fecha_nacimiento && (planActual === "premium" || planActual === "vitalicia")) {
+      const hoyCoCumple = new Date(Date.now() - 5 * 60 * 60 * 1000);
+      const mesDiaCumple = `${String(hoyCoCumple.getUTCMonth() + 1).padStart(2, "0")}-${String(hoyCoCumple.getUTCDate()).padStart(2, "0")}`;
+      if ((perfil.fecha_nacimiento as string).slice(5, 10) === mesDiaCumple) {
+        esCumpleHoyElegible = true;
+        const { data: aliadosCumple } = await supabase
+          .from("aliados")
+          .select("nombre, categoria, promociones!inner(descripcion, es_cumpleanos, activa)")
+          .eq("activo", true)
+          .eq("promociones.es_cumpleanos", true)
+          .eq("promociones.activa", true);
+        const interesesCumple = (Array.isArray(perfil.categorias_interes) ? (perfil.categorias_interes as string[]) : []).map((c) => c.trim().toLowerCase());
+        const lineasCumple: string[] = [];
+        for (const a of (aliadosCumple || []) as Record<string, unknown>[]) {
+          const catsAliado = ((a.categoria as string) || "").split(",").map((c) => c.trim().toLowerCase());
+          const coincide = interesesCumple.length === 0 || catsAliado.some((c) => interesesCumple.includes(c));
+          if (!coincide) continue;
+          for (const promo of (a.promociones as Record<string, unknown>[]) || []) {
+            lineasCumple.push(`- ${a.nombre}: ${promo.descripcion}`);
+          }
+        }
+        cortesiaCumpleHoy = lineasCumple.join("\n");
+      }
+    }
+
+    const systemPrompt = buildSystemPrompt(perfil, numerologia, aliados, [], config, usoDescuentos, productosTienda, profesionales, referidosActivos, tramitesPendientes, programas, anuncios, vacantes, talleresEducacion, esCumpleHoyElegible, cortesiaCumpleHoy);
 
     // Cargar historial de conversación (últimos 10 mensajes)
     const { data: historial } = await supabase
