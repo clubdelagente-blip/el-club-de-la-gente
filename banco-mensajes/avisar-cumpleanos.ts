@@ -84,13 +84,18 @@ const FRASES_RESPALDO_NUMEROLOGIA: Record<number, string> = {
 // cumpleaños", ni firmar, ni mencionar cortesías/beneficios (eso ya está
 // cubierto por el texto fijo antes y después de esta variable).
 async function redactarFraseCumpleIA(rasgos: string): Promise<string | null> {
-  const systemPrompt = `Eres parte del equipo de El Club de la Gente (Fusagasugá, Colombia). Vas a escribir UNA sola frase corta (máximo 160 caracteres) para la mitad de un mensaje de cumpleaños por WhatsApp.
+  // Importante: NO pedirle un número exacto de caracteres. Este modelo
+  // "razona" antes de responder, y con un límite numérico se pone a contar
+  // caracteres uno por uno en el razonamiento (gastando ahí todo el
+  // presupuesto de tokens, sin llegar nunca a escribir la frase). "una sola
+  // frase" como límite cualitativo no dispara ese conteo.
+  const systemPrompt = `Eres parte del equipo de El Club de la Gente (Fusagasugá, Colombia). Vas a escribir UNA sola frase corta (una sola oración, no un párrafo) para la mitad de un mensaje de cumpleaños por WhatsApp.
 
 Rasgos de personalidad de esta persona (úsalos solo como guía de TONO, nunca los menciones explícitamente ni expliques que vienen de un "perfil" o "número"): es ${rasgos}
 
 Instrucciones:
 - Empieza con "Que este nuevo año..." (mismo estilo siempre).
-- Máximo 160 caracteres, una sola frase, cálida y natural.
+- Una sola oración, cálida y natural -- nunca un párrafo ni varias frases.
 - NO saludes ("feliz cumpleaños" ya está en otra parte del mensaje), NO firmes, NO menciones cortesías, descuentos ni beneficios.
 - Un emoji al final está bien.
 - Responde ÚNICAMENTE con la frase final, sin comillas ni explicaciones.`;
@@ -105,8 +110,10 @@ Instrucciones:
         // gpt-oss-120b "piensa" antes de responder y ese razonamiento también
         // cuenta contra max_tokens -- con 300 el presupuesto se gastaba
         // pensando y la respuesta llegaba vacía (sin tirar error), cayendo
-        // siempre al respaldo fijo sin que se notara por qué.
-        max_tokens: 700,
+        // siempre al respaldo fijo sin que se notara por qué. Subido más de
+        // lo que debería hacer falta ahora (ver nota sobre el prompt arriba)
+        // como margen de seguridad.
+        max_tokens: 1000,
         temperature: 0.8,
       }),
     });
