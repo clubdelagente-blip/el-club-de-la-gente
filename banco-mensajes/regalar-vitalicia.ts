@@ -23,6 +23,9 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
+// Plantilla "vitalicia_regalo_nuevo", ya aprobada por Meta -- {{1}}=primer nombre.
+const CONTENT_SID_VITALICIA_REGALO_NUEVO = "HX8582a09e6b3d5d34532cd879e63ab2cb";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -120,15 +123,16 @@ Deno.serve(async (req: Request) => {
   if (notifErr) console.error("Error creando notificación:", notifErr);
 
   const primerNombre = nombre.trim().split(" ")[0];
-  const msg = esNuevo
-    ? `🎁 ¡Hola ${primerNombre}! El Club de la Gente te regaló una membresía *Vitalicia* — descuentos ilimitados para siempre en todos nuestros aliados, sin ningún costo.\n\nYa tienes tu cuenta lista. Para entrar:\n1. Ve a elclubdelagente.com\n2. Toca "Iniciar sesión"\n3. Pon tu número de WhatsApp (este mismo) y te llega un código para entrar — no necesitas contraseña.\n\n¡Bienvenido al Club!`
-    : `🎁 ¡Hola ${primerNombre}! El Club de la Gente te regaló la membresía *Vitalicia* — descuentos ilimitados para siempre en todos los aliados, sin ningún costo. Ya está activa en tu cuenta.\n\nEl Club de la Gente`;
+  const msgExistente = `🎁 ¡Hola ${primerNombre}! El Club de la Gente te regaló la membresía *Vitalicia* — descuentos ilimitados para siempre en todos los aliados, sin ningún costo. Ya está activa en tu cuenta.\n\nEl Club de la Gente`;
+  const bodyPayload = esNuevo
+    ? { to: digits, contentSid: CONTENT_SID_VITALICIA_REGALO_NUEVO, contentVariables: { "1": primerNombre } }
+    : { to: digits, body: msgExistente };
 
   try {
     const rEnvio = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: digits, body: msg }),
+      body: JSON.stringify(bodyPayload),
     });
     if (!rEnvio.ok) {
       console.error("whatsapp-send-3 rechazó el mensaje de regalo:", rEnvio.status, await rEnvio.text().catch(() => ""));
