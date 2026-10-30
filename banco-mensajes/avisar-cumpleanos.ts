@@ -32,8 +32,7 @@ const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY")!;
 
 const CONTENT_SID_CUMPLE_PREMIUM = "HXff073eb3a93c3735d92b8a7dea3be4fa"; // feliz_cumpleanos_v2
-// TODO: reemplazar por el SID real en cuanto la crees en Twilio.
-const CONTENT_SID_CUMPLE_BASICO = "HX_PENDIENTE_feliz_cumpleanos_basico"; // feliz_cumpleanos_basico
+const CONTENT_SID_CUMPLE_BASICO = "HX3f6892fbda13a2f0c9725bc696c60c26"; // feliz_cumpleanos_basico
 
 function calcularNumerologia(fechaNacimiento: string): number {
   const digits = fechaNacimiento.replace(/\D/g, "");
