@@ -1537,13 +1537,18 @@ function bindFormAliado(){
         'Descuentos premium y beneficios ampliados',
         'Acceso prioritario a eventos del Club',
       ];
-      const msg=`¡Bienvenido al Club, ${nombre}! 🌿\n\nYa eres aliado de El Club de la Gente.\n\nPara entrar a tu cuenta, ve a https://elclubdelagente.com/Registro.html?modo=login e inicia sesión con tu WhatsApp (${waDigits}) -- te llega un código, no necesitas contraseña.\n\nTu cuenta ya incluye membresía Premium vitalicia y gratuita:\n${beneficiosVitalicia.map(b=>'• '+b).join('\n')}`;
+      // Plantilla aprobada "cuenta_aliado_creada_" (v1/v2 fueron rechazadas
+      // por Meta -- mencionaban el link de login, patrón que detecta como
+      // phishing). Ya no incluye instrucciones de acceso por WhatsApp; las
+      // credenciales quedan visibles en este mismo modal para que el admin
+      // las comparta a mano si hace falta.
+      const msg=`¡Hola ${nombre}! 🌿 Ya tienes tu cuenta de aliado activa en El Club de la Gente, con membresía Premium vitalicia y gratuita incluida.\n\nQueremos agradecerte de corazón por creer en El Club de la Gente. Tu confianza nos impulsa a seguir creciendo y a construir una comunidad que ahorra, aprende y ayuda.\nCon tu apoyo podremos llegar a muchas más personas y seres sintientes, y transformar juntos nuestro entorno.\nGracias por unirte a esta familia. ¡Bienvenido(a)!`;
 
       let enviado=false;
       try{
         const res=await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3",{
           method:"POST",headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({to:waDigits,body:msg})
+          body:JSON.stringify({to:waDigits,contentSid:"HX7f78d0fdc442b9248fa8aa74a68cea9f",contentVariables:{"1":nombre}})
         });
         enviado=res.ok;
       }catch(_){enviado=false;}
