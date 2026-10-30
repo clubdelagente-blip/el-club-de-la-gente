@@ -13,6 +13,7 @@ const CONTENT_SID_AVISO_POSTULACION_ALIADO = "HXd5578c55b4ee0dccb632819a4b1d6edc
 const CONTENT_SID_AVISO_POSTULACION_PROFESIONAL = "HXb0b7bbf56754ab37b19affc01eb8139d";
 const CONTENT_SID_BIENVENIDA_PLAN_GRATIS = "HX64c02dfb5a22f065cf58544e0c1a573a";
 const CONTENT_SID_BIENVENIDA_PAGO_ERROR = "HX62d9d2cc97f88fa857b4d219f27bb08b";
+const CONTENT_SID_AVISO_NUEVA_SOLICITUD = "HXdaf8eaff5e1d758d19ae263ac29fa8cd";
 
 // Deja siempre el número de celular en 10 dígitos, sin el indicativo "57"
 // -- si esto no fuera consistente entre el registro y el login, el correo
@@ -598,7 +599,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ to: await numeroAdmin(), body: `💳 Nueva solicitud de membresía ${pagoPendiente.planLabel} por ${new Intl.NumberFormat("es-CO").format(pagoPendiente.precio)} COP (registro nuevo). Revísala en Admin → Ventas.` }),
+          body: JSON.stringify({
+            to: await numeroAdmin(),
+            contentSid: CONTENT_SID_AVISO_NUEVA_SOLICITUD,
+            contentVariables: { "1": pagoPendiente.planLabel, "2": new Intl.NumberFormat("es-CO").format(pagoPendiente.precio) },
+          }),
         }).catch(() => {});
         // Verificación automática del comprobante con IA — no bloquea nada,
         // pero actualiza el aviso visible que ya quedó mostrado en pantalla

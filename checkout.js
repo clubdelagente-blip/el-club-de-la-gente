@@ -8,6 +8,10 @@ const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 const ic = (n) => `<i data-lucide="${n}"></i>`;
 
+// Plantillas de WhatsApp aprobadas por Meta -- fuera del Sandbox ya no se
+// puede mandar texto libre a un número que no escribió primero.
+const CONTENT_SID_AVISO_NUEVA_SOLICITUD = "HXdaf8eaff5e1d758d19ae263ac29fa8cd";
+
 // Mismo toast que ya usa directorio.js -- antes los errores de pago (el
 // momento más sensible de todo el flujo) salían con un alert() nativo del
 // navegador, frío y a veces mostrando el mensaje técnico crudo de Supabase.
@@ -240,7 +244,11 @@ function wirePago() {
         fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ to: data.valor, body: `💳 Nueva solicitud de membresía ${estadoPago.planLabel} por ${fmt.format(estadoPago.precio)} COP. Revísala en Admin → Ventas.` }),
+          body: JSON.stringify({
+            to: data.valor,
+            contentSid: CONTENT_SID_AVISO_NUEVA_SOLICITUD,
+            contentVariables: { "1": estadoPago.planLabel, "2": fmt.format(estadoPago.precio) },
+          }),
         }).catch(() => {});
       }).catch(() => {});
   });
