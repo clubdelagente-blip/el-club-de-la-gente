@@ -14,6 +14,10 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<"
 // Plantilla "descuento_confirmado_beneficio", ya aprobada por Meta -- {{1}}=nombre
 // del aliado, {{2}}=descripción del beneficio.
 const CONTENT_SID_DESCUENTO_CONFIRMADO_BENEFICIO = "HX0cd6a44f46a89233ea800c9513a48029";
+
+// Plantilla "descuento_confirmado_pct", ya aprobada por Meta -- {{1}}=nombre
+// del aliado, {{2}}=ahorro, {{3}}=monto de la compra.
+const CONTENT_SID_DESCUENTO_CONFIRMADO_PCT = "HX97ddfc6468b5751748cb2b1abef30147";
 const nf = new Intl.NumberFormat("es-CO");
 const fmtCOP = (n) => "$" + nf.format(Math.max(0, Math.round(n || 0)));
 function norm(s) {
@@ -775,7 +779,7 @@ function wireCalc(a) {
 
     if (MIEMBRO_WA) {
       const bodyPayload = usaPorcentaje
-        ? { to: MIEMBRO_WA, body: `¡Hola! 🎉 Tu descuento en ${a.nombre} ya quedó registrado.\n\nAhorraste ${fmtCOP(ahorro)} en una compra de ${fmtCOP(monto)}. 💳\n\n🌿 Con esta compra contribuyes al impacto social del Club en Fusagasugá.\n\nEl Club de la Gente` }
+        ? { to: MIEMBRO_WA, contentSid: CONTENT_SID_DESCUENTO_CONFIRMADO_PCT, contentVariables: { "1": a.nombre, "2": fmtCOP(ahorro), "3": fmtCOP(monto) } }
         : { to: MIEMBRO_WA, contentSid: CONTENT_SID_DESCUENTO_CONFIRMADO_BENEFICIO, contentVariables: { "1": a.nombre, "2": p.descripcion } };
       fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
         method: "POST",
