@@ -33,8 +33,10 @@ function colorCategoria(categoria) {
 const nf = new Intl.NumberFormat("es-CO");
 const fmtCOP = (n) => "$" + nf.format(Math.max(0, Math.round(n || 0)));
 function pctDerivada(p) {
-  if (p.tipo !== "porcentaje" || !p.precio_normal || !p.ahorro_fijo) return null;
-  return Math.round((p.ahorro_fijo / p.precio_normal) * 100);
+  if (p.tipo !== "porcentaje") return null;
+  if (p.descuento_pct) return p.descuento_pct;
+  if (p.precio_normal && p.ahorro_fijo) return Math.round((p.ahorro_fijo / p.precio_normal) * 100);
+  return null;
 }
 function badgePromo(p) {
   const pct = pctDerivada(p);

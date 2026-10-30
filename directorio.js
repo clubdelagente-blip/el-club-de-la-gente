@@ -393,8 +393,10 @@ async function abrirModalMejorarPlan(aliado) {
 const DIAS_TXT = { lunes: "lun", martes: "mar", miercoles: "mié", jueves: "jue", viernes: "vie", sabado: "sáb", domingo: "dom" };
 
 function pctDerivada(p) {
-  if (p.tipo !== "porcentaje" || !p.precio_normal || !p.ahorro_fijo) return null;
-  return Math.round((p.ahorro_fijo / p.precio_normal) * 100);
+  if (p.tipo !== "porcentaje") return null;
+  if (p.descuento_pct) return p.descuento_pct;
+  if (p.precio_normal && p.ahorro_fijo) return Math.round((p.ahorro_fijo / p.precio_normal) * 100);
+  return null;
 }
 function badgePromo(p) {
   const pct = pctDerivada(p);
@@ -406,7 +408,11 @@ function badgePromo(p) {
   return "Promo";
 }
 function beneficioTexto(p) {
-  if (p.tipo === "porcentaje") { const pct = pctDerivada(p); return pct != null ? `Ahorras ${pct}% (${fmtCOP(p.ahorro_fijo)} sobre ${fmtCOP(p.precio_normal)})` : "Descuento porcentual — consulta el % con el establecimiento."; }
+  if (p.tipo === "porcentaje") {
+    const pct = pctDerivada(p);
+    if (pct == null) return "Descuento porcentual — consulta el % con el establecimiento.";
+    return (p.precio_normal && p.ahorro_fijo) ? `Ahorras ${pct}% (${fmtCOP(p.ahorro_fijo)} sobre ${fmtCOP(p.precio_normal)})` : `Ahorras ${pct}% en tu compra.`;
+  }
   if (p.tipo === "2x1") return "Paga 1 y recibe 2.";
   if (p.tipo === "monto_fijo") return p.ahorro_fijo ? `Ahorras ${fmtCOP(p.ahorro_fijo)} fijo.` : "Descuento de monto fijo.";
   if (p.tipo === "precio_especial") return (p.precio_normal && p.precio_descuento) ? `Precio especial: ${fmtCOP(p.precio_descuento)} en vez de ${fmtCOP(p.precio_normal)}.` : "Precio especial para miembros.";

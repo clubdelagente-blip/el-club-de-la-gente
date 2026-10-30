@@ -1695,9 +1695,9 @@ function bindFormPromocionInline(aliadoId,editId){
       if(!tipo){toast('Selecciona el tipo de promoción');return;}
       if(!descripcion){toast('La descripción es obligatoria');return;}
       btn.disabled=true;btn.innerHTML=`${ic("loader")} Guardando…`;if(window.lucide)lucide.createIcons();
-      let precio_normal=null,precio_descuento=null,ahorro_fijo=null;
+      let precio_normal=null,precio_descuento=null,ahorro_fijo=null,descuento_pct=null;
       if(tipo==='precio_especial'){precio_normal=parseInt($("#pr-precio-n")?.value)||null;precio_descuento=parseInt($("#pr-precio-d")?.value)||null;if(precio_normal&&precio_descuento)ahorro_fijo=precio_normal-precio_descuento;}
-      else if(tipo==='porcentaje'){precio_normal=parseInt($("#pr-precio-n-pct")?.value)||null;const pct=parseInt($("#pr-pct")?.value)||0;if(precio_normal&&pct){precio_descuento=Math.round(precio_normal*(1-pct/100));ahorro_fijo=precio_normal-precio_descuento;}}
+      else if(tipo==='porcentaje'){precio_normal=parseInt($("#pr-precio-n-pct")?.value)||null;descuento_pct=parseInt($("#pr-pct")?.value)||null;if(precio_normal&&descuento_pct){precio_descuento=Math.round(precio_normal*(1-descuento_pct/100));ahorro_fijo=precio_normal-precio_descuento;}}
       else if(tipo==='monto_fijo'){ahorro_fijo=parseInt($("#pr-ahorro-fijo")?.value)||null;}
       else if(tipo==='regalo'){ahorro_fijo=parseInt($("#pr-regalo-val")?.value)||null;}
       const diasActivos=[...document.querySelectorAll('#pr-dias-chips .fa-chip.is-on')].map(b=>b.dataset.dia);
@@ -1706,7 +1706,7 @@ function bindFormPromocionInline(aliadoId,editId){
       const payload={aliado_id:aliadoId,tipo,titulo,descripcion,
         aplica_a:$("#pr-aplica")?.value||'toda_la_tienda',
         producto_especifico:$("#pr-aplica")?.value==='producto_especifico'?($("#pr-prod")?.value.trim()||null):null,
-        precio_normal,precio_descuento,ahorro_fijo,
+        precio_normal,precio_descuento,ahorro_fijo,descuento_pct,
         dias_aplica:diasActivos.length?diasActivos:['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
         hora_inicio:$("#pr-hora-ini")?.value||null,hora_fin:$("#pr-hora-fin")?.value||null,
         fecha_inicio:$("#pr-fecha-ini")?.value||null,fecha_fin:$("#pr-fecha-fin")?.value||null,
@@ -2430,7 +2430,7 @@ function htmlFormPromocion(p={},aliadoId){
   const diasActivos=Array.isArray(p.dias_aplica)?p.dias_aplica:DIAS;
   const diasChips=DIAS.map((d,i)=>`<button type="button" class="fa-chip${diasActivos.includes(d)?' is-on':''}" data-dia="${d}">${DIAS_LBL[i]}</button>`).join('');
   const fldStyle='width:100%;font-family:var(--cuerpo);font-size:16px;color:#1a1a18;padding:10px 14px;border:1.5px solid rgba(26,26,24,.13);border-radius:8px;background:#f5f4f0';
-  const pctVal=p.tipo==='porcentaje'&&p.precio_normal&&p.precio_descuento?Math.round((1-p.precio_descuento/p.precio_normal)*100):'';
+  const pctVal=p.tipo==='porcentaje'?(p.descuento_pct||(p.precio_normal&&p.precio_descuento?Math.round((1-p.precio_descuento/p.precio_normal)*100):'')):'';
   _promoFormAliadoId=aliadoId;
   return `
   <div class="ad-field" style="background:#f5f4f0;border-radius:14px;padding:16px;display:flex;justify-content:center">
@@ -2562,15 +2562,15 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
       if(!tipo){toast('Selecciona el tipo de promoción');return;}
       if(!descripcion){toast('La descripción es obligatoria');return;}
       btn.disabled=true;btn.innerHTML=`${ic("loader")} Guardando…`;if(window.lucide)lucide.createIcons();
-      let precio_normal=null,precio_descuento=null,ahorro_fijo=null;
+      let precio_normal=null,precio_descuento=null,ahorro_fijo=null,descuento_pct=null;
       if(tipo==='precio_especial'){
         precio_normal=parseInt($("#pr-precio-n")?.value)||null;
         precio_descuento=parseInt($("#pr-precio-d")?.value)||null;
         if(precio_normal&&precio_descuento)ahorro_fijo=precio_normal-precio_descuento;
       }else if(tipo==='porcentaje'){
         precio_normal=parseInt($("#pr-precio-n-pct")?.value)||null;
-        const pct=parseInt($("#pr-pct")?.value)||0;
-        if(precio_normal&&pct){precio_descuento=Math.round(precio_normal*(1-pct/100));ahorro_fijo=precio_normal-precio_descuento;}
+        descuento_pct=parseInt($("#pr-pct")?.value)||null;
+        if(precio_normal&&descuento_pct){precio_descuento=Math.round(precio_normal*(1-descuento_pct/100));ahorro_fijo=precio_normal-precio_descuento;}
       }else if(tipo==='monto_fijo'){
         ahorro_fijo=parseInt($("#pr-ahorro-fijo")?.value)||null;
       }else if(tipo==='regalo'){
@@ -2582,7 +2582,7 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
       const payload={aliado_id:aliadoId,tipo,titulo,descripcion,
         aplica_a:$("#pr-aplica")?.value||'toda_la_tienda',
         producto_especifico:$("#pr-aplica")?.value==='producto_especifico'?($("#pr-prod")?.value.trim()||null):null,
-        precio_normal,precio_descuento,ahorro_fijo,
+        precio_normal,precio_descuento,ahorro_fijo,descuento_pct,
         dias_aplica:diasActivos.length?diasActivos:['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
         hora_inicio:$("#pr-hora-ini")?.value||null,
         hora_fin:$("#pr-hora-fin")?.value||null,
