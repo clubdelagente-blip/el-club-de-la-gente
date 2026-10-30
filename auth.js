@@ -12,6 +12,7 @@ const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 const CONTENT_SID_AVISO_POSTULACION_ALIADO = "HXd5578c55b4ee0dccb632819a4b1d6edc";
 const CONTENT_SID_AVISO_POSTULACION_PROFESIONAL = "HXb0b7bbf56754ab37b19affc01eb8139d";
 const CONTENT_SID_BIENVENIDA_PLAN_GRATIS = "HX64c02dfb5a22f065cf58544e0c1a573a";
+const CONTENT_SID_BIENVENIDA_PAGO_ERROR = "HX62d9d2cc97f88fa857b4d219f27bb08b";
 
 // Deja siempre el número de celular en 10 dígitos, sin el indicativo "57"
 // -- si esto no fuera consistente entre el registro y el login, el correo
@@ -645,20 +646,22 @@ document.addEventListener("DOMContentLoaded", async () => {
       // bienvenida a Gratis (no tiene sentido venderle los beneficios de
       // Gratis a alguien que ya pagó Básico/Premium) -- recibe uno propio,
       // enfocado solo en que le avisaremos apenas verifiquemos su pago.
-      // Quien viene de pagar (Básico/Premium) sigue en texto libre por ahora
-      // -- esas 2 plantillas (bienvenida_pago_pendiente/bienvenida_pago_error)
-      // todavía no están migradas. El caso de plan Gratis (el más frecuente,
-      // cada registro nuevo) ya usa la plantilla aprobada.
-      const bodyPayload = pagoPendiente
-        ? {
-            body: pagoPendienteOk
-              ? `¡Hola, *${primerNombre}*! 💙🌿\n\n¡Ya eres parte de *El Club de la Gente*! 🎉🤝\n\nRecibimos tu comprobante de pago de la membresía *${pagoPendiente.planLabel}*. Nos alegra muchísimo darte la bienvenida a esta comunidad donde juntos *ahorramos, aprendemos y ayudamos*. 🧡\n\n¡Prepárate para disfrutar de tus beneficios y ser parte de algo que va más allá de una membresía!\n\n*¡Qué alegría tenerte aquí!* 💙\n\n_El Club de la Gente_`
-              : `¡Hola ${primerNombre}! 🌿 Tu cuenta en El Club de la Gente ya se creó, pero tuvimos un problema guardando tu comprobante de pago de la membresía ${pagoPendiente.planLabel}. Escríbenos por este WhatsApp y te ayudamos a completarlo.\n\nEl Club de la Gente`,
-          }
-        : {
-            contentSid: CONTENT_SID_BIENVENIDA_PLAN_GRATIS,
-            contentVariables: { "1": primerNombre, "2": `https://elclubdelagente.com/Bienvenida.html?id=${data.user.id}` },
-          };
+      // bienvenida_pago_pendiente (el caso "sí, ok") todavía no está migrada
+      // -- sigue en texto libre por ahora.
+      let bodyPayload;
+      if (pagoPendiente && pagoPendienteOk) {
+        bodyPayload = { body: `¡Hola, *${primerNombre}*! 💙🌿\n\n¡Ya eres parte de *El Club de la Gente*! 🎉🤝\n\nRecibimos tu comprobante de pago de la membresía *${pagoPendiente.planLabel}*. Nos alegra muchísimo darte la bienvenida a esta comunidad donde juntos *ahorramos, aprendemos y ayudamos*. 🧡\n\n¡Prepárate para disfrutar de tus beneficios y ser parte de algo que va más allá de una membresía!\n\n*¡Qué alegría tenerte aquí!* 💙\n\n_El Club de la Gente_` };
+      } else if (pagoPendiente) {
+        bodyPayload = {
+          contentSid: CONTENT_SID_BIENVENIDA_PAGO_ERROR,
+          contentVariables: { "1": primerNombre, "2": pagoPendiente.planLabel },
+        };
+      } else {
+        bodyPayload = {
+          contentSid: CONTENT_SID_BIENVENIDA_PLAN_GRATIS,
+          contentVariables: { "1": primerNombre, "2": `https://elclubdelagente.com/Bienvenida.html?id=${data.user.id}` },
+        };
+      }
       fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
