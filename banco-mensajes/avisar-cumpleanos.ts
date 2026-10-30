@@ -102,15 +102,24 @@ Instrucciones:
       body: JSON.stringify({
         model: "openai/gpt-oss-120b",
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: "Escribe la frase." }],
-        max_tokens: 300,
+        // gpt-oss-120b "piensa" antes de responder y ese razonamiento también
+        // cuenta contra max_tokens -- con 300 el presupuesto se gastaba
+        // pensando y la respuesta llegaba vacía (sin tirar error), cayendo
+        // siempre al respaldo fijo sin que se notara por qué.
+        max_tokens: 700,
         temperature: 0.8,
       }),
     });
     const data = await groqRes.json();
     const texto = data?.choices?.[0]?.message?.content?.trim();
+    if (!texto) {
+      console.error("Frase de cumpleaños vacía de la IA, respuesta completa:", JSON.stringify(data));
+      return null;
+    }
     // Si por algo la IA se extiende de más, mejor usar el respaldo fijo que
     // mandar algo que se corte a mitad de frase o rompa el límite de WhatsApp.
-    if (texto && texto.length <= 300) return texto;
+    if (texto.length <= 300) return texto;
+    console.error("Frase de cumpleaños de la IA demasiado larga, usando respaldo:", texto);
     return null;
   } catch (e) {
     console.error("Error generando frase de cumpleaños con IA:", e);
