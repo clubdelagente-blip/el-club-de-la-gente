@@ -18,6 +18,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// Plantilla "promo_fecha_especial", ya aprobada por Meta -- {{1}}=primer
+// nombre, {{2}}=nombre de la fecha, {{3}}=lista de beneficios.
+const CONTENT_SID_PROMO_FECHA_ESPECIAL = "HXfe3ec7941a7cbeeb7d023e9fd4c28158";
+
 // mes-dia (MM-DD) en que arranca el aviso de cada fecha especial. Los
 // eventos de un solo día usan esa misma fecha; los de rango (Navidad, la
 // Primatón, fin de año) avisan solo el primer día.
@@ -111,13 +115,16 @@ Deno.serve(async (_req: Request) => {
     if (!beneficios.length) continue;
 
     const primerNombre = (m.nombre || "").trim().split(" ")[0] || "";
-    const msg = `¡Hola ${primerNombre}! 🌿 Por ${nombreFecha}, El Club de la Gente te tiene estos beneficios especiales:\n\n${beneficios.join("\n")}\n\n¡Aprovéchalos!`;
 
     try {
       const r = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: m.whatsapp, body: msg }),
+        body: JSON.stringify({
+          to: m.whatsapp,
+          contentSid: CONTENT_SID_PROMO_FECHA_ESPECIAL,
+          contentVariables: { "1": primerNombre, "2": nombreFecha, "3": beneficios.join("\n") },
+        }),
       });
       if (r.ok) mensajesEnviados++;
     } catch (e) {
