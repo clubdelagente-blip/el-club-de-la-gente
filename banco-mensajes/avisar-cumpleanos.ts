@@ -84,21 +84,21 @@ const FRASES_RESPALDO_NUMEROLOGIA: Record<number, string> = {
 // cumpleaños", ni firmar, ni mencionar cortesías/beneficios (eso ya está
 // cubierto por el texto fijo antes y después de esta variable).
 async function redactarFraseCumpleIA(rasgos: string): Promise<string | null> {
-  // Importante: NO pedirle un número exacto de caracteres. Este modelo
-  // "razona" antes de responder, y con un límite numérico se pone a contar
-  // caracteres uno por uno en el razonamiento (gastando ahí todo el
-  // presupuesto de tokens, sin llegar nunca a escribir la frase). "una sola
-  // frase" como límite cualitativo no dispara ese conteo.
-  const systemPrompt = `Eres parte del equipo de El Club de la Gente (Fusagasugá, Colombia). Vas a escribir UNA sola frase corta (una sola oración, no un párrafo) para la mitad de un mensaje de cumpleaños por WhatsApp.
+  // Importante: NO pedirle un número exacto de caracteres/palabras. Este
+  // modelo "razona" antes de responder, y con un límite numérico se pone a
+  // contar uno por uno en el razonamiento (gastando ahí todo el presupuesto
+  // de tokens, sin llegar nunca a escribir el texto). Límites cualitativos
+  // ("2 o 3 oraciones") no disparan ese conteo.
+  const systemPrompt = `Eres parte del equipo de El Club de la Gente (Fusagasugá, Colombia). Vas a escribir un mensaje corto pero con profundidad real (2 o 3 oraciones) para la mitad de un mensaje de cumpleaños por WhatsApp.
 
-Rasgos de personalidad de esta persona (úsalos solo como guía de TONO, nunca los menciones explícitamente ni expliques que vienen de un "perfil" o "número"): es ${rasgos}
+Rasgos de personalidad de esta persona (úsalos como guía de TONO Y de contenido -- que se note que el mensaje es sobre ella, no genérico; nunca menciones explícitamente que vienen de un "perfil" o "número"): es ${rasgos}
 
 Instrucciones:
 - Empieza con "Que este nuevo año..." (mismo estilo siempre).
-- Una sola oración, cálida y natural -- nunca un párrafo ni varias frases.
+- 2 o 3 oraciones, cálidas y reflexivas -- que se sienta escrito para esa persona, no una frase genérica de cumpleaños.
 - NO saludes ("feliz cumpleaños" ya está en otra parte del mensaje), NO firmes, NO menciones cortesías, descuentos ni beneficios.
 - Un emoji al final está bien.
-- Responde ÚNICAMENTE con la frase final, sin comillas ni explicaciones.`;
+- Responde ÚNICAMENTE con el texto final, sin comillas ni explicaciones.`;
 
   try {
     const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -124,8 +124,10 @@ Instrucciones:
       return null;
     }
     // Si por algo la IA se extiende de más, mejor usar el respaldo fijo que
-    // mandar algo que se corte a mitad de frase o rompa el límite de WhatsApp.
-    if (texto.length <= 300) return texto;
+    // mandar algo que se corte a mitad de frase o rompa el límite de WhatsApp
+    // (la plantilla completa tiene ~1024 caracteres de tope entre el texto
+    // fijo y las dos variables -- 600 deja margen de sobra para 2-3 oraciones).
+    if (texto.length <= 600) return texto;
     console.error("Frase de cumpleaños de la IA demasiado larga, usando respaldo:", texto);
     return null;
   } catch (e) {
