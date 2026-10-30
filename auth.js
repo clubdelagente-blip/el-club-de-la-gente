@@ -7,6 +7,10 @@ import { comprimirImagen } from './imagen.js';
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 
+// Plantillas de WhatsApp aprobadas por Meta -- fuera del Sandbox ya no se
+// puede mandar texto libre a un número que no escribió primero.
+const CONTENT_SID_AVISO_POSTULACION_ALIADO = "HXd5578c55b4ee0dccb632819a4b1d6edc";
+
 // Deja siempre el número de celular en 10 dígitos, sin el indicativo "57"
 // -- si esto no fuera consistente entre el registro y el login, el correo
 // interno (dígitos + "@clubdelagente.app") no coincidiría y se crearía una
@@ -828,7 +832,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ to: await numeroAdmin(), body: `📋 Nueva postulación de ALIADO\n\nNegocio: ${negocio}\nCategoría: ${categoria || "—"}\nResponsable: ${nombre}\nWhatsApp: ${whatsapp}\n\nRevísala en Admin → Aliados → Postulaciones.` }),
+      body: JSON.stringify({
+        to: await numeroAdmin(),
+        contentSid: CONTENT_SID_AVISO_POSTULACION_ALIADO,
+        contentVariables: { "1": negocio, "2": categoria || "—", "3": nombre, "4": whatsapp },
+      }),
     }).catch(() => {});
 
     localStorage.setItem("ecdlg_rol", "aliado");
