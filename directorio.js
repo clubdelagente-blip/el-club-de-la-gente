@@ -675,6 +675,13 @@ function sheetAliado(a) {
         </div>
       </div>
       <p id="calc-fijo" style="display:none;font-size:13px;color:#555;background:#f5f4f0;border-radius:8px;padding:12px 14px;margin:4px 0 0"></p>
+      <div class="calc__field" id="calc-ahorro-manual-wrap" style="display:none;margin-top:10px">
+        <label>¿Cuánto ahorraste hoy? (valor aproximado)</label>
+        <div class="calc__input-wrap">
+          <span class="peso">$</span>
+          <input type="text" inputmode="numeric" id="calc-ahorro-manual" placeholder="0" autocomplete="off">
+        </div>
+      </div>
       <div class="calc__result" id="calc-result">
         <div class="calc__cel">
           <small>Pagas</small>
@@ -723,23 +730,36 @@ function wireCalc(a) {
   const resultWrap = $("#calc-result");
   const fijoEl = $("#calc-fijo");
   const inMonto = $("#calc-monto");
+  const ahorroManualWrap = $("#calc-ahorro-manual-wrap");
+  const inAhorroManual = $("#calc-ahorro-manual");
   const selDesc = $("#calc-desc");
   const elPagas = $("#calc-pagas");
   const elAhorro = $("#calc-ahorro");
   const notaEl = $("#calc-nota");
   let monto = 0;
+  let ahorroManual = 0;
 
   function esPorcentajeUsable(p) { return p.tipo === "porcentaje" && pctDerivada(p) != null; }
+  // 2x1 y Personalizado no tienen un ahorro fijo configurable en Admin (el
+  // beneficio varía según lo que compre cada quien) -- se le pide al miembro
+  // que escriba cuánto ahorró para que sí quede reflejado en su ahorro total.
+  function necesitaAhorroManual(p) { return p.tipo === "2x1" || p.tipo === "personalizado"; }
 
   function actualizarModo() {
     const p = promos[+selDesc.value];
     const usaPorcentaje = esPorcentajeUsable(p);
+    const manual = necesitaAhorroManual(p);
     montoWrap.style.display = usaPorcentaje ? "" : "none";
     resultWrap.style.display = usaPorcentaje ? "" : "none";
     fijoEl.style.display = usaPorcentaje ? "none" : "block";
     if (!usaPorcentaje) fijoEl.textContent = beneficioTexto(p);
+    ahorroManualWrap.style.display = manual ? "" : "none";
+    if (inAhorroManual) inAhorroManual.value = "";
+    ahorroManual = 0;
     notaEl.textContent = usaPorcentaje
       ? "Ingresa el valor de la compra y toca el botón para aplicar el descuento y notificar al miembro."
+      : manual
+      ? "Escribe cuánto ahorraste con este beneficio y toca el botón para aplicarlo y notificar al miembro."
       : "Toca el botón para aplicar este beneficio y notificar al miembro.";
     recalc();
   }
@@ -752,11 +772,21 @@ function wireCalc(a) {
     elAhorro.textContent = fmtCOP(ahorro);
     elPagas.textContent = fmtCOP(monto - ahorro);
   }
+  function ahorroDe(p) {
+    if (esPorcentajeUsable(p)) return Math.round(monto * (pctDerivada(p) / 100));
+    if (necesitaAhorroManual(p)) return ahorroManual;
+    return p.ahorro_fijo || 0;
+  }
   inMonto?.addEventListener("input", () => {
     const raw = inMonto.value.replace(/\D/g, "");
     monto = parseInt(raw, 10) || 0;
     inMonto.value = monto ? nf.format(monto) : "";
     recalc();
+  });
+  inAhorroManual?.addEventListener("input", () => {
+    const raw = inAhorroManual.value.replace(/\D/g, "");
+    ahorroManual = parseInt(raw, 10) || 0;
+    inAhorroManual.value = ahorroManual ? nf.format(ahorroManual) : "";
   });
   selDesc.addEventListener("change", actualizarModo);
 
@@ -804,11 +834,11 @@ function wireCalc(a) {
     const p = promos[+selDesc.value];
     const usaPorcentaje = esPorcentajeUsable(p);
     if (usaPorcentaje && !monto) { toast("Ingresa el valor de la compra primero", false); inMonto.focus(); return; }
+    if (necesitaAhorroManual(p) && !ahorroManual) { toast("Escribe cuánto ahorraste primero", false); inAhorroManual?.focus(); return; }
 
     // Sin miembro identificado no hay nada real que proteger (es solo vista previa)
     if (!MIEMBRO_ID) {
-      const ahorro = usaPorcentaje ? Math.round(monto * (pctDerivada(p) / 100)) : (p.ahorro_fijo || 0);
-      finalizarAplicacion(p, usaPorcentaje, ahorro);
+      finalizarAplicacion(p, usaPorcentaje, ahorroDe(p));
       return;
     }
 
@@ -841,8 +871,7 @@ function wireCalc(a) {
 
     const p = promos[+selDesc.value];
     const usaPorcentaje = esPorcentajeUsable(p);
-    const ahorro = usaPorcentaje ? Math.round(monto * (pctDerivada(p) / 100)) : (p.ahorro_fijo || 0);
-    await finalizarAplicacion(p, usaPorcentaje, ahorro, codigo);
+    await finalizarAplicacion(p, usaPorcentaje, ahorroDe(p), codigo);
   });
 
   actualizarModo();
