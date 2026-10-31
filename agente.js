@@ -10,7 +10,7 @@
 import { supabase } from './supabase.js';
 
 (function () {
-  const NUM_WA = "573000000028"; // número demo del Club (wa.me)
+  const NUM_WA = "573170142609"; // número real del Club en WhatsApp (wa.me)
 
   /* ---------- contenido que puede enviar el agente ---------- */
   const TOGGLES = [
