@@ -12,6 +12,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// Plantilla "recordatorio_taller", ya aprobada por Meta -- {{1}}=primer nombre,
+// {{2}}=fecha de mañana, {{3}}=título del taller, {{4}}=descripción+lugar
+// (puede venir vacío), {{5}}=link para confirmar asistencia.
+const CONTENT_SID_RECORDATORIO_TALLER = "HX724cf6d8924b228c667ee1f6ea6ea60c";
+
 Deno.serve(async (_req: Request) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
@@ -72,12 +77,16 @@ Deno.serve(async (_req: Request) => {
       if (!m.whatsapp) continue;
       const primerNombre = (m.nombre || "").trim().split(" ")[0] || "";
       const link = `https://elclubdelagente.com/ConfirmarEvento.html?evento=${evento.id}&miembro=${m.id}`;
-      const msg = `🎓 ¡Hola ${primerNombre}! Mañana (${fechaFmt}) tenemos el taller "${evento.titulo}" en El Club de la Gente.${evento.descripcion ? `\n\n${evento.descripcion}` : ""}${evento.lugar ? `\n\n📍 ${evento.lugar}` : ""}\n\nEs gratis para todos los miembros. Confirma que vas aquí:\n${link}\n\nEl Club de la Gente`;
+      const bloqueExtra = [evento.descripcion, evento.lugar ? `📍 ${evento.lugar}` : null].filter(Boolean).join("\n\n");
       try {
         const r = await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ to: m.whatsapp, body: msg }),
+          body: JSON.stringify({
+            to: m.whatsapp,
+            contentSid: CONTENT_SID_RECORDATORIO_TALLER,
+            contentVariables: { "1": primerNombre, "2": fechaFmt, "3": evento.titulo, "4": bloqueExtra, "5": link },
+          }),
         });
         if (r.ok) enviados++;
       } catch (e) {
