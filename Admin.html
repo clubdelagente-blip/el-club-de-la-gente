@@ -3677,9 +3677,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
         if(errNotif){console.error('Error creando notificación de rechazo:',errNotif);toast('Se rechazó, pero la notificación en la app falló: '+errNotif.message);}
       }
       if(s?.perfiles?.whatsapp){
+        const primerNombreRech=(s.perfiles.nombre||'').trim().split(' ')[0]||'';
         fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3',{
           method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({to:s.perfiles.whatsapp,body:'No pudimos confirmar tu comprobante de pago. Tu cuenta sigue activa en el plan Gratis -- entra a la app y en tus notificaciones puedes volver a subir el comprobante para verificarlo de nuevo. — El Club de la Gente'}),
+          body:JSON.stringify({to:s.perfiles.whatsapp,contentSid:'HX77e8533449cf8b712708bcd8c8ffff50',contentVariables:{'1':primerNombreRech}}),
         }).catch(()=>{});
       }
       toast('Solicitud rechazada');
