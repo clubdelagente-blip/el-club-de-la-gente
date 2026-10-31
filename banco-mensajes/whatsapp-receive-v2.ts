@@ -1246,7 +1246,12 @@ Deno.serve(async (req: Request) => {
           ...mensajesHistorial,
           { role: "user", content: textoParaIA },
         ],
-        max_tokens: 400,
+        // openai/gpt-oss-120b "piensa" antes de responder y ese razonamiento
+        // también cuenta contra max_tokens -- con 400 el presupuesto se podía
+        // gastar pensando en mensajes simples ("¿Cómo estás?") y la respuesta
+        // llegaba vacía, cayendo al mensaje de respaldo sin que se notara por
+        // qué (mismo problema ya visto y resuelto en avisar-cumpleanos.ts).
+        max_tokens: 1200,
         temperature: 0.6,
       }),
     });
