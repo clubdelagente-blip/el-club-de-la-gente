@@ -1668,21 +1668,12 @@ async function cargarOnboarding(userId, perfData) {
   if (localStorage.getItem("ecdlg_onb_cerrado_" + userId) === "1") return; // el miembro ya lo cerró
 
   const pasoPerfil = Object.keys(perfData?.respuestas_segmentacion || {}).length > 0;
-  const whatsapp = (perfData?.whatsapp || "").replace(/\D/g, "");
 
-  const [{ count: descCount }, { data: refCount }, convRes] = await Promise.all([
-    supabase.from("descuentos").select("id", { count: "exact", head: true }).eq("miembro_id", userId),
-    supabase.rpc("contar_referidos", { p_user_id: userId }),
-    whatsapp
-      ? supabase.from("conversaciones").select("id", { count: "exact", head: true }).eq("whatsapp", whatsapp).eq("rol", "user")
-      : Promise.resolve({ count: 0 }),
-  ]);
+  const { count: descCount } = await supabase.from("descuentos").select("id", { count: "exact", head: true }).eq("miembro_id", userId);
 
   const pasos = {
     perfil: pasoPerfil,
     clubcard: (descCount || 0) > 0,
-    agente: (convRes?.count || 0) > 0,
-    referidos: (refCount || 0) > 0,
   };
 
   const total = Object.keys(pasos).length;
@@ -1709,13 +1700,6 @@ async function cargarOnboarding(userId, perfData) {
   };
   $("#onb-close-card")?.addEventListener("click", cerrar);
   $("#onb-close-done")?.addEventListener("click", cerrar);
-  $("#onb-item-referidos")?.addEventListener("click", () => {
-    const card = $("#card-referidos");
-    if (!card) return;
-    card.scrollIntoView({ behavior: "smooth", block: "center" });
-    card.classList.add("onb-highlight");
-    setTimeout(() => card.classList.remove("onb-highlight"), 1500);
-  });
 }
 
 /* ---------- Aliados recomendados (personalizado con el perfil real) ---------- */
