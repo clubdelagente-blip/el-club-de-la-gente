@@ -655,7 +655,11 @@ Cuando el miembro pida un viaje, una moto, un carro, un domicilio o algo similar
 NUNCA inventes un link si no está disponible arriba — dile la verdad, que ese servicio específico aún no está activo.`;
 
   if (aliados.length > 0) {
-    const aliadosList = aliados.map((a) => {
+    // Mismo tipo de tope que ya usa la lista de productos (slice 40) -- hoy
+    // el Club tiene muchos menos aliados que esto, así que no cambia nada
+    // ahora mismo; es solo para que el prompt no crezca sin límite si algún
+    // día hay cientos de aliados.
+    const aliadosList = aliados.slice(0, 150).map((a) => {
       const wa = a.whatsapp ? `wa.me/57${String(a.whatsapp).replace(/\D/g,"")}` : null;
       return `- ${a.nombre} (${a.categoria}): ${a.descuento} de descuento · ${a.direccion}${wa ? ` · WhatsApp: ${wa}` : ""}`;
     }).join("\n");
@@ -679,7 +683,7 @@ NUNCA inventes un link si no está disponible arriba — dile la verdad, que ese
 
   if (profesionales.length > 0) {
     const esPremiumProf = perfil.plan === "premium" || perfil.plan === "vitalicia";
-    const profsList = profesionales.map((p) => {
+    const profsList = profesionales.slice(0, 100).map((p) => {
       const servicios = (p.servicios as Record<string, unknown>[]) || [];
       const serviciosTxt = servicios.length
         ? servicios.map((s) => `${s.nombre}${s.es_cortesia ? " (cortesía gratis)" : s.descuento_pct ? ` (${s.descuento_pct} de descuento)` : s.tarifa ? ` (${formatoCOP(s.tarifa as number)})` : ""}`).join(", ")
