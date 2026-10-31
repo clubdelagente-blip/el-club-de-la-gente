@@ -17,6 +17,9 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY")!;
 
+// Plantilla "vitalicia_referidos_3dias", ya aprobada por Meta -- {{1}}=primer nombre.
+const CONTENT_SID_VITALICIA_REFERIDOS_3DIAS = "HX13636f2eda495f25ab49aa1807d7d8a3";
+
 function calcularNumerologia(fechaNacimiento: string): number {
   const digits = fechaNacimiento.replace(/\D/g, "");
   let suma = digits.split("").reduce((acc, d) => acc + parseInt(d), 0);
@@ -142,12 +145,15 @@ Deno.serve(async (_req: Request) => {
   for (const p of (porVencerRaw || []).filter((p) => p.vitalicia_pendiente)) {
     if (!p.whatsapp) continue;
     const primerNombre = (p.nombre || "").trim().split(" ")[0] || "";
-    const msg = `¡Hola ${primerNombre}! 🎉 En 3 días termina tu mes pagado y, gracias a tus 5 referidos, tu membresía pasa directo a Vitalicia. No tienes que pagar ni hacer nada.\n\nEl Club de la Gente`;
     try {
       await fetch(`${SUPABASE_URL}/functions/v1/whatsapp-send-3`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: p.whatsapp, body: msg }),
+        body: JSON.stringify({
+          to: p.whatsapp,
+          contentSid: CONTENT_SID_VITALICIA_REFERIDOS_3DIAS,
+          contentVariables: { "1": primerNombre },
+        }),
       });
     } catch (e) {
       console.error("Error enviando aviso de vitalicia por vencer a", p.whatsapp, e);
