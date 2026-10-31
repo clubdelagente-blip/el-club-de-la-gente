@@ -505,122 +505,11 @@
             <p>Tu asistente personal del Club. Te avisa de tus ahorros, descuentos nuevos y aliados según lo que te interesa — directo en tu WhatsApp.</p>
           </div>
 
-          <div class="agente-grid">
-
-            <!-- TELÉFONO -->
-            <div class="ag-phone-col">
-              <div class="ag-phone">
-                <div class="ag-screen">
-                  <span class="ag-notch"></span>
-
-                  <div class="ag-bar">
-                    <span class="ag-bar__back"><i data-lucide="chevron-left"></i></span>
-                    <span class="ag-bar__avatar">
-                      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="20" cy="20" r="18.5" stroke="#021B1A" stroke-width="1.6"/>
-                        <circle cx="20" cy="20" r="14" stroke="#095544" stroke-width="1.6"/>
-                        <text x="20" y="20" text-anchor="middle" dominant-baseline="central" font-family="Anton, sans-serif" font-size="20" font-weight="700" fill="#021B1A">G</text>
-                      </svg>
-                    </span>
-                    <span class="ag-bar__id">
-                      <span class="ag-bar__name">El Club de la Gente <i class="verify" data-lucide="badge-check"></i></span>
-                      <span class="ag-bar__status"><span class="dot"></span> Cuenta de empresa · en línea</span>
-                    </span>
-                    <span class="ag-bar__icons"><i data-lucide="video"></i><i data-lucide="phone"></i></span>
-                  </div>
-
-                  <div class="ag-chat" id="ag-chat">
-                    <!-- mensajes inyectados por agente.js -->
-                  </div>
-
-                  <div class="ag-input">
-                    <span class="ag-input__box"><i data-lucide="smile"></i> Mensaje</span>
-                    <span class="ag-input__send"><i data-lucide="mic"></i></span>
-                  </div>
-                </div>
+          <div class="ag-side ag-side--solo">
+            <div class="ag-conn">
+              <div class="ag-conn__actions">
+                <button class="ag-btn-wa" id="ag-open-wa"><i data-lucide="message-circle"></i> Abrir chat con mi agente</button>
               </div>
-              <p class="ag-phone-note">Vista previa de los mensajes que recibe tu agente. El tono y las recomendaciones se ajustan a tus categorías.</p>
-            </div>
-
-            <!-- CONFIGURACIÓN -->
-            <div class="ag-side">
-
-              <!-- conexión -->
-              <div class="ag-conn">
-                <div class="ag-conn__head">
-                  <span class="ag-conn__ic"><i data-lucide="message-circle"></i></span>
-                  <div>
-                    <div class="ag-conn__title">Tu agente está activo</div>
-                    <div class="ag-conn__phone" id="ag-phone-num">Conectado a +57 300 •••  •• 28</div>
-                  </div>
-                  <span class="ag-conn__badge"><span class="dot"></span> Conectado</span>
-                </div>
-                <p class="ag-conn__desc">Recibes mensajes personalizados desde el número oficial del Club. Puedes escribirle cuando quieras para ver tus beneficios, calcular un descuento o postularte a un programa.</p>
-                <div class="ag-conn__actions">
-                  <button class="ag-btn-wa" id="ag-open-wa"><i data-lucide="message-circle"></i> Abrir chat con mi agente</button>
-                  <button class="ag-btn-ghost" id="ag-test"><i data-lucide="send"></i> Enviar mensaje de prueba</button>
-                </div>
-              </div>
-
-              <!-- qué recibes -->
-              <div class="card">
-                <div class="card__head">
-                  <span class="card__title">Qué recibes de tu agente</span>
-                </div>
-                <ul class="ag-toggles" id="ag-toggles"></ul>
-              </div>
-
-              <!-- preferencias -->
-              <div class="card">
-                <div class="card__head">
-                  <span class="card__title">Preferencias de comunicación</span>
-                </div>
-                <div class="ag-field">
-                  <div class="ag-field__label">Frecuencia <span>¿cada cuánto te escribe?</span></div>
-                  <div class="ag-seg-row" data-seg="frecuencia">
-                    <button class="ag-seg-btn" data-val="importante">Solo lo importante</button>
-                    <button class="ag-seg-btn" data-val="semanal">Resumen semanal</button>
-                    <button class="ag-seg-btn" data-val="diario">Diario</button>
-                  </div>
-                </div>
-                <div class="ag-field">
-                  <div class="ag-field__label">Canal</div>
-                  <div class="ag-seg-row" data-seg="canal">
-                    <button class="ag-seg-btn" data-val="wa">Solo WhatsApp</button>
-                    <button class="ag-seg-btn" data-val="wa-correo">WhatsApp + correo</button>
-                  </div>
-                </div>
-                <div class="ag-note">
-                  <i data-lucide="sparkles"></i>
-                  <p>Estas recomendaciones salen de tus <a id="ag-edit-cats">categorías de interés</a>. Cámbialas cuando quieras y tu agente se ajusta al instante.</p>
-                </div>
-              </div>
-
-              <!-- cómo funciona -->
-              <div class="card">
-                <div class="card__head">
-                  <span class="card__title">Cómo evoluciona tu agente</span>
-                </div>
-                <div class="ag-phases">
-                  <div class="ag-phase is-live">
-                    <span class="ag-phase__live">Activo</span>
-                    <div class="ag-phase__n">Fase 1</div>
-                    <div class="ag-phase__name">Mensajes y enlaces directos</div>
-                    <div class="ag-phase__tool">Resúmenes y accesos por WhatsApp</div>
-                  </div>
-                  <div class="ag-phase">
-                    <div class="ag-phase__n">Fase 2</div>
-                    <div class="ag-phase__name">Conversación en vivo</div>
-                    <div class="ag-phase__tool">WhatsApp Business API</div>
-                  </div>
-                  <div class="ag-phase">
-                    <div class="ag-phase__n">Fase 3</div>
-                    <div class="ag-phase__name">Agente automático 24/7</div>
-                    <div class="ag-phase__tool">Automatización + tus datos</div>
-                  </div>
-                </div>
-              </div>
-
             </div>
           </div>
         </section>
@@ -1267,7 +1156,7 @@
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
   <script type="module" src="dashboard.js?v=184"></script>
-  <script type="module" src="agente.js?v=2"></script>
+  <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
