@@ -66,6 +66,22 @@ function normalizarLlave(s: string | null | undefined): string {
   return v;
 }
 
+// Hash del CONTENIDO real de la imagen del comprobante (no de la URL -- cada
+// subida tiene una URL distinta aunque sea la misma foto reusada). Se usa
+// para que una misma foto no pueda aprobar dos cosas distintas (dos
+// renovaciones, o una renovación y un pedido de la Tienda).
+async function hashComprobante(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    const hashBuf = await crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  } catch (_) {
+    return null;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405, headers: corsHeaders });
@@ -92,6 +108,25 @@ Deno.serve(async (req: Request) => {
       .update({ verificacion_ia: { motivo: "monto_sobre_tope", monto: solicitud.monto, tope: TOPE_AUTO_APROBAR } })
       .eq("id", solicitud.id);
     return new Response("Monto sobre el tope, queda para revisión manual", { status: 200, headers: corsHeaders });
+  }
+
+  // Protección anti-reuso: si esta misma foto ya se usó para aprobar otra
+  // solicitud o pedido antes, nunca se auto-aprueba -- queda para que un
+  // humano la revise. Si no se puede calcular el hash (ej. la URL falló),
+  // se sigue el flujo normal sin bloquear por esto.
+  const hashComp = await hashComprobante(solicitud.comprobante_url);
+  if (hashComp) {
+    const { data: usoPrevio } = await supabase
+      .from("comprobantes_usados")
+      .select("tipo, referencia_id")
+      .eq("hash", hashComp)
+      .maybeSingle();
+    if (usoPrevio) {
+      await supabase.from("solicitudes_membresia")
+        .update({ verificacion_ia: { motivo: "comprobante_reusado", uso_previo: usoPrevio } })
+        .eq("id", solicitud.id);
+      return new Response("Comprobante ya usado antes, queda para revisión manual", { status: 200, headers: corsHeaders });
+    }
   }
 
   const { data: cfg } = await supabase.from("configuracion").select("valor").eq("clave", "club_llave_pago").maybeSingle();
@@ -196,6 +231,11 @@ Deno.serve(async (req: Request) => {
   if (!reclamada) {
     console.log(`Solicitud ${solicitud_id} ya fue procesada (probablemente por el admin) -- la IA no hace nada más.`);
     return new Response(JSON.stringify({ ok: true, aprobado: false, motivo: "ya_procesada" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
+
+  if (hashComp) {
+    const { error: hashErr } = await supabase.from("comprobantes_usados").insert({ hash: hashComp, tipo: "membresia", referencia_id: solicitud.id });
+    if (hashErr) console.error("Error registrando hash de comprobante (no bloquea la aprobación):", hashErr);
   }
 
   // ---- A partir de aquí, el mismo procedimiento que aprobar-membresia.ts ----

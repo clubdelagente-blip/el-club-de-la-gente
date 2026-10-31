@@ -39,6 +39,22 @@ function normalizarLlave(s: string | null | undefined): string {
   return v;
 }
 
+// Hash del CONTENIDO real de la imagen del comprobante (no de la URL -- cada
+// subida tiene una URL distinta aunque sea la misma foto reusada). Se usa
+// para que una misma foto no pueda aprobar dos cosas distintas (dos pedidos,
+// o un pedido y una renovación de membresía).
+async function hashComprobante(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    const hashBuf = await crypto.subtle.digest("SHA-256", buf);
+    return Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  } catch (_) {
+    return null;
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405, headers: corsHeaders });
@@ -52,7 +68,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: pedido } = await supabase
     .from("pedidos_club")
-    .select("id, monto, comprobante_url, estado")
+    .select("id, monto, comprobante_url, estado, productos(precio_normal, precio_descuento)")
     .eq("id", pedido_id)
     .maybeSingle();
 
@@ -60,11 +76,54 @@ Deno.serve(async (req: Request) => {
     return new Response("Nada que verificar", { status: 200, headers: corsHeaders });
   }
 
-  if (pedido.monto > TOPE_AUTO_APROBAR) {
+  // El monto a cobrar NUNCA se confía del valor guardado por el navegador --
+  // se recalcula siempre del precio actual del producto real en la base de
+  // datos. Sin esto, alguien podía insertar su propio pedido desde la consola
+  // del navegador con un "monto" inventado (ej. $100) y la IA lo auto-aprobaba
+  // por transferir justo ese valor inventado.
+  const producto = (pedido as unknown as { productos?: { precio_normal: number | null; precio_descuento: number | null } }).productos;
+  const montoReal = producto ? (producto.precio_descuento ?? producto.precio_normal ?? null) : null;
+
+  if (montoReal == null) {
     await supabase.from("pedidos_club")
-      .update({ verificacion_ia: { motivo: "monto_sobre_tope", monto: pedido.monto, tope: TOPE_AUTO_APROBAR } })
+      .update({ verificacion_ia: { motivo: "producto_no_verificable" } })
+      .eq("id", pedido.id);
+    return new Response("No se pudo verificar el precio del producto, queda para revisión manual", { status: 200, headers: corsHeaders });
+  }
+
+  if (pedido.monto !== montoReal) {
+    // El monto declarado no coincide con el precio real -- se corrige para
+    // que Admin vea el valor correcto, y SIEMPRE queda para revisión manual
+    // (nunca se auto-aprueba un pedido que llegó con el monto manipulado).
+    await supabase.from("pedidos_club")
+      .update({ monto: montoReal, verificacion_ia: { motivo: "monto_no_coincide_con_producto", monto_declarado: pedido.monto, monto_real: montoReal } })
+      .eq("id", pedido.id);
+    return new Response("Monto no coincide con el producto, queda para revisión manual", { status: 200, headers: corsHeaders });
+  }
+
+  if (montoReal > TOPE_AUTO_APROBAR) {
+    await supabase.from("pedidos_club")
+      .update({ verificacion_ia: { motivo: "monto_sobre_tope", monto: montoReal, tope: TOPE_AUTO_APROBAR } })
       .eq("id", pedido.id);
     return new Response("Monto sobre el tope, queda para revisión manual", { status: 200, headers: corsHeaders });
+  }
+
+  // Protección anti-reuso: si esta misma foto ya se usó para aprobar otra
+  // solicitud o pedido antes, nunca se auto-aprueba -- queda para que un
+  // humano la revise.
+  const hashComp = await hashComprobante(pedido.comprobante_url);
+  if (hashComp) {
+    const { data: usoPrevio } = await supabase
+      .from("comprobantes_usados")
+      .select("tipo, referencia_id")
+      .eq("hash", hashComp)
+      .maybeSingle();
+    if (usoPrevio) {
+      await supabase.from("pedidos_club")
+        .update({ verificacion_ia: { motivo: "comprobante_reusado", uso_previo: usoPrevio } })
+        .eq("id", pedido.id);
+      return new Response("Comprobante ya usado antes, queda para revisión manual", { status: 200, headers: corsHeaders });
+    }
   }
 
   const { data: cfg } = await supabase.from("configuracion").select("valor").eq("clave", "club_llave_pago").maybeSingle();
@@ -128,8 +187,8 @@ Deno.serve(async (req: Request) => {
     && (hoy - fechaDetectada) >= -24 * 60 * 60 * 1000;
 
   const montoOk = analisis.monto != null
-    && analisis.monto <= pedido.monto
-    && analisis.monto >= pedido.monto - TOLERANCIA_MONTO;
+    && analisis.monto <= montoReal
+    && analisis.monto >= montoReal - TOLERANCIA_MONTO;
   const llaveClubNorm = normalizarLlave(llaveClub);
   const llaveDetectadaNorm = normalizarLlave(analisis.llave_destino);
   const llaveOk = llaveClubNorm.length >= 3 && llaveClubNorm === llaveDetectadaNorm;
@@ -153,6 +212,11 @@ Deno.serve(async (req: Request) => {
   if (estadoErr) {
     console.error("Error marcando pedido del Club como pagado (auto-IA):", estadoErr);
     return new Response(JSON.stringify({ error: estadoErr.message }), { status: 500, headers: corsHeaders });
+  }
+
+  if (hashComp) {
+    const { error: hashErr } = await supabase.from("comprobantes_usados").insert({ hash: hashComp, tipo: "pedido_club", referencia_id: pedido.id });
+    if (hashErr) console.error("Error registrando hash de comprobante (no bloquea la aprobación):", hashErr);
   }
 
   console.log(`Pedido Club ${pedido_id} auto-aprobado por IA`);
