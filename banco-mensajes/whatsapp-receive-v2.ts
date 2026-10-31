@@ -69,6 +69,21 @@ const INJECTION_PATTERNS = [
   /override\s+(your\s+)?instructions/i,
 ];
 
+// Respaldo fijo de escalación: la IA debería marcar [ESCALAR] ella misma
+// cuando detecta una queja o un pedido de hablar con una persona, pero
+// ningún modelo obedece el 100% de las veces. Estas frases fuerzan la
+// escalación aunque la IA no lo haya marcado, para que una queja real nunca
+// se quede sin llegarle a nadie del equipo.
+const PALABRAS_ESCALACION = [
+  /hablar\s+con\s+(alguien|una\s+persona|un\s+humano|un\s+asesor|un\s+agente)/i,
+  /persona\s+real/i,
+  /necesito\s+un\s+asesor/i,
+  /es\s+una\s+queja/i,
+  /tengo\s+una\s+queja/i,
+  /quiero\s+poner\s+una\s+queja/i,
+  /quiero\s+reclamar/i,
+];
+
 function sanitizar(mensaje: string): { texto: string; esAtaque: boolean } {
   const texto = mensaje.slice(0, MAX_MESSAGE_LENGTH);
   const esAtaque = INJECTION_PATTERNS.some((p) => p.test(texto));
@@ -831,6 +846,16 @@ Deno.serve(async (req: Request) => {
     console.log("PERFIL_DATA:", JSON.stringify(perfilData));
     console.log("PERFIL_ERROR:", JSON.stringify(perfilError));
 
+    // Un error real de la consulta (no "no encontrado", eso llega como
+    // perfilData=null sin error) no debe tratarse igual que "no es miembro"
+    // -- si no, un miembro Premium real recibe el mensaje de "únete al Club"
+    // justo cuando la base de datos tuvo un problema pasajero.
+    if (perfilError) {
+      console.error("Error consultando perfil:", perfilError);
+      const twimlErrorPerfil = `<Response><Message>Tuvimos un problema para encontrar tu cuenta. Intenta de nuevo en un momento 🙏</Message></Response>`;
+      return new Response(twimlErrorPerfil, { headers: { "Content-Type": "text/xml", ...corsHeaders } });
+    }
+
     const perfil = perfilData || {};
     const planActual = (perfil.plan as string) || "";
 
@@ -1203,9 +1228,14 @@ Deno.serve(async (req: Request) => {
     // Se guarda también en "conversaciones.escalado" -- antes esto solo
     // quedaba en el WhatsApp puntual al admin, sin ningún registro para medir
     // después qué tan seguido pasa.
-    const fueEscalado = /^\[ESCALAR\]/i.test(raw);
+    // No depende solo de que la IA marque [ESCALAR] -- si el miembro pidió
+    // explícitamente hablar con una persona o puso una queja y la IA no lo
+    // detectó, esto lo fuerza igual (ver PALABRAS_ESCALACION arriba).
+    const marcadoPorIA = /^\[ESCALAR\]/i.test(raw);
+    const pidioHumanoExplicito = PALABRAS_ESCALACION.some((p) => p.test(textoMiembro));
+    const fueEscalado = marcadoPorIA || pidioHumanoExplicito;
     if (fueEscalado) {
-      raw = raw.replace(/^\[ESCALAR\]\s*/i, "");
+      if (marcadoPorIA) raw = raw.replace(/^\[ESCALAR\]\s*/i, "");
       const numAdmin = config.numero_admin_notificaciones;
       if (numAdmin) {
         const nombreMiembro = perfil.nombre || "Un miembro";
@@ -1256,6 +1286,12 @@ Deno.serve(async (req: Request) => {
     });
   } catch (err) {
     console.error("Error:", err);
-    return twimlEmpty;
+    // Antes esto devolvía una respuesta vacía -- el miembro veía su mensaje
+    // entregado y nunca recibía nada, sin saber por qué. Mejor avisarle que
+    // hubo un problema que dejarlo sin ninguna respuesta.
+    const msgError = "Tuvimos un problema respondiendo tu mensaje. Intenta de nuevo en un momento 🙏";
+    return new Response(`<Response><Message>${msgError}</Message></Response>`, {
+      headers: { "Content-Type": "text/xml", ...corsHeaders },
+    });
   }
 });
