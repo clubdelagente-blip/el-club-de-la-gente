@@ -26,7 +26,27 @@ const MODELO_AUDIO = "whisper-large-v3-turbo";
 
 const RATE_LIMIT_MAX = 10;
 const RATE_LIMIT_WINDOW_MIN = 5;
+// Tope aparte por día -- el de 5 minutos no frena a alguien que manda
+// mensajes "a goteo" (uno cada rato) durante horas; cada uno igual gasta una
+// llamada completa a Groq. 80/día es generoso para una conversación real,
+// pero corta un uso sostenido fuera de lo normal.
+const RATE_LIMIT_DIARIO_MAX = 80;
 const MAX_MESSAGE_LENGTH = 500;
+
+// Tope de tiempo para llamadas externas (Groq, Twilio, Google) -- sin esto,
+// si alguno de esos servicios se cuelga, la función se queda esperando
+// indefinidamente y el miembro nunca recibe respuesta.
+const TIMEOUT_EXTERNO_MS = 20000;
+
+async function fetchConTimeout(url: string, options: RequestInit, timeoutMs: number = TIMEOUT_EXTERNO_MS): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 // Plantilla "escalacion_agente_whatsapp", ya aprobada por Meta -- {{1}}=nombre
 // del miembro, {{2}}=su WhatsApp, {{3}}=su último mensaje.
@@ -120,7 +140,16 @@ async function excedeLimite(supabase: ReturnType<typeof createClient>, whatsapp:
     .eq("whatsapp", whatsapp)
     .eq("rol", "user")
     .gte("created_at", desde);
-  return (count ?? 0) >= RATE_LIMIT_MAX;
+  if ((count ?? 0) >= RATE_LIMIT_MAX) return true;
+
+  const desdeHoy = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count: countDia } = await supabase
+    .from("conversaciones")
+    .select("id", { count: "exact", head: true })
+    .eq("whatsapp", whatsapp)
+    .eq("rol", "user")
+    .gte("created_at", desdeHoy);
+  return (countDia ?? 0) >= RATE_LIMIT_DIARIO_MAX;
 }
 
 // ─── Media entrante (fotos y audios de WhatsApp) ────────────────────────────
@@ -136,7 +165,7 @@ async function excedeLimite(supabase: ReturnType<typeof createClient>, whatsapp:
 async function descargarMediaTwilio(mediaUrl: string): Promise<Blob | null> {
   try {
     const authHeader = "Basic " + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
-    const res = await fetch(mediaUrl, { headers: { Authorization: authHeader } });
+    const res = await fetchConTimeout(mediaUrl, { headers: { Authorization: authHeader } });
     if (!res.ok) return null;
     return await res.blob();
   } catch (_) {
@@ -177,7 +206,7 @@ async function transcribirAudioWhatsApp(blob: Blob, contentType: string): Promis
     form.append("file", blob, `audio.${ext}`);
     form.append("model", MODELO_AUDIO);
     form.append("language", "es");
-    const res = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+    const res = await fetchConTimeout("https://api.groq.com/openai/v1/audio/transcriptions", {
       method: "POST",
       headers: { Authorization: `Bearer ${GROQ_API_KEY}` },
       body: form,
@@ -192,7 +221,7 @@ async function transcribirAudioWhatsApp(blob: Blob, contentType: string): Promis
 
 async function describirImagenWhatsApp(imageUrl: string): Promise<string | null> {
   try {
-    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const groqRes = await fetchConTimeout("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${GROQ_API_KEY}` },
       body: JSON.stringify({
@@ -233,7 +262,7 @@ function limpiarParaVoz(texto: string): string {
 // este uso.
 async function generarAudioTTS(texto: string): Promise<Blob | null> {
   try {
-    const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_API_KEY}`, {
+    const res = await fetchConTimeout(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1200,7 +1229,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Llamar a Groq con historial
-    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const groqRes = await fetchConTimeout("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
