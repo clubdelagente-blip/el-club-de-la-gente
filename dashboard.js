@@ -684,7 +684,7 @@ async function cargarDescuentos(userId, whatsapp) {
       .select("nombre_producto, monto, ahorro, created_at")
       .eq("miembro_id", userId).not("estado", "in", "(pendiente_pago,cancelado)"),
     supabase.from("viajes_conductor")
-      .select("tipo, monto, ahorro, created_at")
+      .select("tipo, monto, descuento_pct, ahorro, created_at")
       .eq("miembro_id", userId).eq("anulado", false),
     supabase.from("servicios_aplicados")
       .select("nombre_servicio, tarifa, descuento_pct, es_cortesia, ahorro, created_at")
@@ -744,7 +744,7 @@ async function cargarDescuentos(userId, whatsapp) {
     })),
     ...(uberData || []).map(d => ({
       tipo: "uber", nombre: `Uber ${TIPO_UBER_LBL[d.tipo] || d.tipo}`, categoria: "Transporte",
-      descuento_pct: "10%", compra: d.monto, ahorro: d.ahorro || 0, created_at: d.created_at,
+      descuento_pct: `${d.descuento_pct || 10}%`, compra: d.monto, ahorro: d.ahorro || 0, created_at: d.created_at,
     })),
     ...(profData || []).map(d => ({
       tipo: "profesional", nombre: d.nombre_servicio, categoria: "Profesionales",

@@ -210,7 +210,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=7"></script>
-  <script src="admin.js?v=32"></script>
+  <script src="admin.js?v=33"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -257,11 +257,12 @@ async function cargarCategoriasClub(){
   (hijos||[]).forEach(h=>{ if(h.mostrar_si_respuesta&&h.opciones?.length)SUBCATS[h.mostrar_si_respuesta]=h.opciones; });
 }
 async function cargarConfigTransporte(){
-  const{data}=await supabase.from('configuracion').select('*').in('clave',['grupo_wa_moto','grupo_wa_carro','numero_admin_notificaciones']);
+  const{data}=await supabase.from('configuracion').select('*').in('clave',['grupo_wa_moto','grupo_wa_carro','numero_admin_notificaciones','uber_descuento_pct']);
   const map={};(data||[]).forEach(r=>map[r.clave]=r.valor);
   const m=$("#cfg-grupo-moto");if(m)m.value=map.grupo_wa_moto||'';
   const c=$("#cfg-grupo-carro");if(c)c.value=map.grupo_wa_carro||'';
   const n=$("#cfg-num-admin");if(n)n.value=map.numero_admin_notificaciones||'';
+  const u=$("#cfg-uber-pct");if(u)u.value=map.uber_descuento_pct||'10';
 }
 window.cargarConfigTransporte=cargarConfigTransporte;
 
@@ -2104,7 +2105,7 @@ function abrirModalEditarViaje(v){
       </select>
     </div>
     <div class="ad-field"><label>Monto del viaje (COP)</label><input id="viaje-monto" type="number" value="${v.monto||0}"></div>
-    <p style="font-size:11px;color:rgba(26,26,24,.4);margin-top:-6px">El ahorro (10%) se recalcula solo al guardar.</p>
+    <p style="font-size:11px;color:rgba(26,26,24,.4);margin-top:-6px">El ahorro (${v.descuento_pct||10}%, el mismo que se aplicó cuando se registró este viaje) se recalcula solo al guardar.</p>
     <div class="ad-toolbar" style="margin-top:16px"><div class="ad-spacer"></div><button class="ad-btn" id="viaje-cancel">Cancelar</button><button class="ad-btn ad-btn--verde" id="viaje-save">${ic('check')} Guardar</button></div>
   `);
   setTimeout(()=>{
@@ -2112,7 +2113,7 @@ function abrirModalEditarViaje(v){
     $("#viaje-save")?.addEventListener('click',async()=>{
       const tipo=$("#viaje-tipo")?.value||v.tipo;
       const monto=parseInt($("#viaje-monto")?.value)||0;
-      const ahorro=Math.round(monto*0.10);
+      const ahorro=Math.round(monto*((v.descuento_pct||10)/100));
       await supabase.from('viajes_conductor').update({tipo,monto,ahorro}).eq('id',v.id);
       window.cerrarModal?.();toast('Viaje actualizado ✓');cargarViajesUber();
     });
@@ -3630,10 +3631,11 @@ document.addEventListener('DOMContentLoaded',async()=>{
       const btn=e.target.closest('#cfg-grupo-save');
       const moto=$("#cfg-grupo-moto")?.value.trim()||null;
       const carro=$("#cfg-grupo-carro")?.value.trim()||null;
+      const pct=parseInt($("#cfg-uber-pct")?.value)||10;
       btn.disabled=true;
-      await supabase.from('configuracion').upsert([{clave:'grupo_wa_moto',valor:moto},{clave:'grupo_wa_carro',valor:carro}]);
+      await supabase.from('configuracion').upsert([{clave:'grupo_wa_moto',valor:moto},{clave:'grupo_wa_carro',valor:carro},{clave:'uber_descuento_pct',valor:String(pct)}]);
       btn.disabled=false;
-      toast('Links guardados ✓');
+      toast('Cambios guardados ✓');
       return;
     }
     if(e.target.closest('[data-vt-aprobar]')){

@@ -65,13 +65,19 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Ese WhatsApp no está registrado como conductor del Club" }), { status: 404, headers: corsHeaders });
   }
 
-  const ahorro = Math.round(montoNum * 0.10);
+  // El % lo configura el admin desde Admin.html (clave "uber_descuento_pct")
+  // -- 10 es el valor de siempre, se usa solo si todavía no se ha guardado
+  // nada ahí.
+  const { data: cfg } = await supabase.from("configuracion").select("valor").eq("clave", "uber_descuento_pct").maybeSingle();
+  const pct = Number(cfg?.valor) || 10;
+
+  const ahorro = Math.round(montoNum * (pct / 100));
   const { error } = await supabase.from("viajes_conductor").insert({
     conductor_id: conductor.id,
     miembro_id,
     tipo,
     monto: montoNum,
-    descuento_pct: 10,
+    descuento_pct: pct,
     ahorro,
   });
 

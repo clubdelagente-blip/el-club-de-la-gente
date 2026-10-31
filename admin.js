@@ -363,7 +363,12 @@ function renderConfig() {
           <input id="cfg-grupo-carro" type="url" placeholder="https://chat.whatsapp.com/..." style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(242,240,234,.15);background:rgba(242,240,234,.04);color:#fff;font-size:13px">
         </div>
         <span style="font-size:11px;color:rgba(242,240,234,.35)">El Agente de WhatsApp le comparte este link al miembro cuando pide un viaje. Si lo dejas vacío, el Agente le avisa que el servicio aún no está disponible.</span>
-        <button class="ad-btn ad-btn--verde" id="cfg-grupo-save" style="align-self:flex-start">${ic("check")} Guardar links</button>
+        <div>
+          <label style="font-size:12px;color:rgba(242,240,234,.5);display:block;margin-bottom:5px">Descuento Uber del Club (%)</label>
+          <input id="cfg-uber-pct" type="number" min="1" max="100" placeholder="10" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(242,240,234,.15);background:rgba(242,240,234,.04);color:#fff;font-size:13px">
+        </div>
+        <span style="font-size:11px;color:rgba(242,240,234,.35)">Porcentaje de descuento que recibe el miembro en cada viaje. Los viajes ya registrados no cambian -- solo afecta a los nuevos.</span>
+        <button class="ad-btn ad-btn--verde" id="cfg-grupo-save" style="align-self:flex-start">${ic("check")} Guardar cambios</button>
       </div>
     </div>
     <div class="ad-set">

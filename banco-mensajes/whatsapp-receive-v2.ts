@@ -652,6 +652,7 @@ PERFIL DEL MIEMBRO:
 
   const grupoMoto = config.grupo_wa_moto;
   const grupoCarro = config.grupo_wa_carro;
+  const uberPct = Number(config.uber_descuento_pct) || 10;
   base += `\n\nSERVICIO DE TRANSPORTE Y DOMICILIOS (moto/carro, gratis para todos los miembros):
 El Club tiene grupos de WhatsApp con conductores de confianza (moto y carro). Se usan para dos cosas distintas:
 - Llevar a la persona de un punto a otro (viaje/carrera).
@@ -663,7 +664,7 @@ Cuando el miembro pida un viaje, una moto, un carro, un domicilio o algo similar
    (Si no lo ha dicho ya, pregúntalo — así puede pegarlo directo en el grupo.)
 2. Los domicilios van por el grupo de moto. Dale el link del grupo que corresponda:${grupoMoto ? `\n   - Moto / domicilios: ${grupoMoto}` : "\n   - Moto / domicilios: aún no disponible, dile que ese servicio está en preparación."}${grupoCarro ? `\n   - Carro: ${grupoCarro}` : "\n   - Carro: aún no disponible, dile que ese servicio está en preparación."}
 3. Explícale que debe entrar al grupo y postear ahí su solicitud (con los datos del punto 1) — el primer conductor que le escriba se coordina directo con él. El pago es directo al conductor, en efectivo, Nequi o llave Bre-B (según lo que el conductor acepte).
-4. Recuérdale que por ser miembro del Club tiene 10% de descuento — debe mencionárselo al conductor.
+4. Recuérdale que por ser miembro del Club tiene ${uberPct}% de descuento — debe mencionárselo al conductor.
 NUNCA inventes un link si no está disponible arriba — dile la verdad, que ese servicio específico aún no está activo.`;
 
   if (aliados.length > 0) {
@@ -1093,7 +1094,7 @@ Deno.serve(async (req: Request) => {
     const { data: configData } = await supabase
       .from("configuracion")
       .select("clave, valor")
-      .in("clave", ["grupo_wa_moto", "grupo_wa_carro", "numero_admin_notificaciones"]);
+      .in("clave", ["grupo_wa_moto", "grupo_wa_carro", "numero_admin_notificaciones", "uber_descuento_pct"]);
     const config: Record<string, string | null> = {};
     for (const c of configData || []) config[c.clave as string] = c.valor as string | null;
 

@@ -351,13 +351,13 @@
         </div>
       `;
     }
-    function htmlUberMonto(tipoLbl) {
+    function htmlUberMonto(tipoLbl, pct) {
       return `
         <div class="estado-ic" style="background:#fef3c7">🚗</div>
         <div class="miembro-nombre" style="font-size:20px">${tipoLbl}</div>
         <p style="font-size:12px;color:#888;margin-bottom:14px">Ingresa el monto del viaje.</p>
         <input id="uber-monto" type="text" inputmode="numeric" placeholder="15.000" style="width:100%;padding:12px 14px;border:1px solid #ebebeb;border-radius:10px;font-size:16px;margin-bottom:12px;text-align:center">
-        <div class="detalle"><span class="detalle__lbl">Descuento (10%)</span><span class="detalle__val" id="uber-ahorro" style="color:var(--verde)">$0</span></div>
+        <div class="detalle"><span class="detalle__lbl">Descuento (${pct}%)</span><span class="detalle__val" id="uber-ahorro" style="color:var(--verde)">$0</span></div>
         <p id="uber-error" class="error-msg" style="display:none;margin:10px 0;font-size:13px"></p>
         <button id="uber-aplicar" style="${btnStyle("#095544")}">Aplicar descuento</button>
       `;
@@ -395,14 +395,22 @@
       });
     }
 
-    function abrirUberMonto(tipo, tipoLbl, wa, p) {
-      card.innerHTML = htmlUberMonto(tipoLbl);
+    async function abrirUberMonto(tipo, tipoLbl, wa, p) {
+      // El % lo configura el admin desde Admin.html (clave
+      // "uber_descuento_pct") -- 10 es el de siempre, se usa si todavía no
+      // se ha guardado nada ahí. Esto es solo la vista previa que ve el
+      // conductor antes de aplicar; el cálculo real (el que queda guardado)
+      // lo hace registrar-viaje-conductor del lado del servidor.
+      const { data: cfgPct } = await supabaseClient.from("configuracion").select("valor").eq("clave", "uber_descuento_pct").maybeSingle();
+      const pct = Number(cfgPct?.valor) || 10;
+
+      card.innerHTML = htmlUberMonto(tipoLbl, pct);
       const montoInput = document.getElementById("uber-monto");
       montoInput.addEventListener("input", () => {
         const digits = montoInput.value.replace(/\D/g, "");
         montoInput.value = digits ? Number(digits).toLocaleString("es-CO") : "";
         const monto = parseInt(digits) || 0;
-        document.getElementById("uber-ahorro").textContent = fmtCOPUber(Math.round(monto * 0.10));
+        document.getElementById("uber-ahorro").textContent = fmtCOPUber(Math.round(monto * (pct / 100)));
       });
 
       document.getElementById("uber-aplicar")?.addEventListener("click", async () => {
