@@ -539,6 +539,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // pero la persona queda sin fila en "perfiles" (sin plan, sin nada), un
     // estado roto que antes pasaba desapercibido. Ahora se revisa el error.
     let perfilGuardado = false;
+    let debugErrorMsg = ""; // DEBUG TEMPORAL -- quitar una vez diagnosticado
     try {
       if (data.user) {
         const refPor = localStorage.getItem("ecdlg_ref") || null;
@@ -554,6 +555,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
         if (perfError) {
           console.error("Error guardando perfil:", perfError);
+          debugErrorMsg = perfError.message || JSON.stringify(perfError);
         } else {
           perfilGuardado = true;
           localStorage.removeItem("ecdlg_ref");
@@ -561,12 +563,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     } catch (e) {
       console.error("Error en registro:", e);
+      debugErrorMsg = e?.message || String(e);
     }
 
     setLoading(btn, false, "Crear mi cuenta →");
 
     if (!perfilGuardado) {
-      mostrarError("Tu cuenta se creó, pero hubo un error guardando tu perfil. Escríbenos por WhatsApp para completarlo.");
+      mostrarError("Tu cuenta se creó, pero hubo un error guardando tu perfil (DEBUG: " + debugErrorMsg + "). Escríbenos por WhatsApp para completarlo.");
       return;
     }
 
