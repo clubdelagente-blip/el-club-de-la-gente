@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://js.sentry-cdn.com/c008db963bd16390827cbba643292144.min.js" crossorigin="anonymous"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K062DHDKP"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-K062DHDKP');</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Te invitaron a El Club de la Gente</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="icon-club.png?v=2" type="image/png">
+  <meta name="theme-color" content="#021B1A">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=94">
+  <style>
+    .inv-hero { background: var(--negro); color: var(--crema-en-negro); padding: 48px 0 64px; text-align: center; }
+    .inv-logo { display: inline-block; margin-bottom: 28px; }
+    .inv-logo img { height: 34px; width: auto; }
+    .inv-eyebrow { display: inline-flex; align-items: center; gap: 9px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--negro); background: var(--verde-claro); padding: 9px 17px; border-radius: 100px; margin-bottom: 20px; }
+    .inv-title { font-size: clamp(32px, 6vw, 56px); line-height: 1.05; margin-bottom: 14px; }
+    .inv-sub { font-size: 16px; color: rgba(241,247,246,.65); max-width: 44em; margin: 0 auto 32px; }
+    .inv-video-wrap { max-width: 720px; margin: 0 auto 28px; border-radius: 18px; overflow: hidden; background: #000; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+    .inv-video-frame { position: relative; width: 100%; aspect-ratio: 16/9; }
+    .inv-video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .inv-cta-wrap { margin-top: 8px; }
+    .inv-cta-nota { font-size: 12.5px; color: rgba(241,247,246,.45); margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <section class="inv-hero">
+    <div class="wrap">
+      <a class="inv-logo" href="https://elclubdelagente.com/">
+        <img src="logo-club.png" alt="El Club de la Gente" class="logo-img--inv">
+      </a>
+
+      <div>
+        <span class="inv-eyebrow">Invitación especial <span aria-hidden="true">🎉</span></span>
+        <h1 class="display inv-title">Te invitaron a <span class="italic-verde">El Club de la Gente.</span></h1>
+        <p class="inv-sub">Mira este video de 1 minuto y entiende por qué cientos de personas en Fusagasugá ya están ahorrando con su membresía.</p>
+      </div>
+
+      <div class="inv-video-wrap">
+        <div class="inv-video-frame">
+          <!-- Reemplazar VIDEO_ID por el ID real del video de YouTube (no listado) -->
+          <iframe
+            src="https://www.youtube.com/embed/VIDEO_ID?autoplay=1&mute=1&playsinline=1&rel=0"
+            title="El Club de la Gente"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>
+      </div>
+
+      <div class="inv-cta-wrap">
+        <button type="button" class="btn btn--primario" id="inv-comprar-btn">Comprar ahora <span class="ar">&rarr;</span></button>
+        <p class="inv-cta-nota">Elige tu plan en el siguiente paso — toma menos de 2 minutos.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion seccion--negro" id="inv-planes-wrap" style="display:none">
+    <div class="wrap">
+      <div class="shead">
+        <span class="eyebrow">Membresías</span>
+        <h2 class="display seccion__title">Elige cómo quieres <span class="italic-verde">empezar.</span></h2>
+      </div>
+      <div class="planes"></div>
+    </div>
+  </section>
+
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script type="module" src="app-cms.js?v=46"></script>
+  <script>
+    document.getElementById('inv-comprar-btn')?.addEventListener('click', () => {
+      const btn = document.getElementById('inv-comprar-btn');
+      const seccion = document.getElementById('inv-planes-wrap');
+      if (!seccion) return;
+      seccion.style.display = '';
+      btn.closest('.inv-cta-wrap').style.display = 'none';
+      seccion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Doble rAF: le da al navegador un respiro para pintar las tarjetas
+      // en su estado oculto ANTES de pedirles que entren -- si "is-in" se
+      // agrega en el mismo instante que se quita el display:none, la
+      // transición se salta entera (mismo problema que ya se resolvió en
+      // el título del hero de la landing principal, ver app.js ahí).
+      requestAnimationFrame(() => requestAnimationFrame(() => seccion.classList.add('is-in')));
+    });
+  </script>
+</body>
+</html>

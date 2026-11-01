@@ -1621,7 +1621,10 @@ async function cargarReferidos(userId) {
 
   if (!barra) return;
 
-  const base = "https://elclubdelagente.com/Registro.html";
+  // Apunta a la landing de invitación (video + planes) en vez de directo
+  // al registro -- el ?ref= se arrastra desde ahí hasta Registro.html
+  // pase lo que pase (botón "Comprar ahora" o el modal de ClubCard).
+  const base = "https://elclubdelagente.com/Invitacion.html";
   const link = `${base}?ref=${userId}`;
 
   copiarBtn?.addEventListener("click", () => {

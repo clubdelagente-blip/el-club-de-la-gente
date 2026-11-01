@@ -295,8 +295,14 @@ function abrirModalClubCard(slug) {
 
   const cta = document.getElementById('cc-modal-cta');
   if (cta) {
+    // Si esta página se abrió con "?ref=<id>" (ej. el link de referido de
+    // un miembro, o la landing de invitación), ese ref se arrastra hasta
+    // Registro.html para que el referido siga contando -- sin esto, el
+    // ref se perdía apenas el visitante tocaba "Ver mi ClubCard".
+    const ref = new URLSearchParams(location.search).get('ref');
+    const refQS = ref ? `&ref=${encodeURIComponent(ref)}` : '';
     cta.textContent = esPago ? 'Comprar' : 'Unirme gratis';
-    cta.href = esPago ? `Registro.html?plan=${slug}&comprar=1` : 'Registro.html?modo=registro';
+    cta.href = (esPago ? `Registro.html?plan=${slug}&comprar=1` : 'Registro.html?modo=registro') + refQS;
   }
 
   document.getElementById('cc-modal-ov')?.classList.add('is-open');
