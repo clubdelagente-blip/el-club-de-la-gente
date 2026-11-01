@@ -332,8 +332,8 @@
       return `
         <div class="estado-ic" style="background:#fef3c7">🚗</div>
         <div class="estado-lbl" style="color:#b45309">Descuento Uber del Club</div>
-        <div class="miembro-nombre" style="font-size:20px">¿Cuál es tu WhatsApp?</div>
-        <p style="font-size:12px;color:#888;margin-bottom:16px">Conductor: se guarda en este celular para no pedírtelo cada vez.</p>
+        <div class="miembro-nombre" style="font-size:20px">¿Cuál es tu código?</div>
+        <p style="font-size:12px;color:#888;margin-bottom:16px">Conductor: tu código es tu WhatsApp registrado en el Club. Se guarda en este celular para no pedírtelo cada vez.</p>
         <input id="uber-wa" type="tel" value="${waGuardado}" placeholder="300 000 0000" style="width:100%;padding:12px 14px;border:1px solid #ebebeb;border-radius:10px;font-size:16px;margin-bottom:10px;text-align:center">
         <p id="uber-error" class="error-msg" style="display:none;margin-bottom:10px;font-size:13px"></p>
         <button id="uber-continuar" style="${btnStyle("#021B1A")}">Continuar</button>
@@ -377,15 +377,38 @@
         document.getElementById("uber-cancelar")?.addEventListener("click", () => cargarYRenderizar());
         document.getElementById("uber-continuar")?.addEventListener("click", async () => {
           const errEl = document.getElementById("uber-error");
+          const btnContinuar = document.getElementById("uber-continuar");
+          if (errEl) errEl.style.display = "none";
           // Mismo normalizado que usa el resto del sitio (auth.js) -- el
           // "código" del conductor es su WhatsApp en 10 dígitos, sin el
           // indicativo 57 aunque venga duplicado.
           let wa = (document.getElementById("uber-wa")?.value || "").replace(/\D/g, "");
           while (wa.length > 10 && wa.startsWith("57")) wa = wa.slice(2);
           if (wa.length < 7) {
-            if (errEl) { errEl.textContent = "Ingresa un WhatsApp válido."; errEl.style.display = "block"; }
+            if (errEl) { errEl.textContent = "Ingresa un código válido."; errEl.style.display = "block"; }
             return;
           }
+
+          // Se valida aquí mismo que el código corresponda a un conductor
+          // real del Club -- antes esto solo se descubría hasta el final
+          // (al aplicar el descuento), después de ya haber elegido tipo y
+          // monto. El registro real del viaje lo sigue validando igual
+          // registrar-viaje-conductor del lado del servidor -- esto es solo
+          // para avisar temprano si el código está mal.
+          btnContinuar.disabled = true; btnContinuar.textContent = "Verificando...";
+          const { data: conductor } = await supabaseClient
+            .from("profesionales_publico")
+            .select("id")
+            .eq("es_conductor", true)
+            .eq("whatsapp", wa)
+            .maybeSingle();
+          btnContinuar.disabled = false; btnContinuar.textContent = "Continuar";
+
+          if (!conductor) {
+            if (errEl) { errEl.textContent = "Ese código no corresponde a un conductor registrado del Club."; errEl.style.display = "block"; }
+            return;
+          }
+
           localStorage.setItem("ecdlg_conductor_wa", wa);
           card.innerHTML = htmlUberTipo();
           document.querySelectorAll(".uber-tipo-btn").forEach(btn => {
