@@ -3222,7 +3222,20 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   }
   obtenerSesionConReintento().then(async (session) => {
-    if (!session?.user?.id) { location.href = "Registro.html?modo=login"; return; }
+    if (!session?.user?.id) {
+      // En iOS, recién instalada la app, la primera apertura a veces no
+      // alcanza a leer la sesión a tiempo aunque sí esté guardada -- cerrar
+      // y volver a entrar siempre lo resuelve. Se automatiza ese mismo gesto
+      // una sola vez (la bandera evita un loop si de verdad no hay sesión).
+      if (!sessionStorage.getItem("ecdlg_reload_sesion")) {
+        sessionStorage.setItem("ecdlg_reload_sesion", "1");
+        location.reload();
+        return;
+      }
+      sessionStorage.removeItem("ecdlg_reload_sesion");
+      location.href = "Registro.html?modo=login";
+      return;
+    }
     const userId = session.user.id;
     _miembroId = userId;
     generarQR(userId);
