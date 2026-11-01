@@ -12,6 +12,18 @@ const supabase = createClient(
 const ic = (n) => `<i data-lucide="${n}"></i>`;
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+// Registra cada tarjeta nueva (ya insertada en el DOM) en el observer de
+// entrada de app.js, UNA POR UNA -- antes dependían de que el contenedor
+// completo del grid entrara/saliera de la pantalla como bloque (el
+// contenedor también tenía .fade-up), y en listas cortas (ej. 2 vacantes
+// de Bolsa de trabajo) ese contenedor rebotaba justo en el borde de la
+// pantalla, escondiendo y mostrando TODAS las tarjetas juntas de golpe --
+// eso era el parpadeo. Cada tarjeta ahora se vigila sola.
+function observarTarjetasNuevas(contenedor) {
+  if (!contenedor) return;
+  contenedor.querySelectorAll('.fade-up, .img-pop').forEach((el) => window.observarEntrada?.(el));
+}
+
 /* Color por categoría -- mismo mapeo que directorio.js, para que el borde
    de cada tarjeta del carrusel combine con el color de su categoría. */
 const COLORES_CAT = [
@@ -335,6 +347,7 @@ async function cargarProgramasPub() {
     </div>`;
 
   grid.innerHTML = data.slice(0, LIMITE).map(tarjeta).join('');
+  observarTarjetasNuevas(grid);
   if (window.lucide) lucide.createIcons();
   grid.querySelectorAll('[data-prog-modal]').forEach(card => {
     card.addEventListener('click', () => abrirModalPrograma(card.dataset.progModal));
@@ -348,6 +361,7 @@ async function cargarProgramasPub() {
     btn.textContent = `Ver ${data.length - LIMITE} programas más`;
     btn.addEventListener('click', () => {
       grid.insertAdjacentHTML('beforeend', data.slice(LIMITE).map(tarjeta).join(''));
+      observarTarjetasNuevas(grid);
       if (window.lucide) lucide.createIcons();
       grid.querySelectorAll('[data-prog-modal]').forEach(card => {
         card.addEventListener('click', () => abrirModalPrograma(card.dataset.progModal));
@@ -430,6 +444,7 @@ async function cargarProfesionalesPub() {
       <p style="font-size:13px;opacity:.6;line-height:1.5">${esc(p.descripcion || '')}</p>
     </div>`).join('');
 
+  observarTarjetasNuevas(grid);
   if (window.lucide) lucide.createIcons();
 }
 
@@ -512,6 +527,7 @@ async function cargarEventosEducativosPub() {
 
   if (proximos?.length) {
     grid.innerHTML = proximos.map(e => tarjetaEvento(e, confirmadosMap.get(e.id) || 0)).join('');
+    observarTarjetasNuevas(grid);
   }
 
   if (historial?.length && histWrap && histTrack) {
@@ -554,6 +570,7 @@ async function cargarVacantesPub() {
       <a class="btn btn--primario" style="width:100%;justify-content:center" href="Registro.html?modo=registro">Regístrate para postularte</a>
     </div>`).join('');
 
+  observarTarjetasNuevas(grid);
   seccion.style.display = '';
   if (window.lucide) lucide.createIcons();
 }
