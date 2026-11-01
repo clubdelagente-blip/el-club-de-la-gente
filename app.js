@@ -703,21 +703,30 @@ function toast(msg, check = true) {
 //
 // Toggle (no "add + unobserve") -- se repite cada vez que el elemento
 // entra o sale de la pantalla, para que también se vea al subir, no solo
-// la primera vez que se baja. El parpadeo/"corto circuito" que se veía
-// antes con esto no era por repetirse -- era porque al ESCONDERSE no
-// tenía transición (desaparecía de golpe, en vez de desvanecerse). Eso
-// se arregló en styles.css (ahora también hay transición de salida), así
-// que el toggle ya se puede dejar activo sin que se vea brusco.
+// la primera vez que se baja.
+//
+// Dos correcciones sobre la primera versión de esto:
+// 1. El rootMargin negativo ("adelantar" el efecto antes de llegar al
+//    borde) rompía la ÚLTIMA sección de la página (Membresías, justo
+//    antes del footer) -- como ya no hay más scroll posible después de
+//    ahí, el navegador nunca llegaba a cumplir ese margen de más y la
+//    sección se quedaba invisible para siempre. Se quitó.
+// 2. El parpadeo que seguía viéndose (sobre todo en iPhone) era el
+//    rebote típico del scroll justo en el borde: el observer puede
+//    disparar "entra/sale/entra" varias veces en milisegundos. Ahora
+//    cada cambio espera un poco (120ms) antes de aplicarse -- si en ese
+//    tiempo el estado vuelve a cambiar, se cancela el anterior y no
+//    llega a parpadear, solo se aplica un cambio que de verdad se
+//    mantuvo estable.
 let _fadeObs = null;
 function observeFade() {
-  // rootMargin negativo abajo: el elemento se marca "adentro" un poco ANTES
-  // de llegar al borde real de la pantalla, así el efecto ya viene
-  // terminando justo cuando se termina de ver -- se siente anticipado y
-  // conectado con el scroll, no como que "te alcanza" de golpe al llegar
-  // justo al borde.
   _fadeObs = new IntersectionObserver((entries) => {
-    entries.forEach(e => e.target.classList.toggle("is-in", e.isIntersecting));
-  }, { threshold: 0.12, rootMargin: "0px 0px -12% 0px" });
+    entries.forEach(e => {
+      const el = e.target;
+      clearTimeout(el._fadeTimer);
+      el._fadeTimer = setTimeout(() => el.classList.toggle("is-in", e.isIntersecting), 120);
+    });
+  }, { threshold: 0.12 });
   const hero = $("#hero");
   if (hero) _fadeObs.observe(hero);
   [...$$(".fade-up"), ...$$(".fade-left"), ...$$(".fade-right"), ...$$(".fade-zoom"), ...$$(".img-pop")].forEach(el => _fadeObs.observe(el));
