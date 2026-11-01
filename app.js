@@ -703,29 +703,18 @@ function toast(msg, check = true) {
 //
 // Toggle (no "add + unobserve") -- se repite cada vez que el elemento
 // entra o sale de la pantalla, para que también se vea al subir, no solo
-// la primera vez que se baja.
-//
-// Dos correcciones sobre la primera versión de esto:
-// 1. El rootMargin negativo ("adelantar" el efecto antes de llegar al
-//    borde) rompía la ÚLTIMA sección de la página (Membresías, justo
-//    antes del footer) -- como ya no hay más scroll posible después de
-//    ahí, el navegador nunca llegaba a cumplir ese margen de más y la
-//    sección se quedaba invisible para siempre. Se quitó.
-// 2. El parpadeo que seguía viéndose (sobre todo en iPhone) era el
-//    rebote típico del scroll justo en el borde: el observer puede
-//    disparar "entra/sale/entra" varias veces en milisegundos. Ahora
-//    cada cambio espera un poco (120ms) antes de aplicarse -- si en ese
-//    tiempo el estado vuelve a cambiar, se cancela el anterior y no
-//    llega a parpadear, solo se aplica un cambio que de verdad se
-//    mantuvo estable.
+// la primera vez que se baja. Sin debounce: un intento anterior de
+// "esperar un poco antes de aplicar el cambio" para evitar el parpadeo
+// terminaba bloqueando que algunas tarjetas se alcanzaran a esconder si
+// se cruzaban rápido -- se quedaban pegadas visibles. La causa real del
+// parpadeo era otra (ver styles.css: el --delay escalonado se aplicaba
+// también al ESCONDERSE, no solo al aparecer, así que unas tarjetas
+// tardaban más que otras en irse). Ya corregido ahí, el toggle directo
+// no necesita este parche.
 let _fadeObs = null;
 function observeFade() {
   _fadeObs = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      const el = e.target;
-      clearTimeout(el._fadeTimer);
-      el._fadeTimer = setTimeout(() => el.classList.toggle("is-in", e.isIntersecting), 120);
-    });
+    entries.forEach(e => e.target.classList.toggle("is-in", e.isIntersecting));
   }, { threshold: 0.12 });
   const hero = $("#hero");
   if (hero) _fadeObs.observe(hero);
