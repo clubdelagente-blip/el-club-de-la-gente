@@ -18,14 +18,14 @@
     .inv-hero { background: var(--negro); color: var(--crema-en-negro); padding: 48px 0 64px; text-align: center; }
     .inv-logo { display: inline-block; margin-bottom: 28px; }
     .inv-logo img { height: 34px; width: auto; }
-    .inv-eyebrow { display: inline-flex; align-items: center; gap: 9px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--negro); background: var(--verde-claro); padding: 9px 17px; border-radius: 100px; margin-bottom: 20px; }
+    .inv-eyebrow { display: inline-flex; align-items: center; gap: 9px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--negro); background: #EAB749; padding: 9px 17px; border-radius: 100px; margin-bottom: 18px; }
     .inv-title { font-size: clamp(32px, 6vw, 56px); line-height: 1.1; margin-bottom: 14px; }
     .inv-title .inv-title-linea2 { display: block; white-space: nowrap; font-size: clamp(22px, 7.5vw, 56px); }
     .inv-sub { font-size: 16px; color: rgba(241,247,246,.65); max-width: 44em; margin: 0 auto 32px; }
 
-    .inv-countdown { display: inline-flex; align-items: center; gap: 10px; background: rgba(241,247,246,.06); border: 1px solid rgba(241,247,246,.15); color: var(--crema-en-negro); font-size: 13px; padding: 10px 18px; border-radius: 100px; margin-bottom: 20px; }
-    .inv-countdown__lbl { color: rgba(241,247,246,.55); }
-    .inv-countdown__num { font-family: var(--display); color: var(--verde-claro); font-size: 15px; letter-spacing: .02em; }
+    .inv-countdown { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; background: rgba(234,183,73,.08); border: 1px solid rgba(234,183,73,.35); color: var(--crema-en-negro); padding: 14px 28px; border-radius: 18px; margin-bottom: 24px; }
+    .inv-countdown__lbl { color: rgba(241,247,246,.6); font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; }
+    .inv-countdown__num { font-family: var(--display); color: #EAB749; font-size: clamp(28px, 7vw, 42px); letter-spacing: .02em; line-height: 1; }
     .inv-video-wrap { max-width: 720px; margin: 0 auto 28px; border-radius: 18px; overflow: hidden; background: #000; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
     .inv-video-frame { position: relative; width: 100%; aspect-ratio: 16/9; }
     .inv-video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
@@ -42,16 +42,17 @@
     .inv-stat { text-align: center; }
     .inv-stat strong { display: block; font-family: var(--display); font-size: 28px; color: var(--verde-claro); line-height: 1; }
     .inv-stat span { display: block; font-size: 12px; color: rgba(241,247,246,.5); margin-top: 4px; max-width: 120px; }
+    .inv-stat--oro strong { color: #EAB749; }
 
     .inv-resenas { max-width: 420px; margin: 0 auto 10px; overflow: hidden; }
     .inv-resenas__track { display: flex; transition: transform .5s cubic-bezier(.22,1,.36,1); }
     .inv-resena { flex: 0 0 100%; background: rgba(241,247,246,.05); border: 1px solid rgba(241,247,246,.1); border-radius: 14px; padding: 16px 18px; text-align: left; box-sizing: border-box; }
-    .inv-resena__estrellas { color: var(--verde-claro); font-size: 13px; margin-bottom: 8px; letter-spacing: 2px; }
+    .inv-resena__estrellas { color: #EAB749; font-size: 13px; margin-bottom: 8px; letter-spacing: 2px; }
     .inv-resena__texto { font-size: 13.5px; color: rgba(241,247,246,.8); line-height: 1.5; margin-bottom: 10px; min-height: 3.2em; }
     .inv-resena__autor { font-size: 12px; color: rgba(241,247,246,.45); }
     .inv-resenas__dots { display: flex; justify-content: center; gap: 6px; margin: 10px 0 24px; }
     .inv-resenas__dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(241,247,246,.25); border: 0; padding: 0; cursor: pointer; }
-    .inv-resenas__dot.is-active { background: var(--verde-claro); }
+    .inv-resenas__dot.is-active { background: #EAB749; }
   </style>
 </head>
 <body>
@@ -69,12 +70,14 @@
 
       <div>
         <span class="inv-eyebrow">Prelanzamiento <span aria-hidden="true">🚀</span></span>
-        <h1 class="display inv-title">Te invitaron a<span class="italic-verde inv-title-linea2">El Club de la Gente.</span></h1>
-        <p class="inv-sub">Mira este video y entiende por qué cientos de personas en Fusagasugá ya están ahorrando con su membresía.</p>
+
         <div class="inv-countdown" id="inv-countdown" hidden>
           <span class="inv-countdown__lbl">El prelanzamiento termina en:</span>
           <span class="inv-countdown__num" id="inv-countdown-num">—</span>
         </div>
+
+        <h1 class="display inv-title">Te invitaron a<span class="italic-verde inv-title-linea2">El Club de la Gente.</span></h1>
+        <p class="inv-sub">Mira este video y entiende por qué cientos de personas en Fusagasugá ya están ahorrando con su membresía.</p>
       </div>
 
       <div class="inv-video-wrap">
@@ -89,7 +92,7 @@
       <div class="inv-stats" id="inv-stats" hidden>
         <div class="inv-stat" id="inv-stat-total-wrap"><strong id="inv-stat-total">—</strong><span>miembros ya en el Club</span></div>
         <div class="inv-stat" id="inv-stat-descuentos-wrap" hidden><strong id="inv-stat-descuentos">—</strong><span>descuentos usados en total</span></div>
-        <div class="inv-stat" id="inv-stat-ahorro-wrap" hidden><strong id="inv-stat-ahorro">—</strong><span>ahorrados por los miembros</span></div>
+        <div class="inv-stat inv-stat--oro" id="inv-stat-ahorro-wrap" hidden><strong id="inv-stat-ahorro">—</strong><span>ahorrados por los miembros</span></div>
       </div>
 
       <div class="inv-resenas" id="inv-resenas" hidden>
