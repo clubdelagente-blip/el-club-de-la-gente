@@ -701,12 +701,13 @@ function toast(msg, check = true) {
 // puede registrar también, en vez de quedar con un reveal aparte que no
 // combinaba con el resto (ver app-cms.js).
 //
-// Revela UNA vez y se queda así (add + unobserve), no un toggle que
-// repite la animación cada vez que el elemento entra o sale de la
-// pantalla -- con varias tarjetas seguidas (ej. vacantes de la bolsa de
-// trabajo), repetirla en cada pasada por el scroll se veía como un
-// parpadeo/corto circuito en vez de algo pulido. Una vez que algo ya se
-// mostró, se queda fijo.
+// Toggle (no "add + unobserve") -- se repite cada vez que el elemento
+// entra o sale de la pantalla, para que también se vea al subir, no solo
+// la primera vez que se baja. El parpadeo/"corto circuito" que se veía
+// antes con esto no era por repetirse -- era porque al ESCONDERSE no
+// tenía transición (desaparecía de golpe, en vez de desvanecerse). Eso
+// se arregló en styles.css (ahora también hay transición de salida), así
+// que el toggle ya se puede dejar activo sin que se vea brusco.
 let _fadeObs = null;
 function observeFade() {
   // rootMargin negativo abajo: el elemento se marca "adentro" un poco ANTES
@@ -715,9 +716,7 @@ function observeFade() {
   // conectado con el scroll, no como que "te alcanza" de golpe al llegar
   // justo al borde.
   _fadeObs = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) { e.target.classList.add("is-in"); _fadeObs.unobserve(e.target); }
-    });
+    entries.forEach(e => e.target.classList.toggle("is-in", e.isIntersecting));
   }, { threshold: 0.12, rootMargin: "0px 0px -12% 0px" });
   const hero = $("#hero");
   if (hero) _fadeObs.observe(hero);
