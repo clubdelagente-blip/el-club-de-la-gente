@@ -685,13 +685,25 @@ function toast(msg, check = true) {
 }
 
 /* ---------- INTERSECTION (fadeUp) ---------- */
+// "toggle" en vez de "add + unobserve" a propósito: antes el efecto se
+// veía UNA sola vez por carga de página -- al bajar y volver a subir ya no
+// pasaba nada porque el observer dejaba de vigilar el elemento apenas
+// aparecía la primera vez. Ahora se queda vigilando siempre, así que la
+// animación se repite cada vez que el elemento entra o sale de la pantalla.
+// "#hero" se incluye aquí (sin la clase .fade-up) solo para que dispare el
+// toggle de "is-in" que necesitan sus hijos (el título, etc.) -- el <header>
+// en sí no tiene ningún estilo ligado a .is-in, así que no se mueve ni
+// desaparece él mismo.
 function observeFade() {
   const obs = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("is-in"); obs.unobserve(e.target); } });
+    entries.forEach(e => e.target.classList.toggle("is-in", e.isIntersecting));
   }, { threshold: 0.12 });
-  $$(".fade-up").forEach(el => obs.observe(el));
+  const hero = $("#hero");
+  if (hero) obs.observe(hero);
+  [...$$(".fade-up"), ...$$(".img-pop")].forEach(el => obs.observe(el));
 
-  // contadores de cifras
+  // contadores de cifras -- estos sí se quedan en su valor final una vez
+  // contados (repetir la cuenta cada vez que se pasa por ahí se ve raro).
   const cObs = new IntersectionObserver((entries) => {
     entries.forEach(e => { if (e.isIntersecting) { animateCount(e.target); cObs.unobserve(e.target); } });
   }, { threshold: 0.5 });
@@ -733,11 +745,13 @@ function splitWordsForReveal(el) {
 document.addEventListener("DOMContentLoaded", () => {
   if (window.lucide) lucide.createIcons();
 
-  // Hero entra de inmediato -- el título se parte en palabras ANTES de
-  // agregar "is-in", para que cada <span class="word"> ya exista en su
-  // estado inicial (oculto) cuando arranca la transición.
+  // El título se parte en palabras ANTES de observar el hero -- el "is-in"
+  // que lo revela se lo pone observeFade() (vía IntersectionObserver), no
+  // un classList.add directo acá: agregarlo en el mismo instante en que se
+  // crean los <span class="word"> no dejaba al navegador pintar el estado
+  // oculto primero, así que la transición se saltaba entera y aparecía ya
+  // "revelado" de una. El observer, al ser asíncrono, sí da ese respiro.
   splitWordsForReveal($(".hero__title"));
-  $("#hero").classList.add("is-in");
   observeFade();
 
   // Nav scroll state
