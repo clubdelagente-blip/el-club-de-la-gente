@@ -3365,10 +3365,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Rol aliado (cuenta real, no localStorage): "Mi negocio" conectado por aliado_id
     if (perfData?.rol === "aliado") {
-      const { data: negocio } = await supabase.from("aliados").select("id, nombre, categoria, whatsapp, maps_url, tienda_activa, tienda_nombre, tienda_llave_pago, instagram, facebook, tiktok, fecha_inicio, fecha_fin, contrato_url").eq("user_id", userId).maybeSingle();
+      const { data: negocio } = await supabase.from("aliados").select("id, nombre, categoria, whatsapp, maps_url, tienda_activa, tienda_nombre, tienda_llave_pago, instagram, facebook, tiktok, fecha_inicio, fecha_fin, contrato_url, codigo_aliado").eq("user_id", userId).maybeSingle();
       if (negocio) {
         const li = $("#sb-negocio-li"); if (li) li.hidden = false;
         const negNombre = $("#negocio-nombre"); if (negNombre) negNombre.textContent = negocio.nombre;
+        const negCodigo = $("#negocio-codigo"); if (negCodigo) negCodigo.value = negocio.codigo_aliado || "Pídeselo al Club";
+        $("#negocio-codigo-copiar")?.addEventListener("click", () => {
+          if (!negocio.codigo_aliado) return;
+          navigator.clipboard.writeText(negocio.codigo_aliado).then(() => toast("Código copiado ✓"));
+        });
         const negCat = $("#negocio-cat"); if (negCat && negocio.categoria) negCat.textContent = negocio.categoria;
         const fmtFechaNeg = (f) => f ? new Date(f + "T00:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }) : null;
         const negVigEl = $("#negocio-vigencia");

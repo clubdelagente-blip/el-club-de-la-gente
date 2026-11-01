@@ -543,6 +543,15 @@
             <p>El desempeño de <b id="negocio-nombre">tu negocio</b> dentro de El Club de la Gente.</p>
           </div>
 
+          <div class="cfg-campo" style="max-width:360px;margin-bottom:24px">
+            <label class="cfg-label">Tu código de aliado</label>
+            <div style="display:flex;gap:8px">
+              <input class="cfg-input" id="negocio-codigo" readonly value="—" style="flex:1;font-weight:700;letter-spacing:.05em">
+              <button type="button" class="btn" id="negocio-codigo-copiar" style="padding:0 16px;white-space:nowrap">Copiar</button>
+            </div>
+            <span style="font-size:12px;color:#777;display:block;margin-top:4px">Te lo van a pedir cada vez que un miembro aplique un descuento en tu negocio desde el Directorio -- lo escribes tú, en su pantalla, para confirmarlo.</span>
+          </div>
+
           <div style="display:flex;gap:8px;margin-bottom:20px">
             <button class="neg-tab-btn is-active" data-negtab="resumen" type="button">Resumen</button>
             <button class="neg-tab-btn" data-negtab="tienda" type="button">Mi tienda</button>
@@ -1145,7 +1154,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=186"></script>
+  <script type="module" src="dashboard.js?v=187"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">
