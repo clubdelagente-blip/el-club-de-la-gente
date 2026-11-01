@@ -694,13 +694,20 @@ function toast(msg, check = true) {
 // toggle de "is-in" que necesitan sus hijos (el título, etc.) -- el <header>
 // en sí no tiene ningún estilo ligado a .is-in, así que no se mueve ni
 // desaparece él mismo.
+// Se guarda en una variable de módulo (no local a observeFade) y se expone
+// como window.observarEntrada -- así, contenido que se inserta DESPUÉS de
+// DOMContentLoaded (ej. el carrusel de promos, que llega por fetch y
+// estaba display:none cuando este observer se armó la primera vez) se
+// puede registrar también, en vez de quedar con un reveal aparte que no
+// combinaba con el resto (ver app-cms.js).
+let _fadeObs = null;
 function observeFade() {
-  const obs = new IntersectionObserver((entries) => {
+  _fadeObs = new IntersectionObserver((entries) => {
     entries.forEach(e => e.target.classList.toggle("is-in", e.isIntersecting));
   }, { threshold: 0.12 });
   const hero = $("#hero");
-  if (hero) obs.observe(hero);
-  [...$$(".fade-up"), ...$$(".img-pop")].forEach(el => obs.observe(el));
+  if (hero) _fadeObs.observe(hero);
+  [...$$(".fade-up"), ...$$(".fade-left"), ...$$(".fade-right"), ...$$(".fade-zoom"), ...$$(".img-pop")].forEach(el => _fadeObs.observe(el));
 
   // contadores de cifras -- estos sí se quedan en su valor final una vez
   // contados (repetir la cuenta cada vez que se pasa por ahí se ve raro).
@@ -709,6 +716,7 @@ function observeFade() {
   }, { threshold: 0.5 });
   $$(".cifra__num[data-count]").forEach(el => cObs.observe(el));
 }
+window.observarEntrada = (el) => { if (el && _fadeObs) _fadeObs.observe(el); };
 
 /* ---------- TÍTULO DEL HERO: entra palabra por palabra ---------- */
 // Envuelve cada palabra del título en su propio <span class="word">
@@ -752,6 +760,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // oculto primero, así que la transición se saltaba entera y aparecía ya
   // "revelado" de una. El observer, al ser asíncrono, sí da ese respiro.
   splitWordsForReveal($(".hero__title"));
+  // El título de Aliados Comerciales entra igual, palabra por palabra --
+  // así el carrusel que sigue (ver app-cms.js, cargarPromoCarrusel) se
+  // siente parte de la misma entrada en vez de aparecer de golpe aparte.
+  splitWordsForReveal($("#aliados .seccion__title"));
   observeFade();
 
   // Nav scroll state

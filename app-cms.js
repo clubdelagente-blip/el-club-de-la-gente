@@ -596,9 +596,10 @@ async function cargarCarruselPromos() {
   track.querySelectorAll('[data-pm-carrusel]').forEach(initPmCarrusel);
   wrap.style.display = 'block';
   // El elemento estaba display:none al cargar la página, así que el
-  // IntersectionObserver de fade-up nunca lo pudo "ver" a tiempo -- se
-  // revela directo, igual que el hero, en vez de depender del scroll.
-  requestAnimationFrame(() => wrap.classList.add('is-in'));
+  // IntersectionObserver original (armado en app.js al cargar) nunca lo
+  // pudo "ver" a tiempo. Se registra ahora que ya existe/es visible --
+  // entra animado como el resto, y se repite igual al subir/bajar.
+  window.observarEntrada?.(wrap);
 
   // En celular: una tarjeta a todo el ancho que salta sola a la siguiente
   // cada 2s (el desfile continuo de escritorio no cabe bien en pantallas
