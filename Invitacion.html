@@ -30,6 +30,19 @@
     .inv-video-poster:hover .inv-video-play { transform: translate(-50%, -50%) scale(1.08); }
     .inv-cta-wrap { margin-top: 8px; }
     .inv-cta-nota { font-size: 12.5px; color: rgba(241,247,246,.45); margin-top: 12px; }
+
+    .inv-ref-banner { display: inline-flex; align-items: center; gap: 10px; background: rgba(0,223,129,.1); border: 1px solid rgba(0,223,129,.3); color: var(--crema-en-negro); font-size: 14px; padding: 12px 20px; border-radius: 100px; margin-bottom: 20px; max-width: 90%; }
+
+    .inv-stats { display: flex; justify-content: center; gap: 28px; flex-wrap: wrap; margin: 0 auto 28px; }
+    .inv-stat { text-align: center; }
+    .inv-stat strong { display: block; font-family: var(--display); font-size: 28px; color: var(--verde-claro); line-height: 1; }
+    .inv-stat span { display: block; font-size: 12px; color: rgba(241,247,246,.5); margin-top: 4px; max-width: 120px; }
+
+    .inv-resenas { display: flex; gap: 14px; overflow-x: auto; max-width: 100%; padding: 4px 4px 14px; margin-bottom: 8px; scroll-snap-type: x proximity; }
+    .inv-resena { flex: 0 0 260px; scroll-snap-align: start; background: rgba(241,247,246,.05); border: 1px solid rgba(241,247,246,.1); border-radius: 14px; padding: 16px 18px; text-align: left; }
+    .inv-resena__estrellas { color: var(--verde-claro); font-size: 13px; margin-bottom: 8px; letter-spacing: 2px; }
+    .inv-resena__texto { font-size: 13.5px; color: rgba(241,247,246,.8); line-height: 1.5; margin-bottom: 10px; }
+    .inv-resena__autor { font-size: 12px; color: rgba(241,247,246,.45); }
   </style>
 </head>
 <body>
@@ -40,6 +53,10 @@
       <a class="inv-logo" href="https://elclubdelagente.com/">
         <img src="logo-club.png" alt="El Club de la Gente" class="logo-img--inv">
       </a>
+
+      <div id="inv-ref-banner" class="inv-ref-banner" hidden>
+        <span aria-hidden="true">👋</span> <span id="inv-ref-texto"></span>
+      </div>
 
       <div>
         <span class="inv-eyebrow">Invitación especial <span aria-hidden="true">🎉</span></span>
@@ -55,6 +72,14 @@
           </button>
         </div>
       </div>
+
+      <div class="inv-stats" id="inv-stats" hidden>
+        <div class="inv-stat"><strong id="inv-stat-total">—</strong><span>miembros ya en el Club</span></div>
+        <div class="inv-stat"><strong id="inv-stat-nuevos">—</strong><span>se unieron esta semana</span></div>
+        <div class="inv-stat"><strong id="inv-stat-descuentos">—</strong><span>descuentos usados esta semana</span></div>
+      </div>
+
+      <div class="inv-resenas" id="inv-resenas" hidden></div>
 
       <div class="inv-cta-wrap">
         <button type="button" class="btn btn--primario" id="inv-comprar-btn">Comprar ahora <span class="ar">&rarr;</span></button>
@@ -109,6 +134,58 @@
       frame.innerHTML = '';
       frame.appendChild(iframe);
     });
+
+    // FOMO con datos reales (nunca inventados): miembros totales, nuevos
+    // de la semana, descuentos usados, reseñas reales de aliados, y si el
+    // link trae "?ref=<id>", el nombre de quien invitó + sus referidos
+    // reales (de 5, para la Vitalicia). Todo sale de stats-invitacion.ts,
+    // que calcula esto con la llave de servicio -- nunca se consulta
+    // "perfiles" directo desde el navegador, para no exponer nada privado.
+    (function () {
+      const ref = new URLSearchParams(location.search).get('ref');
+      fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/stats-invitacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ref }),
+      })
+        .then((r) => r.json())
+        .then((d) => {
+          const statTotal = document.getElementById('inv-stat-total');
+          const statNuevos = document.getElementById('inv-stat-nuevos');
+          const statDesc = document.getElementById('inv-stat-descuentos');
+          if (statTotal && d.totalMiembros) {
+            statTotal.textContent = d.totalMiembros;
+            statNuevos.textContent = d.nuevosEstaSemana;
+            statDesc.textContent = d.descuentosEstaSemana;
+            document.getElementById('inv-stats').hidden = false;
+          }
+
+          if (d.referidor?.nombre) {
+            const banner = document.getElementById('inv-ref-banner');
+            const texto = document.getElementById('inv-ref-texto');
+            if (banner && texto) {
+              texto.textContent = d.referidor.referidos > 0
+                ? `${d.referidor.nombre} te invitó — ya tiene ${d.referidor.referidos} de 5 referidos para ganar su membresía Vitalicia gratis. ¡Ayúdale a lograrlo!`
+                : `${d.referidor.nombre} te invitó a conocer El Club de la Gente.`;
+              banner.hidden = false;
+            }
+          }
+
+          if (Array.isArray(d.resenas) && d.resenas.length) {
+            const cont = document.getElementById('inv-resenas');
+            if (cont) {
+              cont.innerHTML = d.resenas.map((r) => `
+                <div class="inv-resena">
+                  <div class="inv-resena__estrellas">${'★'.repeat(r.estrellas)}${'☆'.repeat(5 - r.estrellas)}</div>
+                  <p class="inv-resena__texto">"${String(r.comentario).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))}"</p>
+                  <div class="inv-resena__autor">${r.miembro}${r.aliado ? ' · ' + r.aliado : ''}</div>
+                </div>`).join('');
+              cont.hidden = false;
+            }
+          }
+        })
+        .catch(() => {}); // sin datos reales, simplemente no se muestra nada -- nunca se inventa un número
+    })();
   </script>
 </body>
 </html>
