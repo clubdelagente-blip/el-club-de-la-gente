@@ -178,13 +178,11 @@
     }
     .hero .valor p { padding: 4px 10px; border-radius: 6px; margin-top: 6px; }
 
-    /* ---- Footer: ya usaba var(--negro) de fondo, se le suma la textura
-       del patrón oscuro para que combine con el hero. */
-    .footer {
-      background-image: url("patron-fondo-oscuro.png?v=1"), linear-gradient(var(--negro), var(--negro));
-      background-repeat: repeat, no-repeat;
-      background-size: 400px auto, 100% 100%;
-    }
+    /* ---- Footer: fondo blanco (ver styles.css) -- ya NO lleva la textura
+       oscura que tenía antes, por eso esta regla se vacía: si se vuelve a
+       poner aquí un background-image, gana por orden de cascada sobre el
+       "background: #fff" de styles.css y el footer se ve oscuro otra vez
+       aunque styles.css diga blanco. */
 
     /* ---- Tarjetas de Programas sociales y Educación: siguen con fondo
        blanco (.programa-card en styles.css), pero el texto heredaba el
