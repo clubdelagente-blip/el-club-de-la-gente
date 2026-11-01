@@ -702,9 +702,14 @@ function toast(msg, check = true) {
 // combinaba con el resto (ver app-cms.js).
 let _fadeObs = null;
 function observeFade() {
+  // rootMargin negativo abajo: el elemento se marca "adentro" un poco ANTES
+  // de llegar al borde real de la pantalla, así el efecto ya viene
+  // terminando justo cuando se termina de ver -- se siente anticipado y
+  // conectado con el scroll, no como que "te alcanza" de golpe al llegar
+  // justo al borde.
   _fadeObs = new IntersectionObserver((entries) => {
     entries.forEach(e => e.target.classList.toggle("is-in", e.isIntersecting));
-  }, { threshold: 0.12 });
+  }, { threshold: 0.12, rootMargin: "0px 0px -12% 0px" });
   const hero = $("#hero");
   if (hero) _fadeObs.observe(hero);
   [...$$(".fade-up"), ...$$(".fade-left"), ...$$(".fade-right"), ...$$(".fade-zoom"), ...$$(".img-pop")].forEach(el => _fadeObs.observe(el));
