@@ -152,20 +152,22 @@ function aplicarPlanUI(plan, fechaVencimiento) {
   }
 
   // Fecha de renovación real (viene del pago aprobado por el admin, no inventada)
-  const sbRenuevaEl = document.querySelector(".sb-plan__renueva");
+  // -- hay dos cajas con esta clase (la de Premium/Vitalicia y la de
+  // Gratis/Básico "Cambiar de plan"), así que se rellenan las dos.
+  const sbRenuevaEls = document.querySelectorAll(".sb-plan__renueva");
   const ccRenuevaEl = document.querySelector(".cc-card-renueva");
   if (plan === "vitalicia") {
-    if (sbRenuevaEl) sbRenuevaEl.textContent = "Vitalicia — no vence";
+    sbRenuevaEls.forEach(el => el.textContent = "Vitalicia — no vence");
     if (ccRenuevaEl) ccRenuevaEl.textContent = "Vitalicia";
   } else if (plan === "gratis") {
-    if (sbRenuevaEl) sbRenuevaEl.textContent = "Plan gratuito";
+    sbRenuevaEls.forEach(el => el.textContent = "Plan gratuito");
     if (ccRenuevaEl) ccRenuevaEl.textContent = "—";
   } else if (fechaVencimiento && (plan === "basica" || plan === "premium")) {
     const dVenc = new Date(fechaVencimiento + "T00:00:00");
-    if (sbRenuevaEl) sbRenuevaEl.textContent = "Renueva el " + dVenc.toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" });
+    sbRenuevaEls.forEach(el => el.textContent = "Renueva el " + dVenc.toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" }));
     if (ccRenuevaEl) ccRenuevaEl.textContent = dVenc.toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" });
   } else {
-    if (sbRenuevaEl) sbRenuevaEl.textContent = "Sin membresía activa";
+    sbRenuevaEls.forEach(el => el.textContent = "Sin membresía activa");
     if (ccRenuevaEl) ccRenuevaEl.textContent = "—";
   }
 }
