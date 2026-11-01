@@ -24,6 +24,10 @@
     .inv-video-wrap { max-width: 720px; margin: 0 auto 28px; border-radius: 18px; overflow: hidden; background: #000; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
     .inv-video-frame { position: relative; width: 100%; aspect-ratio: 16/9; }
     .inv-video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    .inv-video-poster { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; padding: 0; cursor: pointer; background: #000; }
+    .inv-video-poster img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: .85; }
+    .inv-video-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 76px; height: 76px; border-radius: 50%; background: var(--verde-claro); color: var(--negro); display: flex; align-items: center; justify-content: center; font-size: 26px; padding-left: 6px; box-shadow: 0 8px 30px rgba(0,0,0,.4); transition: transform .2s ease; }
+    .inv-video-poster:hover .inv-video-play { transform: translate(-50%, -50%) scale(1.08); }
     .inv-cta-wrap { margin-top: 8px; }
     .inv-cta-nota { font-size: 12.5px; color: rgba(241,247,246,.45); margin-top: 12px; }
   </style>
@@ -44,14 +48,11 @@
       </div>
 
       <div class="inv-video-wrap">
-        <div class="inv-video-frame">
-          <!-- Reemplazar VIDEO_ID por el ID real del video de YouTube (no listado) -->
-          <iframe
-            src="https://www.youtube.com/embed/akMdbMI27HI?autoplay=1&mute=1&playsinline=1&rel=0"
-            title="El Club de la Gente"
-            allow="autoplay; encrypted-media; picture-in-picture"
-            allowfullscreen>
-          </iframe>
+        <div class="inv-video-frame" id="inv-video-frame" data-video-id="akMdbMI27HI">
+          <button type="button" class="inv-video-poster" id="inv-video-poster" aria-label="Reproducir video">
+            <img src="https://img.youtube.com/vi/akMdbMI27HI/maxresdefault.jpg" alt="" loading="eager">
+            <span class="inv-video-play">▶</span>
+          </button>
         </div>
       </div>
 
@@ -88,6 +89,25 @@
       // transición se salta entera (mismo problema que ya se resolvió en
       // el título del hero de la landing principal, ver app.js ahí).
       requestAnimationFrame(() => requestAnimationFrame(() => seccion.classList.add('is-in')));
+    });
+
+    // El video arranca con sonido completo (nunca mudo) apenas la persona
+    // toca la miniatura -- un toque directo sí deja que el navegador
+    // reproduzca con audio desde el primer fotograma; un autoplay sin
+    // ese toque, en cambio, el navegador lo bloquea o lo obliga a
+    // silenciarlo (es una regla del navegador, no algo que se pueda
+    // saltar). "vq=hd1080" le pide a YouTube la mejor calidad que la
+    // conexión de esa persona pueda aguantar.
+    document.getElementById('inv-video-poster')?.addEventListener('click', function () {
+      const frame = document.getElementById('inv-video-frame');
+      const videoId = frame.dataset.videoId;
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&playsinline=1&rel=0&vq=hd1080`;
+      iframe.title = 'El Club de la Gente';
+      iframe.allow = 'autoplay; encrypted-media; picture-in-picture';
+      iframe.allowFullscreen = true;
+      frame.innerHTML = '';
+      frame.appendChild(iframe);
     });
   </script>
 </body>
