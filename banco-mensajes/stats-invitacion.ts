@@ -2,12 +2,17 @@
 // Supabase Edge Function · JWT: OFF (la llama Invitacion.html, sin sesión)
 //
 // Junta en una sola llamada los datos REALES que necesita la landing de
-// invitación para generar FOMO legítimo (sin inventar nada):
-// - Cuántos miembros hay en total y cuántos se unieron esta semana.
-// - Cuántos descuentos se usaron esta semana.
+// invitación para generar FOMO legítimo (sin inventar nada). Todos los
+// números son ACUMULADOS desde que existe el Club (no "esta semana") a
+// propósito -- un número que solo crece siempre se ve bien, mientras que
+// uno que se reinicia cada semana puede salir chiquito o en cero en una
+// semana floja y jugar en contra:
+// - Cuántos miembros hay en total.
+// - Cuántos descuentos se han usado en total.
+// - Cuánto han ahorrado los miembros en total (suma real, en pesos).
 // - Si llega un "ref" (el miembro_id de quien compartió el link), su
 //   nombre y cuántos referidos activos ya tiene (de 5, para la Vitalicia).
-// - Unas reseñas reales de aliados, con buena calificación y comentario.
+// - Reseñas reales de aliados, con buena calificación y comentario.
 //
 // Usa la llave de servicio porque "perfiles" tiene datos privados
 // (WhatsApp, etc.) que NUNCA deben quedar expuestos a un visitante sin
@@ -34,28 +39,33 @@ Deno.serve(async (req: Request) => {
   const { ref } = await req.json().catch(() => ({}));
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-  const hace7Dias = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
   const [
     { count: totalMiembros },
-    { count: nuevosEstaSemana },
-    { count: descuentosEstaSemana },
+    { count: totalDescuentos },
+    { data: ahorroRaw },
     { data: resenasRaw },
   ] = await Promise.all([
     supabase.from("perfiles").select("id", { count: "exact", head: true }).eq("rol", "miembro"),
-    supabase.from("perfiles").select("id", { count: "exact", head: true }).eq("rol", "miembro").gte("created_at", hace7Dias),
-    supabase.from("descuentos").select("id", { count: "exact", head: true }).gte("created_at", hace7Dias),
+    supabase.from("descuentos").select("id", { count: "exact", head: true }),
+    // Suma total acumulada (nunca por semana) de lo que han ahorrado los
+    // miembros -- el agregado .sum() de PostgREST evita traer cada fila
+    // de "descuentos" solo para sumarlas a mano acá.
+    supabase.from("descuentos").select("ahorro.sum()"),
     supabase.from("aliados_resenas")
       .select("estrellas, comentario, aliados(nombre), perfiles(nombre)")
       .gte("estrellas", 4)
       .not("comentario", "is", null)
       .order("created_at", { ascending: false })
-      .limit(6),
+      .limit(20),
   ]);
+
+  const totalAhorro = Array.isArray(ahorroRaw) && ahorroRaw[0]
+    ? Number((ahorroRaw[0] as { sum: number | null }).sum) || 0
+    : 0;
 
   const resenas = (resenasRaw || [])
     .filter((r: { comentario: string | null }) => (r.comentario || "").trim().length > 0)
-    .slice(0, 5)
+    .slice(0, 10)
     .map((r: { estrellas: number; comentario: string; aliados: { nombre: string } | null; perfiles: { nombre: string } | null }) => ({
       estrellas: r.estrellas,
       comentario: r.comentario,
@@ -76,8 +86,8 @@ Deno.serve(async (req: Request) => {
 
   return new Response(JSON.stringify({
     totalMiembros: totalMiembros || 0,
-    nuevosEstaSemana: nuevosEstaSemana || 0,
-    descuentosEstaSemana: descuentosEstaSemana || 0,
+    totalDescuentos: totalDescuentos || 0,
+    totalAhorro,
     resenas,
     referidor,
   }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });

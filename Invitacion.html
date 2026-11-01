@@ -75,8 +75,8 @@
 
       <div class="inv-stats" id="inv-stats" hidden>
         <div class="inv-stat"><strong id="inv-stat-total">—</strong><span>miembros ya en el Club</span></div>
-        <div class="inv-stat"><strong id="inv-stat-nuevos">—</strong><span>se unieron esta semana</span></div>
-        <div class="inv-stat"><strong id="inv-stat-descuentos">—</strong><span>descuentos usados esta semana</span></div>
+        <div class="inv-stat"><strong id="inv-stat-descuentos">—</strong><span>descuentos usados en total</span></div>
+        <div class="inv-stat"><strong id="inv-stat-ahorro">—</strong><span>ahorrados por los miembros</span></div>
       </div>
 
       <div class="inv-resenas" id="inv-resenas" hidden></div>
@@ -151,12 +151,12 @@
         .then((r) => r.json())
         .then((d) => {
           const statTotal = document.getElementById('inv-stat-total');
-          const statNuevos = document.getElementById('inv-stat-nuevos');
           const statDesc = document.getElementById('inv-stat-descuentos');
+          const statAhorro = document.getElementById('inv-stat-ahorro');
           if (statTotal && d.totalMiembros) {
             statTotal.textContent = d.totalMiembros;
-            statNuevos.textContent = d.nuevosEstaSemana;
-            statDesc.textContent = d.descuentosEstaSemana;
+            statDesc.textContent = d.totalDescuentos;
+            statAhorro.textContent = '$' + Math.round(d.totalAhorro || 0).toLocaleString('es-CO');
             document.getElementById('inv-stats').hidden = false;
           }
 
