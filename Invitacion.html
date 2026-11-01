@@ -19,8 +19,13 @@
     .inv-logo { display: inline-block; margin-bottom: 28px; }
     .inv-logo img { height: 34px; width: auto; }
     .inv-eyebrow { display: inline-flex; align-items: center; gap: 9px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--negro); background: var(--verde-claro); padding: 9px 17px; border-radius: 100px; margin-bottom: 20px; }
-    .inv-title { font-size: clamp(32px, 6vw, 56px); line-height: 1.05; margin-bottom: 14px; }
+    .inv-title { font-size: clamp(32px, 6vw, 56px); line-height: 1.1; margin-bottom: 14px; }
+    .inv-title .inv-title-linea2 { display: block; white-space: nowrap; font-size: clamp(22px, 7.5vw, 56px); }
     .inv-sub { font-size: 16px; color: rgba(241,247,246,.65); max-width: 44em; margin: 0 auto 32px; }
+
+    .inv-countdown { display: inline-flex; align-items: center; gap: 10px; background: rgba(241,247,246,.06); border: 1px solid rgba(241,247,246,.15); color: var(--crema-en-negro); font-size: 13px; padding: 10px 18px; border-radius: 100px; margin-bottom: 20px; }
+    .inv-countdown__lbl { color: rgba(241,247,246,.55); }
+    .inv-countdown__num { font-family: var(--display); color: var(--verde-claro); font-size: 15px; letter-spacing: .02em; }
     .inv-video-wrap { max-width: 720px; margin: 0 auto 28px; border-radius: 18px; overflow: hidden; background: #000; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
     .inv-video-frame { position: relative; width: 100%; aspect-ratio: 16/9; }
     .inv-video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
@@ -38,11 +43,15 @@
     .inv-stat strong { display: block; font-family: var(--display); font-size: 28px; color: var(--verde-claro); line-height: 1; }
     .inv-stat span { display: block; font-size: 12px; color: rgba(241,247,246,.5); margin-top: 4px; max-width: 120px; }
 
-    .inv-resenas { display: flex; gap: 14px; overflow-x: auto; max-width: 100%; padding: 4px 4px 14px; margin-bottom: 8px; scroll-snap-type: x proximity; }
-    .inv-resena { flex: 0 0 260px; scroll-snap-align: start; background: rgba(241,247,246,.05); border: 1px solid rgba(241,247,246,.1); border-radius: 14px; padding: 16px 18px; text-align: left; }
+    .inv-resenas { max-width: 420px; margin: 0 auto 10px; overflow: hidden; }
+    .inv-resenas__track { display: flex; transition: transform .5s cubic-bezier(.22,1,.36,1); }
+    .inv-resena { flex: 0 0 100%; background: rgba(241,247,246,.05); border: 1px solid rgba(241,247,246,.1); border-radius: 14px; padding: 16px 18px; text-align: left; box-sizing: border-box; }
     .inv-resena__estrellas { color: var(--verde-claro); font-size: 13px; margin-bottom: 8px; letter-spacing: 2px; }
-    .inv-resena__texto { font-size: 13.5px; color: rgba(241,247,246,.8); line-height: 1.5; margin-bottom: 10px; }
+    .inv-resena__texto { font-size: 13.5px; color: rgba(241,247,246,.8); line-height: 1.5; margin-bottom: 10px; min-height: 3.2em; }
     .inv-resena__autor { font-size: 12px; color: rgba(241,247,246,.45); }
+    .inv-resenas__dots { display: flex; justify-content: center; gap: 6px; margin: 10px 0 24px; }
+    .inv-resenas__dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(241,247,246,.25); border: 0; padding: 0; cursor: pointer; }
+    .inv-resenas__dot.is-active { background: var(--verde-claro); }
   </style>
 </head>
 <body>
@@ -59,9 +68,13 @@
       </div>
 
       <div>
-        <span class="inv-eyebrow">Invitación especial <span aria-hidden="true">🎉</span></span>
-        <h1 class="display inv-title">Te invitaron a <span class="italic-verde">El Club de la Gente.</span></h1>
-        <p class="inv-sub">Mira este video de 1 minuto y entiende por qué cientos de personas en Fusagasugá ya están ahorrando con su membresía.</p>
+        <span class="inv-eyebrow">Prelanzamiento <span aria-hidden="true">🚀</span></span>
+        <h1 class="display inv-title">Te invitaron a<span class="italic-verde inv-title-linea2">El Club de la Gente.</span></h1>
+        <p class="inv-sub">Mira este video y entiende por qué cientos de personas en Fusagasugá ya están ahorrando con su membresía.</p>
+        <div class="inv-countdown" id="inv-countdown" hidden>
+          <span class="inv-countdown__lbl">El prelanzamiento termina en:</span>
+          <span class="inv-countdown__num" id="inv-countdown-num">—</span>
+        </div>
       </div>
 
       <div class="inv-video-wrap">
@@ -74,12 +87,15 @@
       </div>
 
       <div class="inv-stats" id="inv-stats" hidden>
-        <div class="inv-stat"><strong id="inv-stat-total">—</strong><span>miembros ya en el Club</span></div>
-        <div class="inv-stat"><strong id="inv-stat-descuentos">—</strong><span>descuentos usados en total</span></div>
-        <div class="inv-stat"><strong id="inv-stat-ahorro">—</strong><span>ahorrados por los miembros</span></div>
+        <div class="inv-stat" id="inv-stat-total-wrap"><strong id="inv-stat-total">—</strong><span>miembros ya en el Club</span></div>
+        <div class="inv-stat" id="inv-stat-descuentos-wrap" hidden><strong id="inv-stat-descuentos">—</strong><span>descuentos usados en total</span></div>
+        <div class="inv-stat" id="inv-stat-ahorro-wrap" hidden><strong id="inv-stat-ahorro">—</strong><span>ahorrados por los miembros</span></div>
       </div>
 
-      <div class="inv-resenas" id="inv-resenas" hidden></div>
+      <div class="inv-resenas" id="inv-resenas" hidden>
+        <div class="inv-resenas__track" id="inv-resenas-track"></div>
+      </div>
+      <div class="inv-resenas__dots" id="inv-resenas-dots" hidden></div>
 
       <div class="inv-cta-wrap">
         <button type="button" class="btn btn--primario" id="inv-comprar-btn">Comprar ahora <span class="ar">&rarr;</span></button>
@@ -135,12 +151,42 @@
       frame.appendChild(iframe);
     });
 
-    // FOMO con datos reales (nunca inventados): miembros totales, nuevos
-    // de la semana, descuentos usados, reseñas reales de aliados, y si el
-    // link trae "?ref=<id>", el nombre de quien invitó + sus referidos
-    // reales (de 5, para la Vitalicia). Todo sale de stats-invitacion.ts,
-    // que calcula esto con la llave de servicio -- nunca se consulta
-    // "perfiles" directo desde el navegador, para no exponer nada privado.
+    // Cronómetro REAL -- el prelanzamiento termina el 27 de noviembre de
+    // 2026 a las 11:59pm (hora Colombia). No es una cuenta regresiva
+    // inventada por visitante: es la misma fecha para todo el mundo,
+    // porque es cuándo de verdad termina esta etapa.
+    (function () {
+      const limite = new Date('2026-11-27T23:59:59-05:00').getTime();
+      const el = document.getElementById('inv-countdown');
+      const num = document.getElementById('inv-countdown-num');
+      if (!el || !num) return;
+      function tick() {
+        const restante = limite - Date.now();
+        if (restante <= 0) { el.hidden = true; return; }
+        const dias = Math.floor(restante / 86400000);
+        const horas = Math.floor((restante % 86400000) / 3600000);
+        const min = Math.floor((restante % 3600000) / 60000);
+        const seg = Math.floor((restante % 60000) / 1000);
+        num.textContent = `${dias}d ${String(horas).padStart(2, '0')}h ${String(min).padStart(2, '0')}m ${String(seg).padStart(2, '0')}s`;
+        el.hidden = false;
+      }
+      tick();
+      setInterval(tick, 1000);
+    })();
+
+    // FOMO con datos reales (nunca inventados): miembros totales,
+    // descuentos usados y ahorro acumulado, reseñas reales de aliados, y
+    // si el link trae "?ref=<id>", el nombre de quien invitó + sus
+    // referidos reales (de 5, para la Vitalicia). Todo sale de
+    // stats-invitacion.ts, que calcula esto con la llave de servicio --
+    // nunca se consulta "perfiles" directo desde el navegador, para no
+    // exponer nada privado.
+    //
+    // Descuentos y ahorro solo se muestran al pasar un umbral (20
+    // descuentos / $1.000.000 de ahorro) -- antes de eso, un número
+    // chiquito se vería mal en vez de generar FOMO, así que esa pieza
+    // simplemente no aparece hasta que el dato real valga la pena
+    // mostrarse.
     (function () {
       const ref = new URLSearchParams(location.search).get('ref');
       fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/stats-invitacion', {
@@ -150,14 +196,17 @@
       })
         .then((r) => r.json())
         .then((d) => {
-          const statTotal = document.getElementById('inv-stat-total');
-          const statDesc = document.getElementById('inv-stat-descuentos');
-          const statAhorro = document.getElementById('inv-stat-ahorro');
-          if (statTotal && d.totalMiembros) {
-            statTotal.textContent = d.totalMiembros;
-            statDesc.textContent = d.totalDescuentos;
-            statAhorro.textContent = '$' + Math.round(d.totalAhorro || 0).toLocaleString('es-CO');
+          if (d.totalMiembros) {
+            document.getElementById('inv-stat-total').textContent = d.totalMiembros;
             document.getElementById('inv-stats').hidden = false;
+          }
+          if ((d.totalDescuentos || 0) >= 20) {
+            document.getElementById('inv-stat-descuentos').textContent = d.totalDescuentos;
+            document.getElementById('inv-stat-descuentos-wrap').hidden = false;
+          }
+          if ((d.totalAhorro || 0) >= 1000000) {
+            document.getElementById('inv-stat-ahorro').textContent = '$' + Math.round(d.totalAhorro).toLocaleString('es-CO');
+            document.getElementById('inv-stat-ahorro-wrap').hidden = false;
           }
 
           if (d.referidor?.nombre) {
@@ -172,15 +221,32 @@
           }
 
           if (Array.isArray(d.resenas) && d.resenas.length) {
+            const esc = (s) => String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+            const track = document.getElementById('inv-resenas-track');
+            const dotsWrap = document.getElementById('inv-resenas-dots');
             const cont = document.getElementById('inv-resenas');
-            if (cont) {
-              cont.innerHTML = d.resenas.map((r) => `
-                <div class="inv-resena">
-                  <div class="inv-resena__estrellas">${'★'.repeat(r.estrellas)}${'☆'.repeat(5 - r.estrellas)}</div>
-                  <p class="inv-resena__texto">"${String(r.comentario).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]))}"</p>
-                  <div class="inv-resena__autor">${r.miembro}${r.aliado ? ' · ' + r.aliado : ''}</div>
-                </div>`).join('');
-              cont.hidden = false;
+            if (!track || !dotsWrap || !cont) return;
+
+            track.innerHTML = d.resenas.map((r) => `
+              <div class="inv-resena">
+                <div class="inv-resena__estrellas">${'★'.repeat(r.estrellas)}${'☆'.repeat(5 - r.estrellas)}</div>
+                <p class="inv-resena__texto">"${esc(r.comentario)}"</p>
+                <div class="inv-resena__autor">${esc(r.miembro)}${r.aliado ? ' · ' + esc(r.aliado) : ''}</div>
+              </div>`).join('');
+            dotsWrap.innerHTML = d.resenas.map((_, i) => `<button type="button" class="inv-resenas__dot${i === 0 ? ' is-active' : ''}" data-i="${i}" aria-label="Reseña ${i + 1}"></button>`).join('');
+            cont.hidden = false;
+            dotsWrap.hidden = d.resenas.length < 2;
+
+            let idx = 0;
+            const dots = Array.from(dotsWrap.querySelectorAll('.inv-resenas__dot'));
+            function irA(i) {
+              idx = i;
+              track.style.transform = `translateX(-${idx * 100}%)`;
+              dots.forEach((dot, j) => dot.classList.toggle('is-active', j === idx));
+            }
+            dots.forEach((dot) => dot.addEventListener('click', () => irA(+dot.dataset.i)));
+            if (d.resenas.length > 1) {
+              setInterval(() => irA((idx + 1) % d.resenas.length), 5000);
             }
           }
         })
