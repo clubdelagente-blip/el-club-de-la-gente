@@ -729,52 +729,17 @@ function observeFade() {
 }
 window.observarEntrada = (el) => { if (el && _fadeObs) _fadeObs.observe(el); };
 
-/* ---------- TÍTULO DEL HERO: entra palabra por palabra ---------- */
-// Envuelve cada palabra del título en su propio <span class="word">
-// (con --wi = su índice, usado en styles.css para escalonar el delay),
-// sin tocar el <span class="italic-verde"> que ya trae adentro -- recorre
-// los nodos hijos y repite lo mismo dentro de cualquier elemento anidado.
-function splitWordsForReveal(el) {
-  if (!el || el.dataset.split) return;
-  el.dataset.split = "1";
-  let i = 0;
-  function walk(node) {
-    Array.from(node.childNodes).forEach((child) => {
-      if (child.nodeType === Node.TEXT_NODE) {
-        const frag = document.createDocumentFragment();
-        child.textContent.split(/(\s+)/).forEach((part) => {
-          if (part === "") return;
-          if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
-          const span = document.createElement("span");
-          span.className = "word";
-          span.style.setProperty("--wi", i++);
-          span.textContent = part;
-          frag.appendChild(span);
-        });
-        node.replaceChild(frag, child);
-      } else if (child.nodeType === Node.ELEMENT_NODE) {
-        walk(child);
-      }
-    });
-  }
-  walk(el);
-}
-
 /* ---------- INIT ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   if (window.lucide) lucide.createIcons();
 
-  // El título se parte en palabras ANTES de observar el hero -- el "is-in"
-  // que lo revela se lo pone observeFade() (vía IntersectionObserver), no
-  // un classList.add directo acá: agregarlo en el mismo instante en que se
-  // crean los <span class="word"> no dejaba al navegador pintar el estado
-  // oculto primero, así que la transición se saltaba entera y aparecía ya
-  // "revelado" de una. El observer, al ser asíncrono, sí da ese respiro.
-  splitWordsForReveal($(".hero__title"));
-  // El título de Aliados Comerciales entra igual, palabra por palabra --
-  // así el carrusel que sigue (ver app-cms.js, cargarPromoCarrusel) se
-  // siente parte de la misma entrada en vez de aparecer de golpe aparte.
-  splitWordsForReveal($("#aliados .seccion__title"));
+  // El título del hero y el de Aliados Comerciales YA NO se parten en
+  // palabras -- ese efecto (muchos <span> animando a la vez, encima
+  // montado sobre el bloque completo que TAMBIÉN se animaba) era más
+  // pesado que el resto de la página y causaba el parpadeo que no se veía
+  // en las secciones con el reveal simple de bloque. Ahora usan el mismo
+  // mecanismo que ya funciona bien en todas las demás secciones (ver
+  // clases .hero__title.fade-up y #aliados .shead.fade-up en el HTML).
   observeFade();
 
   // Nav scroll state
