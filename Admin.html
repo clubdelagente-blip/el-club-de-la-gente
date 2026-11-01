@@ -3806,7 +3806,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const destAl=e.target.closest('[data-dest-aliado]');if(destAl){await supabase.from('aliados').update({destacado:destAl.dataset.dest!=='true'}).eq('id',destAl.dataset.destAliado);cargarAliados();return;}
     const edAl=e.target.closest('[data-ed-aliado]');if(edAl){const a=_aliados.find(x=>x.id===edAl.dataset.edAliado);if(a){abrirModal('Editar aliado',a.nombre,htmlFormAliado(a));bindFormAliado();}return;}
     const togAl=e.target.closest('[data-tog-aliado]');if(togAl){const activo=togAl.dataset.activo==='true';await supabase.from('aliados').update({activo:!activo}).eq('id',togAl.dataset.togAliado);cargarAliados();return;}
-    const rmAl=e.target.closest('[data-rm-aliado]');if(rmAl&&confirm('¿Eliminar este aliado?')){const{error}=await supabase.from('aliados').delete().eq('id',rmAl.dataset.rmAliado);if(error){toast('No se pudo eliminar -- tiene productos, promociones o pedidos asociados');return;}cargarAliados();toast('Aliado eliminado');return;}
+    const rmAl=e.target.closest('[data-rm-aliado]');if(rmAl&&confirm('¿Eliminar este aliado?')){const alReg=_aliados.find(x=>x.id===rmAl.dataset.rmAliado);const{error}=await supabase.from('aliados').delete().eq('id',rmAl.dataset.rmAliado);if(error){toast('No se pudo eliminar -- tiene productos, promociones o pedidos asociados');return;}if(alReg?.user_id)await supabase.from('perfiles').update({plan:'gratis'}).eq('id',alReg.user_id);cargarAliados();toast('Aliado eliminado');return;}
     const rmMiembro=e.target.closest('[data-rm-miembro]');
     if(rmMiembro){
       const nom=rmMiembro.dataset.nomMiembro||'este miembro';
