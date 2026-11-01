@@ -99,7 +99,7 @@
       </div>
 
       <div class="inv-stats" id="inv-stats" hidden>
-        <div class="inv-stat" id="inv-stat-total-wrap"><strong id="inv-stat-total">—</strong><span>miembros ya en el Club</span></div>
+        <div class="inv-stat" id="inv-stat-total-wrap" hidden><strong id="inv-stat-total">—</strong><span>miembros ya en el Club</span></div>
         <div class="inv-stat" id="inv-stat-descuentos-wrap" hidden><strong id="inv-stat-descuentos">—</strong><span>descuentos usados en total</span></div>
         <div class="inv-stat inv-stat--oro" id="inv-stat-ahorro-wrap" hidden><strong id="inv-stat-ahorro">—</strong><span>ahorrados por los miembros</span></div>
       </div>
@@ -211,18 +211,23 @@
       })
         .then((r) => r.json())
         .then((d) => {
-          if (d.totalMiembros) {
+          let algunStatVisible = false;
+          if ((d.totalMiembros || 0) >= 100) {
             document.getElementById('inv-stat-total').textContent = d.totalMiembros;
-            document.getElementById('inv-stats').hidden = false;
+            document.getElementById('inv-stat-total-wrap').hidden = false;
+            algunStatVisible = true;
           }
           if ((d.totalDescuentos || 0) >= 20) {
             document.getElementById('inv-stat-descuentos').textContent = d.totalDescuentos;
             document.getElementById('inv-stat-descuentos-wrap').hidden = false;
+            algunStatVisible = true;
           }
           if ((d.totalAhorro || 0) >= 1000000) {
             document.getElementById('inv-stat-ahorro').textContent = '$' + Math.round(d.totalAhorro).toLocaleString('es-CO');
             document.getElementById('inv-stat-ahorro-wrap').hidden = false;
+            algunStatVisible = true;
           }
+          document.getElementById('inv-stats').hidden = !algunStatVisible;
 
           if (d.referidor?.nombre) {
             const banner = document.getElementById('inv-ref-banner');
