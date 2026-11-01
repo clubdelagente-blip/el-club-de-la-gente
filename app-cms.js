@@ -164,7 +164,7 @@ async function cargarAliadosPub() {
   if (!grid) return;
 
   grid.innerHTML = data.map((a, i) => `
-    <article class="aliado fade-up" data-aliado="${i}" style="--delay:${i * 60}ms">
+    <article class="aliado fade-up" data-aliado="${i}" style="--delay:${i * 110}ms">
       <div class="aliado__img">
         ${a.imagen_url
           ? `<img src="${a.imagen_url}" alt="${a.nombre}" style="width:100%;height:100%;object-fit:cover">`
@@ -206,7 +206,7 @@ function tarjetaPlanHtml(p, i) {
   const claseSlug = esPremium ? "plan--premium" : esVitalicia ? "plan--vitalicia" : p.slug === "gratis" ? "plan--gratis" : "plan--basica";
 
   return `
-    <article class="plan ${claseSlug} fade-up" data-cc-modal="${p.slug}" style="--delay:${i * 60}ms;cursor:pointer">
+    <article class="plan ${claseSlug} fade-up" data-cc-modal="${p.slug}" style="--delay:${i * 110}ms;cursor:pointer">
       ${p.recomendado ? `<span class="plan__badge-rec" id="badge-rec">Recomendado</span>` : ""}
       <span class="plan__tag">${esc(p.tag)}</span>
       ${p.ribbon_texto ? `<span style="display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;background:var(--verde,#0E8A3E);color:#fff;padding:7px 14px;border-radius:100px;margin-top:12px;">${esc(p.ribbon_texto)}</span>` : ""}
@@ -423,7 +423,7 @@ async function cargarProfesionalesPub() {
   if (seccion) seccion.style.display = '';
 
   grid.innerHTML = data.map((p, i) => `
-    <div class="profe-card fade-up" style="--delay:${i * 60}ms">
+    <div class="profe-card fade-up" style="--delay:${i * 110}ms">
       ${p.imagen_url ? `<img class="img-pop" src="${p.imagen_url}" alt="${esc(p.nombre)}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin-bottom:12px">` : `<span style="width:72px;height:72px;border-radius:50%;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:24px;font-weight:700;color:var(--verde)">${esc((p.nombre||'P')[0])}</span>`}
       <div style="font-weight:600;font-size:15px;margin-bottom:4px">${esc(p.nombre)}</div>
       <div style="font-size:13px;opacity:.6;margin-bottom:8px">${esc(p.area || '')}</div>
@@ -546,7 +546,7 @@ async function cargarVacantesPub() {
   }
 
   grid.innerHTML = data.map((v, i) => `
-    <div class="profe-card fade-up" style="--delay:${i * 60}ms">
+    <div class="profe-card fade-up" style="--delay:${i * 110}ms">
       ${v.aliados?.imagen_url ? `<img class="img-pop" src="${v.aliados.imagen_url}" alt="${esc(v.aliados.nombre || '')}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;margin-bottom:12px">` : `<span style="width:56px;height:56px;border-radius:10px;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:20px;font-weight:700;color:var(--verde)">${esc((v.aliados?.nombre || 'V')[0])}</span>`}
       <div style="font-weight:600;font-size:15px;margin-bottom:4px">${esc(v.titulo)}</div>
       <div style="font-size:13px;opacity:.6;margin-bottom:8px">${esc(v.aliados?.nombre || '')}</div>
