@@ -23,9 +23,13 @@
     .inv-title .inv-title-linea2 { display: block; white-space: nowrap; font-size: clamp(22px, 7.5vw, 56px); }
     .inv-sub { font-size: 16px; color: rgba(241,247,246,.65); max-width: 44em; margin: 0 auto 32px; }
 
-    .inv-countdown { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; background: rgba(234,183,73,.08); border: 1px solid rgba(234,183,73,.35); color: var(--crema-en-negro); padding: 14px 28px; border-radius: 18px; margin-bottom: 24px; }
+    .inv-countdown { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-bottom: 26px; }
     .inv-countdown__lbl { color: rgba(241,247,246,.6); font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; }
-    .inv-countdown__num { font-family: var(--display); color: #EAB749; font-size: clamp(28px, 7vw, 42px); letter-spacing: .02em; line-height: 1; }
+    .inv-countdown__boxes { display: flex; gap: 8px; }
+    .inv-countdown__box { position: relative; background: #141414; border: 1px solid rgba(234,183,73,.3); border-radius: 12px; padding: 12px 6px 10px; min-width: 60px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+    .inv-countdown__box::after { content: ""; position: absolute; left: 8px; right: 8px; top: 50%; height: 1px; background: rgba(255,255,255,.1); }
+    .inv-countdown__box strong { display: block; font-family: var(--display); color: #EAB749; font-size: clamp(24px, 6.5vw, 36px); line-height: 1; }
+    .inv-countdown__box span { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: rgba(241,247,246,.45); margin-top: 6px; }
     .inv-video-wrap { max-width: 720px; margin: 0 auto 28px; border-radius: 18px; overflow: hidden; background: #000; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
     .inv-video-frame { position: relative; width: 100%; aspect-ratio: 16/9; }
     .inv-video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
@@ -72,8 +76,13 @@
         <span class="inv-eyebrow">Prelanzamiento <span aria-hidden="true">🚀</span></span>
 
         <div class="inv-countdown" id="inv-countdown" hidden>
-          <span class="inv-countdown__lbl">El prelanzamiento termina en:</span>
-          <span class="inv-countdown__num" id="inv-countdown-num">—</span>
+          <span class="inv-countdown__lbl">El prelanzamiento termina en</span>
+          <div class="inv-countdown__boxes">
+            <div class="inv-countdown__box"><strong id="inv-cd-dias">00</strong><span>Días</span></div>
+            <div class="inv-countdown__box"><strong id="inv-cd-horas">00</strong><span>Horas</span></div>
+            <div class="inv-countdown__box"><strong id="inv-cd-min">00</strong><span>Min</span></div>
+            <div class="inv-countdown__box"><strong id="inv-cd-seg">00</strong><span>Seg</span></div>
+          </div>
         </div>
 
         <h1 class="display inv-title">Te invitaron a<span class="italic-verde inv-title-linea2">El Club de la Gente.</span></h1>
@@ -161,16 +170,19 @@
     (function () {
       const limite = new Date('2026-11-27T23:59:59-05:00').getTime();
       const el = document.getElementById('inv-countdown');
-      const num = document.getElementById('inv-countdown-num');
-      if (!el || !num) return;
+      const elDias = document.getElementById('inv-cd-dias');
+      const elHoras = document.getElementById('inv-cd-horas');
+      const elMin = document.getElementById('inv-cd-min');
+      const elSeg = document.getElementById('inv-cd-seg');
+      if (!el || !elDias) return;
+      const pad = (n) => String(n).padStart(2, '0');
       function tick() {
         const restante = limite - Date.now();
         if (restante <= 0) { el.hidden = true; return; }
-        const dias = Math.floor(restante / 86400000);
-        const horas = Math.floor((restante % 86400000) / 3600000);
-        const min = Math.floor((restante % 3600000) / 60000);
-        const seg = Math.floor((restante % 60000) / 1000);
-        num.textContent = `${dias}d ${String(horas).padStart(2, '0')}h ${String(min).padStart(2, '0')}m ${String(seg).padStart(2, '0')}s`;
+        elDias.textContent = pad(Math.floor(restante / 86400000));
+        elHoras.textContent = pad(Math.floor((restante % 86400000) / 3600000));
+        elMin.textContent = pad(Math.floor((restante % 3600000) / 60000));
+        elSeg.textContent = pad(Math.floor((restante % 60000) / 1000));
         el.hidden = false;
       }
       tick();
