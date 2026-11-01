@@ -312,6 +312,7 @@ async function cargarPlanesPub() {
   const planesVisibles = data.filter(p => p.slug !== 'vitalicia');
   PLANES_LANDING = Object.fromEntries(data.map(p => [p.slug, p]));
   cont.innerHTML = planesVisibles.map(tarjetaPlanHtml).join('');
+  observarTarjetasNuevas(cont);
   if (window.lucide) lucide.createIcons();
 
   cont.querySelectorAll('[data-cc-modal]').forEach(card => {
