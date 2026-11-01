@@ -20,13 +20,13 @@
     .inv-logo img { height: 34px; width: auto; }
     .inv-eyebrow { display: inline-flex; align-items: center; gap: 9px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--negro); background: #EAB749; padding: 9px 17px; border-radius: 100px; margin-bottom: 18px; }
     .inv-title { font-size: clamp(32px, 6vw, 56px); line-height: 1.1; margin-bottom: 14px; }
-    .inv-title .inv-title-linea2 { display: block; white-space: nowrap; font-size: clamp(22px, 7.5vw, 56px); }
+    .inv-title .inv-title-linea2 { display: block; white-space: nowrap; font-size: clamp(22px, 7.5vw, 56px); color: #EAB749; }
     .inv-sub { font-size: 16px; color: rgba(241,247,246,.65); max-width: 44em; margin: 0 auto 32px; }
 
     .inv-countdown { display: flex; flex-direction: column; align-items: center; gap: 14px; margin-bottom: 26px; }
     .inv-countdown__lbl { color: rgba(241,247,246,.6); font-size: 12.5px; text-transform: uppercase; letter-spacing: .06em; }
     .inv-countdown__boxes { display: flex; gap: 8px; }
-    .inv-countdown__box { position: relative; background: #141414; border: 1px solid rgba(234,183,73,.3); border-radius: 12px; padding: 12px 6px 10px; min-width: 60px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+    .inv-countdown__box { position: relative; background: #141414; border: 1px solid rgba(0,223,129,.45); border-radius: 12px; padding: 12px 6px 10px; min-width: 60px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
     .inv-countdown__box::after { content: ""; position: absolute; left: 8px; right: 8px; top: 50%; height: 1px; background: rgba(255,255,255,.1); }
     .inv-countdown__box strong { display: block; font-family: var(--display); color: #EAB749; font-size: clamp(24px, 6.5vw, 36px); line-height: 1; }
     .inv-countdown__box span { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: rgba(241,247,246,.45); margin-top: 6px; }
@@ -69,7 +69,7 @@
       </a>
 
       <div id="inv-ref-banner" class="inv-ref-banner" hidden>
-        <span aria-hidden="true">👋</span> <span id="inv-ref-texto"></span>
+        <span id="inv-ref-texto"></span> <span aria-hidden="true">👋</span>
       </div>
 
       <div>
