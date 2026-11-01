@@ -539,10 +539,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     // pero la persona queda sin fila en "perfiles" (sin plan, sin nada), un
     // estado roto que antes pasaba desapercibido. Ahora se revisa el error.
     let perfilGuardado = false;
-    let debugErrorMsg = ""; // DEBUG TEMPORAL -- quitar una vez diagnosticado
     try {
       if (data.user) {
-        const refPor = localStorage.getItem("ecdlg_ref") || null;
+        // El referido guardado en localStorage puede quedar viejo (el
+        // referidor borró su cuenta, o se limpió la base) -- si ya no existe,
+        // se registra sin referidor en vez de romper todo el registro por
+        // una llave foránea inválida.
+        let refPor = localStorage.getItem("ecdlg_ref") || null;
+        if (refPor) {
+          const { data: refExiste } = await supabase.from("perfiles").select("id").eq("id", refPor).maybeSingle();
+          if (!refExiste) {
+            refPor = null;
+            localStorage.removeItem("ecdlg_ref");
+          }
+        }
         const { error: perfError } = await supabase.from("perfiles").upsert({
           id: data.user.id,
           nombre,
@@ -555,7 +565,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
         if (perfError) {
           console.error("Error guardando perfil:", perfError);
-          debugErrorMsg = perfError.message || JSON.stringify(perfError);
         } else {
           perfilGuardado = true;
           localStorage.removeItem("ecdlg_ref");
@@ -563,13 +572,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     } catch (e) {
       console.error("Error en registro:", e);
-      debugErrorMsg = e?.message || String(e);
     }
 
     setLoading(btn, false, "Crear mi cuenta →");
 
     if (!perfilGuardado) {
-      mostrarError("Tu cuenta se creó, pero hubo un error guardando tu perfil (DEBUG: " + debugErrorMsg + "). Escríbenos por WhatsApp para completarlo.");
+      mostrarError("Tu cuenta se creó, pero hubo un error guardando tu perfil. Escríbenos por WhatsApp para completarlo.");
       return;
     }
 
