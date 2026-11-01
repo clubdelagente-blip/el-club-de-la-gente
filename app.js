@@ -698,11 +698,45 @@ function observeFade() {
   $$(".cifra__num[data-count]").forEach(el => cObs.observe(el));
 }
 
+/* ---------- TÍTULO DEL HERO: entra palabra por palabra ---------- */
+// Envuelve cada palabra del título en su propio <span class="word">
+// (con --wi = su índice, usado en styles.css para escalonar el delay),
+// sin tocar el <span class="italic-verde"> que ya trae adentro -- recorre
+// los nodos hijos y repite lo mismo dentro de cualquier elemento anidado.
+function splitWordsForReveal(el) {
+  if (!el || el.dataset.split) return;
+  el.dataset.split = "1";
+  let i = 0;
+  function walk(node) {
+    Array.from(node.childNodes).forEach((child) => {
+      if (child.nodeType === Node.TEXT_NODE) {
+        const frag = document.createDocumentFragment();
+        child.textContent.split(/(\s+)/).forEach((part) => {
+          if (part === "") return;
+          if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+          const span = document.createElement("span");
+          span.className = "word";
+          span.style.setProperty("--wi", i++);
+          span.textContent = part;
+          frag.appendChild(span);
+        });
+        node.replaceChild(frag, child);
+      } else if (child.nodeType === Node.ELEMENT_NODE) {
+        walk(child);
+      }
+    });
+  }
+  walk(el);
+}
+
 /* ---------- INIT ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   if (window.lucide) lucide.createIcons();
 
-  // Hero entra de inmediato
+  // Hero entra de inmediato -- el título se parte en palabras ANTES de
+  // agregar "is-in", para que cada <span class="word"> ya exista en su
+  // estado inicial (oculto) cuando arranca la transición.
+  splitWordsForReveal($(".hero__title"));
   $("#hero").classList.add("is-in");
   observeFade();
 

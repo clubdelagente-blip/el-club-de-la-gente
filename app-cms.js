@@ -424,7 +424,7 @@ async function cargarProfesionalesPub() {
 
   grid.innerHTML = data.map((p, i) => `
     <div class="profe-card fade-up" style="--delay:${i * 60}ms">
-      ${p.imagen_url ? `<img src="${p.imagen_url}" alt="${esc(p.nombre)}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin-bottom:12px">` : `<span style="width:72px;height:72px;border-radius:50%;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:24px;font-weight:700;color:var(--verde)">${esc((p.nombre||'P')[0])}</span>`}
+      ${p.imagen_url ? `<img class="img-pop" src="${p.imagen_url}" alt="${esc(p.nombre)}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin-bottom:12px">` : `<span style="width:72px;height:72px;border-radius:50%;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:24px;font-weight:700;color:var(--verde)">${esc((p.nombre||'P')[0])}</span>`}
       <div style="font-weight:600;font-size:15px;margin-bottom:4px">${esc(p.nombre)}</div>
       <div style="font-size:13px;opacity:.6;margin-bottom:8px">${esc(p.area || '')}</div>
       <p style="font-size:13px;opacity:.6;line-height:1.5">${esc(p.descripcion || '')}</p>
@@ -547,7 +547,7 @@ async function cargarVacantesPub() {
 
   grid.innerHTML = data.map((v, i) => `
     <div class="profe-card fade-up" style="--delay:${i * 60}ms">
-      ${v.aliados?.imagen_url ? `<img src="${v.aliados.imagen_url}" alt="${esc(v.aliados.nombre || '')}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;margin-bottom:12px">` : `<span style="width:56px;height:56px;border-radius:10px;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:20px;font-weight:700;color:var(--verde)">${esc((v.aliados?.nombre || 'V')[0])}</span>`}
+      ${v.aliados?.imagen_url ? `<img class="img-pop" src="${v.aliados.imagen_url}" alt="${esc(v.aliados.nombre || '')}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;margin-bottom:12px">` : `<span style="width:56px;height:56px;border-radius:10px;background:var(--verde-soft,#e8f5ec);display:flex;align-items:center;justify-content:center;margin-bottom:12px;font-size:20px;font-weight:700;color:var(--verde)">${esc((v.aliados?.nombre || 'V')[0])}</span>`}
       <div style="font-weight:600;font-size:15px;margin-bottom:4px">${esc(v.titulo)}</div>
       <div style="font-size:13px;opacity:.6;margin-bottom:8px">${esc(v.aliados?.nombre || '')}</div>
       ${v.descripcion ? `<p style="font-size:13px;opacity:.6;line-height:1.5;margin-bottom:14px">${esc(v.descripcion)}</p>` : ''}
