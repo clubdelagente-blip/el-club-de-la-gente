@@ -285,7 +285,8 @@ a { color: inherit; text-decoration: none; }
    quedaba sin espacio y el navegador lo recortaba en el borde de la
    pantalla (se veía la última palabra "cortada" en celular). Este padding
    le da a la itálica el aire que le falta, sin notarse como espacio extra. */
-.italic-verde .word { padding-right: .09em; }
+.italic-verde .word { padding-right: .2em; }
+.italic-verde .word:last-child { padding-right: .28em; }
 
 /* ============================================================
    TICKER

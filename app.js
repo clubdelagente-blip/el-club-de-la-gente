@@ -700,6 +700,13 @@ function toast(msg, check = true) {
 // estaba display:none cuando este observer se armó la primera vez) se
 // puede registrar también, en vez de quedar con un reveal aparte que no
 // combinaba con el resto (ver app-cms.js).
+//
+// Revela UNA vez y se queda así (add + unobserve), no un toggle que
+// repite la animación cada vez que el elemento entra o sale de la
+// pantalla -- con varias tarjetas seguidas (ej. vacantes de la bolsa de
+// trabajo), repetirla en cada pasada por el scroll se veía como un
+// parpadeo/corto circuito en vez de algo pulido. Una vez que algo ya se
+// mostró, se queda fijo.
 let _fadeObs = null;
 function observeFade() {
   // rootMargin negativo abajo: el elemento se marca "adentro" un poco ANTES
@@ -708,7 +715,9 @@ function observeFade() {
   // conectado con el scroll, no como que "te alcanza" de golpe al llegar
   // justo al borde.
   _fadeObs = new IntersectionObserver((entries) => {
-    entries.forEach(e => e.target.classList.toggle("is-in", e.isIntersecting));
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add("is-in"); _fadeObs.unobserve(e.target); }
+    });
   }, { threshold: 0.12, rootMargin: "0px 0px -12% 0px" });
   const hero = $("#hero");
   if (hero) _fadeObs.observe(hero);
