@@ -1821,9 +1821,9 @@ async function cargarAnuncios(){
   const{data}=await supabase.from('anuncios').select('*').order('created_at',{ascending:false});
   _anuncios=data||[];
   const panel=$("#p-contenido");if(!panel)return;
-  const lista=_anuncios.length?_anuncios.map(a=>`<div style="display:flex;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
+  const lista=_anuncios.length?_anuncios.map(a=>`<div style="display:flex;flex-wrap:wrap;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
     ${a.imagen_url?`<img src="${a.imagen_url}" style="width:72px;height:72px;object-fit:cover;border-radius:6px;flex-shrink:0">`:''}
-    <div style="flex:1;min-width:0"><div style="font-weight:600;margin-bottom:4px">${a.titulo}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${a.contenido||''}</div><div style="font-size:11px;color:rgba(242,240,234,.3);margin-top:6px">${new Date(a.created_at).toLocaleDateString('es-CO')}</div></div>
+    <div style="flex:1 1 200px;min-width:0"><div style="font-weight:600;margin-bottom:4px">${a.titulo}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${a.contenido||''}</div><div style="font-size:11px;color:rgba(242,240,234,.3);margin-top:6px">${new Date(a.created_at).toLocaleDateString('es-CO')}</div></div>
     <div style="display:flex;gap:6px;flex-shrink:0"><button class="ad-btn" data-ed-an="${a.id}">${ic("pencil")}</button><button class="ad-btn" data-rm-an="${a.id}">${ic("trash-2")}</button></div>
   </div>`).join(''):`<p style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">No hay anuncios aún.</p>`;
   panel.innerHTML=`<div class="ad-toolbar"><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="btn-an-add">${ic("plus")} Nuevo anuncio</button></div>${lista}`;
@@ -1851,9 +1851,9 @@ function bindFormAnuncio(){setTimeout(()=>{
 async function cargarProgramas(){
   const{data}=await supabase.from('programas').select('*').order('created_at',{ascending:false});
   _programas=data||[];const panel=$("#p-programas");if(!panel)return;
-  const lista=_programas.length?_programas.map(p=>`<div style="display:flex;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
+  const lista=_programas.length?_programas.map(p=>`<div style="display:flex;flex-wrap:wrap;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
     ${p.imagen_url?`<img src="${p.imagen_url}" style="width:72px;height:72px;object-fit:cover;border-radius:6px;flex-shrink:0">`:`<span class="ad-av">${(p.nombre||'P')[0]}</span>`}
-    <div style="flex:1;min-width:0"><div style="font-weight:600;margin-bottom:4px">${p.nombre}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${p.descripcion||''}</div></div>
+    <div style="flex:1 1 200px;min-width:0"><div style="font-weight:600;margin-bottom:4px">${p.nombre}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${p.descripcion||''}</div></div>
     <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
       <span class="ad-pill ${p.activo?'activo':'inactivo'}" data-tog-prog="${p.id}" data-activo="${p.activo}" style="cursor:pointer"><span class="d"></span>${p.activo?'Activo':'Inactivo'}</span>
       <button class="ad-btn" data-ed-prog="${p.id}">${ic("pencil")}</button><button class="ad-btn" data-rm-prog="${p.id}">${ic("trash-2")}</button>
@@ -1892,9 +1892,9 @@ async function cargarEventosEducacionAdmin(){
   _eventosEdu=eventos||[];_facilitadoresEdu=facilitadores||[];_categoriasEdu=categorias||[];
   const cont=$("#edutab-eventos");if(!cont)return;
   const countConf=id=>(confirmaciones||[]).filter(c=>c.evento_id===id).length;
-  const lista=_eventosEdu.length?_eventosEdu.map(e=>`<div style="display:flex;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
+  const lista=_eventosEdu.length?_eventosEdu.map(e=>`<div style="display:flex;flex-wrap:wrap;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
     ${e.imagen_url?`<img src="${e.imagen_url}" style="width:72px;height:72px;object-fit:cover;border-radius:6px;flex-shrink:0">`:`<span class="ad-av">${esc((e.titulo||'E')[0])}</span>`}
-    <div style="flex:1;min-width:0">
+    <div style="flex:1 1 200px;min-width:0">
       <div style="font-weight:600;margin-bottom:4px">${esc(e.titulo)}${e.categorias_educacion?.nombre?` <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:#5B6EE122;color:#5B6EE1;border:1px solid #5B6EE155;vertical-align:middle">${esc(e.categorias_educacion.nombre)}</span>`:''}</div>
       <div style="font-size:13px;color:rgba(242,240,234,.5)">${new Date(e.fecha+'T00:00:00').toLocaleDateString('es-CO',{day:'numeric',month:'long',year:'numeric'})}${e.facilitadores_educacion?.nombre?' · '+esc(e.facilitadores_educacion.nombre):''}</div>
     </div>
@@ -1912,9 +1912,9 @@ async function cargarFacilitadoresAdmin(){
   const{data}=await supabase.from('facilitadores_educacion').select('*').order('created_at',{ascending:false});
   _facilitadoresEdu=data||[];
   const cont=$("#edutab-facilitadores");if(!cont)return;
-  const lista=_facilitadoresEdu.length?_facilitadoresEdu.map(f=>`<div style="display:flex;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
+  const lista=_facilitadoresEdu.length?_facilitadoresEdu.map(f=>`<div style="display:flex;flex-wrap:wrap;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
     ${f.foto_url?`<img src="${f.foto_url}" style="width:56px;height:56px;object-fit:cover;border-radius:50%;flex-shrink:0">`:`<span class="ad-av">${esc((f.nombre||'F')[0])}</span>`}
-    <div style="flex:1;min-width:0"><div style="font-weight:600;margin-bottom:4px">${esc(f.nombre)}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${esc(f.descripcion)||''}</div></div>
+    <div style="flex:1 1 200px;min-width:0"><div style="font-weight:600;margin-bottom:4px">${esc(f.nombre)}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${esc(f.descripcion)||''}</div></div>
     <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
       <button class="ad-btn" data-ed-facil="${f.id}">${ic("pencil")}</button><button class="ad-btn" data-rm-facil="${f.id}">${ic("trash-2")}</button>
     </div></div>`).join(''):`<p style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">No hay facilitadores aún.</p>`;
@@ -2043,9 +2043,9 @@ async function cargarProfesionales(){
     const est=p.estado||(p.activo?'activo':'pendiente');
     const col=EC[est]||EC.pendiente;const lbl=EL[est]||'Pendiente';
     const wa=(p.whatsapp||'').replace(/\D/g,'');
-    return `<div style="display:flex;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
+    return `<div style="display:flex;flex-wrap:wrap;gap:14px;padding:16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:10px">
     ${p.imagen_url?`<img src="${p.imagen_url}" style="width:52px;height:52px;object-fit:cover;border-radius:50%;flex-shrink:0">`:`<span class="ad-av">${esc((p.nombre||'P')[0])}</span>`}
-    <div style="flex:1;min-width:0"><div style="font-weight:600;margin-bottom:2px">${esc(p.nombre)}${p.es_conductor?` <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#00DF8122;color:#00DF81;border:1px solid #00DF8155;vertical-align:middle">🚗 Conductor</span>`:''}</div><div style="font-size:12px;color:rgba(242,240,234,.4);margin-bottom:4px">${esc(p.area)} ${p.whatsapp?`· ${esc(p.whatsapp)}`:''}${diasRestantesHtml(p.fecha_fin)}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${esc(p.descripcion)}</div>${(p.documentos||[]).length?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">${p.documentos.map((d,i)=>`<a href="${d}" target="_blank" rel="noopener" style="font-size:11px;color:#00DF81;text-decoration:underline">${ic('file-text')} Documento ${i+1}</a>`).join('')}</div>`:''}${p.contrato_url?`<a href="${p.contrato_url}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;font-size:11px;color:#00DF81;text-decoration:underline">${ic('file-text')} Contrato firmado</a>`:''}</div>
+    <div style="flex:1 1 200px;min-width:0"><div style="font-weight:600;margin-bottom:2px">${esc(p.nombre)}${p.es_conductor?` <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#00DF8122;color:#00DF81;border:1px solid #00DF8155;vertical-align:middle">🚗 Conductor</span>`:''}</div><div style="font-size:12px;color:rgba(242,240,234,.4);margin-bottom:4px">${esc(p.area)} ${p.whatsapp?`· ${esc(p.whatsapp)}`:''}${diasRestantesHtml(p.fecha_fin)}</div><div style="font-size:13px;color:rgba(242,240,234,.5)">${esc(p.descripcion)}</div>${(p.documentos||[]).length?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px">${p.documentos.map((d,i)=>`<a href="${d}" target="_blank" rel="noopener" style="font-size:11px;color:#00DF81;text-decoration:underline">${ic('file-text')} Documento ${i+1}</a>`).join('')}</div>`:''}${p.contrato_url?`<a href="${p.contrato_url}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;font-size:11px;color:#00DF81;text-decoration:underline">${ic('file-text')} Contrato firmado</a>`:''}</div>
     <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0">
       <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:${col}22;color:${col};border:1px solid ${col}55">${lbl}</span>
       <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
@@ -2079,8 +2079,8 @@ async function cargarViajesUber(){
   </div>`;
   const lista=_viajesConductor.length?_viajesConductor.map(v=>{
     const anulado=!!v.anulado;
-    return `<div style="display:flex;gap:14px;padding:14px 16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:8px;${anulado?'opacity:.5':''}">
-      <div style="flex:1;min-width:0">
+    return `<div style="display:flex;flex-wrap:wrap;gap:14px;padding:14px 16px;background:rgba(242,240,234,.04);border:1px solid rgba(242,240,234,.08);border-radius:10px;margin-bottom:8px;${anulado?'opacity:.5':''}">
+      <div style="flex:1 1 200px;min-width:0">
         <div style="font-weight:600;font-size:13px">${esc(v.profesionales?.nombre||'Conductor eliminado')} <span style="color:rgba(242,240,234,.35)">→</span> ${esc(v.perfiles?.nombre||'Miembro eliminado')}</div>
         <div style="font-size:12px;color:rgba(242,240,234,.4);margin-top:2px">${TIPO_LBL[v.tipo]||esc(v.tipo)} · ${COP(v.monto)} · ahorro ${COP(v.ahorro)} · ${new Date(v.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
         ${anulado?`<div style="font-size:11px;color:#e2685f;margin-top:4px">${ic('ban')} Anulado${v.motivo_anulacion?': '+esc(v.motivo_anulacion):''}</div>`:''}
