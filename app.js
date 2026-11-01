@@ -703,18 +703,32 @@ function toast(msg, check = true) {
 //
 // Toggle (no "add + unobserve") -- se repite cada vez que el elemento
 // entra o sale de la pantalla, para que también se vea al subir, no solo
-// la primera vez que se baja. Sin debounce: un intento anterior de
-// "esperar un poco antes de aplicar el cambio" para evitar el parpadeo
-// terminaba bloqueando que algunas tarjetas se alcanzaran a esconder si
-// se cruzaban rápido -- se quedaban pegadas visibles. La causa real del
-// parpadeo era otra (ver styles.css: el --delay escalonado se aplicaba
-// también al ESCONDERSE, no solo al aparecer, así que unas tarjetas
-// tardaban más que otras en irse). Ya corregido ahí, el toggle directo
-// no necesita este parche.
+// la primera vez que se baja.
+//
+// "is-out": .fade-up/.fade-zoom/.img-pop mueven el elemento en el eje
+// VERTICAL (translateY) o cambian su tamaño (scale) para entrar -- eso
+// mismo, al querer ESCONDERSE, cambia la posición/tamaño que el propio
+// IntersectionObserver está midiendo en ese instante (el scroll también
+// es vertical), y podía re-disparar el toggle a medio camino: el
+// parpadeo. .fade-left/.fade-right (que solo mueven en horizontal) nunca
+// tuvieron este problema porque un movimiento horizontal no cambia
+// cuánto del elemento es visible verticalmente. Por eso, desde la
+// primera vez que un elemento se esconde, se le agrega "is-out" y el CSS
+// (ver styles.css) hace que de ahí en adelante entre/salga en horizontal
+// también -- la entrada inicial (la primera vez que se ve) se queda
+// igual de bonita (vertical/zoom), solo los ciclos siguientes cambian.
 let _fadeObs = null;
 function observeFade() {
   _fadeObs = new IntersectionObserver((entries) => {
-    entries.forEach(e => e.target.classList.toggle("is-in", e.isIntersecting));
+    entries.forEach(e => {
+      const el = e.target;
+      if (e.isIntersecting) {
+        el.classList.add("is-in");
+      } else {
+        if (el.classList.contains("is-in")) el.classList.add("is-out");
+        el.classList.remove("is-in");
+      }
+    });
   }, { threshold: 0.12 });
   const hero = $("#hero");
   if (hero) _fadeObs.observe(hero);

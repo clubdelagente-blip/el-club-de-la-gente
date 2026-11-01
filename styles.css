@@ -236,6 +236,15 @@ a { color: inherit; text-decoration: none; }
   opacity: 0; transform: translateY(70px) scale(.8) rotate(-1.5deg); will-change: transform, opacity;
   transition: opacity .4s ease, transform .4s ease;
 }
+/* Desde la primera vez que el elemento se esconde, el camino de ida y
+   vuelta deja de ser vertical (translateY) y pasa a horizontal -- un
+   movimiento vertical, igual que el scroll, puede hacer que el propio
+   IntersectionObserver detecte el elemento como "visible de nuevo" a
+   medio camino de esconderse, lo que se veía como parpadeo. Un
+   movimiento horizontal no cambia cuánto se ve verticalmente, así que no
+   interfiere. La primera entrada (antes de que exista .is-out) se queda
+   con el translateY de arriba, que es el que se ve mejor. */
+.fade-up.is-out { transform: translateX(90px) scale(.85) rotate(2deg); }
 .is-in.fade-up, .is-in .fade-up {
   opacity: 1; transform: translateY(0) scale(1) rotate(0deg);
   transition: opacity .9s cubic-bezier(.22,1,.36,1), transform 1s cubic-bezier(.34,1.56,.64,1);
@@ -262,6 +271,7 @@ a { color: inherit; text-decoration: none; }
   opacity: 0; transform: scale(.55) rotate(-6deg); filter: saturate(.2) blur(9px); will-change: transform, opacity, filter;
   transition: opacity .4s ease, transform .4s ease, filter .4s ease;
 }
+.img-pop.is-out { transform: translateX(70px) scale(.85) rotate(2deg); }
 .is-in.img-pop, .is-in .img-pop {
   opacity: 1; transform: scale(1) rotate(0deg); filter: saturate(1) blur(0);
   transition: opacity 1s cubic-bezier(.22,1,.36,1), transform 1.1s cubic-bezier(.34,1.56,.64,1), filter 1s ease-out;
@@ -293,6 +303,7 @@ a { color: inherit; text-decoration: none; }
   opacity: 0; transform: scale(.6) rotate(3deg); filter: blur(7px); will-change: transform, opacity, filter;
   transition: opacity .4s ease, transform .4s ease, filter .4s ease;
 }
+.fade-zoom.is-out { transform: translateX(80px) scale(.85) rotate(-2deg); }
 .is-in.fade-zoom, .is-in .fade-zoom {
   opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0);
   transition: opacity .9s cubic-bezier(.22,1,.36,1), transform 1s cubic-bezier(.34,1.56,.64,1), filter .9s ease-out;
