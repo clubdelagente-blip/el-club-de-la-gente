@@ -46,10 +46,13 @@ Deno.serve(async (req: Request) => {
     return new Response("Ya es vitalicio o ya está pendiente", { status: 200 });
   }
 
-  // Contar referidos activos del referidor
-  const { count, error: errCount } = await supabase
+  // Contar referidos activos del referidor (con fecha de creación -- se usa
+  // abajo para detectar un patrón sospechoso: 5 cuentas "activas" creadas
+  // casi el mismo día suena más a alguien armando cuentas propias que a
+  // referidos reales traídos uno a uno en el tiempo).
+  const { data: referidosActivos, error: errCount } = await supabase
     .from("perfiles")
-    .select("id", { count: "exact", head: true })
+    .select("id, created_at")
     .eq("referido_por", referidorId)
     .in("plan", ["basica", "premium", "vitalicia"]);
 
@@ -58,9 +61,25 @@ Deno.serve(async (req: Request) => {
     return new Response("Error", { status: 500 });
   }
 
+  const count = referidosActivos?.length ?? 0;
   console.log(`Referidor ${referidorId} tiene ${count} referidos activos`);
 
-  if ((count ?? 0) < 5) return new Response("Aún no llega a 5", { status: 200 });
+  if (count < 5) return new Response("Aún no llega a 5", { status: 200 });
+
+  // Días entre el referido más viejo y el más nuevo de este grupo -- NO
+  // bloquea nada (la vitalicia se gana igual), solo deja una alerta para
+  // que el admin la revise si el patrón se ve armado artificialmente.
+  const UMBRAL_DIAS_SOSPECHOSO = 10;
+  const fechas = referidosActivos.map((r: { created_at: string }) => new Date(r.created_at).getTime());
+  const spanDias = Math.round((Math.max(...fechas) - Math.min(...fechas)) / (24 * 60 * 60 * 1000));
+  const esSospechoso = spanDias <= UMBRAL_DIAS_SOSPECHOSO;
+  if (esSospechoso) {
+    const { error: errAlerta } = await supabase.from("alertas_referidos").insert({
+      referidor_id: referidorId,
+      dias_entre_referidos: spanDias,
+    });
+    if (errAlerta) console.error("Error creando alerta de referidos sospechosos:", errAlerta);
+  }
 
   // ¿Tiene un plan pago activo todavía corriendo? Si sí, no se le corta --
   // se le marca como pendiente y revisar-membresias.ts la activa sola

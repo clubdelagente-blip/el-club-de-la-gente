@@ -350,6 +350,7 @@ const TIPO_BANDEJA = {
   producto:  { t: 'Producto',  c: '#EAB749', icon: 'package' },
   pedido_club: { t: 'Pedido Club', c: '#60a5fa', icon: 'shopping-bag' },
   resena: { t: 'Foto de reseña', c: '#e2685f', icon: 'star' },
+  referido_sospechoso: { t: 'Referidos sospechosos', c: '#e2685f', icon: 'alert-triangle' },
 };
 function badgeTipoBandeja(k){
   const d=TIPO_BANDEJA[k];
@@ -364,11 +365,12 @@ function razonNoAutoAprobadoResena(v){
   return `<div style="font-size:11px;color:rgba(242,240,234,.4);margin-top:4px" title="${esc(JSON.stringify(v))}">🤖 ${esc(motivo)}</div>`;
 }
 async function cargarBandejaReal(){
-  const[{data:solicitudes},{data:productos},{data:pedidosClub},{data:resenas}]=await Promise.all([
+  const[{data:solicitudes},{data:productos},{data:pedidosClub},{data:resenas},{data:alertasRef}]=await Promise.all([
     supabase.from('solicitudes_membresia').select('id,miembro_id,plan,monto,comprobante_url,estado,created_at,verificacion_ia,perfiles(nombre,whatsapp)').eq('estado','pendiente').order('created_at',{ascending:true}),
     supabase.from('productos_aliado').select('*,verificacion_ia,aliados(nombre,tienda_nombre)').eq('estado','pendiente').order('created_at',{ascending:true}),
     supabase.from('pedidos_club').select('*,verificacion_ia,perfiles(nombre,whatsapp)').eq('estado','pendiente_pago').order('created_at',{ascending:true}),
     supabase.from('resenas_producto').select('id,comentario,foto_url,estado,created_at,verificacion_ia,perfiles(nombre),productos(nombre)').eq('estado','pendiente').order('created_at',{ascending:true}),
+    supabase.from('alertas_referidos').select('id,referidor_id,dias_entre_referidos,created_at,perfiles(nombre,whatsapp)').eq('revisado',false).order('created_at',{ascending:true}),
   ]);
   // Mismos caches que usan las pantallas originales -- así sus botones de
   // Rechazar (que buscan ahí el miembro_id/whatsapp) funcionan igual desde
@@ -385,6 +387,8 @@ async function cargarBandejaReal(){
       acciones:`${p.comprobante_url?`<a class="ad-btn" href="${esc(p.comprobante_url)}" target="_blank">${ic('receipt')} Comprobante</a>`:''}<button class="ad-btn ad-btn--verde" data-bj-pc-pago="${p.id}">${ic('check')} Confirmar pago</button><button class="ad-btn" data-bj-pc-cancelar="${p.id}">${ic('x')} Cancelar</button>`})),
     ...(resenas||[]).map(r=>({tipo:'resena',quien:r.perfiles?.nombre,detalle:r.productos?.nombre||r.comentario||'Reseña',monto:null,fecha:r.created_at,razon:razonNoAutoAprobadoResena(r.verificacion_ia),
       acciones:`${r.foto_url?`<a class="ad-btn" href="${esc(r.foto_url)}" target="_blank">${ic('image')} Ver foto</a>`:''}<button class="ad-btn ad-btn--verde" data-bj-resena-aprobar="${r.id}">${ic('check')} Aprobar</button><button class="ad-btn" data-bj-resena-rechazar="${r.id}">${ic('x')} Eliminar</button>`})),
+    ...(alertasRef||[]).map(a=>({tipo:'referido_sospechoso',quien:a.perfiles?.nombre,detalle:`Sus 5 referidos activos se crearon en ${a.dias_entre_referidos} día${a.dias_entre_referidos===1?'':'s'} -- revisa si son reales antes de confiar en su Vitalicia`,monto:null,fecha:a.created_at,razon:'',
+      acciones:`<button class="ad-btn" data-bj-ref-revisado="${a.id}">${ic('check')} Marcar revisado</button>`})),
   ].sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
 
   const nav=$('#bj-nav-count');
@@ -438,6 +442,13 @@ async function cargarBandejaReal(){
     const{error}=await supabase.from('resenas_producto').delete().eq('id',b.dataset.bjResenaRechazar);
     if(error){toast('Error: '+error.message);b.disabled=false;return;}
     toast('Reseña eliminada');
+    cargarBandejaReal();
+  }));
+  $('#p-bandeja').querySelectorAll('[data-bj-ref-revisado]').forEach(b=>b.addEventListener('click',async()=>{
+    b.disabled=true;
+    const{error}=await supabase.from('alertas_referidos').update({revisado:true}).eq('id',b.dataset.bjRefRevisado);
+    if(error){toast('Error: '+error.message);b.disabled=false;return;}
+    toast('Marcado como revisado');
     cargarBandejaReal();
   }));
 }
