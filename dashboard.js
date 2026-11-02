@@ -91,7 +91,11 @@ function toast(msg) {
 function leerPerfil() {
   const p = JSON.parse(localStorage.getItem("ecdlg_perfil") || "{}");
   const m = JSON.parse(localStorage.getItem("ecdlg_miembro") || "{}");
-  const plan = localStorage.getItem("ecdlg_plan") || "premium";
+  // "premium" como default aquí pintaba una ClubCard dorada falsa (plan que
+  // la persona puede ni tener) en el primerísimo login, antes de que llegue
+  // el plan real de Supabase -- "gratis" es un default mucho menos engañoso
+  // mientras tanto (aplicarPlanUI() la corrige al real apenas carga).
+  const plan = localStorage.getItem("ecdlg_plan") || "gratis";
   const params = new URLSearchParams(location.search);
   const rol = params.get("rol") || p.rol || localStorage.getItem("ecdlg_rol") || "miembro";
   // A veces el nombre queda guardado como el correo interno
@@ -3223,14 +3227,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   obtenerSesionConReintento().then(async (session) => {
     if (!session?.user?.id) {
-      // En iOS, recién instalada la app, las primeras aperturas a veces no
-      // alcanzan a leer la sesión a tiempo aunque sí esté guardada -- cerrar
-      // y volver a entrar la resuelve, a veces hace falta más de una vez.
-      // Se automatiza ese mismo gesto hasta 2 veces (el contador evita un
-      // loop si de verdad no hay sesión).
-      const intentos = parseInt(sessionStorage.getItem("ecdlg_reload_sesion") || "0");
-      if (intentos < 2) {
-        sessionStorage.setItem("ecdlg_reload_sesion", String(intentos + 1));
+      // En iOS, recién instalada la app, la primera apertura a veces no
+      // alcanza a leer la sesión a tiempo aunque sí esté guardada -- se
+      // automatiza un solo reintento (más de uno solo suma parpadeo visible
+      // sin mejorar de verdad las probabilidades).
+      if (!sessionStorage.getItem("ecdlg_reload_sesion")) {
+        sessionStorage.setItem("ecdlg_reload_sesion", "1");
         location.reload();
         return;
       }
