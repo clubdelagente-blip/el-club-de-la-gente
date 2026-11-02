@@ -3174,12 +3174,14 @@ async function cargarMarcasCarrusel() {
 // Banner de reintento cuando falla la carga inicial del dashboard (ej. se
 // perdió la conexión justo al recuperar el celular de segundo plano) — sin
 // esto, la persona se queda viendo los spinners internos girar para siempre.
-function mostrarErrorCargaDash() {
+function mostrarErrorCargaDash(debugMsg) {
   if (document.getElementById("dash-error-retry")) return;
   const banner = document.createElement("div");
   banner.id = "dash-error-retry";
   banner.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:9999;background:#fdecea;color:#c0392b;padding:14px 20px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.1)";
-  banner.innerHTML = `<span>No pudimos cargar tu cuenta. Revisa tu conexión e intenta de nuevo.</span><button id="dash-error-retry-btn" style="background:#c0392b;color:#fff;border:none;padding:8px 16px;border-radius:20px;font-weight:700;cursor:pointer">Reintentar</button>`;
+  // DEBUG TEMPORAL: el (debugMsg) se agrega mientras se diagnostica por qué
+  // falla cargar el perfil -- quitar una vez identificada la causa real.
+  banner.innerHTML = `<span>No pudimos cargar tu cuenta. Revisa tu conexión e intenta de nuevo.${debugMsg ? " (DEBUG: " + debugMsg + ")" : ""}</span><button id="dash-error-retry-btn" style="background:#c0392b;color:#fff;border:none;padding:8px 16px;border-radius:20px;font-weight:700;cursor:pointer">Reintentar</button>`;
   document.body.prepend(banner);
   document.getElementById("dash-error-retry-btn").addEventListener("click", () => location.reload());
 }
@@ -3282,8 +3284,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (perfError) {
       // No mostrar "activa tu membresía" cuando en realidad es un error técnico
       // (ej. una columna que falta) — sería engañoso, parecería que no pagó.
+      // Antes esto solo mostraba un toast que desaparecía en 3s y dejaba el
+      // dashboard pegado en el estado inicial sin ninguna explicación visible.
       console.error("Error cargando perfil:", perfError);
-      toast("No pudimos cargar tu perfil. Recarga la página.");
+      mostrarErrorCargaDash(perfError.message || JSON.stringify(perfError));
       return;
     }
     _respuestasSegPrevias = perfData?.respuestas_segmentacion || {};
@@ -3433,7 +3437,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // minimizar) dejaba todo el contenido del dashboard colgado en silencio,
     // con los .brand-loader internos girando para siempre.
     console.error("Error cargando el dashboard:", err);
-    mostrarErrorCargaDash();
+    mostrarErrorCargaDash(err?.message || String(err));
   });
 
   // Respaldo del QR: getSession() puede correr en carrera con la sesión
