@@ -226,6 +226,17 @@ const ic = (n) => `<i data-lucide="${n}"></i>`;
 // antes de insertarlo en innerHTML -- sin esto, cualquiera podia mandar un <script>
 // en el nombre del negocio y que se ejecutara en la sesion del admin al revisarlo.
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Misma lógica que auth.js -- se usa como respaldo para calcularla en vivo
+// cuando perfiles.mision no quedó guardada de antes (ej. aliados, cuya
+// cuenta no pasa por el flujo normal de registro que la calcula y guarda).
+function calcularMision(fechaISO){
+  if(!fechaISO)return null;
+  const digitos=fechaISO.replace(/\D/g,'');
+  const sumar=s=>[...s].reduce((a,d)=>a+(+d),0);
+  let n=sumar(digitos);
+  while(n>9&&n!==11&&n!==22&&n!==33)n=sumar(String(n));
+  return n;
+}
 // Cliente aislado (sin persistir sesión) para crear cuentas de aliados desde
 // el Admin sin reemplazar la sesión del administrador logueado -- signUp()
 // en el cliente principal movería la sesión activa a la cuenta recién creada.
@@ -685,7 +696,7 @@ const ARQUETIPOS_ADMIN={
 };
 async function cargarMiembrosReal(tab,q){
   const[{data:perfiles},{data:descuentos}]=await Promise.all([
-    supabase.from('perfiles').select('id,nombre,whatsapp,plan,barrio,mision,foto_url,created_at').order('created_at',{ascending:false}),
+    supabase.from('perfiles').select('id,nombre,whatsapp,plan,barrio,mision,fecha_nacimiento,foto_url,created_at').order('created_at',{ascending:false}),
     supabase.from('descuentos').select('miembro_id,ahorro'),
   ]);
   const ahorroPorMiembro={};
@@ -696,7 +707,7 @@ async function cargarMiembrosReal(tab,q){
     whatsapp:p.whatsapp||'',
     plan:p.plan||'sin_plan',
     barrio:p.barrio||'—',
-    mision:p.mision||null,
+    mision:p.mision||calcularMision(p.fecha_nacimiento),
     foto:p.foto_url||null,
     fecha:new Date(p.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'}),
     fechaISO:p.created_at,
