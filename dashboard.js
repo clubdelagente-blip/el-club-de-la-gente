@@ -1,13 +1,14 @@
 /* ============================================================
    EL CLUB DE LA GENTE — Módulo 4 · Lógica de perfil/dashboard
    ============================================================ */
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { comprimirImagen } from './imagen.js';
+// Usa el mismo cliente compartido que auth.js/checkout.js (con respaldo de
+// sesión en cookie) -- antes este archivo creaba su PROPIO cliente aparte,
+// sin ese respaldo, así que en el primer arranque de la app instalada en
+// iOS (localStorage todavía vacío, solo la cookie tenía la sesión) este
+// cliente nunca encontraba nada por más que se reintentara.
+import { supabase } from './supabase.js';
 const SUPABASE_URL = "https://egwaedadpqfwnbfosiao.supabase.co";
-const supabase = createClient(
-  SUPABASE_URL,
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4"
-);
 
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
@@ -3174,14 +3175,12 @@ async function cargarMarcasCarrusel() {
 // Banner de reintento cuando falla la carga inicial del dashboard (ej. se
 // perdió la conexión justo al recuperar el celular de segundo plano) — sin
 // esto, la persona se queda viendo los spinners internos girar para siempre.
-function mostrarErrorCargaDash(debugMsg) {
+function mostrarErrorCargaDash() {
   if (document.getElementById("dash-error-retry")) return;
   const banner = document.createElement("div");
   banner.id = "dash-error-retry";
   banner.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:9999;background:#fdecea;color:#c0392b;padding:14px 20px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.1)";
-  // DEBUG TEMPORAL: el (debugMsg) se agrega mientras se diagnostica por qué
-  // falla cargar el perfil -- quitar una vez identificada la causa real.
-  banner.innerHTML = `<span>No pudimos cargar tu cuenta. Revisa tu conexión e intenta de nuevo.${debugMsg ? " (DEBUG: " + debugMsg + ")" : ""}</span><button id="dash-error-retry-btn" style="background:#c0392b;color:#fff;border:none;padding:8px 16px;border-radius:20px;font-weight:700;cursor:pointer">Reintentar</button>`;
+  banner.innerHTML = `<span>No pudimos cargar tu cuenta. Revisa tu conexión e intenta de nuevo.</span><button id="dash-error-retry-btn" style="background:#c0392b;color:#fff;border:none;padding:8px 16px;border-radius:20px;font-weight:700;cursor:pointer">Reintentar</button>`;
   document.body.prepend(banner);
   document.getElementById("dash-error-retry-btn").addEventListener("click", () => location.reload());
 }
@@ -3250,25 +3249,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       sessionStorage.removeItem("ecdlg_reload_sesion");
-      // DEBUG TEMPORAL -- quitar una vez diagnosticada la causa real de por
-      // qué no se encuentra la sesión al recién instalar la app en iOS.
-      try {
-        const lsKeys = Object.keys(localStorage).filter(k => k.startsWith("sb-"));
-        const hayCookieTok = document.cookie.includes("-auth-token.n=");
-        let getSessErr = "ninguno"; let getSessTiene = "no";
-        try {
-          const r = await supabase.auth.getSession();
-          getSessTiene = r.data.session?.user?.id ? "sí" : "no";
-          if (r.error) getSessErr = r.error.message;
-        } catch (e) { getSessErr = "excepción: " + (e?.message || e); }
-        alert(
-          "DEBUG sesión no encontrada:\n" +
-          "localStorage sb-*: " + (lsKeys.length ? lsKeys.join(", ") : "ninguna") + "\n" +
-          "cookie respaldo presente: " + hayCookieTok + "\n" +
-          "getSession ahora mismo -> tiene sesión: " + getSessTiene + " / error: " + getSessErr + "\n" +
-          "standalone: " + (window.matchMedia?.("(display-mode: standalone)")?.matches || navigator.standalone === true)
-        );
-      } catch (e) { alert("DEBUG falló armar el diagnóstico: " + (e?.message || e)); }
       location.href = "Registro.html?modo=login";
       return;
     }
@@ -3317,7 +3297,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Antes esto solo mostraba un toast que desaparecía en 3s y dejaba el
       // dashboard pegado en el estado inicial sin ninguna explicación visible.
       console.error("Error cargando perfil:", perfError);
-      mostrarErrorCargaDash(perfError.message || JSON.stringify(perfError));
+      mostrarErrorCargaDash();
       return;
     }
     _respuestasSegPrevias = perfData?.respuestas_segmentacion || {};
@@ -3467,7 +3447,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // minimizar) dejaba todo el contenido del dashboard colgado en silencio,
     // con los .brand-loader internos girando para siempre.
     console.error("Error cargando el dashboard:", err);
-    mostrarErrorCargaDash(err?.message || String(err));
+    mostrarErrorCargaDash();
   });
 
   // Respaldo del QR: getSession() puede correr en carrera con la sesión
