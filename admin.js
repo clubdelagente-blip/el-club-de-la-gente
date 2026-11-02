@@ -172,15 +172,18 @@ function renderTienda() {
         <button class="ad-btn ad-btn--verde" id="cat-add">${ic("folder-plus")} Nueva categoría</button>
         <button class="ad-btn ad-btn--verde" id="prod-add">${ic("plus")} Agregar producto</button>
       </div>
-      <div class="ad-card" style="margin-bottom:20px">
-        <div class="ad-card__head"><div class="ad-card__title">Categorías</div></div>
+      <details class="ad-card" style="margin-bottom:20px">
+        <summary class="ad-card__head" style="cursor:pointer;list-style:none">
+          <div class="ad-card__title">Categorías</div>
+          <i data-lucide="chevron-down" class="ad-card__chev" style="width:18px;height:18px;flex:none"></i>
+        </summary>
         <div class="ad-table-wrap">
           <table class="ad-table">
             <thead><tr><th>Nombre</th><th>Productos</th><th style="text-align:right">Estado</th></tr></thead>
             <tbody id="cats-body"><tr><td colspan="3" style="text-align:center;padding:30px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
           </table>
         </div>
-      </div>
+      </details>
       <div class="ad-card">
         <div class="ad-card__head"><div class="ad-card__title">Productos</div></div>
         <div class="ad-table-wrap">
