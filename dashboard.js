@@ -3223,12 +3223,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   obtenerSesionConReintento().then(async (session) => {
     if (!session?.user?.id) {
-      // En iOS, recién instalada la app, la primera apertura a veces no
-      // alcanza a leer la sesión a tiempo aunque sí esté guardada -- cerrar
-      // y volver a entrar siempre lo resuelve. Se automatiza ese mismo gesto
-      // una sola vez (la bandera evita un loop si de verdad no hay sesión).
-      if (!sessionStorage.getItem("ecdlg_reload_sesion")) {
-        sessionStorage.setItem("ecdlg_reload_sesion", "1");
+      // En iOS, recién instalada la app, las primeras aperturas a veces no
+      // alcanzan a leer la sesión a tiempo aunque sí esté guardada -- cerrar
+      // y volver a entrar la resuelve, a veces hace falta más de una vez.
+      // Se automatiza ese mismo gesto hasta 2 veces (el contador evita un
+      // loop si de verdad no hay sesión).
+      const intentos = parseInt(sessionStorage.getItem("ecdlg_reload_sesion") || "0");
+      if (intentos < 2) {
+        sessionStorage.setItem("ecdlg_reload_sesion", String(intentos + 1));
         location.reload();
         return;
       }
@@ -3236,6 +3238,7 @@ document.addEventListener("DOMContentLoaded", () => {
       location.href = "Registro.html?modo=login";
       return;
     }
+    sessionStorage.removeItem("ecdlg_reload_sesion");
     const userId = session.user.id;
     _miembroId = userId;
     generarQR(userId);
