@@ -3057,6 +3057,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
             <td style="font-size:13px;font-weight:700;color:#00DF81">${COP(p.precio_descuento)}</td>
             <td style="text-align:right"><div style="display:flex;gap:8px;justify-content:flex-end;align-items:center">
               <span class="ad-pill ${p.activo?'activo':'inactivo'}" data-tog-prod="${p.id}" data-activo="${p.activo}" style="cursor:pointer"><span class="d"></span>${p.activo?'Activo':'Inactivo'}</span>
+              ${p.link_proveedor?`<a class="ad-btn" href="${esc(p.link_proveedor)}" target="_blank" rel="noopener" title="Ver producto en el proveedor">${ic('external-link')}</a>`:''}
               <button class="ad-btn" data-ed-prod="${p.id}">${ic('pencil')}</button>
               <button class="ad-btn" data-rm-prod="${p.id}">${ic('trash-2')}</button>
             </div></td>
