@@ -3208,22 +3208,33 @@ document.addEventListener("DOMContentLoaded", () => {
   // cubre el caso de iOS en modo "app" (ícono de pantalla de inicio), donde
   // el proceso se suspende/mata al segundo de salir y getSession() puede
   // tardar en releer lo que ya está guardado en el dispositivo.
+  // Antes solo miraba localStorage directo -- en el primerísimo arranque de
+  // la app recién instalada, localStorage puede seguir vacío aunque la
+  // sesión SÍ esté en el respaldo de cookie (ver supabase.js), así que esto
+  // decía "no hay nada guardado" y nunca llegaba a intentar recuperarla.
   function haySesionGuardadaEnStorage() {
     try {
-      return Object.keys(localStorage).some(k => k.startsWith("sb-") && k.endsWith("-auth-token"));
+      if (Object.keys(localStorage).some(k => k.startsWith("sb-") && k.endsWith("-auth-token"))) return true;
+    } catch {}
+    try {
+      return document.cookie.includes("-auth-token.n=");
     } catch { return false; }
   }
   async function obtenerSesionConReintento() {
-    for (const espera of [0, 400, 900, 1600]) {
+    for (const espera of [0, 400, 900, 1600, 1600, 1600]) {
       if (espera) await new Promise(r => setTimeout(r, espera));
       const { data } = await supabase.auth.getSession();
       if (data.session?.user?.id) return data.session;
-    }
-    if (haySesionGuardadaEnStorage()) {
-      try {
-        const { data } = await supabase.auth.refreshSession();
-        if (data.session?.user?.id) return data.session;
-      } catch {}
+      // Sin esto, si para este punto ya quedó claro que sí hay algo guardado
+      // (cookie o localStorage) pero getSession() no lo está viendo, seguir
+      // esperando el mismo getSession() no cambia nada -- hay que forzar la
+      // relectura real con refreshSession().
+      if (haySesionGuardadaEnStorage()) {
+        try {
+          const { data: refrescada } = await supabase.auth.refreshSession();
+          if (refrescada.session?.user?.id) return refrescada.session;
+        } catch {}
+      }
     }
     return null;
   }
