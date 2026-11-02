@@ -907,7 +907,7 @@ function renderAgStats(C){
 async function cargarAgenteReal(){
   const[{data:conv},{data:perfiles}]=await Promise.all([
     supabase.from('conversaciones').select('whatsapp,rol,contenido,media_url,media_type,escalado,created_at').order('created_at',{ascending:true}),
-    supabase.from('perfiles').select('id,nombre,whatsapp,plan'),
+    supabase.from('perfiles').select('id,nombre,whatsapp,plan,foto_url'),
   ]);
   const C=conv||[],P=perfiles||[];
   renderAgStats(C);
@@ -929,6 +929,7 @@ async function cargarAgenteReal(){
       nombre:perfil?.nombre||('+57 '+numero),
       plan:perfil?.plan||null,
       miembroId:perfil?.id||null,
+      foto:perfil?.foto_url||null,
       lastText:(last?.contenido||'').slice(0,80),
       lastFrom:last?.rol,
       lastTime:last?.created_at,
@@ -953,7 +954,7 @@ function renderAgConvsReal(){
   const el=$("#ag-convs");if(!el)return;
   el.innerHTML=list.length?list.map(c=>`
     <li class="ag-conv ${c.numero===_agActive?'is-active':''}" data-conv="${c.numero}">
-      <span class="ag-conv__av"><span class="av">${esc(window.ini(c.nombre))}</span></span>
+      <span class="ag-conv__av">${c.foto?`<img src="${esc(c.foto)}" style="width:42px;height:42px;object-fit:cover;border-radius:50%;display:block">`:`<span class="av">${esc(window.ini(c.nombre))}</span>`}</span>
       <span class="ag-conv__main">
         <span class="ag-conv__row"><span class="ag-conv__name">${esc(c.nombre)}</span><span class="ag-conv__time">${c.lastTime?_agTiempo(c.lastTime):''}</span></span>
         <span class="ag-conv__row"><span class="ag-conv__prev">${c.lastFrom==='assistant'?`<span class="me">Tú: ${esc(c.lastText)}</span>`:esc(c.lastText)}</span>${c.necesitaRespuesta?`<span class="ag-conv__badge">1</span>`:''}</span>
@@ -968,7 +969,7 @@ function renderAgThreadReal(){
   if(!c){wrap.innerHTML=`<div class="ag-empty"><span class="ag-empty__ic">${ic('message-circle')}</span><h3>Selecciona una conversación</h3><p>Elige un miembro de la bandeja para ver y responder sus mensajes.</p></div>`;if(window.lucide)lucide.createIcons();return;}
   wrap.innerHTML=`
     <div class="ag-thread__head">
-      <span class="av">${esc(window.ini(c.nombre))}</span>
+      ${c.foto?`<img src="${esc(c.foto)}" style="width:40px;height:40px;object-fit:cover;border-radius:50%;flex-shrink:0">`:`<span class="av">${esc(window.ini(c.nombre))}</span>`}
       <div class="ag-thread__id">
         <div class="ag-thread__name">${esc(c.nombre)} ${c.plan?`<span class="ad-pill ${c.plan}"><span class="d"></span>${window.planLbl(c.plan)}</span>`:''}</div>
         <div class="ag-thread__meta">+57 ${c.numero}</div>
@@ -1341,8 +1342,11 @@ function htmlFormAliado(a={}){
   const customChips=personalizadas.map(c=>`<button type="button" class="fa-chip is-on" data-cat="${c.replace(/"/g,'&quot;')}" data-custom="1">${c} &times;</button>`).join('');
   return `
   <div class="ad-field"><label>Nombre del negocio *</label><input id="fa-nombre" type="text" value="${(a.nombre||'').replace(/"/g,'&quot;')}" placeholder="Ej: Café del Parque"></div>
-  <div class="ad-field"><label>Nombre del responsable</label><input id="fa-responsable" type="text" value="${(a.nombre_responsable||'').replace(/"/g,'&quot;')}" placeholder="Ej: Andrea Gómez">
-    <div style="font-size:11px;color:rgba(26,26,24,.4);margin-top:4px">La persona de contacto -- con este nombre se le saluda a ella, no con el del negocio, al crear su cuenta de acceso.</div></div>
+  <div class="ad-field-2">
+    <div class="ad-field"><label>Nombre del responsable</label><input id="fa-responsable" type="text" value="${(a.nombre_responsable||'').replace(/"/g,'&quot;')}" placeholder="Ej: Andrea Gómez"></div>
+    <div class="ad-field"><label>Fecha de nacimiento del responsable</label><input id="fa-fecha-nacimiento" type="date" value="${a.fecha_nacimiento||''}"></div>
+  </div>
+  <div style="font-size:11px;color:rgba(26,26,24,.4);margin:-6px 0 10px">La persona de contacto -- con este nombre se le saluda a ella, no con el del negocio, al crear su cuenta de acceso. La fecha de nacimiento es para que el Agente de WhatsApp sepa cómo dirigirse a ella (igual que con los miembros).</div>
   <div class="ad-field"><label>Categoría</label>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:2px" id="fa-chips">${chips}</div>
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px" id="fa-chips-custom">${customChips}</div>
@@ -1508,6 +1512,7 @@ function bindFormAliado(){
       // si todavía no lo cargaron, no se deja seguir en vez de saludar con
       // el nombre del negocio por defecto.
       const nombre=$("#fa-responsable")?.value.trim();
+      const fechaNac=$("#fa-fecha-nacimiento")?.value||null;
       let waDigits=($("#fa-wa")?.value||"").replace(/\D/g,"");
       while(waDigits.length>10&&waDigits.startsWith("57"))waDigits=waDigits.slice(2);
       if(!aliadoId){toast('Guarda el aliado primero');return;}
@@ -1519,10 +1524,10 @@ function bindFormAliado(){
       // Si este aliado ya tiene cuenta (user_id), no hay que crear otra --
       // signUp() con el mismo correo fallaría (o peor, quedaría en un estado
       // raro) antes de llegar a corregir el nombre. Si ya existe, el botón
-      // solo actualiza el nombre/whatsapp del saludo, sin tocar su acceso.
+      // solo actualiza el nombre/whatsapp/fecha del saludo, sin tocar su acceso.
       const{data:aliadoActual}=await supabase.from('aliados').select('user_id').eq('id',aliadoId).maybeSingle();
       if(aliadoActual?.user_id){
-        const{error:errUpd}=await supabase.from('perfiles').update({nombre,whatsapp:waDigits}).eq('id',aliadoActual.user_id);
+        const{error:errUpd}=await supabase.from('perfiles').update({nombre,whatsapp:waDigits,fecha_nacimiento:fechaNac}).eq('id',aliadoActual.user_id);
         btn.disabled=false;btn.innerHTML=`${ic("key")} Crear cuenta de acceso`;if(window.lucide)lucide.createIcons();
         if(errUpd){toast('Error actualizando: '+errUpd.message);return;}
         toast('Nombre del responsable actualizado ✓');
@@ -1540,7 +1545,7 @@ function bindFormAliado(){
       }
 
       await supabase.from('aliados').update({user_id:data.user.id}).eq('id',aliadoId);
-      await supabase.from('perfiles').upsert({id:data.user.id,nombre,whatsapp:waDigits,rol:'aliado',plan:'vitalicia'});
+      await supabase.from('perfiles').upsert({id:data.user.id,nombre,whatsapp:waDigits,fecha_nacimiento:fechaNac,rol:'aliado',plan:'vitalicia'});
 
       const beneficiosVitalicia=[
         'Membresía Premium vitalicia y gratuita, para siempre',
@@ -1615,7 +1620,7 @@ function bindFormAliado(){
       let waAliado=($("#fa-wa")?.value||'').replace(/\D/g,'');
       while(waAliado.length>10&&waAliado.startsWith('57'))waAliado=waAliado.slice(2);
       let fotosCarrusel=[];try{fotosCarrusel=JSON.parse($("#fa-carrusel-urls")?.value||'[]');}catch(_){fotosCarrusel=[];}
-      const payload={nombre,nombre_responsable:$("#fa-responsable")?.value.trim()||null,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:waAliado||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,instagram:$("#fa-instagram")?.value.trim()||null,ofrece_domicilio:$("#fa-domicilio")?.checked||false,ofrece_agenda:$("#fa-agenda")?.checked||false,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fotos_carrusel:fotosCarrusel,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true,sellos_activo:$("#fa-sellos-activo")?.checked||false,sellos_meta:parseInt($("#fa-sellos-meta")?.value)||10,sellos_premio_tipo:$("#fa-sellos-tipo")?.value||'descuento',sellos_premio_desc:$("#fa-sellos-premio")?.value.trim()||null};
+      const payload={nombre,nombre_responsable:$("#fa-responsable")?.value.trim()||null,fecha_nacimiento:$("#fa-fecha-nacimiento")?.value||null,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:waAliado||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,instagram:$("#fa-instagram")?.value.trim()||null,ofrece_domicilio:$("#fa-domicilio")?.checked||false,ofrece_agenda:$("#fa-agenda")?.checked||false,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fotos_carrusel:fotosCarrusel,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true,sellos_activo:$("#fa-sellos-activo")?.checked||false,sellos_meta:parseInt($("#fa-sellos-meta")?.value)||10,sellos_premio_tipo:$("#fa-sellos-tipo")?.value||'descuento',sellos_premio_desc:$("#fa-sellos-premio")?.value.trim()||null};
       const id=btn.dataset.id;
       const{error}=id?await supabase.from('aliados').update(payload).eq('id',id):await supabase.from('aliados').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}
