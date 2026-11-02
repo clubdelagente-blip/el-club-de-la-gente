@@ -3256,6 +3256,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
         <div class="ad-field"><label>Precio miembro (COP)</label><input id="fp-descuento" type="text" inputmode="numeric" value="${p.precio_descuento?Number(p.precio_descuento).toLocaleString('es-CO'):''}" placeholder="Ej: 120.000"></div>
       </div>
       <div class="ad-field"><label>Costo del proveedor (COP) <span style="font-weight:400;opacity:.5">— opcional, solo para tu margen, no se le muestra al miembro</span></label><input id="fp-costo" type="text" inputmode="numeric" value="${p.costo_proveedor?Number(p.costo_proveedor).toLocaleString('es-CO'):''}" placeholder="Ej: 60.000"></div>
+      <div class="ad-field"><label>Link para comprarlo (proveedor) <span style="font-weight:400;opacity:.5">— privado, solo para ti, no se le muestra al miembro</span></label><input id="fp-link-proveedor" type="url" value="${(p.link_proveedor||'').replace(/"/g,'&quot;')}" placeholder="https://..."></div>
       <div class="ad-field"><label>Fotos del producto <span style="font-weight:400;opacity:.5">— hasta 5, la primera es la foto principal</span></label>
         <div id="fp-img-grid" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px"></div>
         <input id="fp-img-input" type="file" accept="image/*" style="display:none">
@@ -3310,6 +3311,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
           precio_normal: valorMoneda($('#fp-precio'))||null,
           precio_descuento: valorMoneda($('#fp-descuento'))||null,
           costo_proveedor: valorMoneda($('#fp-costo'))||null,
+          link_proveedor: $('#fp-link-proveedor')?.value.trim()||null,
           imagenes,
           imagen_url: imagenes[0] || null,
           orden: parseInt($('#fp-orden')?.value||0),
