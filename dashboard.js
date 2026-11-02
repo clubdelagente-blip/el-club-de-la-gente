@@ -3250,6 +3250,25 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       sessionStorage.removeItem("ecdlg_reload_sesion");
+      // DEBUG TEMPORAL -- quitar una vez diagnosticada la causa real de por
+      // qué no se encuentra la sesión al recién instalar la app en iOS.
+      try {
+        const lsKeys = Object.keys(localStorage).filter(k => k.startsWith("sb-"));
+        const hayCookieTok = document.cookie.includes("-auth-token.n=");
+        let getSessErr = "ninguno"; let getSessTiene = "no";
+        try {
+          const r = await supabase.auth.getSession();
+          getSessTiene = r.data.session?.user?.id ? "sí" : "no";
+          if (r.error) getSessErr = r.error.message;
+        } catch (e) { getSessErr = "excepción: " + (e?.message || e); }
+        alert(
+          "DEBUG sesión no encontrada:\n" +
+          "localStorage sb-*: " + (lsKeys.length ? lsKeys.join(", ") : "ninguna") + "\n" +
+          "cookie respaldo presente: " + hayCookieTok + "\n" +
+          "getSession ahora mismo -> tiene sesión: " + getSessTiene + " / error: " + getSessErr + "\n" +
+          "standalone: " + (window.matchMedia?.("(display-mode: standalone)")?.matches || navigator.standalone === true)
+        );
+      } catch (e) { alert("DEBUG falló armar el diagnóstico: " + (e?.message || e)); }
       location.href = "Registro.html?modo=login";
       return;
     }
