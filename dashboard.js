@@ -3341,6 +3341,20 @@ document.addEventListener("DOMContentLoaded", () => {
         const sbNumEl = $("#sb-num"); if (sbNumEl) sbNumEl.textContent = numTxt;
         const perfilNumEl = $("#perfil-num"); if (perfilNumEl) perfilNumEl.textContent = numTxt;
       }
+      // Fecha de nacimiento: el render() inicial solo pinta lo que hubiera en
+      // caché (vacío para quien nunca pasó por el registro normal, ej. un
+      // aliado creado desde Admin) -- esto la corrige con el dato real apenas
+      // llega de Supabase, mismo criterio que el número de miembro arriba.
+      const perfilFechaEl = $("#perfil-fecha");
+      if (perfilFechaEl) {
+        if (perfData?.fecha_nacimiento) {
+          perfilCache.fechaISO = perfData.fecha_nacimiento;
+          const dNac = new Date(perfData.fecha_nacimiento + "T00:00:00");
+          perfilFechaEl.textContent = dNac.toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" });
+        } else {
+          perfilFechaEl.textContent = "—";
+        }
+      }
       // Código del frente de la ClubCard (= el WhatsApp): el render() inicial
       // corre ANTES de esta carga real y usaba lo que hubiera en localStorage
       // en ese momento -- si venía vacío (ej. primera vez en este navegador),

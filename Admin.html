@@ -1624,6 +1624,14 @@ function bindFormAliado(){
       const id=btn.dataset.id;
       const{error}=id?await supabase.from('aliados').update(payload).eq('id',id):await supabase.from('aliados').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}
+      // Si este aliado ya tiene cuenta de acceso (user_id), sincroniza nombre,
+      // WhatsApp y fecha de nacimiento a su perfil de una vez -- antes esto
+      // solo pasaba si se volvía a tocar aparte "Crear cuenta de acceso",
+      // fácil de olvidar al solo editar estos datos desde el formulario.
+      const aliadoUserId=id?_aliados.find(x=>x.id===id)?.user_id:null;
+      if(aliadoUserId&&payload.nombre_responsable){
+        await supabase.from('perfiles').update({nombre:payload.nombre_responsable,whatsapp:payload.whatsapp,fecha_nacimiento:payload.fecha_nacimiento}).eq('id',aliadoUserId);
+      }
       window.cerrarModal?.();cargarAliados();toast(id?'Aliado actualizado ✓':'Aliado agregado ✓');
     });
     const aliadoId=btn?.dataset?.id;
