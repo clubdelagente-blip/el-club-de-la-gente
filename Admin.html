@@ -1385,8 +1385,13 @@ function htmlFormAliado(a={}){
   </div>
   <div class="ad-field"><label>Descripción</label><textarea id="fa-desc" rows="3" placeholder="Describe el negocio y sus beneficios">${a.descripcion||''}</textarea></div>
   <div class="ad-field-2">
-    <div class="ad-field"><label>WhatsApp</label><input id="fa-wa" type="tel" value="${(a.whatsapp||'').replace(/"/g,'&quot;')}" placeholder="300 000 0000"></div>
+    <div class="ad-field"><label>Número personal del aliado <span style="font-weight:400;opacity:.5">— privado, para iniciar sesión y que el Club lo contacte</span></label><input id="fa-wa" type="tel" value="${(a.whatsapp||'').replace(/"/g,'&quot;')}" placeholder="300 000 0000"></div>
     <div class="ad-field"><label>Dirección</label><input id="fa-dir" type="text" value="${(a.direccion||'').replace(/"/g,'&quot;')}" placeholder="Calle, barrio"></div>
+  </div>
+  <div class="ad-field">
+    <label>Número de atención al cliente <span style="font-weight:400;opacity:.5">— este es el que ven los miembros en las promociones del Directorio</span></label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;cursor:pointer"><input type="checkbox" id="fa-wa-mismo" style="width:auto" ${(!a.whatsapp_atencion||a.whatsapp_atencion===a.whatsapp)?'checked':''}> Es el mismo número personal de arriba</label>
+    <input id="fa-wa-cliente" type="tel" value="${(a.whatsapp_atencion||'').replace(/"/g,'&quot;')}" placeholder="300 000 0000" ${(!a.whatsapp_atencion||a.whatsapp_atencion===a.whatsapp)?'disabled':''}>
   </div>
   <div class="ad-field"><label>Link de Google Maps</label><input id="fa-maps" type="url" value="${(a.maps_url||'').replace(/"/g,'&quot;')}" placeholder="https://maps.app.goo.gl/..."></div>
   <div class="ad-field"><label>Instagram <span style="font-weight:400;color:rgba(26,26,24,.4)">(se ve como ícono en la ficha)</span></label><input id="fa-instagram" type="url" value="${(a.instagram||'').replace(/"/g,'&quot;')}" placeholder="https://instagram.com/tu_negocio"></div>
@@ -1483,6 +1488,11 @@ function renderFaSubcats(){
 }
 function bindFormAliado(){
   setTimeout(()=>{
+    $("#fa-wa-mismo")?.addEventListener('change',(e)=>{
+      const campo=$("#fa-wa-cliente");if(!campo)return;
+      campo.disabled=e.target.checked;
+      if(e.target.checked)campo.value='';
+    });
     renderFotosCarruselAliado();bindFotosCarruselInput();
     document.querySelectorAll('#fa-chips .fa-chip').forEach(chip=>{
       chip.addEventListener('click',()=>{
@@ -1630,8 +1640,10 @@ function bindFormAliado(){
       const subcategorias=($("#fa-subcat")?.value||'').split(',').map(s=>s.trim()).filter(Boolean);
       let waAliado=($("#fa-wa")?.value||'').replace(/\D/g,'');
       while(waAliado.length>10&&waAliado.startsWith('57'))waAliado=waAliado.slice(2);
+      let waCliente=$("#fa-wa-mismo")?.checked?null:($("#fa-wa-cliente")?.value||'').replace(/\D/g,'');
+      while(waCliente&&waCliente.length>10&&waCliente.startsWith('57'))waCliente=waCliente.slice(2);
       let fotosCarrusel=[];try{fotosCarrusel=JSON.parse($("#fa-carrusel-urls")?.value||'[]');}catch(_){fotosCarrusel=[];}
-      const payload={nombre,nombre_responsable:$("#fa-responsable")?.value.trim()||null,fecha_nacimiento:$("#fa-fecha-nacimiento")?.value||null,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:waAliado||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,instagram:$("#fa-instagram")?.value.trim()||null,ofrece_domicilio:$("#fa-domicilio")?.checked||false,ofrece_agenda:$("#fa-agenda")?.checked||false,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fotos_carrusel:fotosCarrusel,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true,sellos_activo:$("#fa-sellos-activo")?.checked||false,sellos_meta:parseInt($("#fa-sellos-meta")?.value)||10,sellos_premio_tipo:$("#fa-sellos-tipo")?.value||'descuento',sellos_premio_desc:$("#fa-sellos-premio")?.value.trim()||null};
+      const payload={nombre,nombre_responsable:$("#fa-responsable")?.value.trim()||null,fecha_nacimiento:$("#fa-fecha-nacimiento")?.value||null,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:waAliado||null,whatsapp_atencion:waCliente||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,instagram:$("#fa-instagram")?.value.trim()||null,ofrece_domicilio:$("#fa-domicilio")?.checked||false,ofrece_agenda:$("#fa-agenda")?.checked||false,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fotos_carrusel:fotosCarrusel,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true,sellos_activo:$("#fa-sellos-activo")?.checked||false,sellos_meta:parseInt($("#fa-sellos-meta")?.value)||10,sellos_premio_tipo:$("#fa-sellos-tipo")?.value||'descuento',sellos_premio_desc:$("#fa-sellos-premio")?.value.trim()||null};
       const id=btn.dataset.id;
       const{error}=id?await supabase.from('aliados').update(payload).eq('id',id):await supabase.from('aliados').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}

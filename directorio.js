@@ -164,7 +164,7 @@ let ERROR_CARGA = false;
 async function cargarAliados() {
   // Nota: "codigo_aliado" NUNCA se pide acá a propósito — se valida server-side (RPC verificar_codigo_aliado)
   const { data, error } = await supabase.from("aliados_publico")
-    .select("id, nombre, categoria, descuento, descripcion, whatsapp, direccion, maps_url, ofrece_domicilio, ofrece_agenda, instagram, imagen_url, fotos_carrusel, destacado, planes_visibles")
+    .select("id, nombre, categoria, descuento, descripcion, whatsapp, whatsapp_atencion, direccion, maps_url, ofrece_domicilio, ofrece_agenda, instagram, imagen_url, fotos_carrusel, destacado, planes_visibles")
     .eq("activo", true).order("nombre");
   ERROR_CARGA = !!error;
   const todos = data || [];
@@ -464,8 +464,11 @@ function promoCardHtml(p, al) {
   const dotsHtml = medios.length > 1
     ? `<div class="pm-carrusel__dots">${medios.map((_, i) => `<span class="${i === 0 ? "is-on" : ""}"></span>`).join("")}</div>`
     : "";
-  const waLink = (!al?._bloqueado && al?.whatsapp)
-    ? `https://wa.me/57${String(al.whatsapp).replace(/\D/g, "")}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.titulo || p.descripcion || badgePromo(p)}" de ${al?.nombre || ""} que vi en El Club de la Gente`)}`
+  // whatsapp_atencion = número de atención al cliente (público); si el
+  // aliado no lo configuró, se cae al número personal como siempre.
+  const waAtencion = al?.whatsapp_atencion || al?.whatsapp;
+  const waLink = (!al?._bloqueado && waAtencion)
+    ? `https://wa.me/57${String(waAtencion).replace(/\D/g, "")}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.titulo || p.descripcion || badgePromo(p)}" de ${al?.nombre || ""} que vi en El Club de la Gente`)}`
     : null;
   const ctaHtml = waLink
     ? `<a class="pm-wa" href="${waLink}" target="_blank" rel="noopener">${ICON_WA}WhatsApp</a>`
@@ -574,6 +577,9 @@ function sheetAliado(a) {
         <textarea id="resena-comentario" rows="2" placeholder="Cuéntanos qué te pareció (opcional)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:8px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box">${esc(a._miResena?.comentario || "")}</textarea>
         <button type="button" id="resena-enviar" class="btn btn--primario" style="font-size:12.5px;padding:8px 14px;margin-top:8px">${a._miResena ? "Actualizar reseña" : "Enviar reseña"}</button>
       </div>` : '';
+  // whatsapp_atencion = número de atención al cliente (público); si el
+  // aliado no lo configuró, se cae al número personal como siempre.
+  const waAtencion = a.whatsapp_atencion || a.whatsapp;
   return `
     <div style="${ccVars(a.categoria)}">
     <div style="background:linear-gradient(135deg, var(--cc-soft), transparent 70%);border-radius:18px;padding:16px;margin:-6px -6px 14px">
@@ -587,18 +593,18 @@ function sheetAliado(a) {
         </div>
         <div style="flex:none;display:flex;flex-direction:column;gap:8px;align-items:center">
           ${a.instagram ? `<a href="${a.instagram}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:${cc};color:#fff"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>` : ''}
-          ${(a.whatsapp && a.ofrece_domicilio) ? `<button type="button" data-revelar-domicilio aria-label="Pedir a domicilio" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:${cc};color:#fff;border:none;cursor:pointer;padding:0">${ICON_WA}</button>` : ''}
+          ${(waAtencion && a.ofrece_domicilio) ? `<button type="button" data-revelar-domicilio aria-label="Pedir a domicilio" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:${cc};color:#fff;border:none;cursor:pointer;padding:0">${ICON_WA}</button>` : ''}
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;margin-top:10px">
         ${resenas.length ? `<span>${starsHtml(avgResena, 15)}</span><span style="font-size:12.5px;color:var(--tinta-60);font-weight:600">${avgResena.toFixed(1)} · ${resenas.length} reseña${resenas.length === 1 ? '' : 's'}</span>` : `<span style="font-size:12px;color:var(--tinta-45)">Aún sin reseñas</span>`}
       </div>
-      ${(a.whatsapp && (a.ofrece_domicilio || a.ofrece_agenda)) ? `
+      ${(waAtencion && (a.ofrece_domicilio || a.ofrece_agenda)) ? `
       <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
         ${a.ofrece_domicilio ? `
         <div data-domicilio-extra style="display:none;flex-direction:column;gap:10px">
           <p style="font-size:12px;color:#888;margin:0;line-height:1.4">¿Pides a domicilio? Comparte con el negocio la clave dinámica que aparece al voltear tu ClubCard, para que pueda validar tu descuento sin que estés presencialmente.</p>
-          <a class="btn btn--primario btn--bloque" target="_blank" href="https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent('Hola, soy miembro de El Club de la Gente y quiero hacer un pedido en ' + (a.nombre || ''))}">${ICON_WA}Escribir</a>
+          <a class="btn btn--primario btn--bloque" target="_blank" href="https://wa.me/57${String(waAtencion).replace(/\D/g, '')}?text=${encodeURIComponent('Hola, soy miembro de El Club de la Gente y quiero hacer un pedido en ' + (a.nombre || ''))}">${ICON_WA}Escribir</a>
         </div>` : ''}
       </div>` : ''}
       ${promoTop ? `
@@ -632,7 +638,7 @@ function sheetAliado(a) {
       const fotos = (Array.isArray(p.fotos_urls) && p.fotos_urls.length) ? p.fotos_urls : (p.foto_url ? [p.foto_url] : []);
       const esFlyer = fotos.length === 1 && fotos[0].includes('flyer=1');
       if (esFlyer) {
-        const waPromo = (!a._bloqueado && a.whatsapp) ? `https://wa.me/57${String(a.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.descripcion || badgePromo(p)}" de ${a.nombre} que vi en El Club de la Gente`)}` : null;
+        const waPromo = (!a._bloqueado && waAtencion) ? `https://wa.me/57${String(waAtencion).replace(/\D/g, '')}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.descripcion || badgePromo(p)}" de ${a.nombre} que vi en El Club de la Gente`)}` : null;
         const tag = waPromo ? 'a' : 'div';
         const attrsClick = waPromo
           ? ` href="${waPromo}" target="_blank" style="display:block;text-decoration:none;color:inherit;cursor:pointer"`
