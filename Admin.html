@@ -1605,6 +1605,10 @@ function bindFormAliado(){
           body:JSON.stringify({to:waDigits,contentSid:"HX7f78d0fdc442b9248fa8aa74a68cea9f",contentVariables:{"1":nombre}})
         });
         enviado=res.ok;
+        // Sin esto, el mensaje de bienvenida nunca quedaba en "conversaciones"
+        // -- no aparecía en la bandeja del Agente ni en ninguna consulta,
+        // aunque sí se hubiera mandado de verdad por la plantilla aprobada.
+        if(enviado)await supabase.from('conversaciones').insert({whatsapp:waDigits,rol:'assistant',contenido:msg});
       }catch(_){enviado=false;}
 
       const a=_aliados.find(x=>x.id===aliadoId);
