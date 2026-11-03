@@ -932,6 +932,14 @@ async function cargarAgenteReal(){
     const d=(p.whatsapp||'').replace(/\D/g,'');
     return d && (d.endsWith(numero)||numero.endsWith(d));
   });
+  // Todos los miembros/aliados con WhatsApp salen en la bandeja, aunque
+  // nunca le hayan escrito al Agente -- así el admin puede entrar a
+  // cualquiera y escribirle primero, no solo responder lo que ya llegó.
+  P.forEach(p=>{
+    const key=(p.whatsapp||'').replace(/\D/g,'');
+    if(!key)return;
+    if(!porNumero[key])porNumero[key]=[];
+  });
   _agConvsAll=Object.entries(porNumero).map(([numero,msgs])=>{
     const perfil=buscarPerfil(numero);
     const last=msgs[msgs.length-1];
@@ -943,10 +951,17 @@ async function cargarAgenteReal(){
       foto:perfil?.foto_url||null,
       lastText:(last?.contenido||'').slice(0,80),
       lastFrom:last?.rol,
-      lastTime:last?.created_at,
+      lastTime:last?.created_at||null,
       necesitaRespuesta:last?.rol==='user',
     };
-  }).sort((a,b)=>new Date(b.lastTime)-new Date(a.lastTime));
+  }).sort((a,b)=>{
+    // Los que sí tienen conversación van primero, por más reciente; los que
+    // nunca han escrito van después, ordenados alfabéticamente.
+    if(a.lastTime&&b.lastTime)return new Date(b.lastTime)-new Date(a.lastTime);
+    if(a.lastTime)return -1;
+    if(b.lastTime)return 1;
+    return a.nombre.localeCompare(b.nombre);
+  });
 
   if(!_agActive||!_agConvsAll.find(c=>c.numero===_agActive))_agActive=_agConvsAll[0]?.numero||null;
 
@@ -968,7 +983,7 @@ function renderAgConvsReal(){
       <span class="ag-conv__av">${c.foto?`<img src="${esc(c.foto)}" style="width:42px;height:42px;object-fit:cover;border-radius:50%;display:block">`:`<span class="av">${esc(window.ini(c.nombre))}</span>`}</span>
       <span class="ag-conv__main">
         <span class="ag-conv__row"><span class="ag-conv__name">${esc(c.nombre)}</span><span class="ag-conv__time">${c.lastTime?_agTiempo(c.lastTime):''}</span></span>
-        <span class="ag-conv__row"><span class="ag-conv__prev">${c.lastFrom==='assistant'?`<span class="me">Tú: ${esc(c.lastText)}</span>`:esc(c.lastText)}</span>${c.necesitaRespuesta?`<span class="ag-conv__badge">1</span>`:''}</span>
+        <span class="ag-conv__row"><span class="ag-conv__prev">${!c.msgs.length?'<span style="opacity:.5">Sin mensajes aún</span>':c.lastFrom==='assistant'?`<span class="me">Tú: ${esc(c.lastText)}</span>`:esc(c.lastText)}</span>${c.necesitaRespuesta?`<span class="ag-conv__badge">1</span>`:''}</span>
       </span>
     </li>`).join(''):`<li style="padding:30px;text-align:center;color:var(--txt-40);font-size:13px">Sin conversaciones</li>`;
 }
@@ -991,6 +1006,7 @@ function renderAgThreadReal(){
       </div>
     </div>
     <div class="ag-msgs" id="ag-msgs">
+      ${!c.msgs.length?`<div style="text-align:center;padding:30px;color:var(--txt-40);font-size:13px">Aún no has hablado con ${esc(c.nombre)} — escríbele algo para empezar.</div>`:''}
       ${c.msgs.map(m=>`
         <div class="ag-b ag-b--${m.rol==='user'?'user':'agent'}">
           ${m.rol==='assistant'?`<span class="ag-b__auto">${ic('bot')} Automático</span>`:''}
