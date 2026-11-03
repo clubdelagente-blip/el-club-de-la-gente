@@ -93,6 +93,13 @@ function renderMiembros() {
       <div class="ad-card__head"><div><div class="ad-card__title">Miembros por plan</div><div class="ad-card__sub">Distribución actual de la base</div></div></div>
       <div class="ad-chart" id="m-chart" style="height:150px"></div>
     </div>
+    <details class="ad-card" style="margin-bottom:20px">
+      <summary class="ad-card__head" style="cursor:pointer;list-style:none">
+        <div><div class="ad-card__title">Miembros por categoría de interés</div><div class="ad-card__sub">Según lo que respondieron en el Formulario de bienvenida</div></div>
+        <i data-lucide="chevron-down" class="ad-card__chev" style="width:18px;height:18px;flex:none"></i>
+      </summary>
+      <div id="m-cats-breakdown"></div>
+    </details>
     <div class="ad-toolbar">
       <div class="ad-tabs" id="m-tabs">
         ${["todos", "gratis", "basica", "premium", "inactivos"].map(t => `<button class="ad-tab ${t === miembroTab ? "is-on" : ""}" data-tab="${t}">${{ todos: "Todos", gratis: "Gratis", basica: "Básico", premium: "Premium", inactivos: "Inactivos" }[t]}</button>`).join("")}
@@ -109,6 +116,8 @@ function renderMiembros() {
       </table>
     </div>`;
   window.cargarMiembrosReal?.(miembroTab, miembroQ);
+  window.cargarCategoriasInteresBreakdown?.();
+  if (window.lucide) lucide.createIcons();
 }
 
 /* ============================================================

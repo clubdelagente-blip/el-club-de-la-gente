@@ -210,7 +210,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=7"></script>
-  <script src="admin.js?v=34"></script>
+  <script src="admin.js?v=35"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -788,6 +788,44 @@ window.cargarMiembrosReal=cargarMiembrosReal;
 window.filtrarMiembrosReal=filtrarMiembrosReal;
 window.abrirMiembroReal=abrirMiembroReal;
 window.exportarMiembrosCSV=exportarMiembrosCSV;
+
+// Cuántos miembros marcaron cada categoría/subcategoría de interés del
+// Formulario de bienvenida -- misma pregunta "maestra" (CATS) que ya usa
+// Difusión masiva, más sus preguntas hijas (SUBCATS) para el desglose.
+async function cargarCategoriasInteresBreakdown(){
+  const cont=$("#m-cats-breakdown");if(!cont)return;
+  const[{data:preguntas},{data:perfiles}]=await Promise.all([
+    supabase.from('preguntas_segmentacion').select('id,opciones,pregunta_padre_id,mostrar_si_respuesta,guardar_como_categorias'),
+    supabase.from('perfiles').select('categorias_interes,respuestas_segmentacion'),
+  ]);
+  const preg=preguntas||[],P=perfiles||[];
+  const master=preg.find(p=>p.guardar_como_categorias);
+  if(!master){cont.innerHTML=`<p style="padding:0 0 20px;color:rgba(242,240,234,.4);font-size:13px">No hay una pregunta de "categorías de interés" configurada en el Formulario de bienvenida.</p>`;return;}
+  const cats=master.opciones||[];
+  const hijos=preg.filter(p=>p.pregunta_padre_id===master.id);
+  const porCat=cats.map(cat=>{
+    const n=P.filter(p=>(p.categorias_interes||[]).includes(cat)).length;
+    const hijo=hijos.find(h=>h.mostrar_si_respuesta===cat);
+    const subs=(hijo?.opciones||[]).map(sub=>{
+      const nSub=P.filter(p=>{
+        const r=p.respuestas_segmentacion?.[hijo.id];
+        return Array.isArray(r)?r.includes(sub):r===sub;
+      }).length;
+      return{sub,n:nSub};
+    }).filter(s=>s.n>0).sort((a,b)=>b.n-a.n);
+    return{cat,n,subs};
+  }).sort((a,b)=>b.n-a.n);
+  cont.innerHTML=(porCat.map(c=>`
+    <div style="padding:10px 0;border-bottom:1px solid var(--line)">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13.5px;font-weight:600">
+        <span>${esc(c.cat)}</span><span style="flex:none">${c.n} miembro${c.n===1?'':'s'}</span>
+      </div>
+      ${c.subs.length?`<div style="margin-top:6px;padding-left:14px;display:flex;flex-direction:column;gap:4px">
+        ${c.subs.map(s=>`<div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;color:rgba(242,240,234,.5)"><span>— ${esc(s.sub)}</span><span>${s.n}</span></div>`).join('')}
+      </div>`:''}
+    </div>`).join(''))||`<p style="padding:0 0 20px;color:rgba(242,240,234,.4);font-size:13px">Aún no hay respuestas registradas.</p>`;
+}
+window.cargarCategoriasInteresBreakdown=cargarCategoriasInteresBreakdown;
 
 /* ---- DIFUSIÓN MASIVA (datos reales) ---- */
 let _difusionAudiencias=[];
