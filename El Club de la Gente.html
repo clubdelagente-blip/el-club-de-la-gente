@@ -246,13 +246,13 @@
     // a mano desde Admin). Ahora muestra los aliados reales marcados como
     // "destacado" (la estrella en Admin > Aliados) -- coincide con lo que ya
     // dice el título de esta sección, "Nuestros aliados comerciales".
-    const { data } = await supabase.from('aliados_publico').select('nombre,imagen_url,categoria,maps_url').eq('destacado', true);
+    const { data } = await supabase.from('aliados_publico').select('nombre,imagen_url,categoria,instagram').eq('destacado', true);
     if (!data || !data.length) { wrap.classList.add('marcas-carrusel--vacio'); }
     else {
       const items = [...data, ...data];
       track.innerHTML = items.map(m => `<div class="marcas-carrusel__item">
         <div class="marcas-carrusel__col">
-          <a href="${m.maps_url || 'Directorio.html'}" target="_blank" rel="noopener" title="${esc(m.nombre)}">
+          <a href="${m.instagram || 'Directorio.html'}" target="_blank" rel="noopener" title="${esc(m.nombre)}">
             <img src="${m.imagen_url}" alt="${esc(m.nombre)}">
           </a>
           ${m.categoria ? `<span class="marcas-carrusel__cat">${esc(m.categoria)}</span>` : ''}
