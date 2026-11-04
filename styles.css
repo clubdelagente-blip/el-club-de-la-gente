@@ -365,8 +365,14 @@ a { color: inherit; text-decoration: none; }
   .promo-card__img { height: 260px; }
   /* El swipe táctil entre promos (app-cms.js) calcula el desplazamiento en
      100vw por tarjeta -- el PromoCard v2 tiene que medir lo mismo en celular
-     para que ese cálculo siga cuadrando. */
-  .pm-card { width: 100vw; flex-shrink: 0; border-radius: 0; box-shadow: none; }
+     para que ese cálculo siga cuadrando. Con el selector ".pm-card" a secas
+     esta regla perdía contra el ancho base (380px) de más abajo en el
+     archivo, que gana por venir después en la cascada -- por eso se veía un
+     pedacito de la siguiente tarjeta asomando. Se apunta solo al carrusel de
+     la portada (con el ID, que sí gana sin importar el orden); la ficha de
+     cada aliado en el Directorio usa .pm-card en una cuadrícula aparte y no
+     debe volverse 100vw. */
+  #promo-carrusel-track .pm-card { width: 100vw; flex-shrink: 0; border-radius: 0; box-shadow: none; }
 }
 
 /* ============================================================
