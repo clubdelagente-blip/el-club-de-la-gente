@@ -209,6 +209,15 @@
 #sellos-grid .aliado-mini__cat { color: rgba(241,247,246,.6); }
 #sellos-grid .aliado-mini__pct { color: var(--verde-claro); }
 
+/* Promoción del día: fondo verde oscuro (ver Perfil.html), filas en blanco
+   translúcido para que se lean bien encima del degradado. */
+#promo-dia-grid .aliado-mini { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.18); }
+#promo-dia-grid .aliado-mini:hover { background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.3); }
+#promo-dia-grid .aliado-mini__ic { background: rgba(255,255,255,.18); color: #fff; }
+#promo-dia-grid .aliado-mini__name { color: #fff; }
+#promo-dia-grid .aliado-mini__cat { color: rgba(255,255,255,.65); }
+#promo-dia-grid .aliado-mini__pct { color: var(--verde-claro); }
+
 /* actividad reciente */
 .actividad { list-style: none; display: flex; flex-direction: column; }
 .act-item { display: flex; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--linea); }
