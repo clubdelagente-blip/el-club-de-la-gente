@@ -3175,6 +3175,89 @@ async function cargarMarcasCarrusel() {
   </div>`).join("");
 }
 
+// Mismo criterio de "tipo de promo" que badgePromo() de directorio.js --
+// duplicado a propósito (archivo aparte, sin import compartido).
+function badgePromoDash(p) {
+  if (p.tipo === "porcentaje") {
+    const pct = p.descuento_pct || (p.precio_normal && p.ahorro_fijo ? Math.round((p.ahorro_fijo / p.precio_normal) * 100) : null);
+    return pct != null ? `${pct}%` : "% dcto.";
+  }
+  if (p.tipo === "2x1") return "2×1";
+  if (p.tipo === "monto_fijo") return p.ahorro_fijo ? `-${COP(p.ahorro_fijo)}` : "Descuento";
+  if (p.tipo === "precio_especial") return p.precio_descuento != null ? COP(p.precio_descuento) : "Precio especial";
+  if (p.tipo === "regalo") return "🎁";
+  return "Promo";
+}
+
+/* ---------- PROMOCIÓN DEL DÍA (Inicio) ----------
+   Promos reales vigentes hoy (dentro de fecha_inicio/fecha_fin y, si aplica
+   solo ciertos días, que hoy sea uno de ellos) -- si no hay ninguna, cae a
+   un producto al azar de la Tienda del Club, nunca se queda vacío. */
+async function cargarPromoDelDia() {
+  const wrap = document.getElementById("promo-dia-wrap");
+  const tituloEl = document.getElementById("promo-dia-titulo");
+  const grid = document.getElementById("promo-dia-grid");
+  if (!wrap || !grid) return;
+
+  const DIAS_SEMANA_ES = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
+  const hoy = new Date();
+  const hoyISO = hoy.toISOString().slice(0, 10);
+  const diaHoy = DIAS_SEMANA_ES[hoy.getDay()];
+
+  const { data: promosRaw } = await supabase.from("promociones")
+    .select("id, titulo, descripcion, tipo, descuento_pct, ahorro_fijo, precio_normal, precio_descuento, fecha_inicio, fecha_fin, dias_aplica, aliado_id")
+    .eq("activa", true);
+
+  const deHoy = (promosRaw || []).filter(p => {
+    const enRango = (!p.fecha_inicio || p.fecha_inicio <= hoyISO) && (!p.fecha_fin || p.fecha_fin >= hoyISO);
+    const aplicaHoy = !p.dias_aplica || !p.dias_aplica.length || p.dias_aplica.includes(diaHoy);
+    return enRango && aplicaHoy;
+  }).slice(0, 3);
+
+  wrap.hidden = false;
+
+  if (deHoy.length) {
+    const idsAliados = [...new Set(deHoy.map(p => p.aliado_id))];
+    const { data: aliadosData } = await supabase.from("aliados_publico").select("id, nombre, imagen_url").in("id", idsAliados);
+    const aliadosMap = new Map((aliadosData || []).map(a => [a.id, a]));
+
+    tituloEl.textContent = "🎉 Promoción" + (deHoy.length > 1 ? "es" : "") + " de hoy";
+    grid.innerHTML = deHoy.map(p => {
+      const al = aliadosMap.get(p.aliado_id);
+      return `
+      <a class="aliado-mini" href="Directorio.html?abrir=${p.aliado_id}">
+        ${al?.imagen_url
+          ? `<img class="aliado-mini__ic" src="${esc(al.imagen_url)}" alt="" style="object-fit:cover">`
+          : `<span class="aliado-mini__ic">${ic("tag")}</span>`}
+        <span>
+          <span class="aliado-mini__name">${esc(al?.nombre || "Aliado")}</span><br>
+          <span class="aliado-mini__cat">${esc(p.titulo || p.descripcion || "")}</span>
+        </span>
+        <span class="aliado-mini__pct">${badgePromoDash(p)}</span>
+      </a>`;
+    }).join("");
+  } else {
+    const { data: productos } = await supabase.from("productos")
+      .select("id, nombre, descripcion, imagen_url, precio_normal, precio_descuento")
+      .eq("activo", true);
+    if (!productos || !productos.length) { wrap.hidden = true; return; }
+    const p = productos[Math.floor(Math.random() * productos.length)];
+    tituloEl.textContent = "🛍️ Producto destacado de hoy";
+    grid.innerHTML = `
+    <a class="aliado-mini" href="Perfil.html?panel=tienda">
+      ${p.imagen_url
+        ? `<img class="aliado-mini__ic" src="${esc(p.imagen_url)}" alt="" style="object-fit:cover">`
+        : `<span class="aliado-mini__ic">${ic("package")}</span>`}
+      <span>
+        <span class="aliado-mini__name">${esc(p.nombre)}</span><br>
+        <span class="aliado-mini__cat">${esc((p.descripcion || "").slice(0, 60))}</span>
+      </span>
+      <span class="aliado-mini__pct">${COP(p.precio_descuento || p.precio_normal)}</span>
+    </a>`;
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
 // Banner de reintento cuando falla la carga inicial del dashboard (ej. se
 // perdió la conexión justo al recuperar el celular de segundo plano) — sin
 // esto, la persona se queda viendo los spinners internos girar para siempre.
@@ -3458,6 +3541,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     cargarReferidos(userId);
     cargarMarcasCarrusel();
+    cargarPromoDelDia();
     cargarProfesionalesClub(plan);
   }).catch((err) => {
     // Sin esto, un fallo aquí (típico al recuperar conexión en móvil tras
