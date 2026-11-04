@@ -234,7 +234,7 @@
     </a>
   </div>
   <h2 class="display" style="text-align:center;font-size:clamp(34px,5.2vw,56px);line-height:1.05;padding:34px 20px 10px">Nuestros aliados <span class="italic-verde">comerciales</span></h2>
-  <div class="marcas-carrusel" id="marcas-carrusel-landing" aria-label="Marcas Amazon aliadas">
+  <div class="marcas-carrusel" id="marcas-carrusel-landing" aria-label="Aliados destacados">
     <div class="marcas-carrusel__track" id="marcas-track-landing"></div>
   </div>
   <script type="module">
@@ -242,14 +242,18 @@
     const track = document.getElementById('marcas-track-landing');
     const wrap  = document.getElementById('marcas-carrusel-landing');
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const { data } = await supabase.from('marcas_aliadas').select('nombre,logo_url,link_afiliado,categoria').eq('activa', true).order('orden', { ascending: true });
+    // Antes mostraba "marcas_aliadas" (marcas afiliadas tipo Amazon, cargadas
+    // a mano desde Admin). Ahora muestra los aliados reales marcados como
+    // "destacado" (la estrella en Admin > Aliados) -- coincide con lo que ya
+    // dice el título de esta sección, "Nuestros aliados comerciales".
+    const { data } = await supabase.from('aliados_publico').select('nombre,imagen_url,categoria,maps_url').eq('destacado', true);
     if (!data || !data.length) { wrap.classList.add('marcas-carrusel--vacio'); }
     else {
       const items = [...data, ...data];
       track.innerHTML = items.map(m => `<div class="marcas-carrusel__item">
         <div class="marcas-carrusel__col">
-          <a href="${m.link_afiliado || '#'}" target="_blank" rel="noopener" title="${esc(m.nombre)}">
-            <img src="${m.logo_url}" alt="${esc(m.nombre)}">
+          <a href="${m.maps_url || 'Directorio.html'}" target="_blank" rel="noopener" title="${esc(m.nombre)}">
+            <img src="${m.imagen_url}" alt="${esc(m.nombre)}">
           </a>
           ${m.categoria ? `<span class="marcas-carrusel__cat">${esc(m.categoria)}</span>` : ''}
         </div>

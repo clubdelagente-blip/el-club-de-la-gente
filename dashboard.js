@@ -3157,16 +3157,19 @@ async function cargarProfesionalesClub(plan) {
 }
 
 /* ---------- CARRUSEL MARCAS ---------- */
+// Antes mostraba "marcas_aliadas" (marcas afiliadas, cargadas a mano desde
+// Admin). Ahora muestra los aliados reales marcados como "destacado" (la
+// estrella en Admin > Aliados).
 async function cargarMarcasCarrusel() {
   const track = document.getElementById("marcas-track-dash");
   const wrap  = document.getElementById("marcas-carrusel-dash");
   if (!track) return;
-  const { data } = await supabase.from("marcas_aliadas").select("nombre,logo_url,link_afiliado").eq("activa", true).order("orden", { ascending: true });
+  const { data } = await supabase.from("aliados_publico").select("nombre,imagen_url,maps_url").eq("destacado", true);
   if (!data || !data.length) { if (wrap) wrap.style.display = "none"; return; }
   const items = [...data, ...data];
   track.innerHTML = items.map(m => `<div class="marcas-carrusel__item">
-    <a href="${m.link_afiliado || '#'}" target="_blank" rel="noopener" title="${esc(m.nombre)}">
-      <img src="${m.logo_url}" alt="${esc(m.nombre)}">
+    <a href="${m.maps_url || 'Directorio.html'}" target="_blank" rel="noopener" title="${esc(m.nombre)}">
+      <img src="${m.imagen_url}" alt="${esc(m.nombre)}">
     </a>
     <span class="marcas-carrusel__sep">✷</span>
   </div>`).join("");

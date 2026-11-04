@@ -50,7 +50,6 @@ const PANELES = {
   planes:       { t: "Planes", s: "Precios y beneficios de cada membresía" },
   profesionales:{ t: "Profesionales", s: "Asesores jurídicos, psicológicos y contables" },
   viajes:       { t: "Viajes Uber", s: "Historial de viajes aplicados por conductores del Club — anular o corregir" },
-  marcas:       { t: "Marcas", s: "Logos y links de afiliado que aparecen en el carrusel" },
   tienda:       { t: "Tienda del Club", s: "Productos que vende el Club directamente, con envío gestionado" },
   contenido:    { t: "Contenido", s: "Imágenes, videos y publicaciones de la web" },
   programas:    { t: "Programas sociales", s: "Programas, fundaciones, eventos y voluntarios" },
@@ -119,26 +118,6 @@ function renderMiembros() {
   window.cargarCategoriasInteresBreakdown?.();
   if (window.lucide) lucide.createIcons();
 }
-
-/* ============================================================
-   RENDER: MARCAS AMAZON
-   ============================================================ */
-function renderMarcas() {
-  $("#p-marcas").innerHTML = `
-    <div class="ad-toolbar">
-      <div class="ad-spacer"></div>
-      <button class="ad-btn ad-btn--verde" id="marca-add">${ic("plus")} Agregar marca</button>
-    </div>
-    <div class="ad-table-wrap">
-      <table class="ad-table">
-        <thead><tr><th>Marca</th><th>Link de afiliado</th><th>Orden</th><th style="text-align:right">Estado</th></tr></thead>
-        <tbody id="marcas-body"><tr><td colspan="4" style="text-align:center;padding:40px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
-      </table>
-    </div>`;
-  if (window.lucide) lucide.createIcons();
-  window.cargarMarcasAdmin?.();
-}
-window.renderMarcas = renderMarcas;
 
 /* ============================================================
    RENDER: SORTEOS
@@ -460,7 +439,7 @@ function irPanel(panel) {
     // referencia sin prefijo a un nombre que todavia no existe en ningun lado
     // (ni local ni en window) lanza ReferenceError y rompe TODO irPanel -- incluidos
     // paneles que no tienen nada que ver, como pasó con Dashboard.
-    const fn = ({ bandeja: renderBandeja, dashboard: renderDashboard, miembros: renderMiembros, aliados: window.renderAliados, planes: window.renderPlanes, profesionales: window.renderProfesionales, viajes: window.renderViajesUber, marcas: renderMarcas, tienda: renderTienda, contenido: renderContenido, programas: window.renderProgramas, educacion: renderEducacion, sorteos: renderSorteos, ventas: renderVentas, suscripciones: renderSuscripciones, contabilidad: window.renderContabilidad, config: renderConfig, agente: renderAgente, preguntas: window.renderPreguntas })[panel];
+    const fn = ({ bandeja: renderBandeja, dashboard: renderDashboard, miembros: renderMiembros, aliados: window.renderAliados, planes: window.renderPlanes, profesionales: window.renderProfesionales, viajes: window.renderViajesUber, tienda: renderTienda, contenido: renderContenido, programas: window.renderProgramas, educacion: renderEducacion, sorteos: renderSorteos, ventas: renderVentas, suscripciones: renderSuscripciones, contabilidad: window.renderContabilidad, config: renderConfig, agente: renderAgente, preguntas: window.renderPreguntas })[panel];
     if (fn) { fn(); RENDERED[panel] = true; }
   }
   if (window.lucide) lucide.createIcons();
