@@ -3721,6 +3721,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
         toast(id ? "Pregunta actualizada ✓" : "Pregunta agregada ✓");
         $("#ad-modal-ov").classList.remove("is-open");
         cargarPreguntasAdmin();
+        // Sin esto, una categoría nueva agregada aquí no aparecía en el
+        // formulario de aliado hasta recargar toda la página de Admin --
+        // CATS/SUBCATS solo se cargaban una vez al iniciar sesión.
+        cargarCategoriasClub();
       });
     }, 50);
   }
