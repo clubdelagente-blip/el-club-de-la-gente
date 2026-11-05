@@ -87,7 +87,7 @@ function ofertaGrandeHtml(p) {
   if (p.tipo === "2x1") return `<div class="pm-oferta__txt">2×1</div>`;
   if (p.tipo === "porcentaje") {
     const pct = pctDerivada(p);
-    return `<div class="pm-oferta__pct">${pct != null ? pct : ""}<span>%</span></div>`;
+    return `<div class="pm-oferta__pct">${pct != null ? pct : ""}<span>%<b>DCTO.</b></span></div>`;
   }
   if (p.tipo === "precio_especial" && p.precio_descuento != null) {
     return `

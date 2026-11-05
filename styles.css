@@ -490,7 +490,8 @@ a { color: inherit; text-decoration: none; }
   color: #EAB749; text-shadow: 0 3px 0 rgba(2,27,26,.25);
   transform: rotate(-9deg); transform-origin: left bottom;
 }
-.pm-oferta__pct span { font-size: 26px; font-weight: 600; margin-top: 8px; }
+.pm-oferta__pct span { font-size: 22px; font-weight: 600; margin-top: 10px; line-height: 1; }
+.pm-oferta__pct span b { display: block; font-size: 12px; font-weight: 800; letter-spacing: .03em; margin-top: 2px; }
 .pm-oferta__antes { font-size: 13px; color: rgba(255,255,255,.65); text-decoration: line-through; margin-bottom: 2px; }
 .pm-oferta__precio {
   font-family: var(--display); font-weight: 700; font-size: 38px; line-height: 1;
