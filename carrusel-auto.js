@@ -96,6 +96,14 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".marcas-carrusel, .promo-carrusel").forEach(iniciarCarrusel);
+    document.querySelectorAll(".marcas-carrusel").forEach(iniciarCarrusel);
+    // En celular, el carrusel de promos ya tiene su propio manejo en
+    // app-cms.js (una tarjeta completa por pantalla, con swipe) -- si este
+    // script también lo mueve ahí, los dos pelean por el mismo transform y
+    // la tarjeta queda partida a la mitad. Solo se activa en pantallas más
+    // grandes, donde no hay ese manejo dedicado.
+    if (!window.matchMedia("(max-width: 600px)").matches) {
+      document.querySelectorAll(".promo-carrusel").forEach(iniciarCarrusel);
+    }
   });
 })();
