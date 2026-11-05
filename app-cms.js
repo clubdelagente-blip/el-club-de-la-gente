@@ -79,6 +79,24 @@ function detalleVigencia(p) {
 function esMediaVideo(url) {
   return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url || "");
 }
+// Oferta grande de la tarjeta rediseñada (afiche) -- "GRATIS", "30%",
+// "2×1" o el precio con el "antes" tachado cuando hay precio de
+// referencia real (no inventado).
+function ofertaGrandeHtml(p) {
+  if (p.tipo === "regalo") return `<div class="pm-oferta__txt">¡GRATIS!</div>`;
+  if (p.tipo === "2x1") return `<div class="pm-oferta__txt">2×1</div>`;
+  if (p.tipo === "porcentaje") {
+    const pct = pctDerivada(p);
+    return `<div class="pm-oferta__pct">${pct != null ? pct : ""}<span>%</span></div>`;
+  }
+  if (p.tipo === "precio_especial" && p.precio_descuento != null) {
+    return `
+      ${p.precio_normal ? `<div class="pm-oferta__antes">Antes ${fmtCOP(p.precio_normal)}</div>` : ""}
+      <div class="pm-oferta__precio">${fmtCOP(p.precio_descuento)}</div>`;
+  }
+  if (p.tipo === "monto_fijo" && p.ahorro_fijo) return `<div class="pm-oferta__txt">-${fmtCOP(p.ahorro_fijo)}</div>`;
+  return `<div class="pm-oferta__txt">${esc(badgePromo(p))}</div>`;
+}
 function promoCardHtml(p, al) {
   const cc = colorCategoria(al?.categoria);
   const medios = (Array.isArray(p.fotos_urls) && p.fotos_urls.length ? p.fotos_urls : (p.foto_url ? [p.foto_url] : [])).slice(0, 4);
@@ -101,32 +119,23 @@ function promoCardHtml(p, al) {
       ${dotsHtml}
       <div class="pm-carrusel__fade"></div>
       <div class="pm-club-mark"><img src="icon-club-isotipo.png" alt="El Club de la Gente"></div>
-      <div class="pm-logo-pill">${al?.imagen_url ? `<img src="${al.imagen_url}" alt="${esc(al.nombre || "")}">` : `<span>${esc(al?.nombre || "Aliado")}</span>`}</div>
-      <div class="pm-name-pill">${esc(al?.nombre || "")}</div>
+      ${detalleVigencia(p) ? `<span class="pm-vigencia">${esc(detalleVigencia(p))}</span>` : ""}
     </div>
-    <div class="pm-base">
-      <div class="pm-cc ccv2--vitalicia">
-        <div class="ccv2-card ccv2-card--front">
-          <img src="marco-card.png" class="ccv2-frame-img" alt="">
-          <div class="ccv2-front__in">
-            <span class="ccv2-brand">CLUBCARD</span>
-            <div class="ccv2-mid"><img src="logo-club.png" class="ccv2-logo-img" alt=""></div>
-            <div class="ccv2-footer">
-              <div class="ccv2-name">DESCUENTO EXCLUSIVO</div>
-            </div>
+    <div class="pm-oferta">
+      ${ofertaGrandeHtml(p)}
+      <h3 class="pm-titulo">${esc(p.titulo || "Promoción")}</h3>
+      <div class="pm-oferta__pie">
+        <div class="pm-oferta__aliado">
+          <div class="pm-oferta__logo">${al?.imagen_url ? `<img src="${al.imagen_url}" alt="">` : ""}</div>
+          <div>
+            <div class="pm-oferta__nombre">${esc(al?.nombre || "")}</div>
+            <div class="pm-oferta__dir">${esc(al?.direccion || "Fusagasugá")}</div>
           </div>
         </div>
       </div>
-      <span class="pm-badge">${esc(badgePromo(p))}</span>
-      <h3 class="pm-titulo">${esc(p.titulo || al?.nombre || "Promo")}</h3>
-      <p class="pm-desc">${esc(p.descripcion || "")}</p>
-      ${detalleVigencia(p) ? `<span class="pm-vigencia">${esc(detalleVigencia(p))}</span>` : ""}
-    </div>
-    <div class="pm-footer">
-      <img class="pm-logo-club" src="logo-club.png" alt="El Club de la Gente">
     </div>
     <div class="pm-condiciones-wrap">
-      <button type="button" class="pm-condiciones" data-pm-condiciones>Condiciones de la promoción</button>
+      <p class="pm-condiciones-pie">Beneficio exclusivo para miembros activos de El Club de la Gente. <button type="button" class="pm-condiciones" data-pm-condiciones>Condiciones de la promoción</button></p>
       ${p.condiciones ? `<p class="pm-condiciones-txt" hidden>${esc(p.condiciones)}</p>` : ""}
     </div>
   </div>`;
@@ -596,7 +605,7 @@ async function cargarCarruselPromos() {
   const aliadoIds = [...new Set(promos.map(p => p.aliado_id))];
   const { data: aliadosData } = await supabase
     .from('aliados_publico')
-    .select('id, nombre, categoria, whatsapp, imagen_url')
+    .select('id, nombre, categoria, whatsapp, imagen_url, direccion')
     .in('id', aliadoIds);
   const aliadosMap = new Map((aliadosData || []).map(a => [a.id, a]));
 

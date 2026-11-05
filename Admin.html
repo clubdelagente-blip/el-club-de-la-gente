@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=107">
+  <link rel="stylesheet" href="styles.css?v=108">
   <link rel="stylesheet" href="admin.css?v=19">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -2413,6 +2413,26 @@ function pmBadgePreview(tipo){
   if(tipo==='regalo')return'🎁';
   return'Promo';
 }
+// Oferta grande de la tarjeta rediseñada (afiche) -- lee los mismos campos
+// del formulario que pmBadgePreview, pero en el formato grande/HTML.
+function pmOfertaGrandePreview(tipo){
+  if(tipo==='regalo')return `<div class="pm-oferta__txt">¡GRATIS!</div>`;
+  if(tipo==='2x1')return `<div class="pm-oferta__txt">2×1</div>`;
+  if(tipo==='porcentaje'){
+    const pct=parseInt($("#pr-pct")?.value)||0;
+    return `<div class="pm-oferta__pct">${pct||''}<span>%</span></div>`;
+  }
+  if(tipo==='precio_especial'){
+    const n=parseInt($("#pr-precio-n")?.value)||0;
+    const d=parseInt($("#pr-precio-d")?.value)||0;
+    return `${n?`<div class="pm-oferta__antes">Antes $${n.toLocaleString('es-CO')}</div>`:''}<div class="pm-oferta__precio">${d?'$'+d.toLocaleString('es-CO'):'$0'}</div>`;
+  }
+  if(tipo==='monto_fijo'){
+    const m=parseInt($("#pr-ahorro-fijo")?.value)||0;
+    return `<div class="pm-oferta__txt">${m?'-$'+m.toLocaleString('es-CO'):'Descuento'}</div>`;
+  }
+  return `<div class="pm-oferta__txt">${esc(pmBadgePreview(tipo))}</div>`;
+}
 const PM_MES_CORTO=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 function detalleVigenciaPreview(p){
   if(!p.fecha_fin)return '';
@@ -2437,33 +2457,24 @@ function promoCardHtmlPreview(p,al){
       ${dotsHtml}
       <div class="pm-carrusel__fade"></div>
       <div class="pm-club-mark"><img src="icon-club-isotipo.png" alt="El Club de la Gente"></div>
-      <div class="pm-logo-pill">${al?.imagen_url?`<img src="${al.imagen_url}" alt="${esc(al.nombre||'')}">`:`<span>${esc(al?.nombre||'Aliado')}</span>`}</div>
-      <div class="pm-name-pill">${esc(al?.nombre||'')}</div>
-    </div>
-    <div class="pm-base">
-      <div class="pm-cc ccv2--vitalicia">
-        <div class="ccv2-card ccv2-card--front">
-          <img src="marco-card.png" class="ccv2-frame-img" alt="">
-          <div class="ccv2-front__in">
-            <span class="ccv2-brand">CLUBCARD</span>
-            <div class="ccv2-mid"><img src="logo-club.png" class="ccv2-logo-img" alt=""></div>
-            <div class="ccv2-footer">
-              <div class="ccv2-name">DESCUENTO EXCLUSIVO</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <span class="pm-badge">${esc(pmBadgePreview(p.tipo))}</span>
-      <h3 class="pm-titulo">${esc(p.titulo||al?.nombre||'Promo')}</h3>
-      <p class="pm-desc">${esc(p.descripcion||'')}</p>
       ${detalleVigenciaPreview(p)?`<span class="pm-vigencia">${esc(detalleVigenciaPreview(p))}</span>`:''}
     </div>
-    <div class="pm-footer">
-      <img class="pm-logo-club" src="logo-club.png" alt="El Club de la Gente">
-      ${ctaHtml}
+    <div class="pm-oferta">
+      ${pmOfertaGrandePreview(p.tipo)}
+      <h3 class="pm-titulo">${esc(p.titulo||'Promoción')}</h3>
+      <div class="pm-oferta__pie">
+        <div class="pm-oferta__aliado">
+          <div class="pm-oferta__logo">${al?.imagen_url?`<img src="${al.imagen_url}" alt="">`:''}</div>
+          <div>
+            <div class="pm-oferta__nombre">${esc(al?.nombre||'')}</div>
+            <div class="pm-oferta__dir">${esc(al?.direccion||'Fusagasugá')}</div>
+          </div>
+        </div>
+        ${ctaHtml}
+      </div>
     </div>
     <div class="pm-condiciones-wrap">
-      <button type="button" class="pm-condiciones" data-pm-condiciones>Condiciones de la promoción</button>
+      <p class="pm-condiciones-pie">Beneficio exclusivo para miembros activos de El Club de la Gente. <button type="button" class="pm-condiciones" data-pm-condiciones>Condiciones de la promoción</button></p>
       ${p.condiciones?`<p class="pm-condiciones-txt" hidden>${esc(p.condiciones)}</p>`:''}
     </div>
   </div>`;

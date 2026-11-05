@@ -433,137 +433,79 @@ a { color: inherit; text-decoration: none; }
   background: linear-gradient(to bottom, transparent, rgba(2, 10, 8, .62) 85%);
   pointer-events: none;
 }
-.pm-logo-pill {
-  position: absolute; top: 16px; left: 16px; z-index: 3;
-  background: #fff; border-radius: 100px; padding: 7px 12px;
-  box-shadow: 0 8px 18px -8px rgba(0, 0, 0, .5);
-  display: flex; align-items: center; max-width: 46%;
-}
-.pm-logo-pill img { height: 20px; width: auto; max-width: 100%; display: block; object-fit: contain; }
-.pm-logo-pill span { font-family: "Permanent Marker", cursive; font-size: 13px; color: var(--tinta); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pm-name-pill {
-  position: absolute; top: 16px; right: 16px; z-index: 3;
-  background: rgba(2, 10, 8, .42); backdrop-filter: blur(4px);
-  color: #fff; border-radius: 100px; padding: 7px 14px;
-  font-size: 12px; font-weight: 700; letter-spacing: .01em;
-  max-width: 46%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
-.pm-base {
-  position: relative;
-  background: color-mix(in srgb, var(--pm-cc, var(--verde)) 13%, #fff);
-  padding: 0 16px 16px;
-  display: grid;
-  grid-template-columns: 196px 1fr;
-  grid-template-areas: "cc badge" "titulo titulo" "desc desc" "vigencia vigencia";
-  column-gap: 14px;
-  row-gap: 6px;
-  align-items: start;
-}
-
-/* Sello del % -- llamativo, a medio camino entre el carrusel y la franja de
-   abajo (mismo recurso que la ClubCard del otro lado: margen negativo para
-   que se asome, en vez de quedar encerrado en el carrusel). */
-.pm-badge {
-  grid-area: badge;
-  justify-self: end;
-  margin-top: -68px;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--pm-cc, var(--verde)); color: #fff;
-  font-weight: 800; font-size: 27px; letter-spacing: .01em;
-  padding: 12px 20px; border-radius: 16px;
-  box-shadow: 0 14px 28px -8px rgba(0, 0, 0, .6), 0 0 0 3px #fff;
-  white-space: nowrap;
-  position: relative; z-index: 3;
-}
-
-/* Mini ClubCard real (copia reducida de .ccv2 en estilos.css, fijada en el
-   tema Vitalicia negro/dorado) -- mismo lugar que en la referencia: se
-   asoma por encima del carrusel, abajo a la izquierda. Tamaños en px fijos
-   (no clamp/vw como el original) porque aquí SÍ está pensada para verse
-   chica, a propósito. Ya no muestra el tipo de promo adentro -- solo
-   "Descuento exclusivo"; el % se movió junto al título (.pm-badge). */
-.pm-cc {
-  grid-area: cc;
-  width: 196px;
-  margin-top: -104px;
-  transform: rotate(-4deg);
-  filter: drop-shadow(0 16px 20px rgba(0, 0, 0, .4));
-  position: relative;
-  z-index: 2;
-}
-.pm-cc .ccv2-card {
-  position: relative; aspect-ratio: 1.586; border-radius: 13px; overflow: hidden; isolation: isolate;
-  background: radial-gradient(120% 140% at 50% 0%, #1a1a1a 0%, #0d0d0d 60%, #030303 100%);
-  box-shadow: 0 0 0 1.5px rgba(234, 183, 73, .4), inset 0 0 60px rgba(234, 183, 73, .06);
-}
-.pm-cc .ccv2-frame-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; filter: invert(1) brightness(12) contrast(10); mix-blend-mode: screen; z-index: 1; pointer-events: none; }
-.pm-cc .ccv2-front__in { position: absolute; inset: 0; padding: 10% 11% 12%; display: flex; flex-direction: column; z-index: 2; mix-blend-mode: screen; }
-.pm-cc .ccv2-brand { text-align: center; font-size: 9px; font-weight: 700; letter-spacing: .3em; color: #EAB749; text-indent: .3em; margin-top: 4%; }
-.pm-cc .ccv2-mid { flex: 1; display: flex; align-items: center; justify-content: center; }
-.pm-cc .ccv2-logo-img { width: 42%; max-height: 32px; filter: invert(1); object-fit: contain; display: block; margin: 0 auto; }
-.pm-cc .ccv2-footer { display: flex; align-items: center; justify-content: center; }
-.pm-cc .ccv2-name { font-size: 8px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; text-align: center; color: #EAB749; }
-
-/* min-height (no solo line-clamp) a propósito en título y descripción --
-   el clamp solo pone un TOPE de líneas, pero una promo con texto corto
-   ocupaba menos alto real que una con texto largo, y en el carrusel de
-   escritorio (varias tarjetas en fila) eso se notaba como un escalón entre
-   tarjetas. Reservando el espacio de 2 y 6 líneas siempre, todas quedan
-   parejas tenga el texto que tenga cada una. */
-.pm-titulo { grid-area: titulo; text-align: center; font-family: var(--display); font-style: italic; font-size: 21px; font-weight: 600; color: var(--tinta); margin: 0; line-height: 1.15; min-height: 2.3em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.pm-desc { grid-area: desc; font-size: 12.5px; color: var(--tinta-60); line-height: 1.5; margin: 0; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; min-height: 9em; }
-/* Antes era una línea de texto gris -- ahora un sticker amarillo tipo
-   "SOLO HASTA [fecha]", igual de llamativo que el badge del %. */
-.pm-vigencia {
-  grid-area: vigencia; justify-self: start;
-  display: inline-flex; align-items: center;
-  background: #EAB749; color: var(--negro);
-  font-weight: 800; font-size: 10.5px; letter-spacing: .02em; text-transform: uppercase;
-  padding: 5px 11px; border-radius: 6px; transform: rotate(-2deg);
-  box-shadow: 0 6px 14px -8px rgba(2, 27, 26, .5);
-  margin: 4px 0 0;
-}
-
-/* Marca del Club -- insignia chica, centrada arriba del carrusel de fotos,
-   para que siempre se vea de quién es la plataforma aunque el aliado tenga
-   su propio logo a un lado (.pm-logo-pill) y su nombre al otro
-   (.pm-name-pill). */
+/* Marca del Club -- insignia chica arriba a la izquierda del carrusel de
+   fotos, como en el afiche de referencia. */
 .pm-club-mark {
-  position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 4;
-  width: 36px; height: 36px; border-radius: 50%;
+  position: absolute; top: 14px; left: 14px; z-index: 4;
+  width: 34px; height: 34px; border-radius: 50%;
   background: #fff; display: flex; align-items: center; justify-content: center;
   box-shadow: 0 8px 18px -8px rgba(0, 0, 0, .5);
 }
-.pm-club-mark img { width: 24px; height: 24px; object-fit: contain; display: block; }
-
-/* Pie de la tarjeta -- a propósito "fuera" del marco de color (border-top
-   en vez de heredar el fondo con tinte de categoría), con el logo del Club
-   y el botón de WhatsApp, como el "Toca para aprovecharla" del flyer viejo. */
-.pm-footer {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 5px 16px; border-top: 1px solid var(--linea); background: #fff;
+.pm-club-mark img { width: 22px; height: 22px; object-fit: contain; display: block; }
+/* Sticker "SOLO HASTA [fecha]" -- mismo lugar donde antes iba el nombre del
+   aliado (.pm-name-pill, ahora se mudó a .pm-oferta__nombre abajo). */
+.pm-vigencia {
+  position: absolute; top: 14px; right: 14px; z-index: 4;
+  display: inline-flex; align-items: center;
+  background: #EAB749; color: var(--negro);
+  font-weight: 800; font-size: 10.5px; letter-spacing: .02em; text-transform: uppercase;
+  padding: 6px 11px; border-radius: 6px; transform: rotate(3deg);
+  box-shadow: 0 6px 14px -8px rgba(2, 27, 26, .5);
 }
+
+/* Franja de oferta -- el bloque de color sólido (categoría) con el
+   precio/porcentaje/regalo GRANDE como protagonista, igual que en el
+   afiche de referencia. Reemplaza la ClubCard chica + el sello del %
+   que tenía la versión anterior. */
+.pm-oferta {
+  position: relative;
+  background: var(--pm-cc, var(--verde));
+  color: #fff;
+  padding: 20px 18px 16px;
+}
+.pm-oferta__txt {
+  font-family: var(--display); font-weight: 700; font-size: 44px; line-height: .95;
+  letter-spacing: -.01em; text-transform: uppercase;
+}
+.pm-oferta__pct {
+  font-family: var(--display); font-weight: 700; font-size: 64px; line-height: .85;
+  display: flex; align-items: flex-start; gap: 2px;
+}
+.pm-oferta__pct span { font-size: 26px; font-weight: 600; margin-top: 8px; }
+.pm-oferta__antes { font-size: 13px; color: rgba(255,255,255,.65); text-decoration: line-through; margin-bottom: 2px; }
+.pm-oferta__precio { font-family: var(--display); font-weight: 700; font-size: 38px; line-height: 1; }
+.pm-titulo {
+  font-family: var(--display); font-weight: 500; font-size: 18px; font-style: italic;
+  color: #fff; margin: 8px 0 0; line-height: 1.2;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.pm-oferta__pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; }
+.pm-oferta__aliado { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.pm-oferta__logo { width: 34px; height: 34px; flex: none; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.18); }
+.pm-oferta__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pm-oferta__nombre { font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+.pm-oferta__dir { font-size: 10.5px; color: rgba(255,255,255,.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+
 .pm-wa, .pm-wa-lock {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 100px;
+  display: inline-flex; align-items: center; gap: 5px; flex: none;
+  font-size: 11px; font-weight: 700; padding: 8px 14px; border-radius: 100px;
   text-decoration: none; border: none; cursor: pointer; font-family: inherit;
 }
-.pm-wa { background: #1DA851; color: #fff; box-shadow: 0 8px 16px -8px rgba(29, 168, 81, .6); }
+.pm-wa { background: var(--negro); color: #fff; }
 .pm-wa svg { width: 13px; height: 13px; flex: none; }
-.pm-wa-lock { background: #fdecea; color: #b45309; }
+.pm-wa-lock { background: rgba(255,255,255,.9); color: #b45309; }
 .pm-wa-lock i, .pm-wa-lock svg { width: 12px; height: 12px; flex: none; }
-.pm-logo-club { height: 14px; opacity: .78; }
 
-/* Link de condiciones -- siempre lleva a algo: al texto propio de la promo
-   si el aliado lo escribió (se abre ahí mismo, sin salir de la tarjeta), o
-   a los Términos y condiciones generales si no. */
-.pm-condiciones-wrap { padding: 8px 16px 14px; background: #fff; border-top: 1px solid var(--linea); }
+/* Pie -- beneficio + link de condiciones, siempre lleva a algo: al texto
+   propio de la promo si el aliado lo escribió (se abre ahí mismo, sin
+   salir de la tarjeta), o a los Términos y condiciones generales si no. */
+.pm-condiciones-wrap { padding: 10px 16px 14px; background: #fff; }
+.pm-condiciones-pie { font-size: 10.5px; color: var(--tinta-45); line-height: 1.5; margin: 0; }
 .pm-condiciones {
   background: none; border: none; padding: 0; cursor: pointer; font-family: inherit;
   font-size: 10.5px; color: var(--tinta-45); text-decoration: underline; text-underline-offset: 2px;
 }
-.pm-condiciones-txt { font-size: 11.5px; color: var(--tinta-60); line-height: 1.5; margin: 8px 0 0; }
+.pm-condiciones-txt { font-size: 11.5px; color: var(--tinta-60); line-height: 1.5; margin: 6px 0 0; }
 .tienda-hero { position: relative; border-radius: 18px; padding: 26px 22px; overflow: hidden; background: radial-gradient(120% 140% at 15% 0%, #164a2c 0%, #0c2e1b 55%, #05160d 100%); background-size: cover; background-position: center; color: #fff; box-sizing: border-box; min-height: 150px; display: flex; flex-direction: column; justify-content: center; }
 .tienda-hero--img { background-blend-mode: overlay; }
 .tienda-hero__eyebrow { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #00DF81; margin-bottom: 8px; }
