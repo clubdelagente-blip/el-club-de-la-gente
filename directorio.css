@@ -21,19 +21,9 @@ body { background: transparent; }
   background-color: #FDFAF4;
 }
 
-/* ---------- LAYOUT: arriba fijo (título/buscador/categorías), solo la
-   grilla de aliados hace scroll ---------- */
-body {
-  display: flex; flex-direction: column;
-  height: 100vh; height: 100dvh; overflow: hidden;
-}
-#dir-fixed-top { flex: none; }
-#dir-scroll {
-  flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y;
-}
-
 /* ---------- HEADER DEL DIRECTORIO ---------- */
 .dir-top {
+  position: sticky; top: 0; z-index: 100;
   background: rgba(241, 247, 246,0.82);
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--linea);
@@ -69,13 +59,18 @@ body {
 
 /* ---------- BUSCADOR + FILTROS ---------- */
 /* Mismo patrón de figuritas que el fondo fijo de la página (ver
-   #fondo-fijo arriba), para que esta franja se sienta parte de él. Ya no
-   necesita "sticky" ni "background-attachment: fixed" -- ahora vive dentro
-   de #dir-fixed-top, que nunca se mueve (ver el layout de más arriba). */
+   #fondo-fijo arriba), para que esta franja se sienta parte de él --
+   "fixed" para que el patrón quede quieto y no se note la costura con el
+   de #fondo-fijo. Lleva su propio background-color siempre (cubre del
+   todo aunque algún navegador ignore el "fixed"), así que el buscador y
+   las categorías nunca quedan transparentes ni dejan ver la grilla detrás
+   cuando esta franja queda pegada arriba (position: sticky). */
 .dir-tools {
+  position: sticky; top: var(--nav-h); z-index: 60;
   background-image: linear-gradient(rgba(253, 250, 244, .85), rgba(253, 250, 244, .85)), url("patron-fondo-vainilla.png?v=1");
   background-repeat: repeat, repeat;
   background-size: 400px auto, 400px auto;
+  background-attachment: fixed, fixed;
   background-color: #FDFAF4;
   padding: 22px 0 18px; border-bottom: 1px solid var(--linea);
 }
@@ -273,6 +268,7 @@ body {
   .dir-top .logo { grid-column: 2; justify-self: center; }
   .dir-burger { display: flex; grid-column: 1; justify-self: start; }
   .dir-top__right { grid-column: 3; justify-self: end; }
+  .dir-tools { top: var(--nav-h); }
   .calc__grid, .calc__result { grid-template-columns: 1fr; }
   .calc__actions .btn { min-width: 100%; }
 
@@ -291,9 +287,8 @@ body {
   .dir-card--proximo__titulo { font-size: 14.5px; }
   .dir-card--proximo__txt { font-size: 10.5px; }
 
-  /* Deja aire abajo para que la barra fija no tape las últimas tarjetas --
-     en #dir-scroll (lo único que hace scroll ahora), no en body. */
-  #dir-scroll { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); }
+  /* Deja aire abajo para que la barra fija no tape las últimas tarjetas */
+  body { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); }
 }
 
 /* ---------- Barra inferior (solo móvil) -- misma de Perfil.html/dashboard.css,
