@@ -87,7 +87,7 @@
 }
 .sb-link i, .sb-link svg { width: 18px !important; height: 18px !important; flex: none; }
 .sb-link:hover { background: var(--crema-2); color: var(--tinta); }
-.sb-link.is-active { background: var(--negro); color: var(--crema); }
+.sb-link.is-active { background: #EAB749; color: var(--negro); }
 .sb-link__badge { margin-left: auto; font-size: 10px; font-weight: 700; background: var(--verde-soft); color: var(--verde); padding: 2px 8px; border-radius: 100px; }
 
 /* plan activo */
@@ -204,6 +204,10 @@
 .card__title { font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 .card__link { font-size: 12.5px; font-weight: 600; color: var(--verde); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: none; border: none; font-family: var(--cuerpo); }
 .card__link:hover { gap: 10px; }
+/* Solo el link "Actualizar" de categorías de interés -- .card__link se
+   reutiliza en otras tarjetas que siguen en verde, no se tocó la clase
+   entera a propósito. */
+#editar-cats { color: #9c6b0a; }
 
 /* clubcard wrapper en dashboard */
 .cc-wrap { display: flex; flex-direction: column; gap: 14px; }
