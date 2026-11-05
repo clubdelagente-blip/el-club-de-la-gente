@@ -666,6 +666,11 @@ async function cargarCarruselPromos() {
           if (idx >= promos.length) {
             idx -= promos.length;
             track.style.transition = 'none';
+            // Fuerza al navegador a aplicar "sin transición" antes de mover
+            // la tarjeta -- si no, en Safari/iOS a veces el cambio de
+            // transición y el de posición quedan en el mismo paquete visual
+            // y el salto se ve animado hacia atrás (como si retrocediera).
+            void track.offsetWidth;
             track.style.transform = `translateX(calc(-${idx * 100}vw))`;
           }
         }, 360);
