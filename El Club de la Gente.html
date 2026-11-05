@@ -82,13 +82,18 @@
        "lavado" y casi no se notaba fuera del hero/footer; ahora se ve
        igual de marcado en toda la página. El texto por defecto pasa a
        claro para leerse sobre ese fondo. */
-    body {
+    /* El fondo ya no vive en el body ni en cada sección -- en celular
+       (sobre todo iOS/Safari) "background-attachment: fixed" se ignora o
+       se ve con tirones. En su lugar hay un panel fijo de verdad detrás de
+       todo (#fondo-fijo, position:fixed) con el mismo patrón; body y las
+       secciones oscuras quedan transparentes para que se vea a través. */
+    body { background: transparent; color: var(--crema-en-negro); }
+    #fondo-fijo {
+      position: fixed; inset: 0; z-index: -1; pointer-events: none;
       background-image: url("patron-fondo-oscuro.png?v=1");
       background-repeat: repeat;
       background-size: 400px auto;
-      background-attachment: fixed;
       background-color: var(--negro);
-      color: var(--crema-en-negro);
     }
     /* El amarillo pasa a ser el único acento vivo ahora que todo el fondo es
        oscuro (antes era verde en las zonas claras y amarillo solo en hero). */
@@ -113,13 +118,7 @@
        encima del body, así que tapaba el patrón de figuritas aunque el
        body ya lo tuviera -- se le pone el mismo patrón a cada sección
        también, para que se vea parejo en toda la página. ---- */
-    .seccion--negro {
-      background-image: url("patron-fondo-oscuro.png?v=1");
-      background-repeat: repeat;
-      background-size: 400px auto;
-      background-attachment: fixed;
-      background-color: var(--negro);
-    }
+    .seccion--negro { background: transparent; }
 
     /* ---- Párrafo principal de cada sección: fondo amarillo para que
        resalte el texto sobre el fondo oscuro, como un marcador. ---- */
@@ -151,11 +150,7 @@
        sobre el fondo grafito, en vez del verde que ahí se vería apagado. */
     .hero {
       padding-top: 0;
-      background-image: url("patron-fondo-oscuro.png?v=1");
-      background-repeat: repeat;
-      background-size: 400px auto;
-      background-attachment: fixed;
-      background-color: var(--negro);
+      background: transparent;
       color: var(--crema-en-negro);
     }
     .hero .masthead { color: var(--tinta-clara-60); border-bottom-color: var(--linea-clara); }
@@ -195,6 +190,7 @@
   </style>
 </head>
 <body>
+  <div id="fondo-fijo" aria-hidden="true"></div>
   <div class="page-loader" id="page-loader"><img src="icon-club.png" alt=""></div>
   <script>(function(){var l=document.getElementById('page-loader');function ocultar(){if(!l)return;l.classList.add('is-hidden');setTimeout(function(){l.remove();},400);}window.addEventListener('load',ocultar);setTimeout(ocultar,4000);})();</script>
 

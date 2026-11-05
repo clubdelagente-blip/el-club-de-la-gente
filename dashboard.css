@@ -28,13 +28,18 @@
 /* Mismo patrón de la portada, recoloreado a blanco vainilla con figuritas
    en gris -- lavado con una capa casi opaca encima para que las figuras
    casi no se noten, solo como textura de fondo. */
-.dash-body {
+/* El patrón ya no vive en el body -- en celular (sobre todo iOS/Safari)
+   "background-attachment: fixed" se ignora o se ve con tirones. En su
+   lugar hay un panel fijo de verdad detrás de todo (#fondo-fijo,
+   position:fixed) con el mismo patrón; el body queda transparente para
+   que se vea a través. */
+.dash-body { background: transparent; min-height: 100vh; }
+#fondo-fijo {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background-image: linear-gradient(rgba(253, 250, 244, .85), rgba(253, 250, 244, .85)), url("patron-fondo-vainilla.png?v=1");
   background-repeat: repeat, repeat;
   background-size: 400px auto, 400px auto;
-  background-attachment: fixed, fixed;
   background-color: #FDFAF4;
-  min-height: 100vh;
 }
 
 /* ---------- Layout ---------- */
