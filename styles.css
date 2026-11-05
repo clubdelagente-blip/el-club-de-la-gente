@@ -428,11 +428,6 @@ a { color: inherit; text-decoration: none; }
 }
 .pm-carrusel__hint svg, .pm-carrusel__hint i { width: 16px; height: 16px; animation: pm-hint-nudge 1.6s ease-in-out infinite; }
 @keyframes pm-hint-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(3px); } }
-.pm-carrusel__fade {
-  position: absolute; left: 0; right: 0; bottom: 0; height: 42%; z-index: 1;
-  background: linear-gradient(to bottom, transparent, rgba(2, 10, 8, .62) 85%);
-  pointer-events: none;
-}
 /* Marca del Club -- insignia chica arriba a la izquierda del carrusel de
    fotos, como en el afiche de referencia. */
 .pm-club-mark {
@@ -443,14 +438,17 @@ a { color: inherit; text-decoration: none; }
 }
 .pm-club-mark img { width: 22px; height: 22px; object-fit: contain; display: block; }
 /* "¡Aprovecha!" con flecha curva -- mismo recurso del afiche de
-   referencia, señalando hacia la oferta de abajo. */
+   referencia. Ya no vive adentro de .pm-carrusel (que tiene
+   overflow:hidden y la cortaba) sino directo en .pm-card, para que la
+   flecha pueda estirarse hacia abajo y señalar la oferta grande, no solo
+   la foto. */
 .pm-aprovecha {
   position: absolute; top: 38px; left: 20px; z-index: 3; color: #fff;
   display: flex; flex-direction: column; align-items: flex-start; pointer-events: none;
   filter: drop-shadow(0 2px 5px rgba(0,0,0,.45));
 }
 .pm-aprovecha__txt { font-family: "Permanent Marker", cursive; font-size: 17px; transform: rotate(-4deg); white-space: nowrap; }
-.pm-aprovecha__flecha { width: 44px; height: 52px; margin: 2px 0 0 14px; }
+.pm-aprovecha__flecha { width: 70px; height: 192px; margin: 2px 0 0 14px; }
 /* Sticker "SOLO HASTA [fecha]" -- mismo lugar donde antes iba el nombre del
    aliado (.pm-name-pill, ahora se mudó a .pm-oferta__nombre abajo). */
 .pm-vigencia {
@@ -477,21 +475,27 @@ a { color: inherit; text-decoration: none; }
   margin-top: -58px;
   clip-path: polygon(0 58px, 100% 0, 100% 100%, 0 100%);
 }
+/* Rotada para seguir el mismo ángulo ascendente del corte diagonal de
+   arriba (unos 9°, lo que sube el clip-path en 58px a lo ancho de la
+   tarjeta). */
 .pm-oferta__txt {
   font-family: var(--display); font-weight: 700; font-size: 44px; line-height: .95;
   letter-spacing: -.01em; text-transform: uppercase;
   color: #EAB749; text-shadow: 0 3px 0 rgba(2,27,26,.25);
+  display: inline-block; transform: rotate(-9deg); transform-origin: left bottom;
 }
 .pm-oferta__pct {
   font-family: var(--display); font-weight: 700; font-size: 64px; line-height: .85;
   display: flex; align-items: flex-start; gap: 2px;
   color: #EAB749; text-shadow: 0 3px 0 rgba(2,27,26,.25);
+  transform: rotate(-9deg); transform-origin: left bottom;
 }
 .pm-oferta__pct span { font-size: 26px; font-weight: 600; margin-top: 8px; }
 .pm-oferta__antes { font-size: 13px; color: rgba(255,255,255,.65); text-decoration: line-through; margin-bottom: 2px; }
 .pm-oferta__precio {
   font-family: var(--display); font-weight: 700; font-size: 38px; line-height: 1;
   color: #EAB749; text-shadow: 0 3px 0 rgba(2,27,26,.25);
+  display: inline-block; transform: rotate(-9deg); transform-origin: left bottom;
 }
 .pm-titulo {
   font-family: var(--display); font-weight: 500; font-size: 18px; font-style: italic;

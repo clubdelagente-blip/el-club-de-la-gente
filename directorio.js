@@ -507,13 +507,12 @@ function promoCardHtml(p, al) {
       <div class="pm-carrusel__track">${slidesHtml}</div>
       ${medios.length > 1 ? `<div class="pm-carrusel__hint">${ic("chevron-right")}</div>` : ""}
       ${dotsHtml}
-      <div class="pm-carrusel__fade"></div>
       <div class="pm-club-mark"><img src="icon-club-isotipo.png" alt="El Club de la Gente"></div>
       ${detalleVigencia(p) ? `<span class="pm-vigencia">${esc(detalleVigencia(p))}</span>` : ""}
-      <div class="pm-aprovecha">
-        <span class="pm-aprovecha__txt">¡Aprovecha!</span>
-        <svg class="pm-aprovecha__flecha" viewBox="0 0 60 70" fill="none"><path d="M6 4C4 30 10 52 48 58" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/><path d="M36 52L49 59L45 45" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-      </div>
+    </div>
+    <div class="pm-aprovecha">
+      <span class="pm-aprovecha__txt">¡Aprovecha!</span>
+      <svg class="pm-aprovecha__flecha" viewBox="0 0 80 220" fill="none"><path d="M14 10C4 70 4 160 55 200" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M40 192L57 203L54 183" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
     </div>
     <div class="pm-oferta">
       ${ofertaGrandeHtml(p)}
