@@ -358,8 +358,7 @@ a { color: inherit; text-decoration: none; }
    -50% de translateX, que así cae justo donde empieza la copia duplicada.
    Con padding en el track, ese 50% ya no caía en el punto exacto y se veía
    un salto/brinco cada vuelta -- por eso "no completaba la vuelta" bien. */
-.promo-carrusel__track { display: flex; align-items: flex-start; gap: 28px; width: max-content; animation: scroll-x 20s linear infinite; }
-@media (hover: hover) { .promo-carrusel__track:hover { animation-play-state: paused; } }
+.promo-carrusel__track { display: flex; align-items: flex-start; gap: 28px; width: max-content; }
 /* .promo-card ahora solo sirve para el caso "flyer" (una sola imagen
    pre-generada) -- el resto del diseño vive en PromoCard v2 (.pm-*). */
 .promo-card { background: #fff; border: 1.5px solid var(--pc-cc, var(--linea)); border-radius: 18px; overflow: hidden; width: 520px; flex-shrink: 0; box-shadow: 0 4px 24px rgba(0,0,0,.06); transition: transform .3s ease, box-shadow .3s ease; }
