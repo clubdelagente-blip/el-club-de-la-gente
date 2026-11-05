@@ -31,6 +31,11 @@ body { background: transparent; }
 .dir-top .wrap { display: flex; align-items: center; justify-content: space-between; height: var(--nav-h); gap: 20px; }
 .dir-top__right { display: flex; align-items: center; gap: 14px; font-size: 12px; font-weight: 600; letter-spacing: .04em; color: var(--tinta-60); }
 
+/* Botón de menú (3 líneas) -- misma esquina/estilo que el burger de la
+   portada y el de Perfil.html, pero el panel es propio de esta página. */
+.dir-burger { display: none; background: none; border: none; padding: 8px; color: var(--tinta); cursor: pointer; align-items: center; justify-content: center; }
+.dir-burger svg, .dir-burger i { width: 24px; height: 24px; }
+
 /* ---------- HERO / ENCABEZADO EDITORIAL ---------- */
 .dir-hero { padding: 26px 0 18px; position: relative; overflow: hidden; }
 .dir-hero::before {
@@ -46,8 +51,23 @@ body { background: transparent; }
   font-size: clamp(26px, 5vw, 44px); margin: 0; text-wrap: balance; position: relative; z-index: 2;
 }
 
+/* ---------- MENÚ (panel del burger) ---------- */
+/* Reutiliza el panel .nav__mobile de styles.css (mismo look: lista blanca
+   que baja desde el header) con id propio para esta página. */
+#dir-menu a { display: flex; align-items: center; gap: 12px; }
+#dir-menu a i, #dir-menu a svg { width: 18px; height: 18px; color: var(--verde); flex: none; }
+
 /* ---------- BUSCADOR + FILTROS ---------- */
-.dir-tools { position: sticky; top: var(--nav-h); z-index: 60; background: var(--crema); padding: 22px 0 18px; border-bottom: 1px solid var(--linea); }
+/* Mismo patrón de figuritas que el fondo fijo de la página (ver
+   #fondo-fijo arriba), para que esta franja se sienta parte de él. */
+.dir-tools {
+  position: sticky; top: var(--nav-h); z-index: 60;
+  background-image: linear-gradient(rgba(253, 250, 244, .85), rgba(253, 250, 244, .85)), url("patron-fondo-vainilla.png?v=1");
+  background-repeat: repeat, repeat;
+  background-size: 400px auto, 400px auto;
+  background-color: #FDFAF4;
+  padding: 22px 0 18px; border-bottom: 1px solid var(--linea);
+}
 .dir-search { position: relative; max-width: 520px; }
 .dir-search svg { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); width: 19px; height: 19px; color: var(--tinta-45); pointer-events: none; }
 .dir-search input {
@@ -58,21 +78,28 @@ body { background: transparent; }
 .dir-search input::placeholder { color: var(--tinta-45); }
 .dir-search input:focus { outline: none; border-color: var(--verde); box-shadow: 0 0 0 3px var(--verde-soft); }
 
-.dir-filtros { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+/* Mismo criterio visual que los íconos de categoría de la Tienda del Club
+   (.tienda-cat-ic): círculo de color + texto debajo, en fila con scroll
+   horizontal en vez de pastillas envueltas. */
+.dir-filtros { display: flex; gap: 16px; overflow-x: auto; padding: 2px 2px 6px; margin-top: 18px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.dir-filtros::-webkit-scrollbar { display: none; height: 0; }
 .dir-chip {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--cuerpo); font-size: 12.5px; font-weight: 700; letter-spacing: .02em;
-  padding: 9px 18px; border-radius: 100px; border: 1.5px solid var(--linea-fuerte); background: #fff; color: var(--tinta);
-  transition: background .22s, color .22s, border-color .22s, transform .2s, box-shadow .22s;
+  display: flex; flex-direction: column; align-items: center; gap: 7px; flex: 0 0 auto;
+  font-family: var(--cuerpo); background: none; border: none; cursor: pointer; padding: 2px;
 }
-.dir-chip__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cc, var(--verde)); flex: none; transition: transform .2s; }
-.dir-chip:hover { border-color: var(--cc, var(--verde)); color: var(--cc, var(--verde)); transform: translateY(-1px); }
-.dir-chip:hover .dir-chip__dot { transform: scale(1.3); }
-.dir-chip.is-on { background: var(--cc, var(--negro)); color: #fff; border-color: var(--cc, var(--negro)); box-shadow: 0 10px 22px -12px var(--cc-glow, rgba(2,27,26,.5)); }
-.dir-chip.is-on .dir-chip__dot { background: #fff; }
-.dir-chip[data-grupo="Todos"] { background: var(--negro); color: var(--crema); border-color: var(--negro); }
-.dir-chip[data-grupo="Todos"]:not(.is-on) { background: transparent; color: var(--tinta); }
-.dir-chip[data-grupo="Todos"].is-on { background: var(--negro); border-color: var(--negro); box-shadow: 0 10px 22px -12px rgba(2,27,26,.5); }
+.dir-chip__circle {
+  width: 56px; height: 56px; border-radius: 50%; flex: none;
+  background: var(--cc-soft, var(--crema-2)); color: var(--cc, var(--verde));
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s, color .2s, transform .2s;
+}
+.dir-chip__circle svg, .dir-chip__circle i { width: 24px; height: 24px; }
+.dir-chip__lbl { font-size: 10.5px; font-weight: 700; letter-spacing: .01em; color: var(--tinta-60); max-width: 74px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dir-chip:hover .dir-chip__circle { transform: scale(1.06); }
+.dir-chip.is-on .dir-chip__circle { background: var(--cc, var(--negro)); color: #fff; box-shadow: 0 10px 20px -10px var(--cc-glow, rgba(2,27,26,.5)); }
+.dir-chip.is-on .dir-chip__lbl { color: var(--tinta); font-weight: 800; }
+.dir-chip[data-grupo="Todos"] .dir-chip__circle { background: var(--crema-2); color: var(--tinta); }
+.dir-chip[data-grupo="Todos"].is-on .dir-chip__circle { background: var(--negro); color: #fff; }
 
 /* ---------- GRID DE ALIADOS (3 columnas) ---------- */
 .dir-meta { display: flex; align-items: baseline; justify-content: space-between; margin: 30px 0 22px; }
@@ -125,6 +152,34 @@ body { background: transparent; }
   font-size: 10.5px; font-weight: 700; letter-spacing: .02em;
 }
 .dir-card__lock svg { width: 12px; height: 12px; flex: none; }
+
+/* ---------- Tarjeta "Próximamente más aliados" (cierra el grid) ---------- */
+@keyframes dir-proximo-brillo { 0%, 100% { opacity: .55; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+.dir-card--proximo {
+  background: linear-gradient(165deg, var(--negro), #0a2a28 65%, var(--negro));
+  border: 1.5px dashed rgba(241,247,246,.3); border-radius: 22px;
+  padding: 28px 18px 24px; display: flex; flex-direction: column; align-items: center; text-align: center;
+  position: relative; overflow: hidden; cursor: default;
+  animation: dir-card-in .5s cubic-bezier(.2,.8,.2,1) backwards;
+}
+.dir-card--proximo::before {
+  content: ""; position: absolute; inset: -40% -20% auto -20%; height: 220px;
+  background: radial-gradient(220px 160px at 50% 0%, rgba(0,223,129,.28), transparent 70%);
+  pointer-events: none;
+}
+.dir-card--proximo__ic {
+  width: 64px; height: 64px; border-radius: 50%; flex: none; margin-bottom: 14px;
+  display: grid; place-items: center; background: rgba(0,223,129,.14); color: var(--verde-claro);
+  position: relative; z-index: 1; animation: dir-proximo-brillo 2.2s ease-in-out infinite;
+}
+.dir-card--proximo__ic svg { width: 28px; height: 28px; }
+.dir-card--proximo__badge {
+  display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px;
+  padding: 5px 13px; border-radius: 100px; background: rgba(0,223,129,.16); color: var(--verde-claro);
+  font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; position: relative; z-index: 1;
+}
+.dir-card--proximo__titulo { font-family: var(--display); font-size: 19px; font-weight: 500; color: var(--crema); line-height: 1.15; position: relative; z-index: 1; }
+.dir-card--proximo__txt { font-size: 12px; color: rgba(241,247,246,.65); margin-top: 8px; line-height: 1.45; position: relative; z-index: 1; }
 
 /* ---------- Carrusel de fotos del aliado (dentro de la ficha) ---------- */
 .aliado-carrusel-wrap { margin: 20px 0; }
@@ -202,6 +257,11 @@ body { background: transparent; }
 }
 @media (max-width: 720px) {
   .dir-top__right .dir-top__txt { display: none; }
+  /* Logo centrado, burger a la izquierda (misma esquina que en la portada) */
+  .dir-top .wrap { display: grid; grid-template-columns: 44px 1fr 44px; justify-content: unset; }
+  .dir-top .logo { grid-column: 2; justify-self: center; }
+  .dir-burger { display: flex; grid-column: 1; justify-self: start; }
+  .dir-top__right { grid-column: 3; justify-self: end; }
   .dir-tools { top: var(--nav-h); }
   .calc__grid, .calc__result { grid-template-columns: 1fr; }
   .calc__actions .btn { min-width: 100%; }
@@ -215,6 +275,11 @@ body { background: transparent; }
   .dir-card__cat { font-size: 8px; margin-top: 3px; }
   .dir-card__badge { font-size: 10px; padding: 6px 11px 6px 9px; margin-top: 10px; gap: 4px; }
   .dir-card__badge svg { width: 11px; height: 11px; }
+  .dir-card--proximo { padding: 16px 10px 12px; border-radius: 16px; }
+  .dir-card--proximo__ic { width: 48px; height: 48px; margin-bottom: 10px; }
+  .dir-card--proximo__ic svg { width: 22px; height: 22px; }
+  .dir-card--proximo__titulo { font-size: 14.5px; }
+  .dir-card--proximo__txt { font-size: 10.5px; }
 
   /* Deja aire abajo para que la barra fija no tape las últimas tarjetas */
   body { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 72px); }

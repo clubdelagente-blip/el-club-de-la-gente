@@ -182,10 +182,16 @@ async function cargarAliados() {
 }
 
 /* ---------- RENDER FILTROS ---------- */
+// Mismo criterio visual que los íconos de categoría de la Tienda del Club:
+// círculo de color + texto debajo.
 function renderFiltros() {
-  $("#dir-filtros").innerHTML = GRUPOS.map(g =>
-    `<button class="dir-chip${g === filtroActivo ? " is-on" : ""}" data-grupo="${g}" style="${g === "Todos" ? "" : ccVars(g)}">${g === "Todos" ? "" : `<span class="dir-chip__dot"></span>`}${g}</button>`
+  $("#dir-filtros").innerHTML = GRUPOS.map(g => `
+    <button class="dir-chip${g === filtroActivo ? " is-on" : ""}" data-grupo="${g}" style="${g === "Todos" ? "" : ccVars(g)}">
+      <span class="dir-chip__circle">${ic(g === "Todos" ? "layout-grid" : iconoCategoria(g))}</span>
+      <span class="dir-chip__lbl">${g}</span>
+    </button>`
   ).join("");
+  if (window.lucide) lucide.createIcons();
 }
 
 /* ---------- RENDER GRID ---------- */
@@ -219,6 +225,14 @@ function renderGrid() {
     return;
   }
 
+  const proximoCard = `
+    <article class="dir-card--proximo" style="animation-delay:${Math.min(list.length * 45, 400)}ms">
+      <span class="dir-card--proximo__ic">${ic("sparkles")}</span>
+      <span class="dir-card--proximo__badge">✨ Muy pronto</span>
+      <div class="dir-card--proximo__titulo">Vienen más aliados</div>
+      <p class="dir-card--proximo__txt">Cada semana se suman nuevos negocios al Club para que ahorres más. Vuelve pronto a ver quién llegó.</p>
+    </article>`;
+
   cont.innerHTML = list.map((a, i) => `
     <article class="dir-card" data-aliado="${a.id}" tabindex="0" style="${ccVars(a.categoria)};animation-delay:${Math.min(i * 45, 400)}ms">
       <div class="dir-card__logo">
@@ -229,7 +243,7 @@ function renderGrid() {
       <div class="dir-card__nombre">${a.nombre}</div>
       <div class="dir-card__cat">${a.categoria || "Aliado del Club"}</div>
       <div class="dir-card__badge">${ic("flame")}<span>${a.descuento || "Beneficio especial"}</span></div>
-    </article>`).join("");
+    </article>`).join("") + proximoCard;
   if (window.lucide) lucide.createIcons();
 }
 
@@ -940,6 +954,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderFiltros();
     renderGrid();
   });
+
+  // Menú (burger) -- mismo patrón de .nav__mobile de la portada
+  const dirMenu = $("#dir-menu");
+  const dirBurger = $("#dir-burger");
+  function cerrarDirMenu() {
+    if (!dirMenu.classList.contains("is-open")) return;
+    dirMenu.classList.remove("is-open");
+    dirBurger.innerHTML = ic("menu");
+    if (window.lucide) lucide.createIcons();
+    desbloquearScroll();
+  }
+  dirBurger?.addEventListener("click", () => {
+    const abierto = dirMenu.classList.toggle("is-open");
+    dirBurger.innerHTML = ic(abierto ? "x" : "menu");
+    if (window.lucide) lucide.createIcons();
+    if (abierto) bloquearScroll(); else desbloquearScroll();
+  });
+  $$("#dir-menu a").forEach(a => a.addEventListener("click", cerrarDirMenu));
 
   // Clicks globales (abrir sheet, cerrar)
   document.addEventListener("click", (e) => {
