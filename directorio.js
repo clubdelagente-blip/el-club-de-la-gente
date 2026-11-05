@@ -25,29 +25,24 @@ function norm(s) {
     .replace(/[áàäâã]/g, "a").replace(/[éèëê]/g, "e").replace(/[íìïî]/g, "i")
     .replace(/[óòöôõ]/g, "o").replace(/[úùüû]/g, "u").replace(/ñ/g, "n");
 }
-// overflow:hidden en el body NO basta en iOS Safari para bloquear el scroll
-// de fondo detrás de un modal/sheet -- el truco que sí funciona ahí es
-// "congelar" el body con position:fixed, guardando y restaurando el scroll.
+// El body ya no hace scroll (es columna flex con el título/buscador/
+// categorías fijos arriba -- ver directorio.css) -- lo único que se
+// desplaza es #dir-scroll, así que es a ese div al que hay que
+// bloquearle el scroll mientras hay un sheet/menú abierto. Un simple
+// overflow:hidden alcanza acá porque NO es el scroll raíz de la página
+// (el truco de "congelar" con position:fixed solo hacía falta para el
+// body en iOS Safari).
 function bloquearScroll() {
-  if (document.body.dataset.scrollY !== undefined) return; // ya estaba bloqueado
-  const y = window.scrollY || window.pageYOffset || 0;
-  document.body.dataset.scrollY = y;
-  document.body.style.position = "fixed";
-  document.body.style.top = `-${y}px`;
-  document.body.style.left = "0";
-  document.body.style.right = "0";
-  document.body.style.width = "100%";
+  const el = document.getElementById("dir-scroll") || document.body;
+  if (el.dataset.scrollBloqueado !== undefined) return; // ya estaba bloqueado
+  el.dataset.scrollBloqueado = "1";
+  el.style.overflow = "hidden";
 }
 function desbloquearScroll() {
-  if (document.body.dataset.scrollY === undefined) return; // no había bloqueo activo
-  const y = parseInt(document.body.dataset.scrollY, 10);
-  document.body.style.position = "";
-  document.body.style.top = "";
-  document.body.style.left = "";
-  document.body.style.right = "";
-  document.body.style.width = "";
-  delete document.body.dataset.scrollY;
-  window.scrollTo(0, y);
+  const el = document.getElementById("dir-scroll") || document.body;
+  if (el.dataset.scrollBloqueado === undefined) return; // no había bloqueo activo
+  delete el.dataset.scrollBloqueado;
+  el.style.overflow = "";
 }
 
 /* Ícono por palabra clave de categoría (aproximado, no requiere que el admin lo elija) */

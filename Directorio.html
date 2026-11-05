@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=105">
-  <link rel="stylesheet" href="directorio.css?v=21">
+  <link rel="stylesheet" href="directorio.css?v=22">
 </head>
 <body>
   <div id="fondo-fijo" aria-hidden="true"></div>
@@ -28,66 +28,73 @@
 
   <div class="grain" aria-hidden="true"></div>
 
-  <!-- ============================================================
-       HEADER DEL DIRECTORIO
-       ============================================================ -->
-  <header class="dir-top">
-    <div class="wrap">
-      <button class="dir-burger" id="dir-burger" aria-label="Abrir menú"><i data-lucide="menu"></i></button>
+  <!-- Bloque fijo de arriba (título, buscador, categorías) -- no se mueve
+       con el scroll; solo la grilla de aliados de abajo (#dir-scroll) se
+       desplaza. Ver directorio.css (body como columna flex). -->
+  <div id="dir-fixed-top">
+    <!-- ============================================================
+         HEADER DEL DIRECTORIO
+         ============================================================ -->
+    <header class="dir-top">
+      <div class="wrap">
+        <button class="dir-burger" id="dir-burger" aria-label="Abrir menú"><i data-lucide="menu"></i></button>
 
-      <a class="logo" href="El Club de la Gente.html" aria-label="El Club de la Gente">
-        <img src="logo-club.png" alt="El Club de la Gente" style="height:38px;width:auto;">
-      </a>
+        <a class="logo" href="El Club de la Gente.html" aria-label="El Club de la Gente">
+          <img src="logo-club.png" alt="El Club de la Gente" style="height:38px;width:auto;">
+        </a>
 
-      <div class="dir-top__right">
-        <span class="dir-top__txt">Directorio de aliados · Fusagasugá</span>
+        <div class="dir-top__right">
+          <span class="dir-top__txt">Directorio de aliados · Fusagasugá</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Panel del menú (3 líneas) -- mismo patrón visual que .nav__mobile de
+         la portada, con accesos directos a secciones que no caben en la
+         barra inferior. -->
+    <div class="nav__mobile" id="dir-menu">
+      <a href="Perfil.html?panel=clubcard"><i data-lucide="credit-card"></i> Mi ClubCard</a>
+      <a href="Perfil.html?panel=tienda"><i data-lucide="package"></i> Tienda</a>
+      <a href="Perfil.html?panel=sellos"><i data-lucide="stamp"></i> Mis sellos</a>
+      <a href="Perfil.html?panel=agente"><i data-lucide="message-circle"></i> Mi Agente</a>
+      <a href="Perfil.html?panel=programas"><i data-lucide="heart-handshake"></i> Programas sociales</a>
+      <a href="El Club de la Gente.html"><i data-lucide="users"></i> Comunidad</a>
+    </div>
+
+    <!-- ============================================================
+         HERO EDITORIAL
+         ============================================================ -->
+    <section class="dir-hero">
+      <div class="wrap">
+        <h1 class="display">Todos los aliados,<br>todo tu ahorro <span class="italic-verde">en un solo lugar.</span></h1>
+      </div>
+    </section>
+
+    <!-- ============================================================
+         BUSCADOR + FILTROS
+         ============================================================ -->
+    <div class="dir-tools">
+      <div class="wrap">
+        <div class="dir-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="dir-search" placeholder="Busca por nombre o categoría…" autocomplete="off">
+        </div>
+        <div class="dir-filtros" id="dir-filtros"></div>
       </div>
     </div>
-  </header>
-
-  <!-- Panel del menú (3 líneas) -- mismo patrón visual que .nav__mobile de
-       la portada, con accesos directos a secciones que no caben en la
-       barra inferior. -->
-  <div class="nav__mobile" id="dir-menu">
-    <a href="Perfil.html?panel=clubcard"><i data-lucide="credit-card"></i> Mi ClubCard</a>
-    <a href="Perfil.html?panel=tienda"><i data-lucide="package"></i> Tienda</a>
-    <a href="Perfil.html?panel=sellos"><i data-lucide="stamp"></i> Mis sellos</a>
-    <a href="Perfil.html?panel=agente"><i data-lucide="message-circle"></i> Mi Agente</a>
-    <a href="Perfil.html?panel=programas"><i data-lucide="heart-handshake"></i> Programas sociales</a>
-    <a href="El Club de la Gente.html"><i data-lucide="users"></i> Comunidad</a>
   </div>
 
   <!-- ============================================================
-       HERO EDITORIAL
+       GRID DE ALIADOS (única parte que hace scroll)
        ============================================================ -->
-  <section class="dir-hero">
-    <div class="wrap">
-      <h1 class="display">Todos los aliados,<br>todo tu ahorro <span class="italic-verde">en un solo lugar.</span></h1>
-    </div>
-  </section>
-
-  <!-- ============================================================
-       BUSCADOR + FILTROS
-       ============================================================ -->
-  <div class="dir-tools">
-    <div class="wrap">
-      <div class="dir-search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="dir-search" placeholder="Busca por nombre o categoría…" autocomplete="off">
+  <div id="dir-scroll">
+    <section class="wrap">
+      <div class="dir-meta">
+        <span class="dir-meta__count" id="dir-count"></span>
       </div>
-      <div class="dir-filtros" id="dir-filtros"></div>
-    </div>
+      <div class="dir-grid" id="dir-grid"></div>
+    </section>
   </div>
-
-  <!-- ============================================================
-       GRID DE ALIADOS
-       ============================================================ -->
-  <section class="wrap">
-    <div class="dir-meta">
-      <span class="dir-meta__count" id="dir-count"></span>
-    </div>
-    <div class="dir-grid" id="dir-grid"></div>
-  </section>
 
 
   <!-- ============================================================
@@ -118,7 +125,7 @@
        ============================================================ -->
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
-  <script type="module" src="directorio.js?v=63"></script>
+  <script type="module" src="directorio.js?v=64"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
