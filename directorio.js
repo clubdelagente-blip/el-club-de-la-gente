@@ -227,8 +227,7 @@ function renderGrid() {
 
   const proximoCard = `
     <article class="dir-card--proximo" style="animation-delay:${Math.min(list.length * 45, 400)}ms">
-      <span class="dir-card--proximo__ic">${ic("sparkles")}</span>
-      <span class="dir-card--proximo__badge">✨ Muy pronto</span>
+      <span class="dir-card--proximo__badge">Muy pronto</span>
       <div class="dir-card--proximo__titulo">Vienen más aliados</div>
       <p class="dir-card--proximo__txt">Cada semana se suman nuevos negocios al Club para que ahorres más. Vuelve pronto a ver quién llegó.</p>
     </article>`;

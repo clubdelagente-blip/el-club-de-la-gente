@@ -159,33 +159,30 @@ body { background: transparent; }
 }
 .dir-card__lock svg { width: 12px; height: 12px; flex: none; }
 
-/* ---------- Tarjeta "Próximamente más aliados" (cierra el grid) ---------- */
-@keyframes dir-proximo-brillo { 0%, 100% { opacity: .55; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+/* ---------- Tarjeta "Próximamente más aliados" (cierra el grid, de lado a
+   lado -- ocupa las dos columnas) ---------- */
+@keyframes dir-proximo-brillo { 0%, 100% { opacity: .75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
 .dir-card--proximo {
-  background: linear-gradient(165deg, var(--negro), #0a2a28 65%, var(--negro));
-  border: 1.5px dashed rgba(241,247,246,.3); border-radius: 22px;
-  padding: 28px 18px 24px; display: flex; flex-direction: column; align-items: center; text-align: center;
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, #EAB749, #F6CE73);
+  border: 1.5px dashed rgba(2,27,26,.25); border-radius: 22px;
+  padding: 26px 22px; display: flex; flex-direction: column; align-items: center; text-align: center;
   position: relative; overflow: hidden; cursor: default;
   animation: dir-card-in .5s cubic-bezier(.2,.8,.2,1) backwards;
 }
 .dir-card--proximo::before {
   content: ""; position: absolute; inset: -40% -20% auto -20%; height: 220px;
-  background: radial-gradient(220px 160px at 50% 0%, rgba(0,223,129,.28), transparent 70%);
+  background: radial-gradient(260px 160px at 50% 0%, rgba(255,255,255,.4), transparent 70%);
   pointer-events: none;
 }
-.dir-card--proximo__ic {
-  width: 64px; height: 64px; border-radius: 50%; flex: none; margin-bottom: 14px;
-  display: grid; place-items: center; background: rgba(0,223,129,.14); color: var(--verde-claro);
-  position: relative; z-index: 1; animation: dir-proximo-brillo 2.2s ease-in-out infinite;
-}
-.dir-card--proximo__ic svg { width: 28px; height: 28px; }
 .dir-card--proximo__badge {
   display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px;
-  padding: 5px 13px; border-radius: 100px; background: rgba(0,223,129,.16); color: var(--verde-claro);
+  padding: 5px 13px; border-radius: 100px; background: rgba(2,27,26,.1); color: var(--negro);
   font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; position: relative; z-index: 1;
+  animation: dir-proximo-brillo 2.2s ease-in-out infinite;
 }
-.dir-card--proximo__titulo { font-family: var(--display); font-size: 19px; font-weight: 500; color: var(--crema); line-height: 1.15; position: relative; z-index: 1; }
-.dir-card--proximo__txt { font-size: 12px; color: rgba(241,247,246,.65); margin-top: 8px; line-height: 1.45; position: relative; z-index: 1; }
+.dir-card--proximo__titulo { font-family: var(--display); font-size: 19px; font-weight: 500; color: var(--negro); line-height: 1.15; position: relative; z-index: 1; }
+.dir-card--proximo__txt { font-size: 12px; color: rgba(2,27,26,.65); margin-top: 8px; line-height: 1.45; max-width: 420px; position: relative; z-index: 1; }
 
 /* ---------- Carrusel de fotos del aliado (dentro de la ficha) ---------- */
 .aliado-carrusel-wrap { margin: 20px 0; }
@@ -281,9 +278,7 @@ body { background: transparent; }
   .dir-card__cat { font-size: 8px; margin-top: 3px; }
   .dir-card__badge { font-size: 10px; padding: 6px 11px 6px 9px; margin-top: 10px; gap: 4px; }
   .dir-card__badge svg { width: 11px; height: 11px; }
-  .dir-card--proximo { padding: 16px 10px 12px; border-radius: 16px; }
-  .dir-card--proximo__ic { width: 48px; height: 48px; margin-bottom: 10px; }
-  .dir-card--proximo__ic svg { width: 22px; height: 22px; }
+  .dir-card--proximo { padding: 18px 14px; border-radius: 16px; }
   .dir-card--proximo__titulo { font-size: 14.5px; }
   .dir-card--proximo__txt { font-size: 10.5px; }
 
