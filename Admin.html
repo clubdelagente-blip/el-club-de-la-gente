@@ -2487,12 +2487,13 @@ function initPmCarruselPreview(root){
   if(slides.length<=1)return;
   const dots=[...root.querySelectorAll('.pm-carrusel__dots span')];
   const track=root.querySelector('.pm-carrusel__track');
-  let idx=0,started=false,timer=null;
+  let idx=0,timer=null;
   function mostrar(i){idx=i;track.style.transform=`translateX(-${i*100}%)`;dots.forEach((d,di)=>d.classList.toggle('is-on',di===i));
     slides.forEach((s,si)=>{const v=s.querySelector('video');if(!v)return;if(si===i){v.currentTime=0;v.play().catch(()=>{});}else v.pause();});}
   function avanzar(){mostrar((idx+1)%slides.length);programar();}
   function programar(){clearTimeout(timer);const video=slides[idx].querySelector('video');if(video)video.onended=avanzar;else timer=setTimeout(avanzar,3000);}
-  root.addEventListener('click',()=>{root.classList.add('is-activo');if(!started){started=true;mostrar(0);programar();}});
+  root.addEventListener('click',()=>root.classList.add('is-activo'));
+  mostrar(0);programar();
 }
 function actualizarPreviewPromo(aliadoId){
   const cont=$("#pr-pm-preview");if(!cont)return;

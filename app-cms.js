@@ -143,12 +143,14 @@ function promoCardHtml(p, al) {
     </div>
   </div>`;
 }
+// Rota sola desde que aparece (igual que el carrusel de marcas), no hace
+// falta tocarla primero -- antes se quedaba quieta hasta el primer click.
 function initPmCarrusel(root) {
   const slides = [...root.querySelectorAll(".pm-carrusel__slide")];
   if (slides.length <= 1) return;
   const dots = [...root.querySelectorAll(".pm-carrusel__dots span")];
   const track = root.querySelector(".pm-carrusel__track");
-  let idx = 0, started = false, timer = null;
+  let idx = 0, timer = null;
 
   function mostrar(i) {
     idx = i;
@@ -168,10 +170,9 @@ function initPmCarrusel(root) {
     if (video) video.onended = avanzar;
     else timer = setTimeout(avanzar, 3000);
   }
-  root.addEventListener("click", () => {
-    root.classList.add("is-activo");
-    if (!started) { started = true; mostrar(0); programar(); }
-  });
+  root.addEventListener("click", () => root.classList.add("is-activo"));
+  mostrar(0);
+  programar();
 }
 
 /* ---------- Aliados ---------- */
