@@ -32,6 +32,7 @@
   background-image: linear-gradient(rgba(253, 250, 244, .85), rgba(253, 250, 244, .85)), url("patron-fondo-vainilla.png?v=1");
   background-repeat: repeat, repeat;
   background-size: 400px auto, 400px auto;
+  background-attachment: fixed, fixed;
   background-color: #FDFAF4;
   min-height: 100vh;
 }
