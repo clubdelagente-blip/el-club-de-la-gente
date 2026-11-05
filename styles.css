@@ -445,7 +445,7 @@ a { color: inherit; text-decoration: none; }
 /* "¡Aprovecha!" con flecha curva -- mismo recurso del afiche de
    referencia, señalando hacia la oferta de abajo. */
 .pm-aprovecha {
-  position: absolute; top: 58px; left: 18px; z-index: 3; color: #fff;
+  position: absolute; top: 38px; left: 20px; z-index: 3; color: #fff;
   display: flex; flex-direction: column; align-items: flex-start; pointer-events: none;
   filter: drop-shadow(0 2px 5px rgba(0,0,0,.45));
 }
@@ -473,9 +473,9 @@ a { color: inherit; text-decoration: none; }
   position: relative;
   background: var(--pm-cc, var(--verde));
   color: #fff;
-  padding: 34px 18px 16px;
-  margin-top: -22px;
-  clip-path: polygon(0 22px, 100% 0, 100% 100%, 0 100%);
+  padding: 64px 18px 16px;
+  margin-top: -58px;
+  clip-path: polygon(0 58px, 100% 0, 100% 100%, 0 100%);
 }
 .pm-oferta__txt {
   font-family: var(--display); font-weight: 700; font-size: 44px; line-height: .95;
