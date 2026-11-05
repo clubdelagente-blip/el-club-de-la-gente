@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=108">
+  <link rel="stylesheet" href="styles.css?v=109">
   <link rel="stylesheet" href="admin.css?v=19">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -2458,6 +2458,10 @@ function promoCardHtmlPreview(p,al){
       <div class="pm-carrusel__fade"></div>
       <div class="pm-club-mark"><img src="icon-club-isotipo.png" alt="El Club de la Gente"></div>
       ${detalleVigenciaPreview(p)?`<span class="pm-vigencia">${esc(detalleVigenciaPreview(p))}</span>`:''}
+      <div class="pm-aprovecha">
+        <span class="pm-aprovecha__txt">¡Aprovecha!</span>
+        <svg class="pm-aprovecha__flecha" viewBox="0 0 60 70" fill="none"><path d="M6 4C4 30 10 52 48 58" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/><path d="M36 52L49 59L45 45" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </div>
     </div>
     <div class="pm-oferta">
       ${pmOfertaGrandePreview(p.tipo)}
