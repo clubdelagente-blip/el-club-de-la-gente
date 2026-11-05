@@ -490,7 +490,7 @@ function promoCardHtml(p, al) {
       ${medios.length > 1 ? `<div class="pm-carrusel__hint">${ic("chevron-right")}</div>` : ""}
       ${dotsHtml}
       <div class="pm-carrusel__fade"></div>
-      <div class="pm-club-mark"><img src="logo-club.png" alt="El Club de la Gente"></div>
+      <div class="pm-club-mark"><img src="icon-club-isotipo.png" alt="El Club de la Gente"></div>
       <div class="pm-logo-pill">${al?.imagen_url ? `<img src="${al.imagen_url}" alt="${esc(al.nombre || "")}">` : `<span>${esc(al?.nombre || "Aliado")}</span>`}</div>
       <div class="pm-name-pill">${esc(al?.nombre || "")}</div>
     </div>
