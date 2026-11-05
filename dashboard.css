@@ -46,6 +46,15 @@
 .dash { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
 .dash-backdrop { display: none; }
 
+/* El carrusel de "Aliados destacados" (.marcas-carrusel) es transparente a
+   propósito (ver styles.css) para dejar ver el fondo fijo de la página --
+   acá ese fondo fijo es claro (vainilla), no oscuro como en la portada, así
+   que el degradado de los bordes y el separador "✷" vuelven a tono oscuro
+   para seguir leyéndose bien. */
+#marcas-carrusel-dash::before { background: linear-gradient(to right, var(--crema-2), transparent) !important; }
+#marcas-carrusel-dash::after  { background: linear-gradient(to left, var(--crema-2), transparent) !important; }
+#marcas-carrusel-dash .marcas-carrusel__sep { color: var(--verde) !important; }
+
 /* ============================================================
    SIDEBAR
    ============================================================ */

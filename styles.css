@@ -328,13 +328,13 @@ a { color: inherit; text-decoration: none; }
    directo con transform: translateX por JS (requestAnimationFrame), así
    que acá solo queda el recorte visual (overflow:hidden) y los degradados
    de los bordes -- nada de scroll nativo. */
-/* Mismo patrón de figuritas oscuro que el fondo fijo de la página (ver
-   #fondo-fijo), para que el carrusel se sienta parte del mismo fondo. */
+/* Sin fondo propio -- transparente a propósito, para que se vea el
+   patrón del fondo fijo de la página (#fondo-fijo, position:fixed) por
+   detrás. Así el patrón queda realmente estático al hacer scroll (es el
+   mismo fijo de la página, no una copia aparte que se mueve con este
+   bloque) -- "background-attachment: fixed" acá no servía en celular. */
 .marcas-carrusel {
-  background-image: url("patron-fondo-oscuro.png?v=1");
-  background-repeat: repeat;
-  background-size: 400px auto;
-  background-color: var(--negro);
+  background: transparent;
   overflow: hidden; padding: 20px 0; position: relative;
 }
 .marcas-carrusel::before, .marcas-carrusel::after { content: ""; position: absolute; top: 0; bottom: 0; width: 80px; z-index: 3; pointer-events: none; }
