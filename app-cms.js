@@ -11,6 +11,11 @@ const supabase = createClient(
 
 const ic = (n) => `<i data-lucide="${n}"></i>`;
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// Igual que en directorio.js: la descripción del aliado viene con
+// **negrilla** en formato markdown (la genera la IA así) -- esto la convierte
+// en <strong> real y respeta los saltos de línea, en vez de mostrar los
+// asteriscos tal cual.
+const descHtml = (s) => esc(s ?? "").replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>");
 
 // Registra cada tarjeta nueva (ya insertada en el DOM) en el observer de
 // entrada de app.js, UNA POR UNA -- antes dependían de que el contenedor
@@ -198,7 +203,7 @@ async function cargarAliadosPub() {
       <div class="aliado__body">
         <div class="aliado__cat">${a.categoria || ''}</div>
         <div class="aliado__nombre">${a.nombre}</div>
-        <p class="aliado__desc">${a.descripcion || ''}</p>
+        <p class="aliado__desc">${a.descripcion ? descHtml(a.descripcion) : ''}</p>
         <button class="aliado__cta" data-aliado-btn="${i}">Ver beneficio ${ic('arrow-right')}</button>
       </div>
     </article>`).join('');
