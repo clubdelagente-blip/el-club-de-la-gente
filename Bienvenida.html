@@ -113,12 +113,12 @@
       return;
     }
 
-    let miembro, linkMoto, linkCarro, uberPct;
+    let miembro, linkMoto, uberPct;
     try {
       const [{ data: m, error: errM }, { data: cfg }] = await conTimeout(
         Promise.all([
           _supabase.rpc("perfil_publico_por_id", { p_id: miembroId }).maybeSingle(),
-          _supabase.from("configuracion").select("clave, valor").in("clave", ["grupo_wa_moto", "grupo_wa_carro", "uber_descuento_pct"]),
+          _supabase.from("configuracion").select("clave, valor").in("clave", ["grupo_wa_moto", "uber_descuento_pct"]),
         ]),
         8000
       );
@@ -128,7 +128,6 @@
       }
       miembro = m;
       linkMoto = cfg?.find(c => c.clave === "grupo_wa_moto")?.valor;
-      linkCarro = cfg?.find(c => c.clave === "grupo_wa_carro")?.valor;
       uberPct = Number(cfg?.find(c => c.clave === "uber_descuento_pct")?.valor) || 10;
     } catch (_) {
       renderError("No pudimos conectar en este momento. Intenta de nuevo en unos segundos.");
@@ -145,12 +144,6 @@
         pregunta: `¿Usarías Uber moto con el ${uberPct}% de descuento del Club?`,
         nota: "Si dices que sí, te abrimos el grupo de WhatsApp. Recomendación: entra al grupo, luego cierra WhatsApp y vuelve a esta pantalla para terminar las últimas preguntas.",
         onSi: () => { if (linkMoto) window.open(linkMoto, "_blank"); },
-      },
-      {
-        clave: "uber_carro",
-        pregunta: `¿Usarías Uber carro con el ${uberPct}% de descuento del Club?`,
-        nota: "Si dices que sí, te abrimos el grupo de WhatsApp. Recomendación: entra al grupo, luego cierra WhatsApp y vuelve a esta pantalla para terminar las últimas preguntas.",
-        onSi: () => { if (linkCarro) window.open(linkCarro, "_blank"); },
       },
       {
         clave: "interes_talleres",
