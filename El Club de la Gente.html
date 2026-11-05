@@ -34,7 +34,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=98">
+  <link rel="stylesheet" href="styles.css?v=99">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -131,12 +131,9 @@
       font-weight: 500;
     }
 
-    /* ---- Carrusel de marcas: fondo verde, letras blancas ---- */
-    #marcas-carrusel-landing { background: var(--verde) !important; margin-top: 0; }
-    #marcas-carrusel-landing::before { background: linear-gradient(to right, var(--verde), transparent) !important; }
-    #marcas-carrusel-landing::after { background: linear-gradient(to left, var(--verde), transparent) !important; }
-    #marcas-carrusel-landing .marcas-carrusel__cat,
-    #marcas-carrusel-landing .marcas-carrusel__sep { color: #fff !important; }
+    /* El degradado y las letras blancas ya vienen del estilo base de
+       .marcas-carrusel en styles.css -- acá solo falta el margen. */
+    #marcas-carrusel-landing { margin-top: 0; }
     .hero__grid { align-items: start !important; }
     @media (max-width: 1000px) {
       .hero__grid { grid-template-areas: "copy" "valores" !important; }
