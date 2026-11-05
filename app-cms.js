@@ -122,7 +122,7 @@ function promoCardHtml(p, al) {
     </div>
     <div class="pm-aprovecha">
       <span class="pm-aprovecha__txt">¡Aprovecha!</span>
-      <svg class="pm-aprovecha__flecha" viewBox="0 0 80 220" fill="none"><path d="M14 10C4 70 4 160 55 200" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M40 192L57 203L54 183" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      <svg class="pm-aprovecha__flecha" viewBox="0 0 80 280" fill="none"><path d="M14 10C4 110 4 220 55 258" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M40 250L57 261L54 241" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
     </div>
     <div class="pm-oferta">
       ${ofertaGrandeHtml(p)}

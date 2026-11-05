@@ -443,12 +443,12 @@ a { color: inherit; text-decoration: none; }
    flecha pueda estirarse hacia abajo y señalar la oferta grande, no solo
    la foto. */
 .pm-aprovecha {
-  position: absolute; top: 38px; left: 20px; z-index: 3; color: #fff;
+  position: absolute; top: 78px; left: 20px; z-index: 3; color: #fff;
   display: flex; flex-direction: column; align-items: flex-start; pointer-events: none;
   filter: drop-shadow(0 2px 5px rgba(0,0,0,.45));
 }
 .pm-aprovecha__txt { font-family: "Permanent Marker", cursive; font-size: 17px; transform: rotate(-4deg); white-space: nowrap; }
-.pm-aprovecha__flecha { width: 70px; height: 192px; margin: 2px 0 0 14px; }
+.pm-aprovecha__flecha { width: 76px; height: 248px; margin: 2px 0 0 14px; }
 /* Sticker "SOLO HASTA [fecha]" -- mismo lugar donde antes iba el nombre del
    aliado (.pm-name-pill, ahora se mudó a .pm-oferta__nombre abajo). */
 .pm-vigencia {
