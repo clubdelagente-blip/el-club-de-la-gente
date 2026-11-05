@@ -58,21 +58,25 @@ body { background: transparent; }
 #dir-menu a i, #dir-menu a svg { width: 18px; height: 18px; color: var(--verde); flex: none; }
 
 /* ---------- BUSCADOR + FILTROS ---------- */
-/* Mismo patrón de figuritas que el fondo fijo de la página (ver
-   #fondo-fijo arriba), para que esta franja se sienta parte de él --
-   "fixed" para que el patrón quede quieto y no se note la costura con el
-   de #fondo-fijo. Lleva su propio background-color siempre (cubre del
-   todo aunque algún navegador ignore el "fixed"), así que el buscador y
-   las categorías nunca quedan transparentes ni dejan ver la grilla detrás
-   cuando esta franja queda pegada arriba (position: sticky). */
+/* "background-attachment: fixed" (como tenía antes) no se ve igual que el
+   patrón de #fondo-fijo -- en los navegadores donde no se ignora del todo,
+   igual puede no alinear perfecto con el resto, y se nota la costura. La
+   solución real: un hijo .dir-tools__fondo que es "position: fixed" de
+   VERDAD (no un background-attachment), con el mismo "inset:0" que usa
+   #fondo-fijo -- por eso el patrón alinea pixel a pixel con el resto de la
+   página. "overflow:hidden" en .dir-tools lo recorta a su propio tamaño
+   (que ya se ajusta solo al contenido), así nunca se sale de esta franja
+   ni dibuja patrón encima de la grilla de aliados. */
 .dir-tools {
-  position: sticky; top: var(--nav-h); z-index: 60;
+  position: sticky; top: var(--nav-h); z-index: 60; overflow: hidden;
+  background-color: #FDFAF4;
+  padding: 22px 0 18px; border-bottom: 1px solid var(--linea);
+}
+.dir-tools__fondo {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
   background-image: linear-gradient(rgba(253, 250, 244, .85), rgba(253, 250, 244, .85)), url("patron-fondo-vainilla.png?v=1");
   background-repeat: repeat, repeat;
   background-size: 400px auto, 400px auto;
-  background-attachment: fixed, fixed;
-  background-color: #FDFAF4;
-  padding: 22px 0 18px; border-bottom: 1px solid var(--linea);
 }
 .dir-search { position: relative; max-width: 520px; }
 .dir-search svg { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); width: 19px; height: 19px; color: var(--tinta-45); pointer-events: none; }
