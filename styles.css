@@ -136,6 +136,12 @@ a { color: inherit; text-decoration: none; }
 }
 .nav.is-scrolled { border-bottom-color: var(--linea); background: rgba(241, 247, 246,0.9); }
 .nav .wrap { display: flex; align-items: center; justify-content: space-between; }
+/* Logo centrado en escritorio (el burger de celular, más abajo, ya deja el
+   logo a la izquierda y no hay espacio de sobra para centrarlo ahí). */
+@media (min-width: 721px) {
+  .nav .wrap { justify-content: flex-end; position: relative; }
+  .nav .logo { position: absolute; left: 50%; transform: translateX(-50%); }
+}
 
 .logo { display: flex; align-items: center; }
 .logo img { height: 36px; width: auto; }
