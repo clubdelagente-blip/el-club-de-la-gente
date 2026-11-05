@@ -784,6 +784,14 @@ document.addEventListener("DOMContentLoaded", () => {
       openSheet(sheetAliado(+i));
       return;
     }
+    // "Condiciones de la promoción" en el carrusel de PromoCard (app-cms.js)
+    const condBtn = e.target.closest("[data-pm-condiciones]");
+    if (condBtn) {
+      const txt = condBtn.nextElementSibling;
+      if (txt && txt.classList.contains("pm-condiciones-txt")) txt.hidden = !txt.hidden;
+      else window.open("Terminos.html", "_blank");
+      return;
+    }
     // Profesional
     const profe = e.target.closest("[data-profesional]");
     if (profe) { openSheet(sheetProfesional(+profe.dataset.profesional)); return; }

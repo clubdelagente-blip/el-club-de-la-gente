@@ -62,18 +62,12 @@ function badgePromo(p) {
 
 /* Línea chica de vigencia en la tarjeta (PromoCard v2) -- solo días y fecha
    de cierre, duplicado a propósito (mismo patrón que directorio.js). */
-const DIAS_TXT = { lunes: "lun", martes: "mar", miercoles: "mié", jueves: "jue", viernes: "vie", sabado: "sáb", domingo: "dom" };
+/* Sticker amarillo "Solo hasta <fecha>" de la tarjeta (PromoCard v2). */
 const MES_CORTO = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 function detalleVigencia(p) {
-  const partes = [];
-  if (p.dias_aplica && p.dias_aplica.length && p.dias_aplica.length < 7) {
-    partes.push(p.dias_aplica.map(d => DIAS_TXT[d] || d).join("/"));
-  }
-  if (p.fecha_fin) {
-    const f = new Date(p.fecha_fin + "T00:00:00");
-    partes.push(`Válido hasta el ${f.getDate()} de ${MES_CORTO[f.getMonth()]}`);
-  }
-  return partes.join(" · ");
+  if (!p.fecha_fin) return "";
+  const f = new Date(p.fecha_fin + "T00:00:00");
+  return `Solo hasta ${f.getDate()} de ${MES_CORTO[f.getMonth()]}`;
 }
 
 /* ---------- Tarjeta de promoción (PromoCard v2) ----------
@@ -106,6 +100,7 @@ function promoCardHtml(p, al) {
       ${medios.length > 1 ? `<div class="pm-carrusel__hint">${ic("chevron-right")}</div>` : ""}
       ${dotsHtml}
       <div class="pm-carrusel__fade"></div>
+      <div class="pm-club-mark"><img src="logo-club.png" alt="El Club de la Gente"></div>
       <div class="pm-logo-pill">${al?.imagen_url ? `<img src="${al.imagen_url}" alt="${esc(al.nombre || "")}">` : `<span>${esc(al?.nombre || "Aliado")}</span>`}</div>
       <div class="pm-name-pill">${esc(al?.nombre || "")}</div>
     </div>
@@ -125,10 +120,14 @@ function promoCardHtml(p, al) {
       <span class="pm-badge">${esc(badgePromo(p))}</span>
       <h3 class="pm-titulo">${esc(p.titulo || al?.nombre || "Promo")}</h3>
       <p class="pm-desc">${esc(p.descripcion || "")}</p>
-      ${detalleVigencia(p) ? `<p class="pm-vigencia">${esc(detalleVigencia(p))}</p>` : ""}
+      ${detalleVigencia(p) ? `<span class="pm-vigencia">${esc(detalleVigencia(p))}</span>` : ""}
     </div>
     <div class="pm-footer">
       <img class="pm-logo-club" src="logo-club.png" alt="El Club de la Gente">
+    </div>
+    <div class="pm-condiciones-wrap">
+      <button type="button" class="pm-condiciones" data-pm-condiciones>Condiciones de la promoción</button>
+      ${p.condiciones ? `<p class="pm-condiciones-txt" hidden>${esc(p.condiciones)}</p>` : ""}
     </div>
   </div>`;
 }
