@@ -605,7 +605,7 @@ function sheetAliado(a) {
           <div class="sheet__cat" style="color:${cc}">${a.categoria || "Aliado del Club"}</div>
           <h2 class="sheet__nombre" style="margin-top:2px">${a.nombre}</h2>
         </div>
-        <div style="flex:none;display:flex;flex-direction:column;gap:8px;align-items:center;align-self:flex-start;margin-top:42px">
+        <div style="flex:none;display:flex;flex-direction:column;gap:8px;align-items:center;align-self:flex-start;margin-top:60px">
           ${a.instagram ? `<a href="${a.instagram}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:${cc};color:#fff"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>` : ''}
           ${(waAtencion && a.ofrece_domicilio) ? `<button type="button" data-revelar-domicilio aria-label="Pedir a domicilio" style="display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:${cc};color:#fff;border:none;cursor:pointer;padding:0">${ICON_WA}</button>` : ''}
         </div>
