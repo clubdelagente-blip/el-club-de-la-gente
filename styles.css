@@ -460,16 +460,20 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 6px 14px -8px rgba(2, 27, 26, .5);
 }
 
-/* Franja de oferta -- el bloque de color sólido (categoría) con el
-   precio/porcentaje/regalo GRANDE y AMARILLO como protagonista, igual que
-   en el afiche de referencia. Reemplaza la ClubCard chica + el sello del %
-   que tenía la versión anterior. El borde de arriba es diagonal (no recto)
-   -- clip-path recorta una cuña a la izquierda, y el margen negativo sube
-   la tarjeta para que ese recorte deje ver el carrusel de fotos de atrás,
-   no un hueco en blanco. */
+/* Franja de oferta -- fondo negro con el mismo patrón de figuritas que ya
+   se usa en el resto de la plataforma (antes era el color de categoría),
+   con el precio/porcentaje/regalo GRANDE y AMARILLO como protagonista,
+   igual que en el afiche de referencia. Reemplaza la ClubCard chica + el
+   sello del % que tenía la versión anterior. El borde de arriba es
+   diagonal (no recto) -- clip-path recorta una cuña a la izquierda, y el
+   margen negativo sube la tarjeta para que ese recorte deje ver el
+   carrusel de fotos de atrás, no un hueco en blanco. */
 .pm-oferta {
   position: relative;
-  background: var(--pm-cc, var(--verde));
+  background-image: url("patron-fondo-oscuro.png?v=1");
+  background-repeat: repeat;
+  background-size: 400px auto;
+  background-color: var(--negro);
   color: #fff;
   padding: 64px 18px 16px;
   margin-top: -58px;
