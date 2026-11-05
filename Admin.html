@@ -3373,8 +3373,22 @@ document.addEventListener('DOMContentLoaded',async()=>{
             <img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">
             <button type="button" data-rm-img="${i}" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer">×</button>
           </div>`).join('') + (imagenes.length < 5 ? `
-          <button type="button" id="fp-img-add" style="width:64px;height:64px;border:2px dashed rgba(242,240,234,.25);border-radius:8px;background:none;cursor:pointer;font-size:24px;color:rgba(242,240,234,.4);line-height:1">+</button>` : '');
+          <button type="button" id="fp-img-add" style="width:64px;height:64px;border:2px dashed rgba(242,240,234,.25);border-radius:8px;background:none;cursor:pointer;font-size:24px;color:rgba(242,240,234,.4);line-height:1">+</button>
+          <button type="button" id="fp-img-pegar" title="Pegar imagen copiada" style="width:64px;height:64px;border:2px dashed rgba(242,240,234,.25);border-radius:8px;background:none;cursor:pointer;font-size:20px;color:rgba(242,240,234,.4);line-height:1">📋</button>` : '');
         $('#fp-img-add')?.addEventListener('click', () => $('#fp-img-input')?.click());
+        $('#fp-img-pegar')?.addEventListener('click', async () => {
+          // El menú del botón derecho del navegador solo ofrece "Pegar" en
+          // campos de texto -- este botón hace lo mismo que Ctrl/Cmd+V pero
+          // con un clic, leyendo la imagen directo del portapapeles.
+          try {
+            const items = await navigator.clipboard.read();
+            const item = items.find(i => i.types.some(t => t.startsWith('image/')));
+            if (!item) { toast('No hay ninguna imagen copiada en el portapapeles'); return; }
+            const tipo = item.types.find(t => t.startsWith('image/'));
+            const blob = await item.getType(tipo);
+            agregarFotoProd(new File([blob], `pegada-${Date.now()}.${tipo.split('/')[1] || 'png'}`, { type: tipo }));
+          } catch (_) { toast('No se pudo leer el portapapeles -- prueba con Ctrl/Cmd+V'); }
+        });
         cont.querySelectorAll('[data-rm-img]').forEach(b => b.addEventListener('click', () => {
           imagenes.splice(+b.dataset.rmImg, 1);
           renderImgGrid();
