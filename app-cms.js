@@ -648,11 +648,28 @@ async function cargarCarruselPromos() {
     let arrastrando = false;
     let startX = 0;
     let deltaX = 0;
+    let normalizarTimeout = null;
 
+    // "items" trae cada promo duplicada ([...promos, ...promos]) para que al
+    // llegar al final se pueda seguir avanzando hacia una copia idéntica de
+    // la primera -- en vez de saltar de golpe (animado) desde el final hasta
+    // el principio, que se veía como un brinco. Al terminar la transición
+    // hacia esa copia, se reposiciona en silencio (sin transición) al mismo
+    // punto en el original: como es idéntico, no se nota el salto.
     function irA(i, animar) {
-      idx = ((i % items.length) + items.length) % items.length;
+      idx = Math.max(0, i);
       track.style.transition = animar ? 'transform .35s ease' : 'none';
       track.style.transform = `translateX(calc(-${idx * 100}vw + ${deltaX}px))`;
+      clearTimeout(normalizarTimeout);
+      if (animar) {
+        normalizarTimeout = setTimeout(() => {
+          if (idx >= promos.length) {
+            idx -= promos.length;
+            track.style.transition = 'none';
+            track.style.transform = `translateX(calc(-${idx * 100}vw))`;
+          }
+        }, 360);
+      }
     }
     function detenerAuto() { if (intervalId) clearInterval(intervalId); intervalId = null; }
     function iniciarAuto() {
