@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=105">
   <link rel="stylesheet" href="estilos.css?v=21">
-  <link rel="stylesheet" href="dashboard.css?v=41">
+  <link rel="stylesheet" href="dashboard.css?v=42">
   <link rel="stylesheet" href="agente.css?v=2">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -216,40 +216,6 @@
           </div>
 
           <div id="banner-usos" style="display:none;align-items:center;gap:8px;padding:12px 16px;border-radius:12px;font-size:13px;margin-bottom:20px;line-height:1.4"></div>
-
-          <!-- Checklist de primeros pasos (se muestra/oculta por JS según datos reales) -->
-          <div class="onb-wrap" id="onb-wrap" style="display:none">
-            <div class="card onb-card" id="onb-card">
-              <div class="onb-card__head">
-                <div class="onb-card__head-txt">
-                  <div class="onb-card__head-row">
-                    <span class="card__title">Primeros pasos en el Club</span>
-                    <span class="onb-progress__n" id="onb-progress-n">0/2</span>
-                  </div>
-                  <p>Termina esto y le sacas el jugo completo a tu membresía desde el día uno.</p>
-                  <div class="onb-progress"><div class="onb-progress__bar" id="onb-progress-bar"></div></div>
-                </div>
-                <button type="button" class="onb-card__close" id="onb-close-card" title="No volver a mostrar"><i data-lucide="x"></i></button>
-              </div>
-              <div class="onb-list">
-                <button type="button" class="onb-item" data-step="perfil" data-goto-panel="perfil">
-                  <span class="onb-item__check"><i data-lucide="check"></i></span>
-                  <span class="onb-item__txt"><b>Completa tu perfil</b><small>Para personalizar tus recomendaciones</small></span>
-                  <span class="onb-item__go">Ir <i data-lucide="arrow-right"></i></span>
-                </button>
-                <button type="button" class="onb-item" data-step="clubcard" data-goto-panel="clubcard">
-                  <span class="onb-item__check"><i data-lucide="check"></i></span>
-                  <span class="onb-item__txt"><b>Muestra tu primer descuento</b><small>Lleva tu ClubCard a un aliado</small></span>
-                  <span class="onb-item__go">Ir <i data-lucide="arrow-right"></i></span>
-                </button>
-              </div>
-            </div>
-            <div class="onb-done" id="onb-done" hidden>
-              <span class="onb-done__check"><i data-lucide="check"></i></span>
-              <span class="onb-done__txt">Completaste tus primeros pasos en el Club 🎉</span>
-              <button type="button" class="onb-done__close" id="onb-close-done"><i data-lucide="x"></i></button>
-            </div>
-          </div>
 
           <!-- Carrusel de marcas Amazon -->
           <div class="marcas-carrusel" id="marcas-carrusel-dash" style="border-radius:14px;margin-bottom:20px" aria-label="Aliados destacados">
@@ -1155,7 +1121,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=202"></script>
+  <script type="module" src="dashboard.js?v=203"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">

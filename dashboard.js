@@ -1671,47 +1671,6 @@ async function cargarReferidos(userId) {
   }
 }
 
-/* ---------- Checklist de primeros pasos (Inicio) ---------- */
-async function cargarOnboarding(userId, perfData) {
-  const wrap = $("#onb-wrap");
-  if (!wrap) return;
-  if (localStorage.getItem("ecdlg_onb_cerrado_" + userId) === "1") return; // el miembro ya lo cerró
-
-  const pasoPerfil = Object.keys(perfData?.respuestas_segmentacion || {}).length > 0;
-
-  const { count: descCount } = await supabase.from("descuentos").select("id", { count: "exact", head: true }).eq("miembro_id", userId);
-
-  const pasos = {
-    perfil: pasoPerfil,
-    clubcard: (descCount || 0) > 0,
-  };
-
-  const total = Object.keys(pasos).length;
-  const hechos = Object.values(pasos).filter(Boolean).length;
-  wrap.style.display = "";
-
-  if (hechos === total) {
-    $("#onb-card").hidden = true;
-    $("#onb-done").hidden = false;
-  } else {
-    $("#onb-card").hidden = false;
-    $("#onb-done").hidden = true;
-    $$(".onb-item").forEach(btn => btn.classList.toggle("is-done", !!pasos[btn.dataset.step]));
-    const bar = $("#onb-progress-bar");
-    if (bar) bar.style.width = (100 * hechos / total) + "%";
-    const n = $("#onb-progress-n");
-    if (n) n.textContent = hechos + "/" + total;
-  }
-  if (window.lucide) lucide.createIcons();
-
-  const cerrar = () => {
-    wrap.classList.add("is-hidden");
-    localStorage.setItem("ecdlg_onb_cerrado_" + userId, "1");
-  };
-  $("#onb-close-card")?.addEventListener("click", cerrar);
-  $("#onb-close-done")?.addEventListener("click", cerrar);
-}
-
 /* ---------- Links a Directorio con datos del miembro (mismo esquema que Verificar.html) ---------- */
 async function actualizarLinksAliados(userId, plan, whatsapp) {
   const limite = LIMITE_DESCUENTOS[plan] ?? 1;
@@ -3431,7 +3390,6 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       cargarDescuentos(userId, perfData?.whatsapp);
       actualizarLinksAliados(userId, plan, perfData?.whatsapp);
-      cargarOnboarding(userId, perfData);
     }
 
     // Rol aliado (cuenta real, no localStorage): "Mi negocio" conectado por aliado_id
@@ -3519,9 +3477,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (abierto) bloquearScroll(); else desbloquearScroll();
   });
   $("#dash-backdrop")?.addEventListener("click", () => { $("#dash").classList.remove("menu-open"); desbloquearScroll(); });
-
-  // Atajos a ClubCard / perfil desde tarjetas
-  $$("[data-goto-panel]").forEach(b => b.addEventListener("click", () => irPanel(b.dataset.gotoPanel)));
 
   // Flip de ClubCard -- también se voltea tocando la tarjeta misma, no
   // solo con el botón "Quiero acceder a mis beneficios". Cada vez que queda
