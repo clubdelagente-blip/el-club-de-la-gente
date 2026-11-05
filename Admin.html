@@ -3331,6 +3331,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     }, 50);
   }
 
+  let _fpPasteHandler = null;
   function htmlFormProd(p = {}) {
     const catOpts = _cats.map(c => `<option value="${c.id}" ${p.categoria_id===c.id?'selected':''}>${c.nombre}</option>`).join('');
     return `
@@ -3343,7 +3344,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       </div>
       <div class="ad-field"><label>Costo del proveedor (COP) <span style="font-weight:400;opacity:.5">— opcional, solo para tu margen, no se le muestra al miembro</span></label><input id="fp-costo" type="text" inputmode="numeric" value="${p.costo_proveedor?Number(p.costo_proveedor).toLocaleString('es-CO'):''}" placeholder="Ej: 60.000"></div>
       <div class="ad-field"><label>Link para comprarlo (proveedor) <span style="font-weight:400;opacity:.5">— privado, solo para ti, no se le muestra al miembro</span></label><input id="fp-link-proveedor" type="url" value="${(p.link_proveedor||'').replace(/"/g,'&quot;')}" placeholder="https://..."></div>
-      <div class="ad-field"><label>Fotos del producto <span style="font-weight:400;opacity:.5">— hasta 5, la primera es la foto principal</span></label>
+      <div class="ad-field"><label>Fotos del producto <span style="font-weight:400;opacity:.5">— hasta 5, la primera es la foto principal. También puedes pegar una imagen copiada con Ctrl/Cmd+V</span></label>
         <div id="fp-img-grid" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px"></div>
         <input id="fp-img-input" type="file" accept="image/*" style="display:none">
       </div>
@@ -3380,13 +3381,32 @@ document.addEventListener('DOMContentLoaded',async()=>{
         }));
       }
       renderImgGrid();
+      async function agregarFotoProd(file) {
+        if (imagenes.length >= 5) return;
+        try { imagenes.push(await subirImagen(file)); renderImgGrid(); }
+        catch (_) { toast('Error subiendo la foto'); }
+      }
       $('#fp-img-input')?.addEventListener('change', async (e) => {
         const file = e.target.files?.[0];
         e.target.value = '';
         if (!file) return;
-        try { imagenes.push(await subirImagen(file)); renderImgGrid(); }
-        catch (_) { toast('Error subiendo la foto'); }
+        agregarFotoProd(file);
       });
+      // Pegar una imagen copiada (Ctrl/Cmd+V) mientras este formulario está
+      // abierto -- el portapapeles no trae nombre de archivo, así que se le
+      // arma uno con la extensión que corresponda a su tipo real.
+      document.removeEventListener('paste', _fpPasteHandler);
+      _fpPasteHandler = (e) => {
+        if (!$('#fp-img-grid')) return;
+        const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+        if (!item) return;
+        e.preventDefault();
+        const blob = item.getAsFile();
+        if (!blob) return;
+        const ext = item.type.split('/')[1] || 'png';
+        agregarFotoProd(new File([blob], `pegada-${Date.now()}.${ext}`, { type: item.type }));
+      };
+      document.addEventListener('paste', _fpPasteHandler);
 
       $('#fp-save')?.addEventListener('click', async () => {
         const nombre = $('#fp-nombre')?.value.trim(); if (!nombre) { toast('El nombre es obligatorio'); return; }
