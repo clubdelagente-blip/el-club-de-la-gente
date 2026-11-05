@@ -19,7 +19,11 @@
 .wa-card h4 { font-size: 14.5px; font-weight: 600; margin-bottom: 4px; }
 .wa-card p { font-size: 13px; color: var(--tinta-60); line-height: 1.5; margin: 0; }
 
-.tienda-search { position: relative; margin-bottom: 14px; }
+/* margin-top: antes el espacio con el banner de arriba dependía de que
+   .tienda-banner-dots estuviera visible -- cuando solo hay 1 anuncio esos
+   puntos se ocultan (display:none) y con ellos se iba también el espacio
+   entre el banner y el buscador, quedaban pegados. */
+.tienda-search { position: relative; margin-top: 20px; margin-bottom: 14px; }
 .tienda-search input { width: 100%; box-sizing: border-box; font-family: var(--cuerpo); font-size: 16px; color: var(--tinta); padding: 11px 14px 11px 40px; border: 1px solid var(--linea); border-radius: 12px; background: var(--crema-2); transition: border-color .15s, background .15s; }
 .tienda-search input::placeholder { color: var(--tinta-45); }
 .tienda-search input:focus { outline: none; border-color: var(--verde); background: #fff; }
@@ -452,7 +456,9 @@
 @media (max-width: 860px) {
   .bottom-tabbar { display: flex; }
 }
-.topbar__burger { display: none; width: 40px; height: 40px; border-radius: 9px; border: 1px solid var(--linea); background: var(--crema); place-items: center; cursor: pointer; }
+/* Sin "color" explícito, Safari/iOS pinta el ícono con el azul por defecto
+   de los botones nativos en vez de heredar el tinta oscuro de la página. */
+.topbar__burger { display: none; width: 40px; height: 40px; border-radius: 9px; border: 1px solid var(--linea); background: var(--crema); color: var(--tinta); place-items: center; cursor: pointer; }
 .topbar__burger i { width: 20px; height: 20px; }
 @media (max-width: 860px) {
   .topbar__burger { display: grid; }

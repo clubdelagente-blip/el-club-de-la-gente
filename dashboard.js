@@ -2410,12 +2410,13 @@ async function cargarTienda() {
         ${imgSrc ? `<img src="${imgSrc}" class="tienda-card__img" alt="${esc(p.nombre)}">` : `<div class="tienda-card__img tienda-card__img--ph"></div>`}
         ${sinStock ? `<span class="tienda-card__badge" style="background:#777">Agotado</span>`
           : descuentoPct ? `<span class="tienda-card__badge">-${descuentoPct}%</span>`
-          : esNuevo ? `<span class="tienda-card__badge" style="background:#1d4ed8">Nuevo</span>` : ''}
+          : esNuevo ? `<span class="tienda-card__badge" style="background:var(--negro)">Nuevo</span>` : ''}
       </div>
       <div class="tienda-card__body">
         <span class="tienda-card__vendedor tienda-card__vendedor--${p._origen}">${p._origen === 'club' ? ICON_TIENDA : ICON_ALIADO}${esc(vendedor)}</span>
         ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat">${esc(p.categorias_productos.nombre)}</span>` : ''}
         <div class="tienda-card__nombre">${esc(p.nombre)}</div>
+        <span class="tienda-card__envio">${ic('truck')}Envío gratis</span>
         ${resumenP ? `<div class="tienda-card__rating">${estrellasHtml(resumenP.promedio, 12)}<span>${resumenP.texto}</span></div>` : ''}
         ${pocoStock ? `<div class="tienda-card__stock">Quedan ${p.stock}</div>` : ''}
         <div class="tienda-card__precios">
