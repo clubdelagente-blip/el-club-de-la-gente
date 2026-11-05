@@ -65,6 +65,11 @@ function animarNumeroCOP(el, target) {
 // Escapa texto que viene de otros usuarios (nombre de producto del aliado,
 // datos de envio del miembro) antes de insertarlo en innerHTML.
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Igual que en directorio.js/app-cms.js: las descripciones (de aliado o de
+// producto) a veces vienen con **negrilla** en formato markdown -- esto las
+// convierte en <strong> real y respeta los saltos de línea, en vez de
+// mostrar los asteriscos tal cual.
+const descHtml = (s) => esc(s ?? '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
 // Campos de dinero: texto con separador de miles en vivo (un <input type="number"> interpreta
 // el "." que la gente escribe para miles como punto decimal, ej. "62.000" -> 62).
 function formatearInputMoneda(input) {
@@ -2514,7 +2519,7 @@ function abrirDetalleProductoClub(p) {
     <span class="tienda-card__vendedor tienda-card__vendedor--club" style="margin-top:16px"><i data-lucide="store"></i>Tienda del Club</span>
     ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat" style="display:block;margin-top:4px">${esc(p.categorias_productos.nombre)}</span>` : ''}
     <div style="display:flex;align-items:center;gap:6px;margin:4px 0 2px" id="tpd-resumen">${estrellasHtml(0, 14)}<span style="font-size:12.5px;color:#777">Cargando reseñas…</span></div>
-    <p style="font-size:14px;line-height:1.6;color:#444;margin:8px 0 16px">${p.descripcion ? esc(p.descripcion) : 'Sin descripción adicional.'}</p>
+    <p style="font-size:14px;line-height:1.6;color:#444;margin:8px 0 16px">${p.descripcion ? descHtml(p.descripcion) : 'Sin descripción adicional.'}</p>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
       ${p.precio_normal && p.precio_descuento && p.precio_normal > p.precio_descuento ? `<span style="font-size:14px;color:#999;text-decoration:line-through">${COP(p.precio_normal)}</span>` : ''}
       <span style="font-size:24px;font-weight:800;color:var(--verde)">${COP(precio)}</span>
@@ -2800,7 +2805,7 @@ function abrirDetalleProductoAliado(p) {
     </div>
     <span class="tienda-card__vendedor"><i data-lucide="handshake"></i>${esc(p.aliados?.tienda_nombre || p.aliados?.nombre)}</span>
     ${p.categorias_productos?.nombre ? `<span class="tienda-card__cat" style="display:block;margin-top:4px">${esc(p.categorias_productos.nombre)}</span>` : ''}
-    <p style="font-size:14px;line-height:1.6;color:#444;margin:8px 0 16px">${p.descripcion ? esc(p.descripcion) : 'Sin descripción adicional.'}</p>
+    <p style="font-size:14px;line-height:1.6;color:#444;margin:8px 0 16px">${p.descripcion ? descHtml(p.descripcion) : 'Sin descripción adicional.'}</p>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
       ${precioNormal ? `<span style="font-size:14px;color:#999;text-decoration:line-through">${precioNormal}</span>` : ''}
       ${precioDesc ? `<span style="font-size:24px;font-weight:800;color:var(--verde)">${precioDesc}</span>` : ''}
