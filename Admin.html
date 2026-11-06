@@ -1257,6 +1257,7 @@ function renderTablaAliados(list){
       <button class="ad-btn ${a.destacado?'ad-btn--verde':''}" data-dest-aliado="${a.id}" data-dest="${a.destacado}" title="${a.destacado?'Quitar del carrusel de la portada':'Mostrar en el carrusel de la portada'}" style="padding:4px 10px">${ic("star")}</button>
       <span class="ad-pill ${a.activo?'activo':'inactivo'}" data-tog-aliado="${a.id}" data-activo="${a.activo}" style="cursor:pointer"><span class="d"></span>${a.activo?'Activo':'Inactivo'}</span>
       <button class="ad-btn" data-promos-aliado="${a.id}" data-nom-aliado="${(a.nombre||'').replace(/"/g,'&quot;')}" title="Promociones">${ic("tag")}</button>
+      ${a.user_id?`<button class="ad-btn" data-ver-aliado="${a.id}" title="Ver su panel 'Mi negocio', como si fueras ellos">${ic("eye")}</button>`:`<button class="ad-btn" disabled style="opacity:.3;cursor:not-allowed" title="Primero créale una cuenta de acceso (editar → Crear cuenta de acceso)">${ic("eye")}</button>`}
       <button class="ad-btn" data-ed-aliado="${a.id}">${ic("pencil")}</button>
       <button class="ad-btn" data-rm-aliado="${a.id}">${ic("trash-2")}</button>
     </div></td></tr>`).join('');
@@ -3885,6 +3886,19 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const rmProf=e.target.closest('[data-rm-prof]');if(rmProf&&confirm('¿Eliminar este profesional?')){const{error}=await supabase.from('profesionales').delete().eq('id',rmProf.dataset.rmProf);if(error){toast('No se pudo eliminar -- tiene viajes o servicios asociados');return;}cargarProfesionales();toast('Profesional eliminado');return;}
     const promosAl=e.target.closest('[data-promos-aliado]');if(promosAl){cargarYMostrarPromociones(promosAl.dataset.promosAliado,promosAl.dataset.nomAliado);return;}
     const destAl=e.target.closest('[data-dest-aliado]');if(destAl){await supabase.from('aliados').update({destacado:destAl.dataset.dest!=='true'}).eq('id',destAl.dataset.destAliado);cargarAliados();return;}
+    const verAl=e.target.closest('[data-ver-aliado]');if(verAl){
+      const a=_aliados.find(x=>x.id===verAl.dataset.verAliado);
+      if(!confirm(`Vas a abrir el panel "Mi negocio" de ${a?.nombre||'este aliado'} en una pestaña nueva, como si fueras ellos.\n\nComo el navegador comparte la sesión, es probable que tu propia sesión de Admin en esta pestaña también quede como la de ellos después -- si pasa eso, solo vuelve a iniciar sesión como Admin.\n\n¿Continuar?`))return;
+      verAl.disabled=true;const icOrig=verAl.innerHTML;verAl.innerHTML=ic('loader');if(window.lucide)lucide.createIcons();
+      try{
+        const resp=await fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/generar-sesion-aliado',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({aliado_id:verAl.dataset.verAliado})});
+        const out=await resp.json();
+        if(!resp.ok||out.error)throw new Error(out.error||'Error desconocido');
+        window.open(out.link,'_blank');
+      }catch(err){toast('Error: '+err.message);}
+      verAl.disabled=false;verAl.innerHTML=icOrig;if(window.lucide)lucide.createIcons();
+      return;
+    }
     const edAl=e.target.closest('[data-ed-aliado]');if(edAl){const a=_aliados.find(x=>x.id===edAl.dataset.edAliado);if(a){abrirModal('Editar aliado',a.nombre,htmlFormAliado(a));bindFormAliado();}return;}
     const togAl=e.target.closest('[data-tog-aliado]');if(togAl){const activo=togAl.dataset.activo==='true';const alId=togAl.dataset.togAliado;await supabase.from('aliados').update({activo:!activo}).eq('id',alId);const alReg=_aliados.find(x=>x.id===alId);if(alReg?.user_id)await supabase.from('perfiles').update({plan:!activo?'vitalicia':'gratis'}).eq('id',alReg.user_id);cargarAliados();return;}
     const rmAl=e.target.closest('[data-rm-aliado]');if(rmAl&&confirm('¿Eliminar este aliado?')){const alReg=_aliados.find(x=>x.id===rmAl.dataset.rmAliado);const{error}=await supabase.from('aliados').delete().eq('id',rmAl.dataset.rmAliado);if(error){toast('No se pudo eliminar -- tiene productos, promociones o pedidos asociados');return;}if(alReg?.user_id)await supabase.from('perfiles').update({plan:'gratis'}).eq('id',alReg.user_id);cargarAliados();toast('Aliado eliminado');return;}
