@@ -208,7 +208,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=7"></script>
-  <script src="admin.js?v=36"></script>
+  <script src="admin.js?v=37"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -3735,6 +3735,21 @@ document.addEventListener('DOMContentLoaded',async()=>{
       await supabase.from('configuracion').upsert([{clave:'grupo_wa_moto',valor:moto},{clave:'grupo_wa_carro',valor:carro},{clave:'uber_descuento_pct',valor:String(pct)}]);
       btn.disabled=false;
       toast('Cambios guardados ✓');
+      return;
+    }
+    if(e.target.closest('#cfg-pass-save')){
+      const btn=e.target.closest('#cfg-pass-save');
+      const nueva=$("#cfg-pass-nueva")?.value||'';
+      const repetir=$("#cfg-pass-repetir")?.value||'';
+      if(nueva.length<8){toast('La contraseña debe tener al menos 8 caracteres');return;}
+      if(nueva!==repetir){toast('Las dos contraseñas no coinciden');return;}
+      if(!confirm('¿Cambiar la contraseña de esta cuenta de Admin?'))return;
+      btn.disabled=true;const txtOrig=btn.innerHTML;btn.innerHTML=`${ic('loader')} Cambiando…`;if(window.lucide)lucide.createIcons();
+      const{error}=await supabase.auth.updateUser({password:nueva});
+      btn.disabled=false;btn.innerHTML=txtOrig;if(window.lucide)lucide.createIcons();
+      if(error){toast('Error: '+error.message);return;}
+      $("#cfg-pass-nueva").value='';$("#cfg-pass-repetir").value='';
+      toast('Contraseña cambiada ✓');
       return;
     }
     if(e.target.closest('[data-vt-aprobar]')){

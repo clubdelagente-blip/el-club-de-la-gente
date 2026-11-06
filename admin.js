@@ -369,7 +369,22 @@ function renderConfig() {
           <div class="ad-toggle ${it.on ? "is-on" : ""}" data-toggle="${i}"></div>
         </div>`).join("")}
     </div>
-    <div class="ad-toolbar"><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="cfg-save">${ic("check")} Guardar cambios</button></div>`;
+    <div class="ad-toolbar"><div class="ad-spacer"></div><button class="ad-btn ad-btn--verde" id="cfg-save">${ic("check")} Guardar cambios</button></div>
+    <div style="font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:rgba(242,240,234,.4);margin:28px 0 10px">Cuenta de Admin</div>
+    <div class="ad-set">
+      <div class="ad-set__row" style="flex-direction:column;align-items:stretch;gap:10px">
+        <span style="font-size:11px;color:rgba(242,240,234,.35)">Por seguridad, la contraseña actual no se puede ver -- solo se puede cambiar por una nueva.</span>
+        <div>
+          <label style="font-size:12px;color:rgba(242,240,234,.5);display:block;margin-bottom:5px">Nueva contraseña</label>
+          <input id="cfg-pass-nueva" type="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(242,240,234,.15);background:rgba(242,240,234,.04);color:#fff;font-size:13px">
+        </div>
+        <div>
+          <label style="font-size:12px;color:rgba(242,240,234,.5);display:block;margin-bottom:5px">Repetir nueva contraseña</label>
+          <input id="cfg-pass-repetir" type="password" placeholder="Repite la contraseña" autocomplete="new-password" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(242,240,234,.15);background:rgba(242,240,234,.04);color:#fff;font-size:13px">
+        </div>
+        <button class="ad-btn ad-btn--verde" id="cfg-pass-save" style="align-self:flex-start">${ic("key")} Cambiar contraseña</button>
+      </div>
+    </div>`;
   window.cargarConfigTransporte?.();
   if (window.lucide) lucide.createIcons();
 }
