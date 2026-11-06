@@ -127,6 +127,81 @@ function renderProfDocsGrid() {
   cont.querySelectorAll("[data-rm-doc]").forEach(b => b.addEventListener("click", () => { profDocs.splice(+b.dataset.rmDoc, 1); renderProfDocsGrid(); }));
 }
 
+/* ---------- REGISTRO ALIADO: categorías y subcategorías ---------- */
+// Arranca con esta lista por defecto y se reemplaza por las opciones reales de
+// la pregunta "categorías de interés" del Formulario de bienvenida en cuanto
+// carga la página -- así quien se postula ve las mismas categorías y
+// subcategorías que ya usa el Admin para dar de alta un aliado nuevo.
+let CATS_ALIADO = ['Restaurante / Cafetería', 'Salud y bienestar', 'Belleza y estética', 'Barbería', 'Odontología', 'Veterinaria', 'Ropa y accesorios', 'Supermercado / Tienda', 'Educación', 'Deporte y gym', 'Tecnología'];
+let SUBCATS_ALIADO = {};
+let _catsAliadoCargadas = false;
+async function cargarCategoriasAliado() {
+  if (_catsAliadoCargadas) return;
+  _catsAliadoCargadas = true;
+  try {
+    const { data: master } = await supabase.from('preguntas_segmentacion').select('id,opciones').eq('guardar_como_categorias', true).limit(1);
+    if (master?.[0]) {
+      if (master[0].opciones?.length) CATS_ALIADO = master[0].opciones;
+      const { data: hijos } = await supabase.from('preguntas_segmentacion').select('mostrar_si_respuesta,opciones').eq('pregunta_padre_id', master[0].id);
+      SUBCATS_ALIADO = {};
+      (hijos || []).forEach(h => { if (h.mostrar_si_respuesta && h.opciones?.length) SUBCATS_ALIADO[h.mostrar_si_respuesta] = h.opciones; });
+    }
+  } catch (_) { /* si falla, se queda con la lista por defecto */ }
+  renderCatGrid();
+}
+function renderCatGrid() {
+  const cont = $("#cat-grid");
+  if (!cont) return;
+  const antes = $$(".cat-opt.is-on:not(#cat-otra-btn)").map(b => b.dataset.cat);
+  const otraAntes = $("#cat-otra-btn")?.classList.contains("is-on");
+  cont.innerHTML = CATS_ALIADO.map(c => `<button type="button" class="cat-opt${antes.includes(c) ? ' is-on' : ''}" data-cat="${c}">${c}</button>`).join('')
+    + `<button type="button" class="cat-opt${otraAntes ? ' is-on' : ''}" data-cat="Otra" id="cat-otra-btn">Otra</button>`;
+  $$(".cat-opt").forEach(btn => {
+    btn.addEventListener("click", () => {
+      btn.classList.toggle("is-on");
+      const otraInput = $("#al-cat-otra");
+      const alguienEsOtra = $("#cat-otra-btn")?.classList.contains("is-on");
+      if (otraInput) otraInput.style.display = alguienEsOtra ? "block" : "none";
+      actualizarAlCatHidden();
+      renderSubcatsAliado();
+    });
+  });
+  actualizarAlCatHidden();
+  renderSubcatsAliado();
+}
+function actualizarAlCatHidden() {
+  const seleccionadas = $$(".cat-opt.is-on:not(#cat-otra-btn)").map(b => b.dataset.cat);
+  const otraInput = $("#al-cat-otra");
+  const alguienEsOtra = $("#cat-otra-btn")?.classList.contains("is-on");
+  if (alguienEsOtra && otraInput?.value.trim()) seleccionadas.push(otraInput.value.trim());
+  const hidden = $("#al-cat");
+  if (hidden) hidden.value = seleccionadas.join(", ");
+}
+// Muestra, por cada categoría marcada, sus subcategorías (si la pregunta de
+// esa categoría en el Formulario de bienvenida tiene una hija con opciones) --
+// mismo patrón que renderFaSubcats() en Admin.
+function renderSubcatsAliado() {
+  const catsSel = $$(".cat-opt.is-on:not(#cat-otra-btn)").map(b => b.dataset.cat);
+  const wrap = $("#al-subcats-wrap");
+  if (!wrap) return;
+  const actuales = ($("#al-subcat")?.value || "").split(",").map(s => s.trim()).filter(Boolean);
+  const grupos = catsSel.filter(c => SUBCATS_ALIADO[c]?.length);
+  if (!grupos.length) { wrap.style.display = "none"; wrap.innerHTML = ""; const h = $("#al-subcat"); if (h) h.value = ""; return; }
+  wrap.style.display = "";
+  wrap.innerHTML = grupos.map(cat => `
+    <div style="margin-bottom:10px">
+      <div style="font-size:12px;font-weight:600;margin-bottom:6px">${cat}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">${SUBCATS_ALIADO[cat].map(s => `<button type="button" class="cat-opt${actuales.includes(s) ? ' is-on' : ''}" data-subcat="${s}" style="font-size:13px;padding:8px 14px">${s}</button>`).join('')}</div>
+    </div>`).join('');
+  wrap.querySelectorAll("[data-subcat]").forEach(chip => chip.addEventListener("click", () => { chip.classList.toggle("is-on"); actualizarSubcatHidden(); }));
+  actualizarSubcatHidden();
+}
+function actualizarSubcatHidden() {
+  const sel = $$("#al-subcats-wrap [data-subcat].is-on").map(b => b.dataset.subcat);
+  const h = $("#al-subcat");
+  if (h) h.value = sel.join(", ");
+}
+
 /* ---------- REGISTRO ALIADO: logotipo del negocio ---------- */
 let alLogo = null;
 function renderAlLogoGrid() {
@@ -175,7 +250,7 @@ function elegirRol(rol) {
   $("#form-aliado").hidden      = rol !== "aliado";
   $("#form-profesional").hidden = rol !== "profesional";
   if (rol === "profesional") { profDocs = []; renderProfDocsGrid(); }
-  if (rol === "aliado") { alLogo = null; renderAlLogoGrid(); }
+  if (rol === "aliado") { alLogo = null; renderAlLogoGrid(); renderCatGrid(); cargarCategoriasAliado(); }
 
   if (window.lucide) lucide.createIcons();
 }
@@ -315,26 +390,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     elegirRol(rolParam);
   }
 
-  // Categorías aliado — selección múltiple
-  $$(".cat-opt").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const esOtra = btn.id === "cat-otra-btn";
-      btn.classList.toggle("is-on");
-      const otraInput = $("#al-cat-otra");
-      const alguienEsOtra = $("#cat-otra-btn")?.classList.contains("is-on");
-      if (otraInput) otraInput.style.display = alguienEsOtra ? "block" : "none";
-      const seleccionadas = $$(".cat-opt.is-on:not(#cat-otra-btn)").map(b => b.dataset.cat);
-      if (alguienEsOtra && otraInput?.value.trim()) seleccionadas.push(otraInput.value.trim());
-      const hidden = $("#al-cat");
-      if (hidden) hidden.value = seleccionadas.join(", ");
-    });
-  });
-  $("#al-cat-otra")?.addEventListener("input", (e) => {
-    const seleccionadas = $$(".cat-opt.is-on:not(#cat-otra-btn)").map(b => b.dataset.cat);
-    if (e.target.value.trim()) seleccionadas.push(e.target.value.trim());
-    const hidden = $("#al-cat");
-    if (hidden) hidden.value = seleccionadas.join(", ");
-  });
+  // Categorías aliado — se renderizan dinámicamente, ver renderCatGrid()
+  $("#al-cat-otra")?.addEventListener("input", actualizarAlCatHidden);
 
   // Área profesional — mostrar campo libre si elige "Otra"
   $("#prof-area")?.addEventListener("change", (e) => {
@@ -866,6 +923,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const btn = e.target.querySelector("button[type=submit]");
     const negocio = $("#al-negocio").value.trim();
     const categoria = $("#al-cat").value.trim();
+    const subcategorias = ($("#al-subcat").value.trim() || "").split(",").map(s => s.trim()).filter(Boolean);
     const descripcion = $("#al-desc").value.trim();
     const nombre = $("#al-nombre").value.trim();
     const fechaNacimiento = $("#al-fecha").value;
@@ -892,6 +950,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { error } = await supabase.from("aliados_postulaciones").insert({
       nombre_negocio: negocio,
       categoria,
+      subcategorias,
       descripcion,
       nombre_responsable: nombre,
       fecha_nacimiento: fechaNacimiento,

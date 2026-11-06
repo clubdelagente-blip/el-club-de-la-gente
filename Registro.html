@@ -187,22 +187,11 @@
               </div>
               <div class="campo">
                 <label>Categoría o tipo de negocio</label>
-                <div class="cat-grid" id="cat-grid">
-                  <button type="button" class="cat-opt" data-cat="Restaurante / Cafetería">Restaurante / Cafetería</button>
-                  <button type="button" class="cat-opt" data-cat="Salud y bienestar">Salud y bienestar</button>
-                  <button type="button" class="cat-opt" data-cat="Belleza y estética">Belleza y estética</button>
-                  <button type="button" class="cat-opt" data-cat="Barbería">Barbería</button>
-                  <button type="button" class="cat-opt" data-cat="Odontología">Odontología</button>
-                  <button type="button" class="cat-opt" data-cat="Veterinaria">Veterinaria</button>
-                  <button type="button" class="cat-opt" data-cat="Ropa y accesorios">Ropa y accesorios</button>
-                  <button type="button" class="cat-opt" data-cat="Supermercado / Tienda">Supermercado / Tienda</button>
-                  <button type="button" class="cat-opt" data-cat="Educación">Educación</button>
-                  <button type="button" class="cat-opt" data-cat="Deporte y gym">Deporte y gym</button>
-                  <button type="button" class="cat-opt" data-cat="Tecnología">Tecnología</button>
-                  <button type="button" class="cat-opt" data-cat="Otra" id="cat-otra-btn">Otra</button>
-                </div>
+                <div class="cat-grid" id="cat-grid"></div>
                 <input type="text" id="al-cat-otra" placeholder="Describe la categoría de tu negocio" style="display:none;margin-top:10px">
                 <input type="hidden" id="al-cat">
+                <div id="al-subcats-wrap" style="display:none;margin-top:10px"></div>
+                <input type="hidden" id="al-subcat">
               </div>
               <div class="campo">
                 <label for="al-desc">Descripción del negocio</label>
@@ -410,7 +399,7 @@
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
-  <script type="module" src="auth.js?v=65"></script>
+  <script type="module" src="auth.js?v=66"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
