@@ -466,24 +466,6 @@ function detalleVigencia(p) {
 function esMediaVideo(url) {
   return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url || "");
 }
-// Oferta grande de la tarjeta rediseñada (afiche) -- "GRATIS", "30%",
-// "2×1" o el precio con el "antes" tachado cuando hay precio de
-// referencia real (no inventado).
-function ofertaGrandeHtml(p) {
-  if (p.tipo === "regalo") return `<div class="pm-oferta__txt">¡GRATIS!</div>`;
-  if (p.tipo === "2x1") return `<div class="pm-oferta__txt">2×1</div>`;
-  if (p.tipo === "porcentaje") {
-    const pct = pctDerivada(p);
-    return `<div class="pm-oferta__pct">${pct != null ? pct : ""}<span>%<b>DCTO.</b></span></div>`;
-  }
-  if (p.tipo === "precio_especial" && p.precio_descuento != null) {
-    return `
-      ${p.precio_normal ? `<div class="pm-oferta__antes">Antes ${fmtCOP(p.precio_normal)}</div>` : ""}
-      <div class="pm-oferta__precio">${fmtCOP(p.precio_descuento)}</div>`;
-  }
-  if (p.tipo === "monto_fijo" && p.ahorro_fijo) return `<div class="pm-oferta__txt">-${fmtCOP(p.ahorro_fijo)}</div>`;
-  return `<div class="pm-oferta__txt">${esc(badgePromo(p))}</div>`;
-}
 function promoCardHtml(p, al) {
   const cc = colorCategoria(al?.categoria);
   const medios = (Array.isArray(p.fotos_urls) && p.fotos_urls.length ? p.fotos_urls : (p.foto_url ? [p.foto_url] : [])).slice(0, 4);
@@ -508,29 +490,27 @@ function promoCardHtml(p, al) {
       : "";
   return `
   <div class="pm-card" style="--pm-cc:${cc}">
-    <div class="pm-carrusel" data-pm-carrusel role="button" tabindex="0" aria-label="Ver fotos y videos de la promoción">
-      <div class="pm-carrusel__track">${slidesHtml}</div>
-      ${medios.length > 1 ? `<div class="pm-carrusel__hint">${ic("chevron-right")}</div>` : ""}
-      ${dotsHtml}
-      <div class="pm-club-mark"><img src="icon-club-isotipo.png" alt="El Club de la Gente"></div>
-      ${detalleVigencia(p) ? `<span class="pm-vigencia">${esc(detalleVigencia(p))}</span>` : ""}
-    </div>
-    <div class="pm-aprovecha">
-      <span class="pm-aprovecha__txt">¡Aprovecha!</span>
-      <svg class="pm-aprovecha__flecha" viewBox="0 0 80 280" fill="none"><path d="M14 10C4 110 4 220 55 258" stroke="#fff" stroke-width="4" stroke-linecap="round"/><path d="M40 250L57 261L54 241" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
-    </div>
-    <div class="pm-oferta">
-      ${ofertaGrandeHtml(p)}
-      <h3 class="pm-titulo">${esc(p.titulo || "Promoción")}</h3>
-      <div class="pm-oferta__pie">
-        <div class="pm-oferta__aliado">
-          <div class="pm-oferta__logo">${al?.imagen_url ? `<img src="${al.imagen_url}" alt="">` : ""}</div>
-          <div>
-            <div class="pm-oferta__nombre">${esc(al?.nombre || "")}</div>
-            <div class="pm-oferta__dir">${esc(al?.direccion || "Fusagasugá")}</div>
+    <div class="pm-top">
+      <div class="pm-info">
+        <div class="pm-info__top">
+          <div class="pm-info__aliado">
+            <div class="pm-info__logo">${al?.imagen_url ? `<img src="${al.imagen_url}" alt="">` : ""}</div>
+            <span class="pm-info__nombre">${esc(al?.nombre || "")}</span>
           </div>
+          <div class="pm-club-mark"><img src="icon-club-isotipo.png" alt="El Club de la Gente"></div>
         </div>
-        ${ctaHtml}
+        <h3 class="pm-titulo">${esc(p.titulo || "Promoción")}</h3>
+        <span class="pm-tipo">${esc(badgePromo(p))}</span>
+        ${detalleVigencia(p) ? `<span class="pm-vigencia">${esc(detalleVigencia(p))}</span>` : ""}
+        <button type="button" class="pm-vermas" data-pm-vermas>Ver más ${ic("chevron-down")}</button>
+        <div class="pm-desc" data-pm-desc hidden>
+          ${p.descripcion ? `<p class="pm-desc__txt">${descHtml(p.descripcion)}</p>` : ""}
+          ${ctaHtml}
+        </div>
+      </div>
+      <div class="pm-carrusel" data-pm-carrusel aria-label="Fotos y videos de la promoción">
+        <div class="pm-carrusel__track">${slidesHtml}</div>
+        ${dotsHtml}
       </div>
     </div>
     <div class="pm-condiciones-wrap">
@@ -539,36 +519,50 @@ function promoCardHtml(p, al) {
     </div>
   </div>`;
 }
-// Rota sola desde que aparece (igual que el carrusel de marcas), no hace
-// falta tocarla primero -- antes se quedaba quieta hasta el primer click.
+// Carrusel de fotos/video de la promo -- solo se mueve arrastrando con el
+// dedo o el mouse (sin autoplay). stopPropagation en cada evento evita que
+// el gesto también mueva un carrusel ancestro (no debería haber uno en la
+// ficha del aliado, pero se deja igual que en app-cms.js por consistencia).
 function initPmCarrusel(root) {
   const slides = [...root.querySelectorAll(".pm-carrusel__slide")];
   if (slides.length <= 1) return;
   const dots = [...root.querySelectorAll(".pm-carrusel__dots span")];
   const track = root.querySelector(".pm-carrusel__track");
-  let idx = 0, timer = null;
+  let idx = 0, arrastrando = false, startX = 0, deltaX = 0;
 
-  function mostrar(i) {
-    idx = i;
-    track.style.transform = `translateX(-${i * 100}%)`;
-    dots.forEach((d, di) => d.classList.toggle("is-on", di === i));
+  function mostrar(i, animar) {
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    track.style.transition = animar ? "transform .3s ease" : "none";
+    track.style.transform = `translateX(calc(-${idx * 100}% + ${arrastrando ? deltaX : 0}px))`;
+    dots.forEach((d, di) => d.classList.toggle("is-on", di === idx));
     slides.forEach((s, si) => {
       const v = s.querySelector("video");
       if (!v) return;
-      if (si === i) { v.currentTime = 0; v.play().catch(() => {}); }
+      if (si === idx) { v.currentTime = 0; v.loop = true; v.play().catch(() => {}); }
       else v.pause();
     });
   }
-  function avanzar() { mostrar((idx + 1) % slides.length); programar(); }
-  function programar() {
-    clearTimeout(timer);
-    const video = slides[idx].querySelector("video");
-    if (video) video.onended = avanzar;
-    else timer = setTimeout(avanzar, 3000);
+  function iniciar(clientX, e) { e.stopPropagation(); arrastrando = true; startX = clientX; deltaX = 0; }
+  function mover(clientX, e) { if (!arrastrando) return; e.stopPropagation(); deltaX = clientX - startX; mostrar(idx, false); }
+  function soltar(e) {
+    if (!arrastrando) return;
+    e?.stopPropagation();
+    const umbral = root.offsetWidth * 0.18;
+    if (deltaX < -umbral && idx < slides.length - 1) idx += 1;
+    else if (deltaX > umbral && idx > 0) idx -= 1;
+    arrastrando = false;
+    deltaX = 0;
+    mostrar(idx, true);
   }
-  root.addEventListener("click", () => root.classList.add("is-activo"));
-  mostrar(0);
-  programar();
+
+  root.addEventListener("touchstart", (e) => iniciar(e.touches[0].clientX, e), { passive: true });
+  root.addEventListener("touchmove", (e) => mover(e.touches[0].clientX, e), { passive: true });
+  root.addEventListener("touchend", (e) => soltar(e), { passive: true });
+  root.addEventListener("mousedown", (e) => { iniciar(e.clientX, e); e.preventDefault(); });
+  window.addEventListener("mousemove", (e) => mover(e.clientX, e));
+  window.addEventListener("mouseup", (e) => soltar(e));
+
+  mostrar(0, false);
 }
 
 function estrellasIconos(valor, size) {
@@ -1004,6 +998,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       const txt = condBtn.nextElementSibling;
       if (txt && txt.classList.contains("pm-condiciones-txt")) txt.hidden = !txt.hidden;
       else window.open("Terminos.html", "_blank");
+      return;
+    }
+    const vermasBtn = e.target.closest("[data-pm-vermas]");
+    if (vermasBtn) {
+      const desc = vermasBtn.closest(".pm-info")?.querySelector("[data-pm-desc]");
+      if (desc) { desc.hidden = !desc.hidden; vermasBtn.classList.toggle("is-open", !desc.hidden); }
       return;
     }
     if (e.target.closest("#sheet-close") || e.target === overlay) closeSheet();

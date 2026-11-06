@@ -384,10 +384,12 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ============================================================
-   TARJETA DE PROMOCIÓN (PromoCard v2) — carrusel de fotos/video +
-   ClubCard de ticket vintage con el % dinámico, fondo por categoría.
-   Un solo componente compartido, usado en el carrusel de la portada
-   y en la ficha de cada aliado del Directorio.
+   TARJETA DE PROMOCIÓN (PromoCard v3) — banner horizontal: info del
+   aliado + título/tipo/vigencia a la izquierda, carrusel de fotos/video
+   (solo swipe, sin autoplay) a la derecha, fondo sólido por categoría.
+   Un solo componente compartido, usado en el carrusel de la portada,
+   en la ficha de cada aliado del Directorio y en la vista previa de
+   Admin (duplicado a propósito en cada archivo).
    ============================================================ */
 .pm-card {
   position: relative;
@@ -395,133 +397,83 @@ a { color: inherit; text-decoration: none; }
   flex-shrink: 0;
   border-radius: 22px;
   overflow: hidden;
-  background: #fff;
-  box-shadow: 0 20px 44px -22px rgba(2, 27, 26, .4), 0 2px 10px rgba(2, 27, 26, .08);
-  font-family: var(--cuerpo);
-}
-/* Franja de color por categoría en el borde izquierdo -- mismo recurso que
-   ya usaba el flyer viejo (.promo-card::before en directorio.css), para que
-   el marco de la tarjeta nueva se sienta igual de "de marca". */
-.pm-card::before {
-  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; z-index: 5;
-  background: var(--pm-cc, var(--verde)); pointer-events: none;
-}
-.pm-carrusel {
-  position: relative;
-  aspect-ratio: 1 / 1;
-  background: linear-gradient(150deg, var(--pm-cc, var(--verde)), color-mix(in srgb, var(--pm-cc, var(--verde)) 55%, #000 30%));
-  cursor: pointer;
-  overflow: hidden;
-  -webkit-tap-highlight-color: transparent;
-}
-.pm-carrusel__track { display: flex; width: 100%; height: 100%; transition: transform .6s cubic-bezier(.65, 0, .35, 1); }
-.pm-carrusel__slide { width: 100%; height: 100%; flex: none; }
-.pm-carrusel__slide img, .pm-carrusel__slide video { width: 100%; height: 100%; object-fit: cover; display: block; }
-.pm-carrusel__ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, .55); }
-.pm-carrusel__ph svg, .pm-carrusel__ph i { width: 34px; height: 34px; }
-.pm-carrusel.is-activo { box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .6); }
-.pm-carrusel__dots { position: absolute; bottom: 14px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; z-index: 2; }
-.pm-carrusel__dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, .4); transition: all .3s ease; }
-.pm-carrusel__dots span.is-on { background: #fff; width: 18px; border-radius: 4px; }
-.pm-carrusel__hint {
-  position: absolute; top: 14px; right: 14px; z-index: 2;
-  width: 34px; height: 34px; border-radius: 50%;
-  background: rgba(2, 27, 26, .38); backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center; color: #fff;
-  opacity: .92; transition: opacity .4s ease, transform .4s ease;
-}
-.pm-carrusel__hint svg, .pm-carrusel__hint i { width: 16px; height: 16px; animation: pm-hint-nudge 1.6s ease-in-out infinite; }
-@keyframes pm-hint-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(3px); } }
-/* Marca del Club -- insignia chica arriba a la izquierda del carrusel de
-   fotos, como en el afiche de referencia. */
-.pm-club-mark {
-  position: absolute; top: 14px; left: 14px; z-index: 4;
-  width: 34px; height: 34px; border-radius: 50%;
-  background: #fff; display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 8px 18px -8px rgba(0, 0, 0, .5);
-}
-.pm-club-mark img { width: 22px; height: 22px; object-fit: contain; display: block; }
-/* "¡Aprovecha!" con flecha curva -- mismo recurso del afiche de
-   referencia. Ya no vive adentro de .pm-carrusel (que tiene
-   overflow:hidden y la cortaba) sino directo en .pm-card, para que la
-   flecha pueda estirarse hacia abajo y señalar la oferta grande, no solo
-   la foto. */
-.pm-aprovecha {
-  position: absolute; top: 78px; left: 20px; z-index: 3; color: #fff;
-  display: flex; flex-direction: column; align-items: flex-start; pointer-events: none;
-  filter: drop-shadow(0 2px 5px rgba(0,0,0,.45));
-}
-.pm-aprovecha__txt { font-family: "Permanent Marker", cursive; font-size: 17px; transform: rotate(-4deg); white-space: nowrap; }
-.pm-aprovecha__flecha { width: 76px; height: 248px; margin: 2px 0 0 14px; }
-/* Sticker "SOLO HASTA [fecha]" -- mismo lugar donde antes iba el nombre del
-   aliado (.pm-name-pill, ahora se mudó a .pm-oferta__nombre abajo). */
-.pm-vigencia {
-  position: absolute; top: 14px; right: 14px; z-index: 4;
-  display: inline-flex; align-items: center;
-  background: #EAB749; color: var(--negro);
-  font-weight: 800; font-size: 10.5px; letter-spacing: .02em; text-transform: uppercase;
-  padding: 6px 11px; border-radius: 6px; transform: rotate(3deg);
-  box-shadow: 0 6px 14px -8px rgba(2, 27, 26, .5);
-}
-
-/* Franja de oferta -- color de categoría como antes, mezclado con el
-   mismo patrón de figuritas que ya se usa en el resto de la plataforma.
-   El PNG del patrón es opaco y casi negro de base (sin transparencia), así
-   que "multiply" lo apagaba todo a negro -- "screen" sí deja ver bien el
-   color de categoría (casi no cambia contra el negro del patrón) y además
-   resalta las figuras como un brillo claro encima. Con el
-   precio/porcentaje/regalo GRANDE y AMARILLO como protagonista, igual que
-   en el afiche de referencia. Reemplaza la ClubCard chica + el sello del %
-   que tenía la versión anterior. El borde de arriba es diagonal (no recto)
-   -- clip-path recorta una cuña a la izquierda, y el margen negativo sube
-   la tarjeta para que ese recorte deje ver el carrusel de fotos de atrás,
-   no un hueco en blanco. */
-.pm-oferta {
-  position: relative;
+  display: flex;
+  flex-direction: column;
   background-image: url("patron-fondo-oscuro.png?v=1");
   background-repeat: repeat;
   background-size: 400px auto;
   background-color: var(--pm-cc, var(--verde));
   background-blend-mode: screen;
-  color: #fff;
-  padding: 64px 18px 16px;
-  margin-top: -58px;
-  clip-path: polygon(0 58px, 100% 0, 100% 100%, 0 100%);
+  box-shadow: 0 20px 44px -22px rgba(2, 27, 26, .4), 0 2px 10px rgba(2, 27, 26, .08);
+  font-family: var(--cuerpo);
 }
-/* Rotada para seguir el mismo ángulo ascendente del corte diagonal de
-   arriba (unos 9°, lo que sube el clip-path en 58px a lo ancho de la
-   tarjeta). */
-.pm-oferta__txt {
-  font-family: var(--display); font-weight: 700; font-size: 44px; line-height: .95;
-  letter-spacing: -.01em; text-transform: uppercase;
-  color: #EAB749; text-shadow: 0 3px 0 rgba(2,27,26,.25);
-  display: inline-block; transform: rotate(-9deg); transform-origin: left bottom;
+.pm-top { display: flex; align-items: stretch; }
+.pm-info { flex: 1; min-width: 0; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 5px; color: #fff; }
+.pm-info__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pm-info__aliado { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.pm-info__logo { width: 22px; height: 22px; flex: none; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.22); }
+.pm-info__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pm-info__nombre { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.95); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Marca del Club -- arriba a la derecha de la info, como pidió el usuario
+   (antes flotaba sobre la foto, arriba a la izquierda). */
+.pm-club-mark {
+  width: 22px; height: 22px; flex: none; border-radius: 50%;
+  background: #fff; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, .5);
 }
-.pm-oferta__pct {
-  font-family: var(--display); font-weight: 700; font-size: 64px; line-height: .85;
-  display: flex; align-items: flex-start; gap: 2px;
-  color: #EAB749; text-shadow: 0 3px 0 rgba(2,27,26,.25);
-  transform: rotate(-9deg); transform-origin: left bottom;
-}
-.pm-oferta__pct span { font-size: 22px; font-weight: 600; margin-top: 10px; line-height: 1; }
-.pm-oferta__pct span b { display: block; font-size: 12px; font-weight: 800; letter-spacing: .03em; margin-top: 2px; }
-.pm-oferta__antes { font-size: 13px; color: rgba(255,255,255,.65); text-decoration: line-through; margin-bottom: 2px; }
-.pm-oferta__precio {
-  font-family: var(--display); font-weight: 700; font-size: 38px; line-height: 1;
-  color: #EAB749; text-shadow: 0 3px 0 rgba(2,27,26,.25);
-  display: inline-block; transform: rotate(-9deg); transform-origin: left bottom;
-}
+.pm-club-mark img { width: 14px; height: 14px; object-fit: contain; display: block; }
 .pm-titulo {
-  font-family: var(--display); font-weight: 500; font-size: 18px; font-style: italic;
-  color: #fff; margin: 8px 0 0; line-height: 1.2;
+  font-family: var(--display); font-weight: 500; font-size: 16px; font-style: italic;
+  color: #fff; margin: 2px 0 0; line-height: 1.18;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-.pm-oferta__pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; }
-.pm-oferta__aliado { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.pm-oferta__logo { width: 34px; height: 34px; flex: none; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.18); }
-.pm-oferta__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.pm-oferta__nombre { font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
-.pm-oferta__dir { font-size: 10.5px; color: rgba(255,255,255,.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+.pm-tipo {
+  display: inline-flex; align-items: center; width: fit-content;
+  background: rgba(255,255,255,.92); color: var(--negro);
+  font-weight: 800; font-size: 10.5px; letter-spacing: .02em; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 100px; margin-top: 1px;
+}
+.pm-vigencia {
+  display: inline-flex; align-items: center; width: fit-content;
+  background: #EAB749; color: var(--negro);
+  font-weight: 800; font-size: 10px; letter-spacing: .02em; text-transform: uppercase;
+  padding: 4px 9px; border-radius: 6px; margin-top: 1px;
+}
+.pm-vermas {
+  margin-top: 6px; width: fit-content; display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.45); color: #fff;
+  font-size: 11px; font-weight: 700; padding: 6px 11px; border-radius: 100px;
+  cursor: pointer; font-family: inherit;
+}
+.pm-vermas svg, .pm-vermas i { width: 12px; height: 12px; transition: transform .25s ease; }
+.pm-vermas.is-open svg, .pm-vermas.is-open i { transform: rotate(180deg); }
+.pm-desc { margin-top: 6px; }
+.pm-desc__txt { font-size: 11.5px; line-height: 1.5; color: rgba(255,255,255,.92); margin: 0 0 8px; }
+
+/* Carrusel de fotos/video del producto -- a la derecha, solo por swipe
+   (dedo o mouse), sin autoplay. El padding deja ver de fondo el color de
+   categoría de .pm-card como "marco" alrededor de cada foto/video. */
+.pm-carrusel {
+  position: relative;
+  width: 140px;
+  flex: none;
+  padding: 10px;
+  box-sizing: border-box;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.pm-carrusel:active { cursor: grabbing; }
+.pm-carrusel__track { display: flex; width: 100%; height: 100%; transition: transform .3s ease; }
+.pm-carrusel__slide { width: 100%; height: 100%; flex: none; border-radius: 12px; overflow: hidden; background: rgba(255,255,255,.1); }
+.pm-carrusel__slide img, .pm-carrusel__slide video { width: 100%; height: 100%; object-fit: cover; display: block; -webkit-user-drag: none; }
+.pm-carrusel__ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, .6); }
+.pm-carrusel__ph svg, .pm-carrusel__ph i { width: 28px; height: 28px; }
+.pm-carrusel__dots { position: absolute; bottom: 4px; left: 10px; right: 10px; display: flex; justify-content: center; gap: 5px; z-index: 2; }
+.pm-carrusel__dots span { width: 5px; height: 5px; border-radius: 50%; background: rgba(255, 255, 255, .45); transition: all .3s ease; }
+.pm-carrusel__dots span.is-on { background: #fff; width: 14px; border-radius: 3px; }
 
 .pm-wa, .pm-wa-lock {
   display: inline-flex; align-items: center; gap: 5px; flex: none;

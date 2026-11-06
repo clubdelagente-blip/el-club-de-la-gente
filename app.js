@@ -792,6 +792,13 @@ document.addEventListener("DOMContentLoaded", () => {
       else window.open("Terminos.html", "_blank");
       return;
     }
+    // "Ver más" de la tarjeta de promoción -- despliega la descripción corta
+    const vermasBtn = e.target.closest("[data-pm-vermas]");
+    if (vermasBtn) {
+      const desc = vermasBtn.closest(".pm-info")?.querySelector("[data-pm-desc]");
+      if (desc) { desc.hidden = !desc.hidden; vermasBtn.classList.toggle("is-open", !desc.hidden); }
+      return;
+    }
     // Profesional
     const profe = e.target.closest("[data-profesional]");
     if (profe) { openSheet(sheetProfesional(+profe.dataset.profesional)); return; }
