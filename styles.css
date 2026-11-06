@@ -397,9 +397,10 @@ a { color: inherit; text-decoration: none; }
    ============================================================ */
 .pm-card {
   position: relative;
-  width: 460px;
+  width: 275px;
+  height: 197px;
   flex-shrink: 0;
-  border-radius: 24px;
+  border-radius: 14px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -412,9 +413,14 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--cuerpo);
 }
 /* Paginador de tarjeta completa -- .pm-page--info (texto + foto chica) y
-   un .pm-page--media por cada foto/video, todas del mismo alto. */
+   un .pm-page--media por cada foto/video, todas del mismo alto. flex:1
+   le da al paginador toda la altura que le sobra a la tarjeta (197px)
+   después de restar el pie blanco de condiciones, que mide lo que su
+   propio contenido necesite. */
 .pm-pager {
   position: relative;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
   cursor: grab;
   touch-action: pan-y;
@@ -422,58 +428,61 @@ a { color: inherit; text-decoration: none; }
   -webkit-tap-highlight-color: transparent;
 }
 .pm-pager:active { cursor: grabbing; }
-.pm-pager__track { display: flex; width: 100%; transition: transform .35s cubic-bezier(.65, 0, .35, 1); }
-.pm-page { width: 100%; flex: none; min-height: 250px; box-sizing: border-box; }
+.pm-pager__track { display: flex; width: 100%; height: 100%; transition: transform .35s cubic-bezier(.65, 0, .35, 1); }
+.pm-page { width: 100%; flex: none; box-sizing: border-box; }
 .pm-page--info { display: flex; align-items: stretch; }
 .pm-page--media { position: relative; }
-.pm-page--media img, .pm-page--media video { width: 100%; height: 100%; min-height: 250px; object-fit: cover; display: block; -webkit-user-drag: none; }
-.pm-page--media .pm-page__ph { width: 100%; height: 100%; min-height: 250px; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, .6); }
-.pm-page__ph svg, .pm-page__ph i { width: 34px; height: 34px; }
-.pm-pager__dots { position: absolute; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; z-index: 2; pointer-events: none; }
-.pm-pager__dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, .5); box-shadow: 0 1px 3px rgba(0,0,0,.4); transition: all .3s ease; }
-.pm-pager__dots span.is-on { background: #fff; width: 18px; border-radius: 4px; }
+.pm-page--media img, .pm-page--media video { width: 100%; height: 100%; object-fit: cover; display: block; -webkit-user-drag: none; }
+.pm-page--media .pm-page__ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, .6); }
+.pm-page__ph svg, .pm-page__ph i { width: 22px; height: 22px; }
+.pm-pager__dots { position: absolute; bottom: 5px; left: 0; right: 0; display: flex; justify-content: center; gap: 4px; z-index: 2; pointer-events: none; }
+.pm-pager__dots span { width: 4px; height: 4px; border-radius: 50%; background: rgba(255, 255, 255, .5); box-shadow: 0 1px 2px rgba(0,0,0,.4); transition: all .3s ease; }
+.pm-pager__dots span.is-on { background: #fff; width: 11px; border-radius: 3px; }
 
-.pm-info { flex: 1; min-width: 0; padding: 20px 20px 18px; display: flex; flex-direction: column; gap: 7px; color: #fff; }
-.pm-info__top { display: flex; align-items: center; gap: 8px; }
-.pm-info__aliado { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.pm-info__logo { width: 28px; height: 28px; flex: none; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.22); }
+.pm-info { flex: 1; min-width: 0; padding: 9px 9px 7px; display: flex; flex-direction: column; gap: 3px; color: #fff; }
+.pm-info__top { display: flex; align-items: center; gap: 6px; }
+.pm-info__aliado { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.pm-info__logo { width: 15px; height: 15px; flex: none; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.22); }
 .pm-info__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.pm-info__nombre { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.95); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-info__nombre { font-size: 8.5px; font-weight: 700; color: rgba(255,255,255,.95); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pm-titulo {
-  font-family: var(--display); font-weight: 500; font-size: 21px; font-style: italic;
-  color: #fff; margin: 4px 0 0; line-height: 1.18;
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  font-family: var(--display); font-weight: 500; font-size: 12px; font-style: italic;
+  color: #fff; margin: 1px 0 0; line-height: 1.15;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
+/* El badge del tipo de promo mide 125×30px fijo -- 45% del ancho de la
+   tarjeta (275px), como pidió el usuario. */
 .pm-tipo {
-  display: inline-flex; align-items: center; width: fit-content;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 125px; height: 30px; box-sizing: border-box;
   background: rgba(255,255,255,.92); color: var(--negro);
-  font-weight: 800; font-size: 11.5px; letter-spacing: .02em; text-transform: uppercase;
-  padding: 5px 12px; border-radius: 100px; margin-top: 2px;
+  font-weight: 800; font-size: 11px; letter-spacing: .02em; text-transform: uppercase;
+  border-radius: 100px; margin-top: 2px;
 }
 .pm-vigencia {
   display: inline-flex; align-items: center; width: fit-content;
   background: #EAB749; color: var(--negro);
-  font-weight: 800; font-size: 11px; letter-spacing: .02em; text-transform: uppercase;
-  padding: 5px 10px; border-radius: 6px; margin-top: 2px;
+  font-weight: 800; font-size: 7px; letter-spacing: .02em; text-transform: uppercase;
+  padding: 2px 6px; border-radius: 5px; margin-top: 2px;
 }
 .pm-vermas {
-  margin-top: 10px; width: fit-content; display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 4px; width: fit-content; display: inline-flex; align-items: center; gap: 3px;
   background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.45); color: #fff;
-  font-size: 12px; font-weight: 700; padding: 8px 14px; border-radius: 100px;
+  font-size: 7.5px; font-weight: 700; padding: 3px 8px; border-radius: 100px;
   cursor: pointer; font-family: inherit;
 }
-.pm-vermas svg, .pm-vermas i { width: 13px; height: 13px; }
+.pm-vermas svg, .pm-vermas i { width: 9px; height: 9px; }
 /* Contenido oculto -- solo sirve como "fuente" para el modal flotante de
    "Ver más" (nunca se muestra inline). */
 .pm-desc { display: none; }
 
 /* Foto chica de referencia en la página de info -- a la derecha, sin
    interacción propia (el swipe lo maneja .pm-pager, la tarjeta entera). */
-.pm-thumb { width: 190px; flex: none; padding: 16px; box-sizing: border-box; pointer-events: none; }
-.pm-thumb__inner { width: 100%; height: 100%; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,.1); }
+.pm-thumb { width: 72px; flex: none; padding: 7px; box-sizing: border-box; pointer-events: none; }
+.pm-thumb__inner { width: 100%; height: 100%; border-radius: 9px; overflow: hidden; background: rgba(255,255,255,.1); }
 .pm-thumb__inner img, .pm-thumb__inner video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pm-thumb__ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.6); }
-.pm-thumb__ph svg, .pm-thumb__ph i { width: 28px; height: 28px; }
+.pm-thumb__ph svg, .pm-thumb__ph i { width: 16px; height: 16px; }
 
 /* Modal flotante de "Ver más" -- fondo blanco, con la descripción y el
    botón de WhatsApp (reutiliza .pm-wa). */
@@ -513,19 +522,19 @@ a { color: inherit; text-decoration: none; }
    al texto propio de la promo si el aliado lo escribió (se abre ahí
    mismo, sin salir de la tarjeta), o a los Términos y condiciones
    generales si no. */
-.pm-condiciones-wrap { padding: 12px 16px 14px; background: #fff; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.pm-condiciones-wrap { padding: 6px 9px 7px; background: #fff; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
 .pm-condiciones-txt-wrap { flex: 1; min-width: 0; }
-.pm-condiciones-pie { font-size: 10.5px; color: var(--tinta-45); line-height: 1.5; margin: 0; }
+.pm-condiciones-pie { font-size: 6.5px; color: var(--tinta-45); line-height: 1.35; margin: 0; }
 .pm-condiciones {
   background: none; border: none; padding: 0; cursor: pointer; font-family: inherit;
-  font-size: 10.5px; color: var(--tinta-45); text-decoration: underline; text-underline-offset: 2px;
+  font-size: 6.5px; color: var(--tinta-45); text-decoration: underline; text-underline-offset: 2px;
 }
-.pm-condiciones-txt { font-size: 11.5px; color: var(--tinta-60); line-height: 1.5; margin: 6px 0 0; }
+.pm-condiciones-txt { font-size: 7.5px; color: var(--tinta-60); line-height: 1.4; margin: 3px 0 0; }
 .pm-club-mark {
-  width: 26px; height: 26px; flex: none; border-radius: 50%;
+  width: 16px; height: 16px; flex: none; border-radius: 50%;
   background: var(--crema-2); display: flex; align-items: center; justify-content: center;
 }
-.pm-club-mark img { width: 16px; height: 16px; object-fit: contain; display: block; }
+.pm-club-mark img { width: 10px; height: 10px; object-fit: contain; display: block; }
 .tienda-hero { position: relative; border-radius: 18px; padding: 26px 22px; overflow: hidden; background: radial-gradient(120% 140% at 15% 0%, #164a2c 0%, #0c2e1b 55%, #05160d 100%); background-size: cover; background-position: center; color: #fff; box-sizing: border-box; min-height: 150px; display: flex; flex-direction: column; justify-content: center; }
 .tienda-hero--img { background-blend-mode: overlay; }
 .tienda-hero__eyebrow { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #00DF81; margin-bottom: 8px; }
