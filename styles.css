@@ -384,18 +384,22 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ============================================================
-   TARJETA DE PROMOCIÓN (PromoCard v3) — banner horizontal: info del
-   aliado + título/tipo/vigencia a la izquierda, carrusel de fotos/video
-   (solo swipe, sin autoplay) a la derecha, fondo sólido por categoría.
-   Un solo componente compartido, usado en el carrusel de la portada,
-   en la ficha de cada aliado del Directorio y en la vista previa de
-   Admin (duplicado a propósito en cada archivo).
+   TARJETA DE PROMOCIÓN (PromoCard v4) — banner grande con fondo sólido
+   por categoría. Página 1: info del aliado + título/tipo/vigencia +
+   "Ver más" + foto chica de referencia. Deslizando la tarjeta ENTERA
+   (dedo o mouse) se pasa a una página por cada foto/video, a pantalla
+   completa. El logo del Club vive abajo a la derecha, en la franja
+   blanca de condiciones. "Ver más" abre un modal flotante blanco con la
+   descripción y el botón de WhatsApp. Un solo componente compartido,
+   usado en el carrusel de la portada, en la ficha de cada aliado del
+   Directorio y en la vista previa de Admin (duplicado a propósito en
+   cada archivo).
    ============================================================ */
 .pm-card {
   position: relative;
-  width: 380px;
+  width: 460px;
   flex-shrink: 0;
-  border-radius: 22px;
+  border-radius: 24px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -407,73 +411,91 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 20px 44px -22px rgba(2, 27, 26, .4), 0 2px 10px rgba(2, 27, 26, .08);
   font-family: var(--cuerpo);
 }
-.pm-top { display: flex; align-items: stretch; }
-.pm-info { flex: 1; min-width: 0; padding: 14px 14px 12px; display: flex; flex-direction: column; gap: 5px; color: #fff; }
-.pm-info__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.pm-info__aliado { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.pm-info__logo { width: 22px; height: 22px; flex: none; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.22); }
-.pm-info__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.pm-info__nombre { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.95); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* Marca del Club -- arriba a la derecha de la info, como pidió el usuario
-   (antes flotaba sobre la foto, arriba a la izquierda). */
-.pm-club-mark {
-  width: 22px; height: 22px; flex: none; border-radius: 50%;
-  background: #fff; display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, .5);
-}
-.pm-club-mark img { width: 14px; height: 14px; object-fit: contain; display: block; }
-.pm-titulo {
-  font-family: var(--display); font-weight: 500; font-size: 16px; font-style: italic;
-  color: #fff; margin: 2px 0 0; line-height: 1.18;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-.pm-tipo {
-  display: inline-flex; align-items: center; width: fit-content;
-  background: rgba(255,255,255,.92); color: var(--negro);
-  font-weight: 800; font-size: 10.5px; letter-spacing: .02em; text-transform: uppercase;
-  padding: 4px 10px; border-radius: 100px; margin-top: 1px;
-}
-.pm-vigencia {
-  display: inline-flex; align-items: center; width: fit-content;
-  background: #EAB749; color: var(--negro);
-  font-weight: 800; font-size: 10px; letter-spacing: .02em; text-transform: uppercase;
-  padding: 4px 9px; border-radius: 6px; margin-top: 1px;
-}
-.pm-vermas {
-  margin-top: 6px; width: fit-content; display: inline-flex; align-items: center; gap: 4px;
-  background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.45); color: #fff;
-  font-size: 11px; font-weight: 700; padding: 6px 11px; border-radius: 100px;
-  cursor: pointer; font-family: inherit;
-}
-.pm-vermas svg, .pm-vermas i { width: 12px; height: 12px; transition: transform .25s ease; }
-.pm-vermas.is-open svg, .pm-vermas.is-open i { transform: rotate(180deg); }
-.pm-desc { margin-top: 6px; }
-.pm-desc__txt { font-size: 11.5px; line-height: 1.5; color: rgba(255,255,255,.92); margin: 0 0 8px; }
-
-/* Carrusel de fotos/video del producto -- a la derecha, solo por swipe
-   (dedo o mouse), sin autoplay. El padding deja ver de fondo el color de
-   categoría de .pm-card como "marco" alrededor de cada foto/video. */
-.pm-carrusel {
+/* Paginador de tarjeta completa -- .pm-page--info (texto + foto chica) y
+   un .pm-page--media por cada foto/video, todas del mismo alto. */
+.pm-pager {
   position: relative;
-  width: 140px;
-  flex: none;
-  padding: 10px;
-  box-sizing: border-box;
   overflow: hidden;
   cursor: grab;
   touch-action: pan-y;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
-.pm-carrusel:active { cursor: grabbing; }
-.pm-carrusel__track { display: flex; width: 100%; height: 100%; transition: transform .3s ease; }
-.pm-carrusel__slide { width: 100%; height: 100%; flex: none; border-radius: 12px; overflow: hidden; background: rgba(255,255,255,.1); }
-.pm-carrusel__slide img, .pm-carrusel__slide video { width: 100%; height: 100%; object-fit: cover; display: block; -webkit-user-drag: none; }
-.pm-carrusel__ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, .6); }
-.pm-carrusel__ph svg, .pm-carrusel__ph i { width: 28px; height: 28px; }
-.pm-carrusel__dots { position: absolute; bottom: 4px; left: 10px; right: 10px; display: flex; justify-content: center; gap: 5px; z-index: 2; }
-.pm-carrusel__dots span { width: 5px; height: 5px; border-radius: 50%; background: rgba(255, 255, 255, .45); transition: all .3s ease; }
-.pm-carrusel__dots span.is-on { background: #fff; width: 14px; border-radius: 3px; }
+.pm-pager:active { cursor: grabbing; }
+.pm-pager__track { display: flex; width: 100%; transition: transform .35s cubic-bezier(.65, 0, .35, 1); }
+.pm-page { width: 100%; flex: none; min-height: 250px; box-sizing: border-box; }
+.pm-page--info { display: flex; align-items: stretch; }
+.pm-page--media { position: relative; }
+.pm-page--media img, .pm-page--media video { width: 100%; height: 100%; min-height: 250px; object-fit: cover; display: block; -webkit-user-drag: none; }
+.pm-page--media .pm-page__ph { width: 100%; height: 100%; min-height: 250px; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, .6); }
+.pm-page__ph svg, .pm-page__ph i { width: 34px; height: 34px; }
+.pm-pager__dots { position: absolute; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; z-index: 2; pointer-events: none; }
+.pm-pager__dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, .5); box-shadow: 0 1px 3px rgba(0,0,0,.4); transition: all .3s ease; }
+.pm-pager__dots span.is-on { background: #fff; width: 18px; border-radius: 4px; }
+
+.pm-info { flex: 1; min-width: 0; padding: 20px 20px 18px; display: flex; flex-direction: column; gap: 7px; color: #fff; }
+.pm-info__top { display: flex; align-items: center; gap: 8px; }
+.pm-info__aliado { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pm-info__logo { width: 28px; height: 28px; flex: none; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.22); }
+.pm-info__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pm-info__nombre { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.95); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-titulo {
+  font-family: var(--display); font-weight: 500; font-size: 21px; font-style: italic;
+  color: #fff; margin: 4px 0 0; line-height: 1.18;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.pm-tipo {
+  display: inline-flex; align-items: center; width: fit-content;
+  background: rgba(255,255,255,.92); color: var(--negro);
+  font-weight: 800; font-size: 11.5px; letter-spacing: .02em; text-transform: uppercase;
+  padding: 5px 12px; border-radius: 100px; margin-top: 2px;
+}
+.pm-vigencia {
+  display: inline-flex; align-items: center; width: fit-content;
+  background: #EAB749; color: var(--negro);
+  font-weight: 800; font-size: 11px; letter-spacing: .02em; text-transform: uppercase;
+  padding: 5px 10px; border-radius: 6px; margin-top: 2px;
+}
+.pm-vermas {
+  margin-top: 10px; width: fit-content; display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.45); color: #fff;
+  font-size: 12px; font-weight: 700; padding: 8px 14px; border-radius: 100px;
+  cursor: pointer; font-family: inherit;
+}
+.pm-vermas svg, .pm-vermas i { width: 13px; height: 13px; }
+/* Contenido oculto -- solo sirve como "fuente" para el modal flotante de
+   "Ver más" (nunca se muestra inline). */
+.pm-desc { display: none; }
+
+/* Foto chica de referencia en la página de info -- a la derecha, sin
+   interacción propia (el swipe lo maneja .pm-pager, la tarjeta entera). */
+.pm-thumb { width: 190px; flex: none; padding: 16px; box-sizing: border-box; pointer-events: none; }
+.pm-thumb__inner { width: 100%; height: 100%; border-radius: 16px; overflow: hidden; background: rgba(255,255,255,.1); }
+.pm-thumb__inner img, .pm-thumb__inner video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pm-thumb__ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.6); }
+.pm-thumb__ph svg, .pm-thumb__ph i { width: 28px; height: 28px; }
+
+/* Modal flotante de "Ver más" -- fondo blanco, con la descripción y el
+   botón de WhatsApp (reutiliza .pm-wa). */
+.pm-modal-ov {
+  position: fixed; inset: 0; z-index: 9999; padding: 20px;
+  background: rgba(2, 27, 26, .6);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .2s ease;
+}
+.pm-modal-ov.is-open { opacity: 1; pointer-events: auto; }
+.pm-modal {
+  position: relative; background: #fff; border-radius: 18px;
+  padding: 30px 22px 22px; max-width: 360px; width: 100%; max-height: 80vh; overflow-y: auto;
+  box-shadow: 0 30px 70px -20px rgba(0, 0, 0, .5);
+}
+.pm-modal__close {
+  position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%;
+  border: none; background: var(--crema-2); color: var(--tinta-60);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.pm-modal__close svg, .pm-modal__close i { width: 16px; height: 16px; }
+.pm-modal__body p { font-size: 13.5px; line-height: 1.6; color: var(--tinta); margin: 0 0 16px; }
 
 .pm-wa, .pm-wa-lock {
   display: inline-flex; align-items: center; gap: 5px; flex: none;
@@ -485,16 +507,25 @@ a { color: inherit; text-decoration: none; }
 .pm-wa-lock { background: rgba(255,255,255,.9); color: #b45309; }
 .pm-wa-lock i, .pm-wa-lock svg { width: 12px; height: 12px; flex: none; }
 
-/* Pie -- beneficio + link de condiciones, siempre lleva a algo: al texto
-   propio de la promo si el aliado lo escribió (se abre ahí mismo, sin
-   salir de la tarjeta), o a los Términos y condiciones generales si no. */
-.pm-condiciones-wrap { padding: 10px 16px 14px; background: #fff; }
+/* Pie -- beneficio + link de condiciones a la izquierda, logo del Club
+   abajo a la derecha (align-items:flex-end lo deja pegado abajo aunque
+   el texto de la izquierda ocupe varias líneas). Siempre lleva a algo:
+   al texto propio de la promo si el aliado lo escribió (se abre ahí
+   mismo, sin salir de la tarjeta), o a los Términos y condiciones
+   generales si no. */
+.pm-condiciones-wrap { padding: 12px 16px 14px; background: #fff; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.pm-condiciones-txt-wrap { flex: 1; min-width: 0; }
 .pm-condiciones-pie { font-size: 10.5px; color: var(--tinta-45); line-height: 1.5; margin: 0; }
 .pm-condiciones {
   background: none; border: none; padding: 0; cursor: pointer; font-family: inherit;
   font-size: 10.5px; color: var(--tinta-45); text-decoration: underline; text-underline-offset: 2px;
 }
 .pm-condiciones-txt { font-size: 11.5px; color: var(--tinta-60); line-height: 1.5; margin: 6px 0 0; }
+.pm-club-mark {
+  width: 26px; height: 26px; flex: none; border-radius: 50%;
+  background: var(--crema-2); display: flex; align-items: center; justify-content: center;
+}
+.pm-club-mark img { width: 16px; height: 16px; object-fit: contain; display: block; }
 .tienda-hero { position: relative; border-radius: 18px; padding: 26px 22px; overflow: hidden; background: radial-gradient(120% 140% at 15% 0%, #164a2c 0%, #0c2e1b 55%, #05160d 100%); background-size: cover; background-position: center; color: #fff; box-sizing: border-box; min-height: 150px; display: flex; flex-direction: column; justify-content: center; }
 .tienda-hero--img { background-blend-mode: overlay; }
 .tienda-hero__eyebrow { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #00DF81; margin-bottom: 8px; }

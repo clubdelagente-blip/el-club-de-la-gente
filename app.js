@@ -160,6 +160,32 @@ const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 const ic = (name, cls = "") => `<i data-lucide="${name}" class="${cls}"></i>`;
 
+/* ---------- Modal flotante "Ver más" de la tarjeta de promoción ----------
+   Duplicado a propósito en directorio.js y Admin.html (cada archivo tiene
+   su copia), igual que el resto del componente PromoCard. */
+function crearPmModal() {
+  if (document.getElementById("pm-modal-ov")) return;
+  document.body.insertAdjacentHTML("beforeend", `
+    <div class="pm-modal-ov" id="pm-modal-ov">
+      <div class="pm-modal">
+        <button type="button" class="pm-modal__close" id="pm-modal-close">${ic("x")}</button>
+        <div class="pm-modal__body" id="pm-modal-body"></div>
+      </div>
+    </div>`);
+  if (window.lucide) lucide.createIcons();
+  const ov = document.getElementById("pm-modal-ov");
+  const cerrar = () => ov.classList.remove("is-open");
+  document.getElementById("pm-modal-close")?.addEventListener("click", cerrar);
+  ov.addEventListener("click", (e) => { if (e.target === ov) cerrar(); });
+}
+function abrirPmModal(html) {
+  crearPmModal();
+  const body = document.getElementById("pm-modal-body");
+  if (body) body.innerHTML = html || "<p>Esta promoción no tiene descripción adicional.</p>";
+  document.getElementById("pm-modal-ov")?.classList.add("is-open");
+  if (window.lucide) lucide.createIcons();
+}
+
 /* ---------- COUNT-UP ---------- */
 const nf = new Intl.NumberFormat("es-CO");
 function toNum(str) { return parseInt(String(str).replace(/\D/g, ""), 10) || 0; }
@@ -792,11 +818,12 @@ document.addEventListener("DOMContentLoaded", () => {
       else window.open("Terminos.html", "_blank");
       return;
     }
-    // "Ver más" de la tarjeta de promoción -- despliega la descripción corta
+    // "Ver más" de la tarjeta de promoción -- abre el modal flotante con la
+    // descripción y el botón de WhatsApp
     const vermasBtn = e.target.closest("[data-pm-vermas]");
     if (vermasBtn) {
       const desc = vermasBtn.closest(".pm-info")?.querySelector("[data-pm-desc]");
-      if (desc) { desc.hidden = !desc.hidden; vermasBtn.classList.toggle("is-open", !desc.hidden); }
+      abrirPmModal(desc?.innerHTML || "");
       return;
     }
     // Profesional

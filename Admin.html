@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=120">
+  <link rel="stylesheet" href="styles.css?v=121">
   <link rel="stylesheet" href="admin.css?v=19">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -2433,59 +2433,70 @@ function detalleVigenciaPreview(p){
 function promoCardHtmlPreview(p,al){
   const cc=colorCategoriaFlyer(al?.categoria);
   const medios=(p.fotos_urls||[]).slice(0,4);
-  const slidesHtml=medios.length?medios.map(u=>pmEsVideo(u)
-      ?`<div class="pm-carrusel__slide"><video src="${u}" muted playsinline preload="metadata"></video></div>`
-      :`<div class="pm-carrusel__slide"><img src="${u}" alt="" loading="lazy"></div>`).join('')
-    :`<div class="pm-carrusel__slide"><div class="pm-carrusel__ph">${ic('image')}</div></div>`;
-  const dotsHtml=medios.length>1?`<div class="pm-carrusel__dots">${medios.map((_,i)=>`<span class="${i===0?'is-on':''}"></span>`).join('')}</div>`:'';
+  const primerMedia=medios[0];
+  const thumbHtml=primerMedia?(pmEsVideo(primerMedia)
+      ?`<video src="${primerMedia}" muted playsinline preload="metadata"></video>`
+      :`<img src="${primerMedia}" alt="" loading="lazy">`)
+    :`<div class="pm-thumb__ph">${ic('image')}</div>`;
+  const mediaPagesHtml=medios.map(u=>pmEsVideo(u)
+      ?`<div class="pm-page pm-page--media"><video src="${u}" muted playsinline preload="metadata" loop></video></div>`
+      :`<div class="pm-page pm-page--media"><img src="${u}" alt="" loading="lazy"></div>`).join('');
+  const totalPaginas=1+medios.length;
+  const dotsHtml=totalPaginas>1?`<div class="pm-pager__dots">${Array.from({length:totalPaginas}).map((_,i)=>`<span class="${i===0?'is-on':''}"></span>`).join('')}</div>`:'';
   const waLink=al?.whatsapp?`https://wa.me/57${String(al.whatsapp).replace(/\D/g,'')}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.titulo||p.descripcion||pmBadgePreview(p.tipo)}" de ${al?.nombre||''} que vi en El Club de la Gente`)}`:null;
   const ctaHtml=waLink?`<a class="pm-wa" href="${waLink}" target="_blank" rel="noopener">${ICON_WA}WhatsApp</a>`:'';
   return `
   <div class="pm-card" style="--pm-cc:${cc}">
-    <div class="pm-top">
-      <div class="pm-info">
-        <div class="pm-info__top">
-          <div class="pm-info__aliado">
-            <div class="pm-info__logo">${al?.imagen_url?`<img src="${al.imagen_url}" alt="">`:''}</div>
-            <span class="pm-info__nombre">${esc(al?.nombre||'')}</span>
+    <div class="pm-pager" data-pm-carrusel aria-label="Desliza para ver fotos y videos de la promoción">
+      <div class="pm-pager__track">
+        <div class="pm-page pm-page--info">
+          <div class="pm-info">
+            <div class="pm-info__top">
+              <div class="pm-info__aliado">
+                <div class="pm-info__logo">${al?.imagen_url?`<img src="${al.imagen_url}" alt="">`:''}</div>
+                <span class="pm-info__nombre">${esc(al?.nombre||'')}</span>
+              </div>
+            </div>
+            <h3 class="pm-titulo">${esc(p.titulo||'Promoción')}</h3>
+            <span class="pm-tipo">${esc(pmBadgePreview(p.tipo))}</span>
+            ${detalleVigenciaPreview(p)?`<span class="pm-vigencia">${esc(detalleVigenciaPreview(p))}</span>`:''}
+            <button type="button" class="pm-vermas" data-pm-vermas>Ver más ${ic('chevron-right')}</button>
+            <div class="pm-desc" data-pm-desc hidden>
+              ${p.descripcion?`<p class="pm-desc__txt">${descHtml(p.descripcion)}</p>`:''}
+              ${ctaHtml}
+            </div>
           </div>
-          <div class="pm-club-mark"><img src="icon-club-isotipo.png" alt="El Club de la Gente"></div>
+          <div class="pm-thumb"><div class="pm-thumb__inner">${thumbHtml}</div></div>
         </div>
-        <h3 class="pm-titulo">${esc(p.titulo||'Promoción')}</h3>
-        <span class="pm-tipo">${esc(pmBadgePreview(p.tipo))}</span>
-        ${detalleVigenciaPreview(p)?`<span class="pm-vigencia">${esc(detalleVigenciaPreview(p))}</span>`:''}
-        <button type="button" class="pm-vermas" data-pm-vermas>Ver más ${ic('chevron-down')}</button>
-        <div class="pm-desc" data-pm-desc hidden>
-          ${p.descripcion?`<p class="pm-desc__txt">${descHtml(p.descripcion)}</p>`:''}
-          ${ctaHtml}
-        </div>
+        ${mediaPagesHtml}
       </div>
-      <div class="pm-carrusel" data-pm-carrusel aria-label="Fotos y videos de la promoción">
-        <div class="pm-carrusel__track">${slidesHtml}</div>
-        ${dotsHtml}
-      </div>
+      ${dotsHtml}
     </div>
     <div class="pm-condiciones-wrap">
-      <p class="pm-condiciones-pie">Beneficio exclusivo para miembros activos de El Club de la Gente. <button type="button" class="pm-condiciones" data-pm-condiciones>Condiciones de la promoción</button></p>
-      ${p.condiciones?`<p class="pm-condiciones-txt" hidden>${esc(p.condiciones)}</p>`:''}
+      <div class="pm-condiciones-txt-wrap">
+        <p class="pm-condiciones-pie">Beneficio exclusivo para miembros activos de El Club de la Gente. <button type="button" class="pm-condiciones" data-pm-condiciones>Condiciones de la promoción</button></p>
+        ${p.condiciones?`<p class="pm-condiciones-txt" hidden>${esc(p.condiciones)}</p>`:''}
+      </div>
+      <div class="pm-club-mark"><img src="icon-club-isotipo.png" alt="El Club de la Gente"></div>
     </div>
   </div>`;
 }
+// Paginador de tarjeta completa -- igual que app-cms.js/directorio.js.
 // Solo se mueve arrastrando (dedo o mouse), sin autoplay -- stopPropagation
-// por consistencia con las otras dos copias (app-cms.js/directorio.js),
-// aunque acá no haya un carrusel ancestro que le pelee el gesto.
+// por consistencia con las otras dos copias, aunque acá no haya un
+// carrusel ancestro que le pelee el gesto.
 function initPmCarruselPreview(root){
-  const slides=[...root.querySelectorAll('.pm-carrusel__slide')];
-  if(slides.length<=1)return;
-  const dots=[...root.querySelectorAll('.pm-carrusel__dots span')];
-  const track=root.querySelector('.pm-carrusel__track');
+  const pages=[...root.querySelectorAll('.pm-page')];
+  if(pages.length<=1)return;
+  const dots=[...root.querySelectorAll('.pm-pager__dots span')];
+  const track=root.querySelector('.pm-pager__track');
   let idx=0,arrastrando=false,startX=0,deltaX=0;
   function mostrar(i,animar){
-    idx=Math.max(0,Math.min(slides.length-1,i));
-    track.style.transition=animar?'transform .3s ease':'none';
+    idx=Math.max(0,Math.min(pages.length-1,i));
+    track.style.transition=animar?'transform .35s cubic-bezier(.65,0,.35,1)':'none';
     track.style.transform=`translateX(calc(-${idx*100}% + ${arrastrando?deltaX:0}px))`;
     dots.forEach((d,di)=>d.classList.toggle('is-on',di===idx));
-    slides.forEach((s,si)=>{const v=s.querySelector('video');if(!v)return;if(si===idx){v.currentTime=0;v.loop=true;v.play().catch(()=>{});}else v.pause();});
+    pages.forEach((pg,pi)=>{const v=pg.querySelector(':scope > video');if(!v)return;if(pi===idx){v.currentTime=0;v.play().catch(()=>{});}else v.pause();});
   }
   function iniciar(clientX,e){e.stopPropagation();arrastrando=true;startX=clientX;deltaX=0;}
   function mover(clientX,e){if(!arrastrando)return;e.stopPropagation();deltaX=clientX-startX;mostrar(idx,false);}
@@ -2493,7 +2504,7 @@ function initPmCarruselPreview(root){
     if(!arrastrando)return;
     e?.stopPropagation();
     const umbral=root.offsetWidth*0.18;
-    if(deltaX<-umbral&&idx<slides.length-1)idx+=1;
+    if(deltaX<-umbral&&idx<pages.length-1)idx+=1;
     else if(deltaX>umbral&&idx>0)idx-=1;
     arrastrando=false;deltaX=0;mostrar(idx,true);
   }
@@ -2504,6 +2515,29 @@ function initPmCarruselPreview(root){
   window.addEventListener('mousemove',(e)=>mover(e.clientX,e));
   window.addEventListener('mouseup',(e)=>soltar(e));
   mostrar(0,false);
+}
+// Modal flotante "Ver más" -- duplicado a propósito (igual que app.js/directorio.js).
+function crearPmModal(){
+  if(document.getElementById('pm-modal-ov'))return;
+  document.body.insertAdjacentHTML('beforeend',`
+    <div class="pm-modal-ov" id="pm-modal-ov">
+      <div class="pm-modal">
+        <button type="button" class="pm-modal__close" id="pm-modal-close">${ic('x')}</button>
+        <div class="pm-modal__body" id="pm-modal-body"></div>
+      </div>
+    </div>`);
+  if(window.lucide)lucide.createIcons();
+  const ov=document.getElementById('pm-modal-ov');
+  const cerrar=()=>ov.classList.remove('is-open');
+  document.getElementById('pm-modal-close')?.addEventListener('click',cerrar);
+  ov.addEventListener('click',(e)=>{if(e.target===ov)cerrar();});
+}
+function abrirPmModal(html){
+  crearPmModal();
+  const body=document.getElementById('pm-modal-body');
+  if(body)body.innerHTML=html||'<p>Esta promoción no tiene descripción adicional.</p>';
+  document.getElementById('pm-modal-ov')?.classList.add('is-open');
+  if(window.lucide)lucide.createIcons();
 }
 function actualizarPreviewPromo(aliadoId){
   const cont=$("#pr-pm-preview");if(!cont)return;
@@ -2518,8 +2552,7 @@ function actualizarPreviewPromo(aliadoId){
   cont.innerHTML=promoCardHtmlPreview({tipo,titulo,descripcion,condiciones,fotos_urls:fotosUrls,dias_aplica,fecha_fin},al);
   // Botones "Ver más" / "Condiciones" dentro de la preview -- stopPropagation
   // evita que el click también dispare el listener de más arriba (wrapPrev)
-  // que re-renderiza toda la preview en cada click del formulario, lo que
-  // cerraría el desplegable apenas se abre.
+  // que re-renderiza toda la preview en cada click del formulario.
   if(!cont.dataset.boundToggle){
     cont.dataset.boundToggle='1';
     cont.addEventListener('click',(e)=>{
@@ -2527,7 +2560,7 @@ function actualizarPreviewPromo(aliadoId){
       if(vermasBtn){
         e.stopPropagation();
         const desc=vermasBtn.closest('.pm-info')?.querySelector('[data-pm-desc]');
-        if(desc){desc.hidden=!desc.hidden;vermasBtn.classList.toggle('is-open',!desc.hidden);}
+        abrirPmModal(desc?.innerHTML||'');
         return;
       }
       const condBtn=e.target.closest('[data-pm-condiciones]');
