@@ -397,10 +397,9 @@ a { color: inherit; text-decoration: none; }
    ============================================================ */
 .pm-card {
   position: relative;
-  width: 275px;
-  height: 197px;
+  width: 820px;
   flex-shrink: 0;
-  border-radius: 14px;
+  border-radius: 28px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -413,14 +412,12 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--cuerpo);
 }
 /* Paginador de tarjeta completa -- .pm-page--info (texto + foto chica) y
-   un .pm-page--media por cada foto/video, todas del mismo alto. flex:1
-   le da al paginador toda la altura que le sobra a la tarjeta (197px)
-   después de restar el pie blanco de condiciones, que mide lo que su
-   propio contenido necesite. */
+   un .pm-page--media por cada foto/video, todas del mismo alto. La altura
+   la pone el contenido de la página de info (texto + badge), y el resto
+   de páginas se estiran a esa misma altura (align-items:stretch, por
+   defecto en el flex row de .pm-pager__track). */
 .pm-pager {
   position: relative;
-  flex: 1;
-  min-height: 0;
   overflow: hidden;
   cursor: grab;
   touch-action: pan-y;
@@ -428,61 +425,65 @@ a { color: inherit; text-decoration: none; }
   -webkit-tap-highlight-color: transparent;
 }
 .pm-pager:active { cursor: grabbing; }
-.pm-pager__track { display: flex; width: 100%; height: 100%; transition: transform .35s cubic-bezier(.65, 0, .35, 1); }
-.pm-page { width: 100%; flex: none; box-sizing: border-box; }
+.pm-pager__track { display: flex; width: 100%; transition: transform .35s cubic-bezier(.65, 0, .35, 1); }
+.pm-page { width: 100%; flex: none; min-height: 340px; box-sizing: border-box; }
 .pm-page--info { display: flex; align-items: stretch; }
 .pm-page--media { position: relative; }
-.pm-page--media img, .pm-page--media video { width: 100%; height: 100%; object-fit: cover; display: block; -webkit-user-drag: none; }
-.pm-page--media .pm-page__ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, .6); }
-.pm-page__ph svg, .pm-page__ph i { width: 22px; height: 22px; }
-.pm-pager__dots { position: absolute; bottom: 5px; left: 0; right: 0; display: flex; justify-content: center; gap: 4px; z-index: 2; pointer-events: none; }
-.pm-pager__dots span { width: 4px; height: 4px; border-radius: 50%; background: rgba(255, 255, 255, .5); box-shadow: 0 1px 2px rgba(0,0,0,.4); transition: all .3s ease; }
-.pm-pager__dots span.is-on { background: #fff; width: 11px; border-radius: 3px; }
+.pm-page--media img, .pm-page--media video { width: 100%; height: 100%; min-height: 340px; object-fit: cover; display: block; -webkit-user-drag: none; }
+.pm-page--media .pm-page__ph { width: 100%; height: 100%; min-height: 340px; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, .6); }
+.pm-page__ph svg, .pm-page__ph i { width: 40px; height: 40px; }
+.pm-pager__dots { position: absolute; bottom: 16px; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; z-index: 2; pointer-events: none; }
+.pm-pager__dots span { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, .5); box-shadow: 0 1px 3px rgba(0,0,0,.4); transition: all .3s ease; }
+.pm-pager__dots span.is-on { background: #fff; width: 22px; border-radius: 4px; }
 
-.pm-info { flex: 1; min-width: 0; padding: 9px 9px 7px; display: flex; flex-direction: column; gap: 3px; color: #fff; }
-.pm-info__top { display: flex; align-items: center; gap: 6px; }
-.pm-info__aliado { display: flex; align-items: center; gap: 5px; min-width: 0; }
-.pm-info__logo { width: 15px; height: 15px; flex: none; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.22); }
+.pm-info { flex: 1; min-width: 0; padding: 32px 30px 26px; display: flex; flex-direction: column; gap: 10px; color: #fff; }
+.pm-info__top { display: flex; align-items: center; gap: 14px; }
+.pm-info__aliado { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pm-info__logo { width: 46px; height: 46px; flex: none; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.22); }
 .pm-info__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.pm-info__nombre { font-size: 8.5px; font-weight: 700; color: rgba(255,255,255,.95); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-info__nombre { font-size: 18px; font-weight: 700; color: rgba(255,255,255,.95); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pm-titulo {
-  font-family: var(--display); font-weight: 500; font-size: 12px; font-style: italic;
-  color: #fff; margin: 1px 0 0; line-height: 1.15;
+  font-family: var(--display); font-weight: 500; font-size: 34px; font-style: italic;
+  color: #fff; margin: 6px 0 0; line-height: 1.15;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-/* El badge del tipo de promo mide 125×30px fijo -- 45% del ancho de la
-   tarjeta (275px), como pidió el usuario. */
+/* El badge del tipo de promo ahora ocupa todo el ancho de la columna de
+   info (no un tamaño fijo chico), para que se vea grande como pidió el
+   usuario -- esto empuja "Ver más" hacia abajo de forma natural, sin
+   necesidad de recalcular posiciones a mano. */
 .pm-tipo {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 125px; height: 30px; box-sizing: border-box;
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; box-sizing: border-box;
   background: rgba(255,255,255,.92); color: var(--negro);
-  font-weight: 800; font-size: 11px; letter-spacing: .02em; text-transform: uppercase;
-  border-radius: 100px; margin-top: 2px;
+  font-weight: 800; font-size: 30px; letter-spacing: .01em; text-transform: uppercase;
+  padding: 16px 20px; border-radius: 100px; margin-top: 10px;
 }
 .pm-vigencia {
   display: inline-flex; align-items: center; width: fit-content;
   background: #EAB749; color: var(--negro);
-  font-weight: 800; font-size: 7px; letter-spacing: .02em; text-transform: uppercase;
-  padding: 2px 6px; border-radius: 5px; margin-top: 2px;
+  font-weight: 800; font-size: 13px; letter-spacing: .02em; text-transform: uppercase;
+  padding: 6px 13px; border-radius: 7px; margin-top: 6px;
 }
 .pm-vermas {
-  margin-top: 4px; width: fit-content; display: inline-flex; align-items: center; gap: 3px;
+  margin-top: 16px; width: fit-content; display: inline-flex; align-items: center; gap: 6px;
   background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.45); color: #fff;
-  font-size: 7.5px; font-weight: 700; padding: 3px 8px; border-radius: 100px;
+  font-size: 15px; font-weight: 700; padding: 11px 22px; border-radius: 100px;
   cursor: pointer; font-family: inherit;
 }
-.pm-vermas svg, .pm-vermas i { width: 9px; height: 9px; }
+.pm-vermas svg, .pm-vermas i { width: 16px; height: 16px; }
 /* Contenido oculto -- solo sirve como "fuente" para el modal flotante de
    "Ver más" (nunca se muestra inline). */
 .pm-desc { display: none; }
 
-/* Foto chica de referencia en la página de info -- a la derecha, sin
-   interacción propia (el swipe lo maneja .pm-pager, la tarjeta entera). */
-.pm-thumb { width: 72px; flex: none; padding: 7px; box-sizing: border-box; pointer-events: none; }
-.pm-thumb__inner { width: 100%; height: 100%; border-radius: 9px; overflow: hidden; background: rgba(255,255,255,.1); }
-.pm-thumb__inner img, .pm-thumb__inner video { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Foto de referencia en la página de info -- ocupa la mitad del ancho de
+   la tarjeta (50%) y usa "contain" en vez de "cover" para que la foto
+   completa se vea entera, sin recortarla. Sin interacción propia (el
+   swipe lo maneja .pm-pager, la tarjeta entera). */
+.pm-thumb { width: 50%; flex: none; padding: 20px; box-sizing: border-box; pointer-events: none; }
+.pm-thumb__inner { width: 100%; height: 100%; border-radius: 20px; overflow: hidden; background: rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; }
+.pm-thumb__inner img, .pm-thumb__inner video { width: 100%; height: 100%; object-fit: contain; display: block; }
 .pm-thumb__ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.6); }
-.pm-thumb__ph svg, .pm-thumb__ph i { width: 16px; height: 16px; }
+.pm-thumb__ph svg, .pm-thumb__ph i { width: 32px; height: 32px; }
 
 /* Modal flotante de "Ver más" -- fondo blanco, con la descripción y el
    botón de WhatsApp (reutiliza .pm-wa). */
@@ -522,19 +523,19 @@ a { color: inherit; text-decoration: none; }
    al texto propio de la promo si el aliado lo escribió (se abre ahí
    mismo, sin salir de la tarjeta), o a los Términos y condiciones
    generales si no. */
-.pm-condiciones-wrap { padding: 6px 9px 7px; background: #fff; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+.pm-condiciones-wrap { padding: 18px 24px 20px; background: #fff; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
 .pm-condiciones-txt-wrap { flex: 1; min-width: 0; }
-.pm-condiciones-pie { font-size: 6.5px; color: var(--tinta-45); line-height: 1.35; margin: 0; }
+.pm-condiciones-pie { font-size: 13px; color: var(--tinta-45); line-height: 1.5; margin: 0; }
 .pm-condiciones {
   background: none; border: none; padding: 0; cursor: pointer; font-family: inherit;
-  font-size: 6.5px; color: var(--tinta-45); text-decoration: underline; text-underline-offset: 2px;
+  font-size: 13px; color: var(--tinta-45); text-decoration: underline; text-underline-offset: 2px;
 }
-.pm-condiciones-txt { font-size: 7.5px; color: var(--tinta-60); line-height: 1.4; margin: 3px 0 0; }
+.pm-condiciones-txt { font-size: 13.5px; color: var(--tinta-60); line-height: 1.5; margin: 6px 0 0; }
 .pm-club-mark {
-  width: 16px; height: 16px; flex: none; border-radius: 50%;
+  width: 40px; height: 40px; flex: none; border-radius: 50%;
   background: var(--crema-2); display: flex; align-items: center; justify-content: center;
 }
-.pm-club-mark img { width: 10px; height: 10px; object-fit: contain; display: block; }
+.pm-club-mark img { width: 24px; height: 24px; object-fit: contain; display: block; }
 .tienda-hero { position: relative; border-radius: 18px; padding: 26px 22px; overflow: hidden; background: radial-gradient(120% 140% at 15% 0%, #164a2c 0%, #0c2e1b 55%, #05160d 100%); background-size: cover; background-position: center; color: #fff; box-sizing: border-box; min-height: 150px; display: flex; flex-direction: column; justify-content: center; }
 .tienda-hero--img { background-blend-mode: overlay; }
 .tienda-hero__eyebrow { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #00DF81; margin-bottom: 8px; }
