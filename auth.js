@@ -127,6 +127,21 @@ function renderProfDocsGrid() {
   cont.querySelectorAll("[data-rm-doc]").forEach(b => b.addEventListener("click", () => { profDocs.splice(+b.dataset.rmDoc, 1); renderProfDocsGrid(); }));
 }
 
+/* ---------- REGISTRO ALIADO: logotipo del negocio ---------- */
+let alLogo = null;
+function renderAlLogoGrid() {
+  const cont = $("#al-logo-grid");
+  if (!cont) return;
+  cont.innerHTML = alLogo
+    ? `<div style="position:relative;width:64px;height:64px">
+        <img src="${URL.createObjectURL(alLogo)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;border:1px solid rgba(26,26,24,.15)">
+        <button type="button" id="al-logo-rm" style="position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;border:none;font-size:12px;line-height:1;cursor:pointer">&times;</button>
+      </div>`
+    : `<button type="button" id="al-logo-add" style="width:64px;height:64px;border:2px dashed #ccc;border-radius:8px;background:none;cursor:pointer;font-size:24px;color:#999;line-height:1">+</button>`;
+  $("#al-logo-add")?.addEventListener("click", () => $("#al-logo-input")?.click());
+  $("#al-logo-rm")?.addEventListener("click", () => { alLogo = null; renderAlLogoGrid(); });
+}
+
 /* ---------- NAVEGACIÓN DE VISTAS ---------- */
 function mostrarVista(id) {
   $$(".auth-view").forEach(v => v.classList.toggle("is-active", v.id === id));
@@ -160,6 +175,7 @@ function elegirRol(rol) {
   $("#form-aliado").hidden      = rol !== "aliado";
   $("#form-profesional").hidden = rol !== "profesional";
   if (rol === "profesional") { profDocs = []; renderProfDocsGrid(); }
+  if (rol === "aliado") { alLogo = null; renderAlLogoGrid(); }
 
   if (window.lucide) lucide.createIcons();
 }
@@ -281,6 +297,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (!file || profDocs.length >= 5) return;
     profDocs.push(file);
     renderProfDocsGrid();
+  });
+
+  // Logotipo del negocio (aliado)
+  $("#al-logo-input")?.addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    alLogo = file;
+    renderAlLogoGrid();
   });
 
   // Link directo desde el footer ("¿Quieres ser aliado?" / "¿Quieres ser profesional?")
@@ -841,18 +866,39 @@ document.addEventListener("DOMContentLoaded", async () => {
     const btn = e.target.querySelector("button[type=submit]");
     const negocio = $("#al-negocio").value.trim();
     const categoria = $("#al-cat").value.trim();
+    const descripcion = $("#al-desc").value.trim();
     const nombre = $("#al-nombre").value.trim();
+    const fechaNacimiento = $("#al-fecha").value;
     const whatsapp = normalizarWhatsapp($("#al-wa").value.trim());
+    const redSocial = $("#al-red").value.trim();
+    const ubicacion = $("#al-ubicacion").value.trim();
 
-    if (!negocio || !nombre || !whatsapp) { mostrarError("Completa todos los campos."); return; }
+    if (!negocio || !descripcion || !nombre || !fechaNacimiento || !whatsapp || !redSocial) {
+      mostrarError("Completa todos los campos."); return;
+    }
+    if (!alLogo) { mostrarError("Sube el logotipo del negocio."); return; }
 
     setLoading(btn, true, "Enviar postulación →");
+
+    let logoUrl = null;
+    try {
+      const file = await comprimirImagen(alLogo);
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `aliado-logo-postulacion-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("contenido").upload(path, file);
+      if (!upErr) logoUrl = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+    } catch (_) { /* si falla la subida, sigue sin logo antes que perder toda la postulación */ }
 
     const { error } = await supabase.from("aliados_postulaciones").insert({
       nombre_negocio: negocio,
       categoria,
+      descripcion,
       nombre_responsable: nombre,
+      fecha_nacimiento: fechaNacimiento,
       whatsapp,
+      red_social: redSocial,
+      ubicacion_url: ubicacion || null,
+      logo_url: logoUrl,
     });
 
     setLoading(btn, false, "Enviar postulación →");

@@ -205,12 +205,33 @@
                 <input type="hidden" id="al-cat">
               </div>
               <div class="campo">
+                <label for="al-desc">Descripción del negocio</label>
+                <textarea id="al-desc" rows="3" placeholder="Cuánto tiempo llevan, qué venden y qué los diferencia de otros negocios similares"></textarea>
+              </div>
+              <div class="campo">
                 <label for="al-nombre">Nombre del responsable</label>
                 <input type="text" id="al-nombre" placeholder="Tu nombre y apellido" autocomplete="name">
               </div>
               <div class="campo">
+                <label for="al-fecha">Fecha de nacimiento del responsable</label>
+                <input type="date" id="al-fecha" max="2012-12-31" min="1920-01-01">
+              </div>
+              <div class="campo">
                 <label for="al-wa">WhatsApp de contacto</label>
                 <input type="tel" id="al-wa" placeholder="300 000 0000" autocomplete="tel">
+              </div>
+              <div class="campo">
+                <label for="al-red">Instagram u otra red social</label>
+                <input type="text" id="al-red" placeholder="Ej: instagram.com/tunegocio">
+              </div>
+              <div class="campo">
+                <label for="al-ubicacion">Link de ubicación del negocio <span style="font-weight:400;opacity:.6">(opcional)</span></label>
+                <input type="url" id="al-ubicacion" placeholder="Link de Google Maps">
+              </div>
+              <div class="campo">
+                <label>Logotipo del negocio</label>
+                <div id="al-logo-grid" style="display:flex;gap:8px;margin-top:4px"></div>
+                <input id="al-logo-input" type="file" accept="image/*" style="display:none">
               </div>
               <button type="submit" class="btn btn--primario btn--bloque">Enviar postulación <span class="ar">&rarr;</span></button>
               <p class="auth-legal">Revisaremos tu caso en particular y te contactaremos por WhatsApp.</p>
@@ -389,7 +410,7 @@
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
-  <script type="module" src="auth.js?v=64"></script>
+  <script type="module" src="auth.js?v=65"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
