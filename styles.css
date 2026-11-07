@@ -379,7 +379,8 @@ a { color: inherit; text-decoration: none; }
      pedacito de la siguiente tarjeta asomando. Se apunta solo al carrusel de
      la portada (con el ID, que sí gana sin importar el orden); la ficha de
      cada aliado en el Directorio usa .pm-card en una cuadrícula aparte y no
-     debe volverse 100vw. */
+     debe volverse 100vw (ver su propio ajuste de ancho más abajo, después
+     de la definición base de .pm-card). */
   #promo-carrusel-track .pm-card { width: 100vw; flex-shrink: 0; border-radius: 0; box-shadow: none; }
 }
 
@@ -535,6 +536,18 @@ a { color: inherit; text-decoration: none; }
   background: var(--crema-2); display: flex; align-items: center; justify-content: center;
 }
 .pm-club-mark img { width: 10px; height: 10px; object-fit: contain; display: block; }
+/* En celular, 820px no cabe en la pantalla -- sin esto, la tarjeta se
+   salía del viewport y (al quedar centrada en la cuadrícula del
+   Directorio) el visitante solo veía una franja del medio, sin texto ni
+   borde, como si "no se viera nada". Va DESPUÉS de la definición base de
+   arriba a propósito -- con la misma especificidad (una sola clase),
+   gana la regla que aparece más abajo en el archivo. El carrusel de la
+   portada (#promo-carrusel-track) tiene su propia regla con ID en el
+   primer media query del archivo, que sí le gana a esta por especificidad
+   y lo deja en 100vw en vez de 92vw. */
+@media (max-width: 600px) {
+  .pm-card { width: 92vw; }
+}
 .tienda-hero { position: relative; border-radius: 18px; padding: 26px 22px; overflow: hidden; background: radial-gradient(120% 140% at 15% 0%, #164a2c 0%, #0c2e1b 55%, #05160d 100%); background-size: cover; background-position: center; color: #fff; box-sizing: border-box; min-height: 150px; display: flex; flex-direction: column; justify-content: center; }
 .tienda-hero--img { background-blend-mode: overlay; }
 .tienda-hero__eyebrow { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #00DF81; margin-bottom: 8px; }
