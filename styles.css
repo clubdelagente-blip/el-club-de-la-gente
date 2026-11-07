@@ -455,7 +455,6 @@ a { color: inherit; text-decoration: none; }
 .pm-titulo {
   font-family: var(--display); font-weight: 600; font-size: 18px; font-style: italic;
   color: #fff; margin: 1px 0 0; line-height: 1.15;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 /* El % (o tipo de promo) es el elemento protagonista de toda la tarjeta --
    sin cápsula, fondo, borde ni recuadro: solo el número/texto en blanco,
@@ -469,7 +468,7 @@ a { color: inherit; text-decoration: none; }
   color: #fff; font-weight: 900; font-size: 54px; line-height: .85;
   letter-spacing: -.01em; text-transform: uppercase;
   text-shadow: 0 3px 0 rgba(0,0,0,.18), 0 8px 16px rgba(0,0,0,.35);
-  margin-top: 2px;
+  margin-top: 7px;
 }
 .pm-vigencia {
   display: inline-flex; align-items: center; width: fit-content;
