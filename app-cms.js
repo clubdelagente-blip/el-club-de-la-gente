@@ -66,14 +66,30 @@ function badgePromo(p) {
   return "Promo";
 }
 
-/* Línea chica de vigencia en la tarjeta (PromoCard v2) -- solo días y fecha
-   de cierre, duplicado a propósito (mismo patrón que directorio.js). */
-/* Sticker amarillo "Solo hasta <fecha>" de la tarjeta (PromoCard v2). */
+/* Sticker amarillo de vigencia de la tarjeta (PromoCard v2) -- combina la
+   fecha de cierre ("Solo hasta X") con los días en que aplica la promo
+   ("Lun-Vie" si son consecutivos, o "Lun/Mié/Vie" si no), duplicado a
+   propósito (mismo patrón que directorio.js y Admin.html). */
 const MES_CORTO = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+const DIAS_ORDEN = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
+const DIAS_CORTO = { lunes: "Lun", martes: "Mar", miercoles: "Mié", jueves: "Jue", viernes: "Vie", sabado: "Sáb", domingo: "Dom" };
+function textoDiasAplica(dias) {
+  if (!Array.isArray(dias) || !dias.length || dias.length >= 7) return "";
+  const ordenados = DIAS_ORDEN.filter(d => dias.includes(d));
+  const idxs = ordenados.map(d => DIAS_ORDEN.indexOf(d));
+  const contiguo = idxs.length > 1 && idxs.every((v, i) => i === 0 || v === idxs[i - 1] + 1);
+  if (contiguo) return `${DIAS_CORTO[ordenados[0]]}-${DIAS_CORTO[ordenados[ordenados.length - 1]]}`;
+  return ordenados.map(d => DIAS_CORTO[d]).join("/");
+}
 function detalleVigencia(p) {
-  if (!p.fecha_fin) return "";
-  const f = new Date(p.fecha_fin + "T00:00:00");
-  return `Solo hasta ${f.getDate()} de ${MES_CORTO[f.getMonth()]}`;
+  const partes = [];
+  if (p.fecha_fin) {
+    const f = new Date(p.fecha_fin + "T00:00:00");
+    partes.push(`Solo hasta ${f.getDate()} de ${MES_CORTO[f.getMonth()]}`);
+  }
+  const dias = textoDiasAplica(p.dias_aplica);
+  if (dias) partes.push(dias);
+  return partes.join(" · ");
 }
 
 /* ---------- Tarjeta de promoción (PromoCard v2) ----------
