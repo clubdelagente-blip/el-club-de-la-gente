@@ -484,14 +484,26 @@ a { color: inherit; text-decoration: none; }
   text-shadow: 0 3px 0 rgba(0,0,0,.18), 0 8px 16px rgba(0,0,0,.35);
   margin-top: auto;
 }
+/* Etiqueta chica "dto." pegada al número -- solo en promos de tipo
+   porcentaje, deja claro que el % es un descuento sin competir en tamaño
+   con el número. */
+.pm-tipo__dto {
+  font-family: var(--cuerpo); font-size: 13px; font-weight: 700;
+  letter-spacing: 0; text-shadow: none; margin-left: 3px;
+  vertical-align: text-bottom;
+}
 .pm-card--titulo-largo .pm-titulo { font-size: 15px; }
 .pm-card--titulo-largo .pm-tipo { font-size: 42px; }
+/* flex-direction:column para poder apilar fecha + días en 2 líneas
+   (.pm-vigencia__l1/__l2) cuando la promo tiene ambos -- con una sola
+   línea de texto (el caso normal) se ve exactamente igual que antes. */
 .pm-vigencia {
-  display: inline-flex; align-items: center; width: fit-content; align-self: center;
+  display: inline-flex; flex-direction: column; align-items: center; width: fit-content; align-self: center;
   background: #EAB749; color: var(--negro);
-  font-weight: 800; font-size: 7px; letter-spacing: .02em; text-transform: uppercase;
+  font-weight: 800; font-size: 7px; letter-spacing: .02em; text-transform: uppercase; line-height: 1.3;
   padding: 2px 6px; border-radius: 5px; margin-top: 2px;
 }
+.pm-vigencia__l2 { font-size: 6px; opacity: .8; }
 /* Empujado al fondo de la columna izquierda (margin-top:auto en un flex
    column toma todo el espacio libre que dejó el badge sin cápsula), cerca
    del link de términos y condiciones (que ahora va debajo, dentro de esta

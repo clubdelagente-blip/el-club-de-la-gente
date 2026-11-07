@@ -81,15 +81,18 @@ function textoDiasAplica(dias) {
   if (contiguo) return `${DIAS_CORTO[ordenados[0]]}-${DIAS_CORTO[ordenados[ordenados.length - 1]]}`;
   return ordenados.map(d => DIAS_CORTO[d]).join("/");
 }
-function detalleVigencia(p) {
-  const partes = [];
-  if (p.fecha_fin) {
+// Si hay fecha Y días, el sticker queda de 2 líneas ("Solo hasta X" arriba,
+// los días abajo); si solo hay uno de los dos, una sola línea con "Solo"
+// adelante en cualquier caso.
+function vigenciaHtml(p) {
+  const fechaTxt = p.fecha_fin ? (() => {
     const f = new Date(p.fecha_fin + "T00:00:00");
-    partes.push(`Solo hasta ${f.getDate()} de ${MES_CORTO[f.getMonth()]}`);
-  }
-  const dias = textoDiasAplica(p.dias_aplica);
-  if (dias) partes.push(dias);
-  return partes.join(" · ");
+    return `Solo hasta ${f.getDate()} de ${MES_CORTO[f.getMonth()]}`;
+  })() : "";
+  const diasTxt = textoDiasAplica(p.dias_aplica);
+  if (!fechaTxt && !diasTxt) return "";
+  if (fechaTxt && diasTxt) return `<span class="pm-vigencia"><span class="pm-vigencia__l1">${esc(fechaTxt)}</span><span class="pm-vigencia__l2">${esc(diasTxt)}</span></span>`;
+  return `<span class="pm-vigencia">${esc(fechaTxt || `Solo ${diasTxt}`)}</span>`;
 }
 
 /* ---------- Tarjeta de promoción (PromoCard v2) ----------
@@ -137,8 +140,8 @@ function promoCardHtml(p, al) {
               </div>
             </div>
             <h3 class="pm-titulo">${esc(p.titulo || "Promoción")}</h3>
-            <span class="pm-tipo">${esc(badgePromo(p))}</span>
-            ${detalleVigencia(p) ? `<span class="pm-vigencia">${esc(detalleVigencia(p))}</span>` : ""}
+            <span class="pm-tipo">${esc(badgePromo(p))}${p.tipo === "porcentaje" ? `<span class="pm-tipo__dto">dto.</span>` : ""}</span>
+            ${vigenciaHtml(p)}
             <button type="button" class="pm-vermas" data-pm-vermas>Ver más ${ic("chevron-right")}</button>
             <button type="button" class="pm-condiciones" data-pm-condiciones>Términos y condiciones</button>
             ${p.condiciones ? `<p class="pm-condiciones-txt" hidden>${esc(p.condiciones)}</p>` : ""}
