@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=139">
+  <link rel="stylesheet" href="styles.css?v=140">
   <link rel="stylesheet" href="admin.css?v=19">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -2473,7 +2473,7 @@ function promoCardHtmlPreview(p,al){
               </div>
             </div>
             <h3 class="pm-titulo">${esc(p.titulo||'Promoción')}</h3>
-            <span class="pm-tipo">${esc(pmBadgePreview(p.tipo))}${p.tipo==='porcentaje'?`<span class="pm-tipo__dto">dto.</span>`:''}</span>
+            <span class="pm-tipo">${esc(pmBadgePreview(p.tipo))}${p.tipo==='porcentaje'?`<span class="pm-tipo__dto">OFF</span>`:''}</span>
             ${vigenciaHtmlPreview(p)}
             <button type="button" class="pm-vermas" data-pm-vermas>Ver más ${ic('chevron-right')}</button>
             <button type="button" class="pm-condiciones" data-pm-condiciones>Términos y condiciones</button>

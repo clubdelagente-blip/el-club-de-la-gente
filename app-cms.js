@@ -140,7 +140,7 @@ function promoCardHtml(p, al) {
               </div>
             </div>
             <h3 class="pm-titulo">${esc(p.titulo || "Promoción")}</h3>
-            <span class="pm-tipo">${esc(badgePromo(p))}${p.tipo === "porcentaje" ? `<span class="pm-tipo__dto">dto.</span>` : ""}</span>
+            <span class="pm-tipo">${esc(badgePromo(p))}${p.tipo === "porcentaje" ? `<span class="pm-tipo__dto">OFF</span>` : ""}</span>
             ${vigenciaHtml(p)}
             <button type="button" class="pm-vermas" data-pm-vermas>Ver más ${ic("chevron-right")}</button>
             <button type="button" class="pm-condiciones" data-pm-condiciones>Términos y condiciones</button>
