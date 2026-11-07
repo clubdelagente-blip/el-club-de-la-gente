@@ -120,13 +120,12 @@ function promoCardHtml(p, al) {
   const dotsHtml = totalPaginas > 1
     ? `<div class="pm-pager__dots">${Array.from({ length: totalPaginas }).map((_, i) => `<span class="${i === 0 ? "is-on" : ""}"></span>`).join("")}</div>`
     : "";
-  // whatsapp_atencion = número de atención al cliente (público); si el
-  // aliado no lo configuró, se cae al número personal como siempre.
-  const waAtencion = al?.whatsapp_atencion || al?.whatsapp;
-  const waLink = waAtencion
-    ? `https://wa.me/57${String(waAtencion).replace(/\D/g, "")}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.titulo || p.descripcion || badgePromo(p)}" de ${al?.nombre || ""} que vi en El Club de la Gente`)}`
-    : null;
-  const ctaHtml = waLink ? `<a class="pm-wa" href="${waLink}" target="_blank" rel="noopener">${ICON_WA}WhatsApp</a>` : "";
+  // Esta tarjeta vive en la portada pública (visitantes sin cuenta) -- es
+  // solo vitrina para mostrar el tipo de promos que hay, NUNCA debe dar
+  // acceso directo a reclamarla (eso es exclusivo de miembros, dentro del
+  // Directorio). Por eso el CTA siempre invita a hacerse miembro, nunca es
+  // un link real de WhatsApp.
+  const ctaHtml = `<a class="pm-wa-lock" href="#membresias">${ic("lock")}Hazte miembro</a>`;
   return `
   <div class="pm-card" style="--pm-cc:${cc}">
     <div class="pm-pager" data-pm-carrusel aria-label="Desliza para ver fotos y videos de la promoción">
