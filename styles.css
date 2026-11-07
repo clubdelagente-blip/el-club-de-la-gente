@@ -433,8 +433,13 @@ a { color: inherit; text-decoration: none; }
 .pm-pager__track { display: flex; width: 100%; height: 100%; transition: transform .35s cubic-bezier(.65, 0, .35, 1); }
 .pm-page { width: 100%; flex: none; box-sizing: border-box; }
 .pm-page--info { display: flex; align-items: stretch; }
+/* object-fit:contain en vez de cover -- la foto o video se ve ENTERO sin
+   importar su proporción original (vertical, cuadrada, panorámica...), y
+   el espacio sobrante lo llena solo el fondo con patrón de la tarjeta
+   (el mismo que ya se ve en .pm-card). Así nunca se recorta nada, sea
+   cual sea el formato que suba el aliado. */
 .pm-page--media { position: relative; }
-.pm-page--media img, .pm-page--media video { width: 100%; height: 100%; object-fit: cover; display: block; -webkit-user-drag: none; }
+.pm-page--media img, .pm-page--media video { width: 100%; height: 100%; object-fit: contain; display: block; -webkit-user-drag: none; }
 .pm-page--media .pm-page__ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, .6); }
 .pm-page__ph svg, .pm-page__ph i { width: 22px; height: 22px; }
 .pm-pager__dots { position: absolute; bottom: 5px; left: 0; right: 0; display: flex; justify-content: center; gap: 4px; z-index: 2; pointer-events: none; }
