@@ -444,9 +444,9 @@ a { color: inherit; text-decoration: none; }
 .pm-info { flex: 1; min-width: 0; padding: 8px 9px 6px; display: flex; flex-direction: column; gap: 3px; color: #fff; }
 .pm-info__top { display: flex; align-items: center; gap: 6px; }
 .pm-info__aliado { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.pm-info__logo { width: 20px; height: 20px; flex: none; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.22); }
+.pm-info__logo { width: 28px; height: 28px; flex: none; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.22); }
 .pm-info__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.pm-info__nombre { font-size: 11px; font-weight: 700; color: rgba(255,255,255,.95); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-info__nombre { font-size: 14px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pm-titulo {
   font-family: var(--display); font-weight: 600; font-size: 15px; font-style: italic;
   color: #fff; margin: 1px 0 0; line-height: 1.15;
