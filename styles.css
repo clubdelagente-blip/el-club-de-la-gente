@@ -477,11 +477,13 @@ a { color: inherit; text-decoration: none; }
    "Ver más" (nunca se muestra inline). */
 .pm-desc { display: none; }
 
-/* Foto chica de referencia en la página de info -- a la derecha, sin
-   interacción propia (el swipe lo maneja .pm-pager, la tarjeta entera). */
-.pm-thumb { width: 26%; flex: none; padding: 7px; box-sizing: border-box; pointer-events: none; }
-.pm-thumb__inner { width: 100%; height: 100%; border-radius: 9px; overflow: hidden; background: rgba(255,255,255,.1); }
-.pm-thumb__inner img, .pm-thumb__inner video { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Foto de referencia en la página de info -- ocupa la mitad del ancho de
+   la tarjeta (50%) para que no quede un hueco vacío al lado del texto, y
+   usa "contain" (no "cover") para no recortarla. Sin interacción propia
+   (el swipe lo maneja .pm-pager, la tarjeta entera). */
+.pm-thumb { width: 50%; flex: none; padding: 7px; box-sizing: border-box; pointer-events: none; }
+.pm-thumb__inner { width: 100%; height: 100%; border-radius: 9px; overflow: hidden; background: rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; }
+.pm-thumb__inner img, .pm-thumb__inner video { width: 100%; height: 100%; object-fit: contain; display: block; }
 .pm-thumb__ph { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.6); }
 .pm-thumb__ph svg, .pm-thumb__ph i { width: 16px; height: 16px; }
 
