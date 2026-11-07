@@ -813,8 +813,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // "Condiciones de la promoción" en el carrusel de PromoCard (app-cms.js)
     const condBtn = e.target.closest("[data-pm-condiciones]");
     if (condBtn) {
-      const txt = condBtn.nextElementSibling;
-      if (txt && txt.classList.contains("pm-condiciones-txt")) txt.hidden = !txt.hidden;
+      const txt = condBtn.closest(".pm-info")?.querySelector(".pm-condiciones-txt");
+      if (txt) txt.hidden = !txt.hidden;
       else window.open("Terminos.html", "_blank");
       return;
     }

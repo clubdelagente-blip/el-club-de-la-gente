@@ -140,6 +140,8 @@ function promoCardHtml(p, al) {
             <span class="pm-tipo">${esc(badgePromo(p))}</span>
             ${detalleVigencia(p) ? `<span class="pm-vigencia">${esc(detalleVigencia(p))}</span>` : ""}
             <button type="button" class="pm-vermas" data-pm-vermas>Ver más ${ic("chevron-right")}</button>
+            <button type="button" class="pm-condiciones" data-pm-condiciones>Términos y condiciones</button>
+            ${p.condiciones ? `<p class="pm-condiciones-txt" hidden>${esc(p.condiciones)}</p>` : ""}
             <div class="pm-desc" data-pm-desc hidden>
               ${p.descripcion ? `<p class="pm-desc__txt">${descHtml(p.descripcion)}</p>` : ""}
               ${ctaHtml}
@@ -151,13 +153,7 @@ function promoCardHtml(p, al) {
       </div>
       ${dotsHtml}
     </div>
-    <div class="pm-condiciones-wrap">
-      <div class="pm-condiciones-txt-wrap">
-        <p class="pm-condiciones-pie">Beneficio exclusivo para miembros activos de El Club de la Gente. <button type="button" class="pm-condiciones" data-pm-condiciones>Condiciones de la promoción</button></p>
-        ${p.condiciones ? `<p class="pm-condiciones-txt" hidden>${esc(p.condiciones)}</p>` : ""}
-      </div>
-      <div class="pm-club-mark"><img src="icon-club-isotipo.png" alt="El Club de la Gente"></div>
-    </div>
+    <div class="pm-club-mark"><img src="icon-club-isotipo.png" alt="El Club de la Gente"></div>
   </div>`;
 }
 // Paginador de la tarjeta entera -- página 1 es la info + foto chica de

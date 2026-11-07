@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=135">
+  <link rel="stylesheet" href="styles.css?v=136">
   <link rel="stylesheet" href="admin.css?v=19">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -2473,6 +2473,8 @@ function promoCardHtmlPreview(p,al){
             <span class="pm-tipo">${esc(pmBadgePreview(p.tipo))}</span>
             ${detalleVigenciaPreview(p)?`<span class="pm-vigencia">${esc(detalleVigenciaPreview(p))}</span>`:''}
             <button type="button" class="pm-vermas" data-pm-vermas>Ver más ${ic('chevron-right')}</button>
+            <button type="button" class="pm-condiciones" data-pm-condiciones>Términos y condiciones</button>
+            ${p.condiciones?`<p class="pm-condiciones-txt" hidden>${esc(p.condiciones)}</p>`:''}
             <div class="pm-desc" data-pm-desc hidden>
               ${p.descripcion?`<p class="pm-desc__txt">${descHtml(p.descripcion)}</p>`:''}
               ${ctaHtml}
@@ -2484,13 +2486,7 @@ function promoCardHtmlPreview(p,al){
       </div>
       ${dotsHtml}
     </div>
-    <div class="pm-condiciones-wrap">
-      <div class="pm-condiciones-txt-wrap">
-        <p class="pm-condiciones-pie">Beneficio exclusivo para miembros activos de El Club de la Gente. <button type="button" class="pm-condiciones" data-pm-condiciones>Condiciones de la promoción</button></p>
-        ${p.condiciones?`<p class="pm-condiciones-txt" hidden>${esc(p.condiciones)}</p>`:''}
-      </div>
-      <div class="pm-club-mark"><img src="icon-club-isotipo.png" alt="El Club de la Gente"></div>
-    </div>
+    <div class="pm-club-mark"><img src="icon-club-isotipo.png" alt="El Club de la Gente"></div>
   </div>`;
 }
 // Paginador de tarjeta completa -- igual que app-cms.js/directorio.js.
@@ -2578,7 +2574,7 @@ function actualizarPreviewPromo(aliadoId){
       const condBtn=e.target.closest('[data-pm-condiciones]');
       if(condBtn){
         e.stopPropagation();
-        const txt=condBtn.closest('.pm-condiciones-wrap')?.querySelector('.pm-condiciones-txt');
+        const txt=condBtn.closest('.pm-info')?.querySelector('.pm-condiciones-txt');
         if(txt)txt.hidden=!txt.hidden;
       }
     });
