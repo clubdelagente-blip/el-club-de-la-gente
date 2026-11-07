@@ -619,12 +619,15 @@ function initPmCarrusel(root) {
 // Mide si el título de la promo quedó en 2 líneas (ya insertada en el DOM,
 // con el layout calculado) y le agrega a la tarjeta la clase que achica
 // el título y el % en conjunto -- duplicado a propósito (mismo patrón que
-// app-cms.js y Admin.html).
+// app-cms.js y Admin.html). OJO: usa offsetHeight, NO scrollHeight --
+// con -webkit-line-clamp, Safari/iOS reporta scrollHeight como si el
+// título no estuviera recortado (más alto de lo que en verdad se ve), así
+// que títulos de 1 sola línea activaban el achique por error.
 function ajustarArmoniaPromoCard(card) {
   const titulo = card.querySelector(".pm-titulo");
   if (!titulo) return;
   const altoLinea = parseFloat(getComputedStyle(titulo).lineHeight) || 21;
-  card.classList.toggle("pm-card--titulo-largo", titulo.scrollHeight > altoLinea * 1.5);
+  card.classList.toggle("pm-card--titulo-largo", titulo.offsetHeight > altoLinea * 1.5);
 }
 
 function estrellasIconos(valor, size) {
