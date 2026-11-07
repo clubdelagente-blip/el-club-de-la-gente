@@ -399,7 +399,7 @@ a { color: inherit; text-decoration: none; }
    ============================================================ */
 .pm-card {
   position: relative;
-  width: 820px;
+  width: 380px;
   height: 197px;
   flex-shrink: 0;
   border-radius: 14px;
@@ -544,15 +544,14 @@ a { color: inherit; text-decoration: none; }
   background: rgba(255,255,255,.9); display: flex; align-items: center; justify-content: center;
 }
 .pm-club-mark img { width: 10px; height: 10px; object-fit: contain; display: block; }
-/* En celular, 820px no cabe en la pantalla -- sin esto, la tarjeta se
-   salía del viewport y (al quedar centrada en la cuadrícula del
-   Directorio) el visitante solo veía una franja del medio, sin texto ni
-   borde, como si "no se viera nada". Va DESPUÉS de la definición base de
-   arriba a propósito -- con la misma especificidad (una sola clase),
-   gana la regla que aparece más abajo en el archivo. El carrusel de la
-   portada (#promo-carrusel-track) tiene su propia regla con ID en el
-   primer media query del archivo, que sí le gana a esta por especificidad
-   y lo deja en 100vw en vez de 92vw. */
+/* En celular, el ancho pasa a 92vw (en vez del ancho fijo de escritorio
+   de arriba) para que la tarjeta ocupe casi toda la pantalla, con la
+   misma proporción compacta en ambos tamaños. Va DESPUÉS de la
+   definición base de arriba a propósito -- con la misma especificidad
+   (una sola clase), gana la regla que aparece más abajo en el archivo.
+   El carrusel de la portada (#promo-carrusel-track) además le pone 4vw
+   de margen a cada lado con su propia regla con ID, en el primer media
+   query del archivo -- ver el porqué ahí. */
 @media (max-width: 600px) {
   .pm-card { width: 92vw; }
 }
