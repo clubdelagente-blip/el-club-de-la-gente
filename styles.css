@@ -371,17 +371,18 @@ a { color: inherit; text-decoration: none; }
   .promo-carrusel__track { gap: 0; padding: 0; animation: none; }
   .promo-card { width: 100vw; flex-shrink: 0; border-radius: 0; box-shadow: none; border-left: none; border-right: none; }
   .promo-card__img { height: 260px; }
-  /* El swipe táctil entre promos (app-cms.js) calcula el desplazamiento en
-     100vw por tarjeta -- el PromoCard v2 tiene que medir lo mismo en celular
-     para que ese cálculo siga cuadrando. Con el selector ".pm-card" a secas
-     esta regla perdía contra el ancho base (380px) de más abajo en el
-     archivo, que gana por venir después en la cascada -- por eso se veía un
-     pedacito de la siguiente tarjeta asomando. Se apunta solo al carrusel de
-     la portada (con el ID, que sí gana sin importar el orden); la ficha de
-     cada aliado en el Directorio usa .pm-card en una cuadrícula aparte y no
-     debe volverse 100vw (ver su propio ajuste de ancho más abajo, después
-     de la definición base de .pm-card). */
-  #promo-carrusel-track .pm-card { width: 100vw; flex-shrink: 0; border-radius: 0; box-shadow: none; }
+  /* La tarjeta del carrusel de portada debe medir exactamente lo mismo que
+     en la ficha del aliado del Directorio (92vw, con sus bordes redondeados
+     y su sombra -- eso lo da el ancho base de .pm-card más abajo en el
+     archivo, ya no hay que pisarlo aquí). El swipe táctil entre promos
+     (app-cms.js) sigue calculando el desplazamiento en 100vw por tarjeta,
+     así que para que cada tarjeta de 92vw quede centrada en su "paso" de
+     100vw (y no se desalinee a medida que se avanza), se le pone 4vw de
+     margen a cada lado -- 92vw + 4vw + 4vw = 100vw, el mismo total de
+     siempre. Solo aplica al carrusel de la portada (con el ID); la
+     cuadrícula del Directorio no lo necesita porque ya centra sus tarjetas
+     sola. */
+  #promo-carrusel-track .pm-card { flex-shrink: 0; margin: 0 4vw; }
 }
 
 /* ============================================================
