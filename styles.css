@@ -452,17 +452,26 @@ a { color: inherit; text-decoration: none; }
 .pm-info__logo { width: 28px; height: 28px; flex: none; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,.22); }
 .pm-info__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pm-info__nombre { font-size: 14px; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Vuelve a envolver en varias líneas (en vez de 1 sola línea con "...") --
+   así, si el título crece, lo que hay debajo (el %, la vigencia, Ver más)
+   baja con él en vez de encimarse. display:-webkit-box + line-clamp:2 es
+   el tope de seguridad (como mucho 2 líneas) para que un título gigante
+   no se coma toda la tarjeta. */
 .pm-titulo {
   font-family: var(--display); font-weight: 600; font-size: 18px; font-style: italic;
   color: #fff; margin: 1px 0 0; line-height: 1.15;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 /* El % (o tipo de promo) es el elemento protagonista de toda la tarjeta --
    sin cápsula, fondo, borde ni recuadro: solo el número/texto en blanco,
    lo más grande posible, directamente sobre el fondo de la tarjeta. La
    tipografía de display (Anton, la misma de los titulares grandes del
    sitio) es condensada -- cabe más grande en el mismo ancho -- y la
-   sombra en dos capas le da relieve para que llame la atención. */
+   sombra en dos capas le da relieve para que llame la atención. Cuando el
+   título ocupa 2 líneas, app-cms.js/directorio.js/Admin.html le agregan
+   a .pm-card la clase .pm-card--titulo-largo (medida en JS después de
+   insertar la tarjeta) para que el título y el % se achiquen juntos y
+   quede en armonía en vez de pelear por el mismo espacio. */
 .pm-tipo {
   display: block; width: fit-content; align-self: center;
   font-family: var(--display);
@@ -471,6 +480,8 @@ a { color: inherit; text-decoration: none; }
   text-shadow: 0 3px 0 rgba(0,0,0,.18), 0 8px 16px rgba(0,0,0,.35);
   margin-top: 7px;
 }
+.pm-card--titulo-largo .pm-titulo { font-size: 15px; }
+.pm-card--titulo-largo .pm-tipo { font-size: 42px; margin-top: 4px; }
 .pm-vigencia {
   display: inline-flex; align-items: center; width: fit-content; align-self: center;
   background: #EAB749; color: var(--negro);

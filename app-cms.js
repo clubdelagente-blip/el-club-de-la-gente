@@ -203,6 +203,16 @@ function initPmCarrusel(root) {
 
   mostrar(0, false);
 }
+// Mide si el título de la promo quedó en 2 líneas (ya insertada en el DOM,
+// con el layout calculado) y le agrega a la tarjeta la clase que achica
+// el título y el % en conjunto -- duplicado a propósito (mismo patrón que
+// directorio.js y Admin.html).
+function ajustarArmoniaPromoCard(card) {
+  const titulo = card.querySelector(".pm-titulo");
+  if (!titulo) return;
+  const altoLinea = parseFloat(getComputedStyle(titulo).lineHeight) || 21;
+  card.classList.toggle("pm-card--titulo-largo", titulo.scrollHeight > altoLinea * 1.5);
+}
 
 /* ---------- Aliados ---------- */
 async function cargarAliadosPub() {
@@ -659,6 +669,7 @@ async function cargarCarruselPromos() {
     return promoCardHtml(p, al);
   }).join('');
   track.querySelectorAll('[data-pm-carrusel]').forEach(initPmCarrusel);
+  track.querySelectorAll('.pm-card').forEach(ajustarArmoniaPromoCard);
   wrap.style.display = 'block';
   // El elemento estaba display:none al cargar la página, así que el
   // IntersectionObserver original (armado en app.js al cargar) nunca lo

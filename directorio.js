@@ -316,6 +316,7 @@ function wireResenas(a) {
   });
   $$("[data-promo-bloqueada]").forEach(el => el.addEventListener("click", () => abrirModalMejorarPlan(a)));
   $$("[data-pm-carrusel]").forEach(initPmCarrusel);
+  $$(".pm-card").forEach(ajustarArmoniaPromoCard);
   if (!VIEWER_USER_ID) return;
   let seleccion = a._miResena?.estrellas || 0;
   const botones = $$("#resena-stars [data-estrella]");
@@ -611,6 +612,16 @@ function initPmCarrusel(root) {
   window.addEventListener("mouseup", (e) => soltar(e));
 
   mostrar(0, false);
+}
+// Mide si el título de la promo quedó en 2 líneas (ya insertada en el DOM,
+// con el layout calculado) y le agrega a la tarjeta la clase que achica
+// el título y el % en conjunto -- duplicado a propósito (mismo patrón que
+// app-cms.js y Admin.html).
+function ajustarArmoniaPromoCard(card) {
+  const titulo = card.querySelector(".pm-titulo");
+  if (!titulo) return;
+  const altoLinea = parseFloat(getComputedStyle(titulo).lineHeight) || 21;
+  card.classList.toggle("pm-card--titulo-largo", titulo.scrollHeight > altoLinea * 1.5);
 }
 
 function estrellasIconos(valor, size) {
