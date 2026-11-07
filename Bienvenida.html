@@ -113,12 +113,12 @@
       return;
     }
 
-    let miembro, linkMoto, uberPct;
+    let miembro, uberPct;
     try {
       const [{ data: m, error: errM }, { data: cfg }] = await conTimeout(
         Promise.all([
           _supabase.rpc("perfil_publico_por_id", { p_id: miembroId }).maybeSingle(),
-          _supabase.from("configuracion").select("clave, valor").in("clave", ["grupo_wa_moto", "uber_descuento_pct"]),
+          _supabase.from("configuracion").select("clave, valor").in("clave", ["uber_descuento_pct"]),
         ]),
         8000
       );
@@ -127,7 +127,6 @@
         return;
       }
       miembro = m;
-      linkMoto = cfg?.find(c => c.clave === "grupo_wa_moto")?.valor;
       uberPct = Number(cfg?.find(c => c.clave === "uber_descuento_pct")?.valor) || 10;
     } catch (_) {
       renderError("No pudimos conectar en este momento. Intenta de nuevo en unos segundos.");
@@ -142,8 +141,7 @@
       {
         clave: "uber_moto",
         pregunta: `¿Usarías Uber moto con el ${uberPct}% de descuento del Club?`,
-        nota: "Si dices que sí, te abrimos el grupo de WhatsApp. Recomendación: entra al grupo, luego cierra WhatsApp y vuelve a esta pantalla para terminar las últimas preguntas.",
-        onSi: () => { if (linkMoto) window.open(linkMoto, "_blank"); },
+        nota: "Todavía estamos preparando esto -- te avisamos en cuanto esté activo.",
       },
       {
         clave: "interes_talleres",
