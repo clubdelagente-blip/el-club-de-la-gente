@@ -471,17 +471,21 @@ a { color: inherit; text-decoration: none; }
    título ocupa 2 líneas, app-cms.js/directorio.js/Admin.html le agregan
    a .pm-card la clase .pm-card--titulo-largo (medida en JS después de
    insertar la tarjeta) para que el título y el % se achiquen juntos y
-   quede en armonía en vez de pelear por el mismo espacio. */
+   quede en armonía en vez de pelear por el mismo espacio. margin-top:auto
+   (en vez de un valor fijo) hace que quede a medio camino entre el título
+   y "Ver más" -- como ese botón también tiene margin-top:auto, los dos
+   márgenes automáticos de la misma columna se reparten en partes iguales
+   el espacio libre que sobra. */
 .pm-tipo {
   display: block; width: fit-content; align-self: center;
   font-family: var(--display);
   color: #fff; font-weight: 900; font-size: 54px; line-height: .85;
   letter-spacing: -.01em; text-transform: uppercase;
   text-shadow: 0 3px 0 rgba(0,0,0,.18), 0 8px 16px rgba(0,0,0,.35);
-  margin-top: 7px;
+  margin-top: auto;
 }
 .pm-card--titulo-largo .pm-titulo { font-size: 15px; }
-.pm-card--titulo-largo .pm-tipo { font-size: 42px; margin-top: 4px; }
+.pm-card--titulo-largo .pm-tipo { font-size: 42px; }
 .pm-vigencia {
   display: inline-flex; align-items: center; width: fit-content; align-self: center;
   background: #EAB749; color: var(--negro);
