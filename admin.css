@@ -471,6 +471,15 @@
   .admin.menu-open .ad-backdrop { opacity: 1; pointer-events: auto; }
   .ad-burger { display: grid; }
   .ad-gallery { grid-template-columns: repeat(2, 1fr); }
+  /* Títulos largos (ej. "Agente WhatsApp") chocaban con la fecha y la
+     campana porque .ad-top no envolvía -- ahora la fecha/campana bajan a su
+     propia fila en vez de apretujarse contra el título. */
+  .ad-top { flex-wrap: wrap; row-gap: 10px; }
+  .ad-top__right { width: 100%; justify-content: space-between; }
+  /* Mismo problema en el encabezado de cada chat del Agente: nombre+plan vs.
+     "Ver perfil"/WhatsApp se amontonaban -- ahora los botones bajan debajo. */
+  .ag-thread__head { flex-wrap: wrap; }
+  .ag-thread__actions { width: 100%; }
 }
 @media (max-width: 560px) {
   .ad-content, .ad-top { padding-left: 18px; padding-right: 18px; }
