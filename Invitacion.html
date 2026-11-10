@@ -247,9 +247,7 @@
             const banner = document.getElementById('inv-ref-banner');
             const texto = document.getElementById('inv-ref-texto');
             if (banner && texto) {
-              texto.textContent = d.referidor.referidos > 0
-                ? `${d.referidor.nombre} te invitó — ya tiene ${d.referidor.referidos} de 5 referidos para ganar su membresía Vitalicia gratis. ¡Ayúdale a lograrlo!`
-                : `${d.referidor.nombre} te invitó a conocer El Club de la Gente.`;
+              texto.textContent = `${d.referidor.nombre} te invitó a conocer El Club de la Gente.`;
               banner.hidden = false;
             }
           }
