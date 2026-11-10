@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=140">
-  <link rel="stylesheet" href="admin.css?v=20">
+  <link rel="stylesheet" href="admin.css?v=21">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
   <style>
@@ -208,7 +208,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/opus-recorder@8.0.5/dist/recorder.min.js"></script>
   <script src="admin-data.js?v=7"></script>
-  <script src="admin.js?v=37"></script>
+  <script src="admin.js?v=38"></script>
   <script type="module">
 /* ---- ADMIN CMS — inline para evitar caché ---- */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -1035,6 +1035,7 @@ function renderAgThreadReal(){
   if(!c){wrap.innerHTML=`<div class="ag-empty"><span class="ag-empty__ic">${ic('message-circle')}</span><h3>Selecciona una conversación</h3><p>Elige un miembro de la bandeja para ver y responder sus mensajes.</p></div>`;if(window.lucide)lucide.createIcons();return;}
   wrap.innerHTML=`
     <div class="ag-thread__head">
+      <button type="button" class="ag-back" data-ag-back>${ic('arrow-left')}</button>
       ${c.foto?`<img src="${esc(c.foto)}" style="width:40px;height:40px;object-fit:cover;border-radius:50%;flex-shrink:0">`:`<span class="av">${esc(window.ini(c.nombre))}</span>`}
       <div class="ag-thread__id">
         <div class="ag-thread__name">${esc(c.nombre)} ${c.plan?`<span class="ad-pill ${c.plan}"><span class="d"></span>${window.planLbl(c.plan)}</span>`:''}</div>
@@ -3800,6 +3801,20 @@ document.addEventListener('DOMContentLoaded',async()=>{
   }
 
   document.addEventListener('click',async(e)=>{
+    // Abrir un chat de la bandeja del Agente -- antes esto no tenía ningún
+    // listener (el cursor:pointer prometía algo que no hacía nada); solo se
+    // veía un hilo porque el primero de la lista se auto-seleccionaba. En
+    // móvil además cambia a la vista de conversación (ver .ag-wrap.is-chat-open).
+    const agConv=e.target.closest('[data-conv]');
+    if(agConv){
+      window.abrirConvReal?.(agConv.dataset.conv);
+      $('#ag-wrap')?.classList.add('is-chat-open');
+      return;
+    }
+    if(e.target.closest('[data-ag-back]')){
+      $('#ag-wrap')?.classList.remove('is-chat-open');
+      return;
+    }
     if(e.target.closest('#cfg-num-save')){
       const btn=e.target.closest('#cfg-num-save');
       const num=$("#cfg-num-admin")?.value.replace(/\D/g,'')||null;

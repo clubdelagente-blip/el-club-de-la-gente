@@ -400,7 +400,7 @@ function renderAgente() {
       <button class="ad-btn ad-btn--verde" id="ag-broadcast">${ic("megaphone")} Difusión masiva</button>
     </div>
     <div class="ad-metrics" id="ag-stats" style="margin-bottom:18px"></div>
-    <div class="ag-wrap">
+    <div class="ag-wrap" id="ag-wrap">
       <div class="ag-list">
         <div class="ag-list__top">
           <div class="ag-list__title"><h3>Bandeja</h3><span class="n" id="ag-pend-n"></span></div>

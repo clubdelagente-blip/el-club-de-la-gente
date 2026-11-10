@@ -397,6 +397,10 @@
 /* --- columna derecha: hilo activo --- */
 .ag-thread { display: flex; flex-direction: column; min-width: 0; background: #0c0c0b; max-height: calc(100vh - 188px); }
 .ag-thread__head { display: flex; align-items: center; gap: 13px; padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--surface); flex: none; }
+/* Solo se ve en móvil (ver @media 980px) -- en escritorio las dos columnas
+   están siempre visibles, así que no hace falta volver atrás. */
+.ag-back { display: none; width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--txt); align-items: center; justify-content: center; cursor: pointer; flex: none; }
+.ag-back i { width: 17px; height: 17px; }
 .ag-thread__head .av { width: 40px; height: 40px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line); display: grid; place-items: center; font-family: var(--display); font-size: 14px; font-weight: 600; flex: none; }
 .ag-thread__id { flex: 1; min-width: 0; }
 .ag-thread__name { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 9px; }
@@ -453,6 +457,13 @@
   .ag-list { border-right: none; border-bottom: 1px solid var(--line); max-height: 280px; }
   .ag-thread { height: 480px; max-height: 480px; }
   .ag-conv__prev { max-width: 60vw; }
+  /* Estilo WhatsApp: en móvil solo se ve la lista hasta que se toca un
+     chat -- antes el primero de la lista se auto-abría siempre, ocupando
+     espacio con un hilo que nadie pidió ver todavía. */
+  .ag-thread { display: none; }
+  .ag-wrap.is-chat-open .ag-list { display: none; }
+  .ag-wrap.is-chat-open .ag-thread { display: flex; height: calc(100vh - 170px); max-height: none; }
+  .ag-back { display: flex; }
 }
 
 /* ============================================================

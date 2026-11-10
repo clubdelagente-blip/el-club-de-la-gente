@@ -158,7 +158,12 @@ Deno.serve(async (req: Request) => {
         await supabase.from("conversaciones").insert({
           whatsapp: (updated.whatsapp || "").replace(/\D/g, ""),
           rol: "assistant",
-          contenido: `Tu membresía ${planLabel} quedó activa, ${primerNombre}. Ya puedes mostrar tu ClubCard en cualquier aliado del Club para empezar a ahorrar.`,
+          // Texto real de la plantilla aprobada "membresia_activada" (Meta no
+          // expone el texto renderizado en la respuesta del API de WhatsApp,
+          // así que queda escrito a mano acá -- si la plantilla cambia algún
+          // día, hay que actualizar esto también para que el historial del
+          // Agente siga mostrando lo mismo que de verdad le llegó al miembro).
+          contenido: `✅ ¡Tu membresía *${planLabel}* ya está activa, *${primerNombre}*! 💙🌿\n\nDesde hoy puedes disfrutar de tus beneficios y presentar tu ClubCard en nuestros aliados para empezar a ahorrar. 🛍️\n\nPero hay algo aún más bonito: *tu membresía no solo te beneficia a ti, también nos ayuda a impulsar programas sociales que llevarán apoyo, oportunidades y esperanza a muchos seres que lo necesitan.* ❤️\n\nPorque cuando ahorras, aprendes y haces parte de esta comunidad, también contribuyes a construir algo bueno para los demás.\n\n¡Gracias por ser parte de El Club de la Gente! Juntos podemos hacer que ayudar sea parte de nuestra vida cotidiana. 🧡\n\n_El Club de la Gente_`,
         });
       } else {
         console.error("whatsapp-send-3 rechazó la confirmación de activación:", rEnvio.status, await rEnvio.text().catch(() => ""));
