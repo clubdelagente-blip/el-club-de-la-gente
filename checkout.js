@@ -29,6 +29,29 @@ function toast(msg, check = false) {
 const PLANES_SIN_PAGO = ["gratis", "vitalicia"]; // se activan solos, no piden comprobante de pago
 const fmt = new Intl.NumberFormat("es-CO");
 
+function primerNombreDe(nombre) {
+  return (nombre || "").split(" ")[0] || "Miembro";
+}
+
+// Avisa al propio miembro, por WhatsApp, que su comprobante no se pudo
+// aprobar solo (quedó para revisión manual del equipo) -- antes esto solo
+// se veía en pantalla, y si cerraba el navegador no se enteraba de nada
+// hasta que el admin lo aprobara a mano. Mismo patrón que auth.js (flujo de
+// "pagar primero y registrarse"), duplicado a propósito -- este archivo es
+// para miembros ya existentes que suben de plan desde su perfil.
+async function avisarRevisionManual(miembroId, planLabel) {
+  const { data: perfil } = await supabase.from("perfiles").select("nombre, whatsapp").eq("id", miembroId).maybeSingle();
+  if (!perfil?.whatsapp) return;
+  fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      to: perfil.whatsapp,
+      body: `¡Hola, *${primerNombreDe(perfil.nombre)}*! 👀 Tu comprobante de pago de la membresía *${planLabel}* quedó en revisión manual de nuestro equipo.\n\nTe avisaremos por aquí apenas quede verificado.\n\n_El Club de la Gente_`,
+    }),
+  }).catch(() => {});
+}
+
 let PLANES = {}; // se llena desde Supabase → { slug: fila de la tabla "planes" }
 
 let estado = {
@@ -228,13 +251,16 @@ function wirePago() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ solicitud_id: nuevaSolicitudId }),
     }).then(async (r) => {
-      if (!verifEl) return;
       const j = await r.json().catch(() => ({}));
-      verifEl.textContent = j.aprobado
-        ? "✅ ¡Tu membresía ya quedó activa! Revisa tu perfil."
-        : "👀 Tu comprobante quedó en revisión manual del equipo.";
+      if (verifEl) {
+        verifEl.textContent = j.aprobado
+          ? "✅ ¡Tu membresía ya quedó activa! Revisa tu perfil."
+          : "👀 Tu comprobante quedó en revisión manual del equipo.";
+      }
+      if (!j.aprobado) avisarRevisionManual(estadoPago.miembroId, estadoPago.planLabel);
     }).catch(() => {
       if (verifEl) verifEl.textContent = "👀 Tu comprobante quedó en revisión manual del equipo.";
+      avisarRevisionManual(estadoPago.miembroId, estadoPago.planLabel);
     });
 
     // Avisar al equipo para que revise el comprobante — fire-and-forget.
