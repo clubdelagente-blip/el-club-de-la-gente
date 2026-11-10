@@ -47,7 +47,7 @@ async function avisarRevisionManual(miembroId, planLabel) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       to: perfil.whatsapp,
-      body: `¡Hola, *${primerNombreDe(perfil.nombre)}*! 👀 Tu comprobante de pago de la membresía *${planLabel}* quedó en revisión manual de nuestro equipo.\n\nTe avisaremos por aquí apenas quede verificado.\n\n_El Club de la Gente_`,
+      body: `¡Hola, *${primerNombreDe(perfil.nombre)}*! 👀 Tu comprobante de pago de la membresía *${planLabel}* quedó en revisión manual de nuestro equipo.\n\nTe avisaremos por aquí apenas quede verificado. Mientras tanto, ya puedes entrar a tu cuenta aquí: https://elclubdelagente.com/Registro.html?modo=login\n\n_El Club de la Gente_`,
     }),
   }).catch(() => {});
 }

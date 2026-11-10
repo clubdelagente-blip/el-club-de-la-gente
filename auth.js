@@ -48,7 +48,7 @@ function avisarRevisionManual(waDigits, primerNombre, planLabel) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       to: waDigits,
-      body: `¡Hola, *${primerNombre}*! 👀 Tu comprobante de pago de la membresía *${planLabel}* quedó en revisión manual de nuestro equipo.\n\nTe avisaremos por aquí apenas quede verificado.\n\n_El Club de la Gente_`,
+      body: `¡Hola, *${primerNombre}*! 👀 Tu comprobante de pago de la membresía *${planLabel}* quedó en revisión manual de nuestro equipo.\n\nTe avisaremos por aquí apenas quede verificado. Mientras tanto, ya puedes entrar a tu cuenta aquí: https://elclubdelagente.com/Registro.html?modo=login\n\n_El Club de la Gente_`,
     }),
   }).catch(() => {});
 }
@@ -85,10 +85,16 @@ function irAExitoPagoPendiente({ nombre, plan, ok }) {
   $("#exito-msg").innerHTML = ok
     ? `Recibimos tu comprobante de la membresía <b>${plan}</b>. Te informaremos por WhatsApp apenas lo verifiquemos, para que puedas acceder a todos tus beneficios.`
     : `Tuvimos un problema guardando tu comprobante de la membresía <b>${plan}</b> — escríbenos por WhatsApp para completarlo y activar tu cuenta.`;
-  // No se invita a entrar a la cuenta mientras el pago sigue sin verificar --
-  // se avisa por WhatsApp apenas quede aprobado.
+  // La cuenta ya existe aunque el pago siga sin verificar (solo activa el
+  // plan Gratis mientras tanto) -- antes se escondía este botón por completo
+  // y la persona se quedaba sin ningún lugar a dónde ir hasta que le
+  // llegara el WhatsApp de aprobación. Ahora sí puede entrar.
   const cta = $("#exito-cta");
-  if (cta) cta.style.display = "none";
+  if (cta) {
+    cta.setAttribute("href", "Perfil.html");
+    cta.innerHTML = `Entrar a mi cuenta <span class="ar">&rarr;</span>`;
+    cta.style.display = "";
+  }
   $(".stepper").style.visibility = "hidden";
   const wa = $("#exito-social"); if (wa) wa.hidden = true;
   const verifEl = $("#verif-ia-status");
