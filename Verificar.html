@@ -285,7 +285,7 @@
       bindBtnAplicarAliado(p, aliadoInfo);
     }
 
-    function renderLimite(p, limite, aliadoInfo, sellosActuales) {
+    function renderLimite(p, limite, aliadoInfo, sellosActuales, planPremium) {
       const planNombre = PLAN_NOMBRE[p.plan] || "Básico";
       const wa = (p.whatsapp||"").replace(/\D/g,"");
       const numero = wa.startsWith("57") ? wa : "57"+wa;
@@ -295,9 +295,15 @@
       const parrafo = sinAcceso
         ? "Los descuentos de aliados son exclusivos desde el plan Básico en adelante. El plan Gratis sí incluye Uber y la Tienda del Club."
         : `Este miembro usó su${limite!==1?"s":""} ${limite} descuento${limite!==1?"s":""} del mes. No aplica más descuentos hasta el próximo mes.`;
+      // El precio sale del plan Premium editado en Admin (no se repite a mano
+      // aquí) -- si por lo que sea no cargó, cae a un texto genérico en vez
+      // de mostrar un precio que puede quedar desactualizado.
+      const precioPremiumTxt = planPremium?.precio_texto
+        ? `${planPremium.precio_texto}${planPremium.precio_sufijo || "/mes"}`
+        : null;
       const msg = sinAcceso
         ? `¡Hola ${p.nombre}! 👋 Los descuentos de aliados son exclusivos desde el plan Básico.\n\nActualiza tu membresía y aprovecha el Club sin restricciones.\n\nEl Club de la Gente`
-        : `¡Hola ${p.nombre}! 👋 Llegaste al límite de ${limite} descuento${limite!==1?"s":""} del mes con tu membresía ${planNombre}.\n\n¿Quieres descuentos ilimitados? Actualiza a Premium por solo $20.000/mes y aprovecha el Club sin restricciones.\n\nEl Club de la Gente`;
+        : `¡Hola ${p.nombre}! 👋 Llegaste al límite de ${limite} descuento${limite!==1?"s":""} del mes con tu membresía ${planNombre}.\n\n¿Quieres descuentos ilimitados? Actualiza a Premium${precioPremiumTxt ? ` por solo ${precioPremiumTxt}` : ""} y aprovecha el Club sin restricciones.\n\nEl Club de la Gente`;
       const waUrl = `https://wa.me/${numero}?text=${encodeURIComponent(msg)}`;
       card.innerHTML = `
         <div class="estado-ic estado-ic--lim">⚠</div>
@@ -796,9 +802,10 @@
 
     async function cargarYRenderizar() {
       try {
-        const [{ data, error }, aliadoInfo] = await conTimeout(Promise.all([
+        const [{ data, error }, aliadoInfo, { data: planPremium }] = await conTimeout(Promise.all([
           supabaseClient.rpc("perfil_publico_por_id", { p_id: id }).single(),
           cargarAliadoInfo(),
+          supabaseClient.from("planes").select("precio_texto, precio_sufijo").eq("slug", "premium").maybeSingle(),
         ]), 12000);
 
         if (error || !data) {
@@ -829,7 +836,7 @@
         }
 
         if (limite !== Infinity && usos >= limite) {
-          renderLimite(data, limite, aliadoInfo, sellosActuales);
+          renderLimite(data, limite, aliadoInfo, sellosActuales, planPremium);
         } else {
           renderOk(data, usos, limite, aliadoInfo, sellosActuales);
         }
