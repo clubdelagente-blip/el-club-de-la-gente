@@ -294,7 +294,16 @@ Deno.serve(async (req: Request) => {
           contentVariables: { "1": planLabel, "2": primerNombre },
         }),
       });
-      if (!rEnvio.ok) {
+      if (rEnvio.ok) {
+        // Sin esto, la confirmación mandada por plantilla aprobada nunca
+        // quedaba en "conversaciones" -- no aparecía en la bandeja del
+        // Agente ni en ningún historial, aunque sí se hubiera enviado de verdad.
+        await supabase.from("conversaciones").insert({
+          whatsapp: (updated.whatsapp || "").replace(/\D/g, ""),
+          rol: "assistant",
+          contenido: `Tu membresía ${planLabel} quedó activa, ${primerNombre}. Ya puedes mostrar tu ClubCard en cualquier aliado del Club para empezar a ahorrar.`,
+        });
+      } else {
         console.error("whatsapp-send-3 rechazó la confirmación (auto-IA):", rEnvio.status, await rEnvio.text().catch(() => ""));
       }
     } catch (e) {
