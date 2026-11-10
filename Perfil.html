@@ -129,6 +129,13 @@
             <p>Aquí ganas tú, crecemos todos y juntos hacemos que las cosas buenas lleguen más lejos.</p>
           </div>
 
+          <!-- Aviso de pago en revisión: solo aparece si hay una solicitud de
+               membresía pendiente (ver cargarAvisoPagoPendiente en dashboard.js) -->
+          <div id="aviso-pago-pendiente" hidden style="display:flex;align-items:center;gap:12px;background:#fef3c7;border:1px solid #fde4a6;border-radius:12px;padding:14px 16px;margin-bottom:18px">
+            <span style="flex:none;width:34px;height:34px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:#b45309"><i data-lucide="clock" style="width:17px;height:17px"></i></span>
+            <p style="font-size:13px;color:#7c4a0a;margin:0"><span id="aviso-pago-pendiente-txt"></span></p>
+          </div>
+
           <!-- ClubCard -->
           <div class="cc-float-wrap">
             <div class="ccv2" style="position:relative">
@@ -1121,7 +1128,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=204"></script>
+  <script type="module" src="dashboard.js?v=205"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">

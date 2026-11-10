@@ -1781,6 +1781,28 @@ async function cargarNotificacionesMiembro(userId) {
   }
 }
 
+// Avisa en el propio Inicio si hay un pago subido y aún sin aprobar -- sin
+// esto, el miembro entraba a su cuenta, veía "Gratis" (el plan real hasta
+// que se apruebe) y no tenía ningún contexto de por qué, aunque ya hubiera
+// pagado Básico o Premium.
+async function cargarAvisoPagoPendiente(userId) {
+  const aviso = document.getElementById("aviso-pago-pendiente");
+  if (!aviso) return;
+  const { data: sol } = await supabase.from("solicitudes_membresia")
+    .select("plan")
+    .eq("miembro_id", userId)
+    .eq("estado", "pendiente")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!sol) { aviso.hidden = true; return; }
+  const planLabel = PLAN_LABEL[sol.plan] || sol.plan;
+  const txt = document.getElementById("aviso-pago-pendiente-txt");
+  if (txt) txt.innerHTML = `Tu pago de <b>${esc(planLabel)}</b> está en revisión. Te avisaremos por WhatsApp apenas quede verificado.`;
+  aviso.hidden = false;
+  if (window.lucide) lucide.createIcons();
+}
+
 // Reintentar un comprobante rechazado -- trae la última solicitud rechazada
 // de este miembro y deja subir uno nuevo, sin tener que escribir por
 // WhatsApp ni volver a pasar por todo el registro.
@@ -3353,6 +3375,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const plan = perfData?.plan || null;
     const nombre = perfData?.nombre || session.user.user_metadata?.nombre || session.user.user_metadata?.full_name || null;
     aplicarPlanUI(plan, perfData?.fecha_vencimiento);
+    cargarAvisoPagoPendiente(userId);
 
     // Categorías de interés reales (nada de datos de ejemplo)
     const catsEl = document.getElementById("perfil-cats");
