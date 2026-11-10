@@ -33,6 +33,26 @@ async function numeroAdmin() {
   return data?.valor || "3043394870";
 }
 
+function primerNombreDe(nombre) {
+  return (nombre || "").split(" ")[0] || "Miembro";
+}
+
+// Avisa al propio miembro, por WhatsApp, que su comprobante no se pudo
+// aprobar solo (quedó para revisión manual del equipo) -- antes esto solo
+// se veía en pantalla, y si cerraba el navegador no se enteraba de nada
+// hasta que el admin lo aprobara a mano días después.
+function avisarRevisionManual(waDigits, primerNombre, planLabel) {
+  if (!waDigits) return;
+  fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/whatsapp-send-3", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      to: waDigits,
+      body: `¡Hola, *${primerNombre}*! 👀 Tu comprobante de pago de la membresía *${planLabel}* quedó en revisión manual de nuestro equipo.\n\nTe avisaremos por aquí apenas quede verificado.\n\n_El Club de la Gente_`,
+    }),
+  }).catch(() => {});
+}
+
 // ---------- "Pagar primero, registrarse después" (visitantes nuevos) ----------
 // El comprobante (File) se retiene en memoria -- recién se sube y se crea la
 // solicitud cuando ya existe un miembro_id real, dentro del handler de
@@ -707,10 +727,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           body: JSON.stringify({ solicitud_id: nuevaSolicitudId }),
         }).then(async (r) => {
           const verifEl = $("#verif-ia-status");
-          if (!verifEl) return;
           const j = await r.json().catch(() => ({}));
           if (j.aprobado) {
-            verifEl.textContent = "✅ ¡Tu membresía ya quedó activa!";
+            if (verifEl) verifEl.textContent = "✅ ¡Tu membresía ya quedó activa!";
             // Para este flujo (pago antes de registrarse) el botón de entrar
             // a la cuenta se deja oculto por defecto porque normalmente la
             // aprobación tarda -- pero si la IA la aprobó sola en segundos,
@@ -722,11 +741,13 @@ document.addEventListener("DOMContentLoaded", async () => {
               cta.style.display = "";
             }
           } else {
-            verifEl.textContent = "👀 Tu comprobante quedó en revisión manual del equipo.";
+            if (verifEl) verifEl.textContent = "👀 Tu comprobante quedó en revisión manual del equipo.";
+            avisarRevisionManual(waDigits, primerNombreDe(nombre), pagoPendiente.planLabel);
           }
         }).catch(() => {
           const verifEl = $("#verif-ia-status");
           if (verifEl) verifEl.textContent = "👀 Tu comprobante quedó en revisión manual del equipo.";
+          avisarRevisionManual(waDigits, primerNombreDe(nombre), pagoPendiente.planLabel);
         });
       } catch (e) {
         console.error("Error guardando el pago pendiente:", e);
