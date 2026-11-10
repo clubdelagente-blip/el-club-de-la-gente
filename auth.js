@@ -769,7 +769,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       // -- sigue en texto libre por ahora.
       let bodyPayload;
       if (pagoPendiente && pagoPendienteOk) {
-        bodyPayload = { body: `¡Hola, *${primerNombre}*! 💙🌿\n\n¡Ya eres parte de *El Club de la Gente*! 🎉🤝\n\nRecibimos tu comprobante de pago de la membresía *${pagoPendiente.planLabel}*. Nos alegra muchísimo darte la bienvenida a esta comunidad donde juntos *ahorramos, aprendemos y ayudamos*. 🧡\n\n¡Prepárate para disfrutar de tus beneficios y ser parte de algo que va más allá de una membresía!\n\n*¡Qué alegría tenerte aquí!* 💙\n\n_El Club de la Gente_` };
+        bodyPayload = { body: `¡Hola, *${primerNombre}*! 💙🌿\n\n¡Ya eres parte de *El Club de la Gente*! 🎉🤝\n\nRecibimos tu comprobante de pago de la membresía *${pagoPendiente.planLabel}*. Nos alegra muchísimo darte la bienvenida a esta comunidad donde juntos *ahorramos, aprendemos y ayudamos*. 🧡\n\n¡Prepárate para disfrutar de tus beneficios y ser parte de algo que va más allá de una membresía!\n\nEntra a tu cuenta cuando quieras aquí: https://elclubdelagente.com/Registro.html?modo=login\n\n*¡Qué alegría tenerte aquí!* 💙\n\n_El Club de la Gente_` };
       } else if (pagoPendiente) {
         bodyPayload = {
           contentSid: CONTENT_SID_BIENVENIDA_PAGO_ERROR,
