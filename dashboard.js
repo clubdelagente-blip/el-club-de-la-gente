@@ -1795,11 +1795,11 @@ async function cargarAvisoPagoPendiente(userId) {
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (!sol) { aviso.hidden = true; return; }
+  if (!sol) { aviso.style.display = "none"; return; }
   const planLabel = PLAN_LABEL[sol.plan] || sol.plan;
   const txt = document.getElementById("aviso-pago-pendiente-txt");
   if (txt) txt.innerHTML = `Tu pago de <b>${esc(planLabel)}</b> está en revisión. Te avisaremos por WhatsApp apenas quede verificado.`;
-  aviso.hidden = false;
+  aviso.style.display = "flex";
   if (window.lucide) lucide.createIcons();
 }
 
