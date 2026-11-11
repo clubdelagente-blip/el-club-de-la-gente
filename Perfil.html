@@ -19,8 +19,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=140">
-  <link rel="stylesheet" href="estilos.css?v=21">
-  <link rel="stylesheet" href="dashboard.css?v=45">
+  <link rel="stylesheet" href="estilos.css?v=22">
+  <link rel="stylesheet" href="dashboard.css?v=46">
   <link rel="stylesheet" href="agente.css?v=2">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -160,7 +160,10 @@
                   <img src="marco-ornamento.png" class="ccv2-orn-img" alt="">
                   <div class="ccv2-back__in">
                     <div class="ccv2-back__row">
-                      <div class="ccv2-qr"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Código QR del Club"></div>
+                      <div class="ccv2-qr">
+                        <img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Código QR del Club">
+                        <button type="button" class="ccv2-qr__link-copiar" data-copiar-link-verif title="Copiar link de verificación"><i data-lucide="link"></i></button>
+                      </div>
                       <div class="ccv2-codigo-verif">
                         <span class="ccv2-codigo-verif__lbl">Código de<br>verificación</span>
                         <div class="ccv2-codigo-verif__row">
@@ -179,7 +182,6 @@
               </div>
             </div>
             <p class="cc-float-hint">Toca la tarjeta para voltearla y mostrar tu código</p>
-            <button type="button" class="cc-link-copiar" id="cc-link-copiar"><i data-lucide="link" style="width:13px;height:13px"></i> Copiar mi link de verificación</button>
           </div>
 
           <!-- Accesos rápidos -->
@@ -331,7 +333,10 @@
                   <img src="marco-ornamento.png" class="ccv2-orn-img" alt="">
                   <div class="ccv2-back__in">
                     <div class="ccv2-back__row">
-                      <div class="ccv2-qr"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Código QR del Club"></div>
+                      <div class="ccv2-qr">
+                        <img src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==" alt="Código QR del Club">
+                        <button type="button" class="ccv2-qr__link-copiar" data-copiar-link-verif title="Copiar link de verificación"><i data-lucide="link"></i></button>
+                      </div>
                       <div class="ccv2-codigo-verif">
                         <span class="ccv2-codigo-verif__lbl">Código de<br>verificación</span>
                         <div class="ccv2-codigo-verif__row">
@@ -1130,7 +1135,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=208"></script>
+  <script type="module" src="dashboard.js?v=209"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">

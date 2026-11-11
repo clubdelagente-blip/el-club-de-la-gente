@@ -1723,25 +1723,20 @@ async function generarCodigoVerificacion() {
 // dígitos ya metido en la URL (recién generado, fresco) para que Verificar.html
 // se salte la puerta manual mientras no haya vencido -- si venció, cae solo al
 // mismo gate de siempre, sin perder la protección contra reenvíos del link.
+// Insignia sobre la esquina del QR (mismo tratamiento que el copiar-código de
+// al lado) -- con stopPropagation porque tocar la tarjeta normalmente la voltea.
 function configurarLinkVerificacion(userId) {
-  const btn = document.getElementById("cc-link-copiar");
-  if (!btn || !userId) return;
-  btn.addEventListener("click", async () => {
-    const original = btn.innerHTML;
+  if (!userId) return;
+  document.querySelectorAll("[data-copiar-link-verif]").forEach(btn => btn.addEventListener("click", async (e) => {
+    e.stopPropagation();
+    if (btn.disabled) return;
     btn.disabled = true;
-    btn.innerHTML = `<i data-lucide="loader" style="width:13px;height:13px"></i> Generando…`;
-    if (window.lucide) lucide.createIcons();
     const codigo = await obtenerCodigoVerificacionFresco();
     const link = `https://elclubdelagente.com/Verificar.html?id=${userId}${codigo ? `&codigo=${codigo}` : ""}`;
     await navigator.clipboard.writeText(link).catch(() => {});
     btn.disabled = false;
-    btn.innerHTML = `<i data-lucide="check" style="width:13px;height:13px"></i> ¡Copiado!`;
-    if (window.lucide) lucide.createIcons();
-    setTimeout(() => {
-      btn.innerHTML = original;
-      if (window.lucide) lucide.createIcons();
-    }, 2000);
-  });
+    toast("Link de verificación copiado ✓");
+  }));
 }
 
 /* ---------- MODAL ACTIVAR ---------- */
