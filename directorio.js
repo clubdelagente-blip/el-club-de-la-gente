@@ -756,7 +756,8 @@ function sheetAliado(a) {
 
     ${(promos.length && MIEMBRO_ID && VIEWER_USER_ID !== MIEMBRO_ID) ? `
     <div class="sheet__sub" style="margin-top:34px">Aplicar promoción</div>
-    <div class="calc">
+    <button type="button" class="btn btn--secundario btn--bloque" id="calc-toggle">${ic('calculator')} Abrir calculadora de descuento</button>
+    <div class="calc" id="calc-wrap" style="display:none">
       <span class="calc__lbl">Tu beneficio en vivo</span>
       <div class="calc__title">¿Cuánto ahorras hoy?</div>
       <div class="calc__grid">
@@ -825,6 +826,17 @@ function sheetAliado(a) {
 function wireCalc(a) {
   const promos = a.promociones || [];
   if (!promos.length || !MIEMBRO_ID || VIEWER_USER_ID === MIEMBRO_ID) return;
+
+  // Colapsada por defecto -- antes se veía siempre abierta de una vez, aunque
+  // el aliado todavía no hubiera decidido aplicar nada.
+  const toggleBtn = $("#calc-toggle");
+  const calcWrap = $("#calc-wrap");
+  toggleBtn?.addEventListener("click", () => {
+    const abierta = calcWrap.style.display !== "none";
+    calcWrap.style.display = abierta ? "none" : "block";
+    toggleBtn.innerHTML = abierta ? `${ic('calculator')} Abrir calculadora de descuento` : `${ic('x')} Cerrar calculadora`;
+    if (window.lucide) lucide.createIcons();
+  });
 
   const montoWrap = $("#calc-monto-wrap");
   const resultWrap = $("#calc-result");
