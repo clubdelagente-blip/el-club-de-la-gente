@@ -661,7 +661,13 @@ async function cargarCarruselPromos() {
   const track = document.getElementById('promo-carrusel-track');
   if (!wrap || !track) return;
 
-  const items = [...promos, ...promos];
+  // La lista se duplica SOLO cuando el scroll automático está activo
+  // (escritorio) -- ahí sí hace falta para que el loop se vea infinito sin
+  // corte. En celular esa animación se apaga (ver @media 600px en
+  // styles.css) y el usuario desliza manualmente, así que duplicar ahí
+  // mostraba la primera promo otra vez apenas se llegaba a la última.
+  const esMovil = window.matchMedia("(max-width: 600px)").matches;
+  const items = esMovil ? promos : [...promos, ...promos];
   track.innerHTML = items.map(p => {
     const al = aliadosMap.get(p.aliado_id);
     const esFlyer = (p.foto_url || '').includes('flyer=1');
