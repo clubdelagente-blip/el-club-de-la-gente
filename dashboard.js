@@ -1699,39 +1699,49 @@ function generarQR(userId) {
   document.querySelectorAll(".ccv2-qr img").forEach(img => img.src = qrSrc);
 }
 
-// Mismo link que ya codifica el QR, pero como texto copiable -- para pedidos
-// que se hacen por WhatsApp directo al aliado (no al bot), donde mandar un
-// pantallazo para que lo "escaneen" es poco práctico. El aliado solo toca el
-// link y Verificar.html le pide el código de 4 dígitos como siempre.
-function configurarLinkVerificacion(userId) {
-  const btn = document.getElementById("cc-link-copiar");
-  if (!btn || !userId) return;
-  const link = `https://elclubdelagente.com/Verificar.html?id=${userId}`;
-  btn.addEventListener("click", () => {
-    navigator.clipboard.writeText(link).then(() => {
-      const original = btn.innerHTML;
-      btn.innerHTML = `<i data-lucide="check" style="width:13px;height:13px"></i> ¡Copiado!`;
-      if (window.lucide) lucide.createIcons();
-      setTimeout(() => {
-        btn.innerHTML = original;
-        if (window.lucide) lucide.createIcons();
-      }, 2000);
-    });
-  });
-}
-
 // Código dinámico de verificación (reverso de la ClubCard): un aliado tiene
 // que pedírselo al miembro para pasar la puerta de seguridad de
 // Verificar.html -- el QR solo ya no alcanza para evitar suplantación.
+async function obtenerCodigoVerificacionFresco() {
+  const { data, error } = await supabase.rpc("generar_codigo_verificacion");
+  if (error || !data) return null;
+  return String(data);
+}
 let _ultimoCodigoVerifTs = 0;
 async function generarCodigoVerificacion() {
   const ahora = Date.now();
   if (ahora - _ultimoCodigoVerifTs < 10000) return; // evita pedir uno nuevo en cada flip rápido
   _ultimoCodigoVerifTs = ahora;
-  const { data, error } = await supabase.rpc("generar_codigo_verificacion");
-  if (error || !data) return;
-  const codigo = String(data);
+  const codigo = await obtenerCodigoVerificacionFresco();
+  if (!codigo) return;
   document.querySelectorAll(".cc-codigo-verif").forEach(el => el.textContent = `${codigo.slice(0, 2)} ${codigo.slice(2)}`);
+}
+
+// Mismo link que ya codifica el QR, pero como texto copiable -- para pedidos
+// que se hacen por WhatsApp directo al aliado (no al bot), donde mandar un
+// pantallazo para que lo "escaneen" es poco práctico. Lleva el código de 4
+// dígitos ya metido en la URL (recién generado, fresco) para que Verificar.html
+// se salte la puerta manual mientras no haya vencido -- si venció, cae solo al
+// mismo gate de siempre, sin perder la protección contra reenvíos del link.
+function configurarLinkVerificacion(userId) {
+  const btn = document.getElementById("cc-link-copiar");
+  if (!btn || !userId) return;
+  btn.addEventListener("click", async () => {
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i data-lucide="loader" style="width:13px;height:13px"></i> Generando…`;
+    if (window.lucide) lucide.createIcons();
+    const codigo = await obtenerCodigoVerificacionFresco();
+    const link = `https://elclubdelagente.com/Verificar.html?id=${userId}${codigo ? `&codigo=${codigo}` : ""}`;
+    await navigator.clipboard.writeText(link).catch(() => {});
+    btn.disabled = false;
+    btn.innerHTML = `<i data-lucide="check" style="width:13px;height:13px"></i> ¡Copiado!`;
+    if (window.lucide) lucide.createIcons();
+    setTimeout(() => {
+      btn.innerHTML = original;
+      if (window.lucide) lucide.createIcons();
+    }, 2000);
+  });
 }
 
 /* ---------- MODAL ACTIVAR ---------- */

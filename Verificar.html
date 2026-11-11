@@ -894,8 +894,26 @@
       }
     }
 
+    // Link de verificación compartido por WhatsApp (botón "Copiar mi link"
+    // en Perfil): trae el código de 4 dígitos ya metido en la URL
+    // (?codigo=1234), generado fresco al momento de copiar el link -- si
+    // todavía no venció, se salta la puerta manual. Si ya venció o no
+    // coincide, cae al mismo gate de siempre, sin romper nada.
+    async function intentarCodigoDeLink(codigo) {
+      try {
+        const { data } = await conTimeout(
+          supabaseClient.rpc("verificar_codigo_miembro", { p_miembro_id: id, p_codigo: codigo }), 10000
+        );
+        if (data === "ok") { cargarYRenderizar(); return; }
+      } catch (_) {}
+      renderCodigoGate();
+    }
+
+    const codigoDeLink = params.get("codigo") || "";
     if (!id) {
       renderNo("Código QR inválido. Escanea el código desde la ClubCard del miembro.");
+    } else if (/^\d{4}$/.test(codigoDeLink)) {
+      intentarCodigoDeLink(codigoDeLink);
     } else {
       renderCodigoGate();
     }
