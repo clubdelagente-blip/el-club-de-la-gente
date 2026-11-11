@@ -173,6 +173,9 @@
 /* ---------- ClubCard flotante (Inicio) ---------- */
 .cc-float-wrap { max-width: 340px; margin: 0 auto 28px; }
 .cc-float-hint { text-align: center; font-size: 11.5px; color: var(--tinta-45, #888); margin-top: 16px; }
+.cc-link-copiar { display: flex; align-items: center; gap: 6px; margin: 10px auto 0; padding: 8px 16px; border-radius: 100px; border: 1px solid var(--linea, #e4e0d4); background: none; color: var(--tinta-60, #555); font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background .15s, border-color .15s; }
+.cc-link-copiar:hover { background: var(--crema-2, #f4f0e8); border-color: var(--verde, #095544); }
+.cc-link-copiar i { flex: none; }
 
 /* ---------- Accesos rápidos (Inicio) ---------- */
 .qa-grid { display: grid; grid-template-columns: repeat(3, 1fr); row-gap: 20px; column-gap: 8px; margin-bottom: 28px; }

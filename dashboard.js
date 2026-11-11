@@ -1699,6 +1699,27 @@ function generarQR(userId) {
   document.querySelectorAll(".ccv2-qr img").forEach(img => img.src = qrSrc);
 }
 
+// Mismo link que ya codifica el QR, pero como texto copiable -- para pedidos
+// que se hacen por WhatsApp directo al aliado (no al bot), donde mandar un
+// pantallazo para que lo "escaneen" es poco práctico. El aliado solo toca el
+// link y Verificar.html le pide el código de 4 dígitos como siempre.
+function configurarLinkVerificacion(userId) {
+  const btn = document.getElementById("cc-link-copiar");
+  if (!btn || !userId) return;
+  const link = `https://elclubdelagente.com/Verificar.html?id=${userId}`;
+  btn.addEventListener("click", () => {
+    navigator.clipboard.writeText(link).then(() => {
+      const original = btn.innerHTML;
+      btn.innerHTML = `<i data-lucide="check" style="width:13px;height:13px"></i> ¡Copiado!`;
+      if (window.lucide) lucide.createIcons();
+      setTimeout(() => {
+        btn.innerHTML = original;
+        if (window.lucide) lucide.createIcons();
+      }, 2000);
+    });
+  });
+}
+
 // Código dinámico de verificación (reverso de la ClubCard): un aliado tiene
 // que pedírselo al miembro para pasar la puerta de seguridad de
 // Verificar.html -- el QR solo ya no alcanza para evitar suplantación.
@@ -3263,6 +3284,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const userId = session.user.id;
     _miembroId = userId;
     generarQR(userId);
+    configurarLinkVerificacion(userId);
     cargarNotificacionesMiembro(userId);
     suscribirPlanRealtime(userId);
 
