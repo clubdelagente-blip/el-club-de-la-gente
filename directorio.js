@@ -100,7 +100,7 @@ function iconoCategoria(categoria) {
 const COLORES_CAT = [
   [/odont/i, "#4FA8E0"], [/veterinar|mascota/i, "#F5B942"], [/turis/i, "#2FA76F"],
   [/canasta|fruver|mercado|supermercado/i, "#8BC53F"], [/ropa|moda|accesorio/i, "#9B6BD9"],
-  [/helad/i, "#FF7AA8"], [/comida|restaurante|cafeter/i, "#FF9F45"], [/barber/i, "#1E88A8"],
+  [/helad/i, "#FF7AA8"], [/comida|restaurante|cafeter/i, "#DFA0B4"], [/barber/i, "#1E88A8"],
   [/bienestar|salud|spa/i, "#FF6B5C"], [/belleza|estetic/i, "#E85D9E"],
   [/educaci|tutor/i, "#5B6EE1"], [/deporte|gym/i, "#F4511E"], [/tecnolog/i, "#00BCD4"],
   [/regalo/i, "#EAB749"],
