@@ -113,10 +113,14 @@ function promoCardHtml(p, al) {
         ? `<video src="${primerMedia}" muted playsinline preload="metadata"></video>`
         : `<img src="${primerMedia}" alt="" loading="lazy">`)
     : `<div class="pm-thumb__ph">${ic("image")}</div>`;
-  const mediaPagesHtml = medios.map(u => esMediaVideo(u)
+  // Arranca en el índice 1, no 0 -- la foto en el índice 0 ya se ve como
+  // miniatura en la página de info (arriba); repetirla acá hacía que al
+  // deslizar por primera vez se viera "la misma foto dos veces seguidas".
+  const mediosExtra = medios.slice(1);
+  const mediaPagesHtml = mediosExtra.map(u => esMediaVideo(u)
       ? `<div class="pm-page pm-page--media"><video src="${u}" muted playsinline preload="metadata" loop></video></div>`
       : `<div class="pm-page pm-page--media"><img src="${u}" alt="" loading="lazy"></div>`).join("");
-  const totalPaginas = 1 + medios.length;
+  const totalPaginas = 1 + mediosExtra.length;
   const dotsHtml = totalPaginas > 1
     ? `<div class="pm-pager__dots">${Array.from({ length: totalPaginas }).map((_, i) => `<span class="${i === 0 ? "is-on" : ""}"></span>`).join("")}</div>`
     : "";
