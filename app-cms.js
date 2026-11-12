@@ -205,13 +205,27 @@ function initPmCarrusel(root) {
     deltaX = 0;
     mostrar(idx, true);
   }
+  // mousemove/mouseup van en window (el mouse puede salirse de la tarjeta
+  // mientras se arrastra), pero solo mientras dura el arrastre -- antes
+  // quedaban pegados ahí para siempre cada vez que este carrusel se volvía a
+  // armar (cargarCarruselPromos se puede volver a llamar), sumando un
+  // listener más escuchando TODO el mouse de la página en cada ocasión.
+  function moverMouse(e) { mover(e.clientX, e); }
+  function soltarMouse(e) {
+    window.removeEventListener("mousemove", moverMouse);
+    window.removeEventListener("mouseup", soltarMouse);
+    soltar(e);
+  }
 
   root.addEventListener("touchstart", (e) => iniciar(e.touches[0].clientX, e), { passive: true });
   root.addEventListener("touchmove", (e) => mover(e.touches[0].clientX, e), { passive: true });
   root.addEventListener("touchend", (e) => soltar(e), { passive: true });
-  root.addEventListener("mousedown", (e) => { iniciar(e.clientX, e); e.preventDefault(); });
-  window.addEventListener("mousemove", (e) => mover(e.clientX, e));
-  window.addEventListener("mouseup", (e) => soltar(e));
+  root.addEventListener("mousedown", (e) => {
+    iniciar(e.clientX, e);
+    e.preventDefault();
+    window.addEventListener("mousemove", moverMouse);
+    window.addEventListener("mouseup", soltarMouse);
+  });
 
   mostrar(0, false);
 }

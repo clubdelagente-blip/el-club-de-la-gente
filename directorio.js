@@ -616,13 +616,31 @@ function initPmCarrusel(root) {
     deltaX = 0;
     mostrar(idx, true);
   }
+  // mousemove/mouseup van en window (el mouse puede salirse de la tarjeta
+  // mientras se arrastra), pero solo mientras dura el arrastre -- antes
+  // quedaban pegados ahí para siempre en cada apertura de esta ficha, porque
+  // openSheet() vuelve a llamar a initPmCarrusel() en cada recarga (ej. al
+  // guardar una reseña) sin que el carrusel viejo se desuscribiera nunca.
+  // Con cada ficha abierta se sumaba un listener más escuchando TODO el
+  // mouse de la página, y uno de esos viejos (apuntando a una tarjeta ya
+  // desmontada) podía disparar en el momento menos pensado y dejar algún
+  // "track" a medio arrastrar.
+  function moverMouse(e) { mover(e.clientX, e); }
+  function soltarMouse(e) {
+    window.removeEventListener("mousemove", moverMouse);
+    window.removeEventListener("mouseup", soltarMouse);
+    soltar(e);
+  }
 
   root.addEventListener("touchstart", (e) => iniciar(e.touches[0].clientX, e), { passive: true });
   root.addEventListener("touchmove", (e) => mover(e.touches[0].clientX, e), { passive: true });
   root.addEventListener("touchend", (e) => soltar(e), { passive: true });
-  root.addEventListener("mousedown", (e) => { iniciar(e.clientX, e); e.preventDefault(); });
-  window.addEventListener("mousemove", (e) => mover(e.clientX, e));
-  window.addEventListener("mouseup", (e) => soltar(e));
+  root.addEventListener("mousedown", (e) => {
+    iniciar(e.clientX, e);
+    e.preventDefault();
+    window.addEventListener("mousemove", moverMouse);
+    window.addEventListener("mouseup", soltarMouse);
+  });
 
   mostrar(0, false);
 }
