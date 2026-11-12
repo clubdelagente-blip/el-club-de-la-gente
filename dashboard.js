@@ -2062,7 +2062,7 @@ function listaResenasHtml(resenas, eventoId, miembroId) {
         <div data-resena-stars="${eventoId}" data-selected="0" style="display:flex;gap:4px;margin-bottom:8px">
           ${[1, 2, 3, 4, 5].map(n => `<button type="button" data-estrella="${n}" style="background:none;border:none;cursor:pointer;padding:2px"><i data-lucide="star" style="width:22px;height:22px;color:#ccc;fill:none"></i></button>`).join('')}
         </div>
-        <textarea data-resena-texto="${eventoId}" rows="2" placeholder="Cuéntanos qué te pareció (opcional)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:8px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>
+        <textarea data-resena-texto="${eventoId}" rows="2" placeholder="Cuéntanos qué te pareció (opcional)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:8px;font-size:16px;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>
         <button data-enviar-resena="${eventoId}" class="btn btn--primario" style="font-size:12.5px;padding:8px 14px;margin-top:8px">Enviar reseña</button>
       </div>`;
 

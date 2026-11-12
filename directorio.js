@@ -692,7 +692,7 @@ function sheetAliado(a) {
         <div id="resena-stars" style="display:flex;gap:4px;margin-bottom:8px">
           ${[1, 2, 3, 4, 5].map(n => `<button type="button" data-estrella="${n}" style="background:none;border:none;cursor:pointer;padding:2px"><i data-lucide="star" style="width:22px;height:22px;${n <= seleccionResena ? 'color:#EAB749;fill:#EAB749' : 'color:#ccc;fill:none'}"></i></button>`).join('')}
         </div>
-        <textarea id="resena-comentario" rows="2" placeholder="Cuéntanos qué te pareció (opcional)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:8px;font-size:13px;font-family:inherit;resize:vertical;box-sizing:border-box">${esc(a._miResena?.comentario || "")}</textarea>
+        <textarea id="resena-comentario" rows="2" placeholder="Cuéntanos qué te pareció (opcional)" style="width:100%;border:1px solid #ddd;border-radius:8px;padding:8px;font-size:16px;font-family:inherit;resize:vertical;box-sizing:border-box">${esc(a._miResena?.comentario || "")}</textarea>
         <button type="button" id="resena-enviar" class="btn btn--primario" style="font-size:12.5px;padding:8px 14px;margin-top:8px">${a._miResena ? "Actualizar reseña" : "Enviar reseña"}</button>
       </div>` : '';
   // whatsapp_atencion = número de atención al cliente (público); si el
