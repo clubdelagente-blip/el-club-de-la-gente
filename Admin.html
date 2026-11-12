@@ -2627,7 +2627,18 @@ function bindFotosPromoInput(){
     const file=e.target.files?.[0];
     e.target.value='';
     if(!file)return;
-    let url;try{url=await subirImagen(file);}catch(_){toast('Error al subir la foto');return;}
+    // Sin este aviso, subir un video (pesa mucho más que una foto comprimida
+    // y puede tardar bastante en conexiones lentas) se sentía como que el
+    // botón no hacía nada -- no había ninguna señal de que sí estaba subiendo.
+    const addBtn=$("#pr-foto-add");
+    if(addBtn){addBtn.disabled=true;addBtn.textContent='…';addBtn.style.fontSize='16px';}
+    let url;
+    try{url=await subirImagen(file);}
+    catch(_){
+      toast('Error al subir el archivo -- si es un video pesado, puede ser el tamaño o la conexión');
+      if(addBtn){addBtn.disabled=false;addBtn.textContent='+';addBtn.style.fontSize='24px';}
+      return;
+    }
     let arr=[];try{arr=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){arr=[];}
     arr.push(url);
     const h=$("#pr-fotos-urls");if(h)h.value=JSON.stringify(arr);
