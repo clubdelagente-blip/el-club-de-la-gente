@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=140">
+  <link rel="stylesheet" href="styles.css?v=141">
   <link rel="stylesheet" href="admin.css?v=21">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -1796,8 +1796,8 @@ function bindFormPromocionInline(aliadoId,editId){
     $("#pr-aplica")?.addEventListener('change',(e)=>{const w=$("#pr-prod-wrap");if(w)w.style.display=e.target.value==='producto_especifico'?'block':'none';});
     const updPrecio=()=>{const n=parseInt($("#pr-precio-n")?.value)||0;const d=parseInt($("#pr-precio-d")?.value)||0;const el=$("#pr-ahorro-prev");if(el)el.textContent=n&&d&&n>d?`Ahorro: $${(n-d).toLocaleString('es-CO')} por visita`:'';};
     $("#pr-precio-n")?.addEventListener('input',updPrecio);$("#pr-precio-d")?.addEventListener('input',updPrecio);updPrecio();
-    const updPct=()=>{const n=parseInt($("#pr-precio-n-pct")?.value)||0;const pct=parseInt($("#pr-pct")?.value)||0;const tope=parseInt($("#pr-pct-tope")?.value)||0;const el=$("#pr-ahorro-pct-prev");if(!el)return;if(!n||!pct){el.textContent='';return;}const ahorro=Math.round(n*pct/100);el.textContent=(tope&&ahorro>tope)?`Ahorro: $${tope.toLocaleString('es-CO')} por visita (tope aplicado)`:`Ahorro: $${ahorro.toLocaleString('es-CO')} por visita`;};
-    $("#pr-precio-n-pct")?.addEventListener('input',updPct);$("#pr-pct")?.addEventListener('input',updPct);$("#pr-pct-tope")?.addEventListener('input',updPct);updPct();
+    const updPct=()=>{const n=parseInt($("#pr-precio-n-pct")?.value)||0;const pct=parseInt($("#pr-pct")?.value)||0;const el=$("#pr-ahorro-pct-prev");if(el)el.textContent=n&&pct?`Ahorro: $${Math.round(n*pct/100).toLocaleString('es-CO')} por visita`:'';};
+    $("#pr-precio-n-pct")?.addEventListener('input',updPct);$("#pr-pct")?.addEventListener('input',updPct);updPct();
     document.querySelectorAll('#pr-dias-chips .fa-chip').forEach(chip=>chip.addEventListener('click',()=>chip.classList.toggle('is-on')));
     renderFotosPromoPreview();bindFotosPromoInput();
     const wrapPrev=$("#fa-promo-form-wrap");
@@ -1824,7 +1824,7 @@ function bindFormPromocionInline(aliadoId,editId){
         aplica_a:$("#pr-aplica")?.value||'toda_la_tienda',
         producto_especifico:$("#pr-aplica")?.value==='producto_especifico'?($("#pr-prod")?.value.trim()||null):null,
         precio_normal,precio_descuento,ahorro_fijo,descuento_pct,
-        tope_descuento:tipo==='porcentaje'?(parseInt($("#pr-pct-tope")?.value)||null):null,
+        pct_hasta:tipo==='porcentaje'&&($("#pr-pct-hasta")?.checked||false),
         dias_aplica:diasActivos.length?diasActivos:['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
         hora_inicio:$("#pr-hora-ini")?.value||null,hora_fin:$("#pr-hora-fin")?.value||null,
         fecha_inicio:$("#pr-fecha-ini")?.value||null,fecha_fin:$("#pr-fecha-fin")?.value||null,
@@ -2419,7 +2419,7 @@ const FECHAS_ESPECIALES=[
 const ICON_WA=`<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.288.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.004 2C6.486 2 2 6.486 2 12.004c0 2.123.666 4.09 1.804 5.714L2.5 22l4.418-1.265A9.955 9.955 0 0 0 12.004 22C17.522 22 22 17.514 22 12.004 22 6.486 17.522 2 12.004 2zm0 18.18a8.14 8.14 0 0 1-4.15-1.136l-.298-.177-3.11.89.903-3.03-.194-.31a8.15 8.15 0 0 1-1.25-4.413c0-4.5 3.66-8.157 8.1-8.157 4.44 0 8.09 3.656 8.09 8.157 0 4.5-3.65 8.176-8.09 8.176z"/></svg>`;
 function pmEsVideo(u){return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u||'');}
 function pmBadgePreview(tipo){
-  if(tipo==='porcentaje'){const n=parseInt($("#pr-precio-n-pct")?.value)||0;const pct=parseInt($("#pr-pct")?.value)||0;return pct?`${pct}%`:'% dcto.';}
+  if(tipo==='porcentaje'){const pct=parseInt($("#pr-pct")?.value)||0;return pct?`${pct}%`:'% dcto.';}
   if(tipo==='2x1')return'2×1';
   if(tipo==='monto_fijo'){const m=parseInt($("#pr-ahorro-fijo")?.value)||0;return m?('-$'+m.toLocaleString('es-CO')):'Descuento';}
   if(tipo==='precio_especial'){const d=parseInt($("#pr-precio-d")?.value)||0;return d?('$'+d.toLocaleString('es-CO')):'Precio especial';}
@@ -2451,10 +2451,6 @@ function minimoHtmlPreview(p){
   if(!p.monto_minimo)return '';
   return `<span class="pm-vigencia">Desde $${p.monto_minimo.toLocaleString('es-CO')}</span>`;
 }
-function topeHtmlPreview(p){
-  if(!p.tope_descuento)return '';
-  return `<span class="pm-vigencia">Hasta $${p.tope_descuento.toLocaleString('es-CO')} de ahorro</span>`;
-}
 function promoCardHtmlPreview(p,al){
   const cc=colorCategoriaFlyer(al?.categoria);
   const medios=(p.fotos_urls||[]).slice(0,4);
@@ -2483,10 +2479,9 @@ function promoCardHtmlPreview(p,al){
               </div>
             </div>
             <h3 class="pm-titulo">${esc(p.titulo||'Promoción')}</h3>
-            <span class="pm-tipo">${esc(pmBadgePreview(p.tipo))}${p.tipo==='porcentaje'?`<span class="pm-tipo__dto">OFF</span>`:''}</span>
+            <span class="pm-tipo">${p.tipo==='porcentaje'&&p.pct_hasta?`<span class="pm-tipo__pre">Hasta</span>`:''}${esc(pmBadgePreview(p.tipo))}${p.tipo==='porcentaje'?`<span class="pm-tipo__dto">OFF</span>`:''}</span>
             ${vigenciaHtmlPreview(p)}
             ${minimoHtmlPreview(p)}
-            ${topeHtmlPreview(p)}
             <button type="button" class="pm-vermas" data-pm-vermas>Ver más ${ic('chevron-right')}</button>
             <button type="button" class="pm-condiciones" data-pm-condiciones>Términos y condiciones</button>
             ${p.condiciones?`<p class="pm-condiciones-txt" hidden>${esc(p.condiciones)}</p>`:''}
@@ -2586,8 +2581,8 @@ function actualizarPreviewPromo(aliadoId){
   const dias_aplica=[...document.querySelectorAll('#pr-dias-chips .fa-chip.is-on')].map(b=>b.dataset.dia);
   const fecha_fin=$("#pr-fecha-fin")?.value||'';
   const monto_minimo=parseInt($("#pr-min")?.value)||0;
-  const tope_descuento=tipo==='porcentaje'?(parseInt($("#pr-pct-tope")?.value)||0):0;
-  cont.innerHTML=promoCardHtmlPreview({tipo,titulo,descripcion,condiciones,fotos_urls:fotosUrls,dias_aplica,fecha_fin,monto_minimo,tope_descuento},al);
+  const pct_hasta=tipo==='porcentaje'&&($("#pr-pct-hasta")?.checked||false);
+  cont.innerHTML=promoCardHtmlPreview({tipo,titulo,descripcion,condiciones,fotos_urls:fotosUrls,dias_aplica,fecha_fin,monto_minimo,pct_hasta},al);
   // Botones "Ver más" / "Condiciones" dentro de la preview -- stopPropagation
   // evita que el click también dispare el listener de más arriba (wrapPrev)
   // que re-renderiza toda la preview en cada click del formulario.
@@ -2700,7 +2695,10 @@ function htmlFormPromocion(p={},aliadoId){
       <div class="ad-field"><label>Precio normal ($) <span style="font-weight:400;color:rgba(26,26,24,.4)">(referencia)</span></label><input id="pr-precio-n-pct" type="number" min="0" value="${p.tipo==='porcentaje'?p.precio_normal||'':''}" placeholder="Ej: 50000"></div>
       <div class="ad-field"><label>Descuento (%)</label><input id="pr-pct" type="number" min="0" max="100" value="${pctVal}" placeholder="Ej: 20"></div>
     </div>
-    <div class="ad-field"><label>Tope del descuento ($) <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional -- ahorro máximo así la compra sea muy grande; se muestra como "Hasta $X de ahorro" en la tarjeta)</span></label><input id="pr-pct-tope" type="number" min="0" value="${p.tipo==='porcentaje'?p.tope_descuento||'':''}" placeholder="Ej: 20000" style="max-width:220px"></div>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:rgba(26,26,24,.75);margin:2px 0 10px">
+      <input id="pr-pct-hasta" type="checkbox" style="width:16px;height:16px;accent-color:#095544"${p.tipo==='porcentaje'&&p.pct_hasta?' checked':''}>
+      Mostrar como "Hasta X%" <span style="font-weight:400;color:rgba(26,26,24,.4)">(en vez de un % fijo -- para cuando no todos los productos tienen el mismo descuento)</span>
+    </label>
     <div id="pr-ahorro-pct-prev" style="font-size:13px;color:#095544;font-weight:600;margin:-4px 0 8px;min-height:18px"></div>
   </div>
   <div id="pr-calc-monto" style="display:${p.tipo==='monto_fijo'?'block':'none'}">
@@ -2779,10 +2777,9 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
     $("#pr-precio-n")?.addEventListener('input',updPrecio);
     $("#pr-precio-d")?.addEventListener('input',updPrecio);
     updPrecio();
-    const updPct=()=>{const n=parseInt($("#pr-precio-n-pct")?.value)||0;const pct=parseInt($("#pr-pct")?.value)||0;const tope=parseInt($("#pr-pct-tope")?.value)||0;const el=$("#pr-ahorro-pct-prev");if(!el)return;if(!n||!pct){el.textContent='';return;}const ahorro=Math.round(n*pct/100);el.textContent=(tope&&ahorro>tope)?`Ahorro: $${tope.toLocaleString('es-CO')} por visita (tope aplicado)`:`Ahorro: $${ahorro.toLocaleString('es-CO')} por visita`;};
+    const updPct=()=>{const n=parseInt($("#pr-precio-n-pct")?.value)||0;const pct=parseInt($("#pr-pct")?.value)||0;const el=$("#pr-ahorro-pct-prev");if(el)el.textContent=n&&pct?`Ahorro: $${Math.round(n*pct/100).toLocaleString('es-CO')} por visita`:'';};
     $("#pr-precio-n-pct")?.addEventListener('input',updPct);
     $("#pr-pct")?.addEventListener('input',updPct);
-    $("#pr-pct-tope")?.addEventListener('input',updPct);
     updPct();
     document.querySelectorAll('#pr-dias-chips .fa-chip').forEach(chip=>chip.addEventListener('click',()=>chip.classList.toggle('is-on')));
     renderFotosPromoPreview();bindFotosPromoInput();
@@ -2821,7 +2818,7 @@ function bindFormPromocion(aliadoId,aliadoNombre,editId){
         aplica_a:$("#pr-aplica")?.value||'toda_la_tienda',
         producto_especifico:$("#pr-aplica")?.value==='producto_especifico'?($("#pr-prod")?.value.trim()||null):null,
         precio_normal,precio_descuento,ahorro_fijo,descuento_pct,
-        tope_descuento:tipo==='porcentaje'?(parseInt($("#pr-pct-tope")?.value)||null):null,
+        pct_hasta:tipo==='porcentaje'&&($("#pr-pct-hasta")?.checked||false),
         dias_aplica:diasActivos.length?diasActivos:['lunes','martes','miercoles','jueves','viernes','sabado','domingo'],
         hora_inicio:$("#pr-hora-ini")?.value||null,
         hora_fin:$("#pr-hora-fin")?.value||null,

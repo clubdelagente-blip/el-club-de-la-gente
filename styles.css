@@ -492,6 +492,14 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0; text-shadow: none; margin-left: 3px;
   vertical-align: baseline;
 }
+/* Mismo tratamiento que .pm-tipo__dto ("OFF") pero ANTES del número -- para
+   promos donde el % no es fijo para todos los productos ("Hasta 30%" en vez
+   de "30%"), sin competir en tamaño con el número grande. */
+.pm-tipo__pre {
+  font-family: var(--cuerpo); font-size: 13px; font-weight: 700;
+  letter-spacing: 0; text-shadow: none; margin-right: 3px;
+  vertical-align: baseline;
+}
 .pm-card--titulo-largo .pm-titulo { font-size: 15px; }
 .pm-card--titulo-largo .pm-tipo { font-size: 42px; }
 /* flex-direction:column para poder apilar fecha + días en 2 líneas
