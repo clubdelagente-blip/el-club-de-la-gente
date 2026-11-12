@@ -338,7 +338,12 @@ function wireResenas(a) {
       .upsert({ aliado_id: a.id, miembro_id: VIEWER_USER_ID, estrellas: seleccion, comentario }, { onConflict: "aliado_id,miembro_id" });
     if (error) { toast("Error guardando tu reseña", false); btn.disabled = false; return; }
     toast("¡Gracias por tu reseña!");
-    openSheet(a.id);
+    await openSheet(a.id);
+    // El comentario ya quedó guardado y se ve arriba en la lista de reseñas
+    // -- limpiar la caja después de publicar evita que se vea el mismo
+    // texto dos veces seguidas (en la lista Y precargado abajo para editar).
+    const ta = $("#resena-comentario");
+    if (ta) ta.value = "";
   });
 }
 
