@@ -453,7 +453,7 @@
 .ag-aud__n b { color: var(--verde-claro); font-family: var(--display); font-size: 15px; }
 
 @media (max-width: 980px) {
-  .ag-wrap { grid-template-columns: 1fr; height: auto; }
+  .ag-wrap { grid-template-columns: 1fr; height: auto; min-height: 0; }
   .ag-list { border-right: none; border-bottom: 1px solid var(--line); max-height: 280px; }
   .ag-thread { height: 480px; max-height: 480px; }
   .ag-conv__prev { max-width: 60vw; }
