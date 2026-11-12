@@ -100,6 +100,10 @@ function minimoHtml(p) {
   if (!p.monto_minimo) return "";
   return `<span class="pm-vigencia">Desde ${fmtCOP(p.monto_minimo)}</span>`;
 }
+function topeHtml(p) {
+  if (!p.tope_descuento) return "";
+  return `<span class="pm-vigencia">Hasta ${fmtCOP(p.tope_descuento)} de ahorro</span>`;
+}
 
 /* ---------- Tarjeta de promoción (PromoCard v2) ----------
    Carrusel de hasta 4 fotos/video (quieto hasta el primer click, luego
@@ -152,6 +156,7 @@ function promoCardHtml(p, al) {
             <span class="pm-tipo">${esc(badgePromo(p))}${p.tipo === "porcentaje" ? `<span class="pm-tipo__dto">OFF</span>` : ""}</span>
             ${vigenciaHtml(p)}
             ${minimoHtml(p)}
+            ${topeHtml(p)}
             <button type="button" class="pm-vermas" data-pm-vermas>Ver más ${ic("chevron-right")}</button>
             <button type="button" class="pm-condiciones" data-pm-condiciones>Términos y condiciones</button>
             ${p.condiciones ? `<p class="pm-condiciones-txt" hidden>${esc(p.condiciones)}</p>` : ""}
