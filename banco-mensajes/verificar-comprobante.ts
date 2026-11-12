@@ -136,19 +136,21 @@ Deno.serve(async (req: Request) => {
     es_comprobante: boolean;
     monto: number | null;
     fecha: string | null;
+    hora: string | null;
     llave_destino: string | null;
     senales_edicion: boolean;
     confianza: "alta" | "media" | "baja";
   };
 
   try {
-    const prompt = `Eres un verificador de comprobantes de pago bancarios (Bre-B, Colombia). Analiza la imagen y responde SOLO un JSON con esta forma exacta, sin texto adicional ni explicaciones:
-{"es_comprobante": boolean, "monto": number|null, "fecha": "YYYY-MM-DD"|null, "llave_destino": string|null, "senales_edicion": boolean, "confianza": "alta"|"media"|"baja"}
+    const prompt = `Eres un verificador de comprobantes de pago bancarios colombianos. Pueden venir de la app Bre-B directamente, o de cualquier banco/billetera (Nequi, Bancolombia, Daviplata, Nu, Movii, u otras) -- el formato visual cambia de una app a otra, pero los datos que importan son siempre los mismos. Analiza la imagen y responde SOLO un JSON con esta forma exacta, sin texto adicional ni explicaciones:
+{"es_comprobante": boolean, "monto": number|null, "fecha": "YYYY-MM-DD"|null, "hora": "HH:MM"|null, "llave_destino": string|null, "senales_edicion": boolean, "confianza": "alta"|"media"|"baja"}
 
-"es_comprobante": true solo si es claramente una captura de pantalla de una transferencia o pago bancario exitoso.
+"es_comprobante": true solo si es claramente una captura de pantalla de una transferencia o pago bancario/Bre-B exitoso, sin importar de qué app o banco sea.
 "monto": el valor transferido, solo el número, sin símbolos ni puntos de miles.
-"fecha": la fecha de la transacción tal como aparece en la imagen.
-"llave_destino": el número de cuenta, teléfono o llave Bre-B a la que se envió el dinero, tal como aparece en la imagen.
+"fecha": la fecha de la transacción, SIEMPRE convertida al formato YYYY-MM-DD sin importar cómo aparezca escrita en la imagen (ej: "11 nov 2026" -> "2026-11-11").
+"hora": la hora de la transacción, SIEMPRE convertida a formato 24 horas HH:MM (ej: "10:59 p.m." -> "22:59"). null si la imagen no muestra hora.
+"llave_destino": el identificador al que se envió el dinero -- puede ser un alias alfanumérico (ej: "@clubdelagente"), un número de celular o un número de cuenta. Suele estar en un campo llamado "Llave", "Alfanumérica", "Celular" o "Cuenta destino". MUY IMPORTANTE: nunca confundas esto con el NOMBRE del beneficiario (ej: "CLUB DE LA GENTE"), que suele aparecer en un campo separado como "Enviado a" o "¿A quién le llegó la plata?" -- ese nombre NO es la llave, ignóralo para este campo y usa solo el identificador alfanumérico/numérico real.
 "senales_edicion": true si notas CUALQUIER inconsistencia visual que sugiera que la imagen fue editada o manipulada (fuentes distintas entre números, pixeles desalineados, bordes raros, texto superpuesto, colores que no calzan).
 "confianza": "alta" solo si puedes leer todos los datos con claridad y no tienes ninguna duda. Si algo no es legible o tienes la más mínima duda, usa "baja" o "media" y pon null en lo que no puedas confirmar.`;
 
