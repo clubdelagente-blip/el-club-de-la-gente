@@ -11,7 +11,7 @@ const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 // puede mandar texto libre a un número que no escribió primero.
 const CONTENT_SID_AVISO_POSTULACION_ALIADO = "HXd5578c55b4ee0dccb632819a4b1d6edc";
 const CONTENT_SID_AVISO_POSTULACION_PROFESIONAL = "HXb0b7bbf56754ab37b19affc01eb8139d";
-const CONTENT_SID_BIENVENIDA_PLAN_GRATIS = "HX64c02dfb5a22f065cf58544e0c1a573a";
+const CONTENT_SID_BIENVENIDA_PLAN_GRATIS = "HX49497d7c3926d0d4c69fb8e6cf15301e";
 const CONTENT_SID_BIENVENIDA_PAGO_ERROR = "HX62d9d2cc97f88fa857b4d219f27bb08b";
 const CONTENT_SID_AVISO_NUEVA_SOLICITUD = "HXdaf8eaff5e1d758d19ae263ac29fa8cd";
 
