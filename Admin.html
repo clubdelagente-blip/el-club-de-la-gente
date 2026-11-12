@@ -2446,6 +2446,10 @@ function vigenciaHtmlPreview(p){
   if(fechaTxt&&diasTxt)return `<span class="pm-vigencia"><span class="pm-vigencia__l1">${esc(fechaTxt)}</span><span class="pm-vigencia__l2">${esc(diasTxt)}</span></span>`;
   return `<span class="pm-vigencia">${esc(fechaTxt||`Solo ${diasTxt}`)}</span>`;
 }
+function minimoHtmlPreview(p){
+  if(!p.monto_minimo)return '';
+  return `<span class="pm-vigencia">Desde $${p.monto_minimo.toLocaleString('es-CO')}</span>`;
+}
 function promoCardHtmlPreview(p,al){
   const cc=colorCategoriaFlyer(al?.categoria);
   const medios=(p.fotos_urls||[]).slice(0,4);
@@ -2476,6 +2480,7 @@ function promoCardHtmlPreview(p,al){
             <h3 class="pm-titulo">${esc(p.titulo||'Promoción')}</h3>
             <span class="pm-tipo">${esc(pmBadgePreview(p.tipo))}${p.tipo==='porcentaje'?`<span class="pm-tipo__dto">OFF</span>`:''}</span>
             ${vigenciaHtmlPreview(p)}
+            ${minimoHtmlPreview(p)}
             <button type="button" class="pm-vermas" data-pm-vermas>Ver más ${ic('chevron-right')}</button>
             <button type="button" class="pm-condiciones" data-pm-condiciones>Términos y condiciones</button>
             ${p.condiciones?`<p class="pm-condiciones-txt" hidden>${esc(p.condiciones)}</p>`:''}
@@ -2574,7 +2579,8 @@ function actualizarPreviewPromo(aliadoId){
   let fotosUrls=[];try{fotosUrls=JSON.parse($("#pr-fotos-urls")?.value||'[]');}catch(_){fotosUrls=[];}
   const dias_aplica=[...document.querySelectorAll('#pr-dias-chips .fa-chip.is-on')].map(b=>b.dataset.dia);
   const fecha_fin=$("#pr-fecha-fin")?.value||'';
-  cont.innerHTML=promoCardHtmlPreview({tipo,titulo,descripcion,condiciones,fotos_urls:fotosUrls,dias_aplica,fecha_fin},al);
+  const monto_minimo=parseInt($("#pr-min")?.value)||0;
+  cont.innerHTML=promoCardHtmlPreview({tipo,titulo,descripcion,condiciones,fotos_urls:fotosUrls,dias_aplica,fecha_fin,monto_minimo},al);
   // Botones "Ver más" / "Condiciones" dentro de la preview -- stopPropagation
   // evita que el click también dispare el listener de más arriba (wrapPrev)
   // que re-renderiza toda la preview en cada click del formulario.
@@ -2717,7 +2723,7 @@ function htmlFormPromocion(p={},aliadoId){
     <div class="ad-field"><label>Vigencia desde <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-fecha-ini" type="date" value="${p.fecha_inicio||''}"></div>
     <div class="ad-field"><label>Vigencia hasta <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-fecha-fin" type="date" value="${p.fecha_fin||''}"></div>
   </div>
-  <div class="ad-field"><label>Compra mínima ($) <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional)</span></label><input id="pr-min" type="number" min="0" value="${p.monto_minimo||''}" placeholder="0" style="max-width:220px"></div>
+  <div class="ad-field"><label>Compra mínima ($) <span style="font-weight:400;color:rgba(26,26,24,.4)">(opcional -- se muestra como "Desde $X" en la tarjeta)</span></label><input id="pr-min" type="number" min="0" value="${p.monto_minimo||''}" placeholder="0" style="max-width:220px"></div>
   <div class="ad-field"><label>Fotos y videos <span style="font-weight:400;color:rgba(26,26,24,.4)">(hasta 4 -- se ven en el carrusel de la tarjeta)</span></label>
     <div id="pr-fotos-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px"></div>
     <input type="file" id="pr-foto-input" accept="image/*,video/*" style="display:none">

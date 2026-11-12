@@ -500,6 +500,12 @@ function vigenciaHtml(p) {
   if (fechaTxt && diasTxt) return `<span class="pm-vigencia"><span class="pm-vigencia__l1">${esc(fechaTxt)}</span><span class="pm-vigencia__l2">${esc(diasTxt)}</span></span>`;
   return `<span class="pm-vigencia">${esc(fechaTxt || `Solo ${diasTxt}`)}</span>`;
 }
+// Mismo sticker que vigenciaHtml, para la condición "compra mínima" que ya
+// existía en el dato (p.monto_minimo) pero nunca se mostraba en ningún lado.
+function minimoHtml(p) {
+  if (!p.monto_minimo) return "";
+  return `<span class="pm-vigencia">Desde ${fmtCOP(p.monto_minimo)}</span>`;
+}
 
 /* ---------- Tarjeta de promoción (PromoCard v2) ----------
    Carrusel de hasta 4 fotos/video (quieto hasta el primer click, luego
@@ -556,6 +562,7 @@ function promoCardHtml(p, al) {
             <h3 class="pm-titulo">${esc(p.titulo || "Promoción")}</h3>
             <span class="pm-tipo">${esc(badgePromo(p))}${p.tipo === "porcentaje" ? `<span class="pm-tipo__dto">OFF</span>` : ""}</span>
             ${vigenciaHtml(p)}
+            ${minimoHtml(p)}
             <button type="button" class="pm-vermas" data-pm-vermas>Ver más ${ic("chevron-right")}</button>
             <button type="button" class="pm-condiciones" data-pm-condiciones>Términos y condiciones</button>
             ${p.condiciones ? `<p class="pm-condiciones-txt" hidden>${esc(p.condiciones)}</p>` : ""}
