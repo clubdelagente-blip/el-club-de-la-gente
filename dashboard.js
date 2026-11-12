@@ -715,7 +715,7 @@ async function cargarDescuentos(userId, whatsapp) {
       if (limite === 0) {
         banner.style.display = "flex";
         banner.innerHTML = `<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <span style="display:inline-flex;align-items:center;gap:4px;background:#0f4423;color:#fff;font-weight:800;font-size:12.5px;padding:5px 11px;border-radius:20px;white-space:nowrap">🔥 Hasta 40% OFF</span>
+          <span style="display:inline-flex;align-items:center;gap:4px;background:#0f4423;color:#fff;font-weight:800;font-size:12.5px;padding:5px 11px;border-radius:20px;white-space:nowrap">🔥 Más del 70% OFF</span>
           <span>Solo para las primeras 50 personas — los descuentos de aliados son exclusivos desde Básico · <a href="Planes.html" style="color:#0f4423;font-weight:800;text-decoration:underline">Ver membresías →</a></span>
         </span>`;
         banner.style.background = "#e8f5ee";
@@ -3138,9 +3138,12 @@ function badgePromoDash(p) {
 
 /* ---------- PROMOCIÓN DEL DÍA (Inicio) ----------
    Promos reales vigentes hoy (dentro de fecha_inicio/fecha_fin y, si aplica
-   solo ciertos días, que hoy sea uno de ellos) -- si no hay ninguna, cae a
-   un producto al azar de la Tienda del Club, nunca se queda vacío. */
-async function cargarPromoDelDia() {
+   solo ciertos días, que hoy sea uno de ellos), filtradas a los aliados de
+   las categorías de interés que el miembro eligió en "Queremos conocerte
+   mejor". Sin categorías elegidas, o sin ninguna promo vigente en esas
+   categorías, cae a un producto al azar de la Tienda del Club -- nunca se
+   queda vacío, y nunca le muestra promos sin relación con sus gustos. */
+async function cargarPromoDelDia(categoriasInteres = []) {
   const wrap = document.getElementById("promo-dia-wrap");
   const tituloEl = document.getElementById("promo-dia-titulo");
   const grid = document.getElementById("promo-dia-grid");
@@ -3151,23 +3154,31 @@ async function cargarPromoDelDia() {
   const hoyISO = hoy.toISOString().slice(0, 10);
   const diaHoy = DIAS_SEMANA_ES[hoy.getDay()];
 
-  const { data: promosRaw } = await supabase.from("promociones")
-    .select("id, titulo, descripcion, tipo, descuento_pct, ahorro_fijo, precio_normal, precio_descuento, fecha_inicio, fecha_fin, dias_aplica, aliado_id")
-    .eq("activa", true);
+  let deHoy = [];
+  let aliadosMap = new Map();
 
-  const deHoy = (promosRaw || []).filter(p => {
-    const enRango = (!p.fecha_inicio || p.fecha_inicio <= hoyISO) && (!p.fecha_fin || p.fecha_fin >= hoyISO);
-    const aplicaHoy = !p.dias_aplica || !p.dias_aplica.length || p.dias_aplica.includes(diaHoy);
-    return enRango && aplicaHoy;
-  }).slice(0, 3);
+  if (categoriasInteres.length) {
+    const { data: promosRaw } = await supabase.from("promociones")
+      .select("id, titulo, descripcion, tipo, descuento_pct, ahorro_fijo, precio_normal, precio_descuento, fecha_inicio, fecha_fin, dias_aplica, aliado_id")
+      .eq("activa", true);
+
+    const vigentesHoy = (promosRaw || []).filter(p => {
+      const enRango = (!p.fecha_inicio || p.fecha_inicio <= hoyISO) && (!p.fecha_fin || p.fecha_fin >= hoyISO);
+      const aplicaHoy = !p.dias_aplica || !p.dias_aplica.length || p.dias_aplica.includes(diaHoy);
+      return enRango && aplicaHoy;
+    });
+
+    if (vigentesHoy.length) {
+      const idsAliados = [...new Set(vigentesHoy.map(p => p.aliado_id))];
+      const { data: aliadosData } = await supabase.from("aliados_publico").select("id, nombre, imagen_url, categoria").in("id", idsAliados);
+      aliadosMap = new Map((aliadosData || []).map(a => [a.id, a]));
+      deHoy = vigentesHoy.filter(p => categoriasInteres.includes(aliadosMap.get(p.aliado_id)?.categoria)).slice(0, 3);
+    }
+  }
 
   wrap.hidden = false;
 
   if (deHoy.length) {
-    const idsAliados = [...new Set(deHoy.map(p => p.aliado_id))];
-    const { data: aliadosData } = await supabase.from("aliados_publico").select("id, nombre, imagen_url").in("id", idsAliados);
-    const aliadosMap = new Map((aliadosData || []).map(a => [a.id, a]));
-
     tituloEl.textContent = "🎉 Promoción" + (deHoy.length > 1 ? "es" : "") + " de hoy";
     grid.innerHTML = deHoy.map(p => {
       const al = aliadosMap.get(p.aliado_id);
@@ -3488,7 +3499,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     cargarReferidos(userId);
     cargarMarcasCarrusel();
-    cargarPromoDelDia();
+    cargarPromoDelDia(perfData?.categorias_interes || []);
     cargarProfesionalesClub(plan);
   }).catch((err) => {
     // Sin esto, un fallo aquí (típico al recuperar conexión en móvil tras
