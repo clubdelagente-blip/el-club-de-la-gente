@@ -222,7 +222,9 @@
 .aliado-mini__ic i { width: 20px; height: 20px; }
 .aliado-mini__name { font-size: 13.5px; font-weight: 600; line-height: 1.2; }
 .aliado-mini__cat { font-size: 11px; color: var(--tinta-45); }
-.aliado-mini__pct { margin-left: auto; font-family: var(--display); font-size: 26px; font-weight: 600; color: var(--verde); }
+.aliado-mini__antes { display: block; font-family: var(--cuerpo); font-size: 11px; font-weight: 500; color: var(--tinta-45); text-decoration: line-through; }
+#promo-dia-grid .aliado-mini__antes { color: rgba(255,255,255,.55); }
+.aliado-mini__pct { margin-left: auto; font-family: var(--display); font-size: 26px; font-weight: 600; color: var(--verde); text-align: right; line-height: 1.05; }
 
 /* Tarjetas de "Mis sellos": fondo oscuro para que se diferencien del resto
    de tarjetas claras del dashboard. */

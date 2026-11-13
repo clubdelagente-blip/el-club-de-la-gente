@@ -354,6 +354,23 @@ function irPanel(panel) {
 }
 window.irPanel = irPanel;
 
+// Los paneles con carga diferida (Tienda, Educación, etc.) antes solo se
+// cargaban al hacer click en el enlace del sidebar -- un link directo por
+// URL (ej. "Perfil.html?panel=tienda", usado por "Producto destacado de
+// hoy" en Inicio) mostraba el panel correcto pero vacío/cargando para
+// siempre, porque mostrarPanel() solo cambia qué se ve, nunca pide los
+// datos. Esta función queda compartida para que el primer panel que carga
+// la página (ver el arranque de sesión más abajo) dispare la misma carga
+// que el click del sidebar.
+function cargarPanelSiHaceFalta(panel) {
+  if (panel === 'tienda') cargarTienda();
+  if (panel === 'educacion') cargarEducacion();
+  if (panel === 'vacantes') cargarVacantesMiembro();
+  if (panel === 'soporte') cargarSoporte();
+  if (panel === 'programas') cargarProgramas();
+  if (panel === 'sellos') cargarSellos();
+}
+
 // El gesto de swipe-desde-el-borde en sí vive en gesto-volver.js (compartido
 // con las demás páginas) -- acá solo hace falta escuchar popstate para que
 // ese history.back() muestre el panel correcto en vez de salir de la página.
@@ -2536,6 +2553,15 @@ async function cargarTienda() {
   renderGrid();
   mostrarVistaTienda('productos');
   cargarMisPedidosClub();
+
+  // Link directo a un producto puntual (ej. "Producto destacado de hoy" en
+  // Inicio) -- sin esto, ese link solo abría la Tienda en general y había
+  // que buscar el mismo producto de nuevo a mano.
+  const idProductoDeep = new URLSearchParams(location.search).get("producto");
+  if (idProductoDeep) {
+    const pDeep = todos.find(x => x.id === idProductoDeep && x._origen === "club");
+    if (pDeep) abrirDetalleProductoClub(pDeep);
+  }
 }
 
 const ESTADO_PEDIDO_CLUB = {
@@ -3200,9 +3226,10 @@ async function cargarPromoDelDia(categoriasInteres = []) {
       .eq("activo", true);
     if (!productos || !productos.length) { wrap.hidden = true; return; }
     const p = productos[Math.floor(Math.random() * productos.length)];
+    const tieneDescuento = p.precio_descuento != null && p.precio_normal != null && p.precio_descuento < p.precio_normal;
     tituloEl.textContent = "🛍️ Producto destacado de hoy";
     grid.innerHTML = `
-    <a class="aliado-mini" href="Perfil.html?panel=tienda">
+    <a class="aliado-mini" href="Perfil.html?panel=tienda&producto=${p.id}">
       ${p.imagen_url
         ? `<img class="aliado-mini__ic" src="${esc(p.imagen_url)}" alt="" style="object-fit:cover">`
         : `<span class="aliado-mini__ic">${ic("package")}</span>`}
@@ -3210,7 +3237,7 @@ async function cargarPromoDelDia(categoriasInteres = []) {
         <span class="aliado-mini__name">${esc(p.nombre)}</span><br>
         <span class="aliado-mini__cat">${esc((p.descripcion || "").slice(0, 60))}</span>
       </span>
-      <span class="aliado-mini__pct">${COP(p.precio_descuento || p.precio_normal)}</span>
+      <span class="aliado-mini__pct">${tieneDescuento ? `<span class="aliado-mini__antes">${COP(p.precio_normal)}</span>` : ""}${COP(p.precio_descuento ?? p.precio_normal)}</span>
     </a>`;
   }
   if (window.lucide) lucide.createIcons();
@@ -3243,6 +3270,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const panelInicial = panelUrl && TITULOS[panelUrl] ? panelUrl : "inicio";
   history.replaceState({ panel: panelInicial }, "", location.href);
   mostrarPanel(panelInicial);
+  cargarPanelSiHaceFalta(panelInicial);
   // getSession() puede devolver null al reabrir la app (PWA en segundo plano)
   // -- antes eso mandaba a Login.html de una, pidiendo el código de nuevo
   // aunque la sesión siguiera siendo válida. Se reintenta varias veces (hasta
@@ -3522,12 +3550,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Sidebar nav
   $$(".sb-link[data-panel]").forEach(l => l.addEventListener("click", () => {
     irPanel(l.dataset.panel);
-    if (l.dataset.panel === 'tienda') cargarTienda();
-    if (l.dataset.panel === 'educacion') cargarEducacion();
-    if (l.dataset.panel === 'vacantes') cargarVacantesMiembro();
-    if (l.dataset.panel === 'soporte') cargarSoporte();
-    if (l.dataset.panel === 'programas') cargarProgramas();
-    if (l.dataset.panel === 'sellos') cargarSellos();
+    cargarPanelSiHaceFalta(l.dataset.panel);
   }));
 
   // Avatar del topbar: acceso directo a Configuración (foto, usuario, contraseña)
