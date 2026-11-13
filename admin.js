@@ -110,7 +110,7 @@ function renderMiembros() {
     </div>
     <div class="ad-table-wrap">
       <table class="ad-table">
-        <thead><tr><th>Miembro</th><th>Plan</th><th>Estado</th><th style="text-align:right">Ahorro total</th></tr></thead>
+        <thead><tr><th>Miembro</th><th>Plan</th><th>Estado</th><th style="text-align:right">Referidos</th><th style="text-align:right">Ahorro total</th></tr></thead>
         <tbody id="m-body"></tbody>
       </table>
     </div>`;
