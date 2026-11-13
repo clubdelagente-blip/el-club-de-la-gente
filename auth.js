@@ -655,7 +655,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         // una llave foránea inválida.
         let refPor = localStorage.getItem("ecdlg_ref") || null;
         if (refPor) {
-          const { data: refExiste } = await supabase.from("perfiles").select("id").eq("id", refPor).maybeSingle();
+          // "perfiles_publico" (solo id/nombre), no "perfiles" -- este chequeo
+          // lee la fila de OTRA persona (el referidor), no la propia, así que
+          // depende de poder leer esa fila sin estar autenticado como ella.
+          const { data: refExiste } = await supabase.from("perfiles_publico").select("id").eq("id", refPor).maybeSingle();
           if (!refExiste) {
             refPor = null;
             localStorage.removeItem("ecdlg_ref");
