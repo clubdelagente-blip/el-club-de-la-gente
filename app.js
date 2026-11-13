@@ -507,7 +507,7 @@ function bindAcordeon() {
 function sheetFaq() {
   return `
     <div class="sheet__cat">Ayuda</div>
-    <h2 class="sheet__nombre">Preguntas frecuentes</h2>
+    <h2 class="sheet__nombre" style="color:#000">Preguntas frecuentes</h2>
     ${htmlAcordeonGrupos(FAQ.map(g => ({ grupo: g.grupo, items: g.preguntas.map(p => ({ titulo: p.q, html: `<p>${p.a}</p>` })) })))}
   `;
 }
@@ -640,7 +640,7 @@ const QUIENES_SOMOS = [
 function sheetQuienesSomos() {
   return `
     <div class="sheet__cat">El Club de la Gente</div>
-    <h2 class="sheet__nombre">Quiénes somos</h2>
+    <h2 class="sheet__nombre" style="color:#000">Quiénes somos</h2>
     ${htmlAcordeonGrupos(QUIENES_SOMOS)}
   `;
 }
@@ -687,7 +687,7 @@ const VALORES = [
 function sheetValores() {
   return `
     <div class="sheet__cat">El Club de la Gente</div>
-    <h2 class="sheet__nombre">Por qué existe el Club</h2>
+    <h2 class="sheet__nombre" style="color:#000">Por qué existe el Club</h2>
     ${htmlAcordeonGrupos(VALORES)}
   `;
 }
