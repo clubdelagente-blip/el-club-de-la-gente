@@ -3593,9 +3593,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!/^3\d{9}$/.test(digits)) { toast("Ingresa un número de WhatsApp colombiano válido (10 dígitos, empieza en 3)"); return; }
     btn.disabled = true; btn.textContent = "Enviando…";
     try {
+      // "session" del callback de arriba (obtenerSesionConReintento) ya no
+      // existe acá abajo -- hay que pedir una fresca, si no esto siempre
+      // tira "session is not defined" y cae directo al catch de abajo
+      // (por eso nunca mandaba el código, con "Error de conexión" tapando
+      // el error real).
+      const { data: { session } } = await supabase.auth.getSession();
       const r = await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/cambiar-whatsapp", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
         body: JSON.stringify({ action: "send", miembro_id: _miembroId, nuevo_whatsapp: digits }),
       });
       const j = await r.json().catch(() => ({}));
@@ -3616,9 +3622,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!/^\d{6}$/.test(code)) { toast("El código debe tener 6 dígitos"); return; }
     btn.disabled = true; btn.textContent = "Confirmando…";
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const r = await fetch("https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/cambiar-whatsapp", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
         body: JSON.stringify({ action: "verify", miembro_id: _miembroId, nuevo_whatsapp: _cfgWaPendiente, code }),
       });
       const j = await r.json().catch(() => ({}));
