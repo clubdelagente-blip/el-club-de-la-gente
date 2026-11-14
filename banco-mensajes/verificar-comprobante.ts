@@ -34,9 +34,14 @@ const CONTENT_SID_MEMBRESIA_ACTIVADA = "HX0f87d7d38c71f42bed631194018e9bbd";
 const TOPE_AUTO_APROBAR = 200000;
 
 // Margen de tolerancia hacia ABAJO del precio exacto (comisiones de
-// transferencia interbancaria, redondeos) -- nunca hacia arriba, eso no
-// tendría sentido permitirlo.
+// transferencia interbancaria, redondeos). Hacia arriba no hay límite --
+// pagar de más no es un riesgo para el Club, y la gente redondea seguido.
 const TOLERANCIA_MONTO = 500;
+
+// Nombre real (sin tapar) con el que está registrada la cuenta del Club --
+// se usa como respaldo cuando el comprobante no muestra ninguna llave (ver
+// coincideNombreTapado más abajo).
+const NOMBRE_CLUB = "CLUB DE LA GENTE";
 
 // Modelo de visión de Groq. Groq ha cambiado su catálogo de modelos de
 // visión varias veces (ver whatsapp-receive-v2.ts para otro ejemplo de esto
@@ -64,6 +69,30 @@ function normalizarLlave(s: string | null | undefined): string {
   v = v.replace(/\D/g, "");
   if (v.length > 10 && v.startsWith("57")) v = v.slice(2);
   return v;
+}
+
+// Algunas apps (ej. Nu) no muestran ninguna llave en la pantalla de
+// confirmación -- solo el nombre del beneficiario, tapado con asteriscos
+// por privacidad (ej. "CLU*** D* L* GEN****"). Cuando pasa eso, se usa este
+// nombre como respaldo: compara palabra por palabra, en el mismo orden, que
+// cada palabra tapada sea un PREFIJO real de la palabra correspondiente del
+// nombre real del Club (si una palabra viene sin asterisco, tiene que
+// coincidir exacta). Exigir el mismo número de palabras en el mismo orden
+// hace que sea prácticamente imposible que el nombre de una cuenta
+// cualquiera cumpla esto por casualidad.
+function coincideNombreTapado(nombreReal: string, nombreTapado: string | null | undefined): boolean {
+  if (!nombreTapado) return false;
+  const limpiar = (s: string) => s.trim().toUpperCase().replace(/\s+/g, " ");
+  const realPalabras = limpiar(nombreReal).split(" ");
+  const tapadoPalabras = limpiar(nombreTapado).split(" ");
+  if (realPalabras.length !== tapadoPalabras.length) return false;
+  return realPalabras.every((real, i) => {
+    const tap = tapadoPalabras[i];
+    const idxAsterisco = tap.indexOf("*");
+    if (idxAsterisco === -1) return tap === real;
+    const prefijo = tap.slice(0, idxAsterisco);
+    return prefijo.length >= 1 && real.startsWith(prefijo);
+  });
 }
 
 // Hash del CONTENIDO real de la imagen del comprobante (no de la URL -- cada
@@ -138,19 +167,21 @@ Deno.serve(async (req: Request) => {
     fecha: string | null;
     hora: string | null;
     llave_destino: string | null;
+    nombre_destino: string | null;
     senales_edicion: boolean;
     confianza: "alta" | "media" | "baja";
   };
 
   try {
     const prompt = `Eres un verificador de comprobantes de pago bancarios colombianos. Pueden venir de la app Bre-B directamente, o de cualquier banco/billetera (Nequi, Bancolombia, Daviplata, Nu, Movii, u otras) -- el formato visual cambia de una app a otra, pero los datos que importan son siempre los mismos. Analiza la imagen y responde SOLO un JSON con esta forma exacta, sin texto adicional ni explicaciones:
-{"es_comprobante": boolean, "monto": number|null, "fecha": "YYYY-MM-DD"|null, "hora": "HH:MM"|null, "llave_destino": string|null, "senales_edicion": boolean, "confianza": "alta"|"media"|"baja"}
+{"es_comprobante": boolean, "monto": number|null, "fecha": "YYYY-MM-DD"|null, "hora": "HH:MM"|null, "llave_destino": string|null, "nombre_destino": string|null, "senales_edicion": boolean, "confianza": "alta"|"media"|"baja"}
 
 "es_comprobante": true solo si es claramente una captura de pantalla de una transferencia o pago bancario/Bre-B exitoso, sin importar de qué app o banco sea.
 "monto": el valor transferido, solo el número, sin símbolos ni puntos de miles.
 "fecha": la fecha de la transacción, SIEMPRE convertida al formato YYYY-MM-DD sin importar cómo aparezca escrita en la imagen (ej: "11 nov 2026" -> "2026-11-11").
 "hora": la hora de la transacción, SIEMPRE convertida a formato 24 horas HH:MM (ej: "10:59 p.m." -> "22:59"). null si la imagen no muestra hora.
-"llave_destino": el identificador al que se envió el dinero -- puede ser un alias alfanumérico (ej: "@clubdelagente"), un número de celular o un número de cuenta. Suele estar en un campo llamado "Llave", "Alfanumérica", "Celular" o "Cuenta destino". MUY IMPORTANTE: nunca confundas esto con el NOMBRE del beneficiario (ej: "CLUB DE LA GENTE"), que suele aparecer en un campo separado como "Enviado a" o "¿A quién le llegó la plata?" -- ese nombre NO es la llave, ignóralo para este campo y usa solo el identificador alfanumérico/numérico real.
+"llave_destino": el identificador al que se envió el dinero -- puede ser un alias alfanumérico (ej: "@clubdelagente"), un número de celular o un número de cuenta. Suele estar en un campo llamado "Llave", "Alfanumérica", "Celular" o "Cuenta destino". MUY IMPORTANTE: nunca confundas esto con el NOMBRE del beneficiario -- ese va en el siguiente campo.
+"nombre_destino": el NOMBRE del beneficiario tal como aparece en la imagen, letra por letra, incluyendo asteriscos si está parcialmente tapado por privacidad (ej: "CLU*** D* L* GEN****"). Suele estar en un campo como "Para", "Enviado a" o "¿A quién le llegó la plata?". Algunas apps (ej. Nu) NO muestran ninguna llave y este es el único dato de destino disponible -- igual repórtalo tal cual se ve, tapado o no. null solo si de verdad no aparece ningún nombre en la imagen.
 "senales_edicion": true si notas CUALQUIER inconsistencia visual que sugiera que la imagen fue editada o manipulada (fuentes distintas entre números, pixeles desalineados, bordes raros, texto superpuesto, colores que no calzan).
 "confianza": "alta" solo si puedes leer todos los datos con claridad y no tienes ninguna duda. Si algo no es legible o tienes la más mínima duda, usa "baja" o "media" y pon null en lo que no puedas confirmar.`;
 
@@ -202,7 +233,11 @@ Deno.serve(async (req: Request) => {
     && analisis.monto >= solicitud.monto - TOLERANCIA_MONTO;
   const llaveClubNorm = normalizarLlave(llaveClub);
   const llaveDetectadaNorm = normalizarLlave(analisis.llave_destino);
-  const llaveOk = llaveClubNorm.length >= 3 && llaveClubNorm === llaveDetectadaNorm;
+  // Si la llave coincide, listo. Si no (algunas apps, ej. Nu, no muestran
+  // ninguna llave en la pantalla de confirmación), se acepta el nombre del
+  // beneficiario como respaldo -- aunque venga tapado con asteriscos.
+  const llaveOk = (llaveClubNorm.length >= 3 && llaveClubNorm === llaveDetectadaNorm)
+    || coincideNombreTapado(NOMBRE_CLUB, analisis.nombre_destino);
 
   const aprobarSolo = analisis.es_comprobante === true
     && montoOk
