@@ -267,7 +267,7 @@
                 <p class="inv-resena__texto">"${esc(r.comentario)}"</p>
                 <div class="inv-resena__autor">
                   ${r.aliadoLogo ? `<span class="inv-resena__logo"><img src="${esc(r.aliadoLogo)}" alt=""></span>` : ''}
-                  <span>${esc(r.miembro)}${r.aliado ? ' · ' + esc(r.aliado) : ''}</span>
+                  <span>${r.aliado ? esc(r.aliado) : 'Miembro del Club'}</span>
                 </div>
               </div>`).join('');
             dotsWrap.innerHTML = d.resenas.map((_, i) => `<button type="button" class="inv-resenas__dot${i === 0 ? ' is-active' : ''}" data-i="${i}" aria-label="Reseña ${i + 1}"></button>`).join('');
