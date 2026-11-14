@@ -708,8 +708,9 @@ function sheetAliado(a) {
   const resenas = a._resenas || [];
   const avgResena = resenas.length ? (resenas.reduce((s, r) => s + r.estrellas, 0) / resenas.length) : null;
   const seleccionResena = a._miResena?.estrellas || 0;
-  const listaResenas = resenas.length
-    ? resenas.map(r => `
+  const resenasAjenas = resenas.filter(r => r.miembro_id !== VIEWER_USER_ID);
+  const listaResenas = resenasAjenas.length
+    ? resenasAjenas.map(r => `
       <div style="padding:10px 0;border-bottom:1px solid #f5f5f5">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px">
           <span style="font-size:12.5px;font-weight:600;color:#333">${esc((r.perfiles?.nombre || 'Miembro').split(' ')[0])}</span>
@@ -717,7 +718,9 @@ function sheetAliado(a) {
         </div>
         ${r.comentario ? `<p style="font-size:12.5px;color:#666;line-height:1.5;margin:0">${esc(r.comentario)}</p>` : ''}
       </div>`).join('')
-    : `<p style="font-size:12.5px;color:#999;padding:4px 0 12px">Sé el primero en dejar una reseña de este aliado.</p>`;
+    : (a._miResena
+      ? ''
+      : `<p style="font-size:12.5px;color:#999;padding:4px 0 12px">Sé el primero en dejar una reseña de este aliado.</p>`);
   const formResena = VIEWER_USER_ID ? `
       <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:4px">
         <div style="font-size:12.5px;font-weight:600;margin-bottom:8px;color:#444">${a._miResena ? "Tu reseña" : "Deja tu reseña"}</div>
