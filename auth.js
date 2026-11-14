@@ -394,12 +394,31 @@ document.addEventListener("DOMContentLoaded", async () => {
   // automáticamente.
   $("#pp-copiar")?.addEventListener("click", () => {
     const btn = $("#pp-copiar");
-    navigator.clipboard.writeText($("#pp-llave")?.value || "").then(() => {
+    const input = $("#pp-llave");
+    const marcarCopiada = () => {
       const orig = btn.textContent;
       btn.textContent = "Copiada";
       setTimeout(() => { btn.textContent = orig; }, 2000);
       ppAvanzar(1, 2);
-    });
+    };
+    // Respaldo para navegadores donde navigator.clipboard falla o no existe
+    // (pasa en algunos navegadores de celular/webviews) -- sin esto, el
+    // clic no hacía nada visible y la persona quedaba atascada sin poder
+    // avanzar al paso 2. Deja la llave seleccionada en el campo para
+    // copiarla a mano como último recurso, pero igual deja avanzar -- no
+    // tiene sentido bloquear el resto del pago solo porque el copiado
+    // automático falló.
+    const copiarConRespaldo = () => {
+      input?.select();
+      input?.setSelectionRange?.(0, 99999);
+      try { document.execCommand("copy"); } catch {}
+      marcarCopiada();
+    };
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(input?.value || "").then(marcarCopiada).catch(copiarConRespaldo);
+    } else {
+      copiarConRespaldo();
+    }
   });
   $("#pp-ya-pague")?.addEventListener("click", () => ppAvanzar(2, 3));
   $("#pp-comprobante")?.addEventListener("change", () => {
