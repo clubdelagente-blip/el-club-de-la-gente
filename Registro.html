@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=142">
-  <link rel="stylesheet" href="auth.css?v=7">
+  <link rel="stylesheet" href="auth.css?v=8">
 </head>
 <body class="auth-body">
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -329,22 +329,58 @@
           <h1 class="auth-title" id="pp-title">Paga tu membresía.</h1>
           <p class="auth-desc" id="pp-sub">Vas a pagar tu membresía.</p>
 
-          <form class="auth-form" id="form-pago-previo">
-            <div style="background:#fff;border:1px solid #ebebeb;border-radius:14px;padding:20px;margin-bottom:16px">
-              <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Llave de pago del Club</label>
-              <div style="display:flex;gap:8px">
-                <input id="pp-llave" readonly style="flex:1;min-width:0;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:16px" value="Cargando…">
-                <button type="button" class="btn" id="pp-copiar" style="padding:0 16px;white-space:nowrap">Copiar</button>
+          <div class="pp-steps" id="pp-steps">
+            <div class="pp-step" id="pp-step-1">
+              <div class="pp-step__head">
+                <span class="pp-step__num">1</span>
+                <span class="pp-step__titulo">Copia la llave del Club</span>
               </div>
-              <div style="text-align:center;font-weight:800;letter-spacing:.02em;font-size:13px;border:1px solid #ebebeb;border-radius:8px;padding:6px;margin-top:10px">Bre-B</div>
-              <p style="font-size:12px;color:#777;margin-top:10px">Transfiere <b id="pp-monto"></b> a esa llave antes de continuar.</p>
+              <div class="pp-step__body">
+                <div style="display:flex;gap:8px">
+                  <input id="pp-llave" readonly style="flex:1;min-width:0;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:16px" value="Cargando…">
+                  <button type="button" class="btn" id="pp-copiar" style="padding:0 16px;white-space:nowrap">Copiar</button>
+                </div>
+                <div style="text-align:center;font-weight:800;letter-spacing:.02em;font-size:13px;border:1px solid #ebebeb;border-radius:8px;padding:6px;margin-top:10px">Bre-B</div>
+              </div>
             </div>
-            <div style="background:#fff;border:1px solid #ebebeb;border-radius:14px;padding:20px;margin-bottom:16px">
-              <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Comprobante de pago *</label>
-              <input type="file" id="pp-comprobante" accept="image/*" style="width:100%;max-width:100%;box-sizing:border-box">
+
+            <div class="pp-step is-locked" id="pp-step-2">
+              <div class="pp-step__head">
+                <span class="pp-step__num">2</span>
+                <span class="pp-step__titulo">Paga por Bre-B desde tu banco</span>
+              </div>
+              <div class="pp-step__body">
+                <ol class="pp-step__lista">
+                  <li>Abre la app de tu banco y busca la opción de enviar o transferir.</li>
+                  <li>Elige la opción <b>Bre-B</b>.</li>
+                  <li>Pega la llave que copiaste en el paso 1.</li>
+                  <li>Digita el monto exacto: <b id="pp-monto"></b></li>
+                  <li>Confirma el envío.</li>
+                </ol>
+                <button type="button" class="btn btn--primario" id="pp-ya-pague">Ya pagué, continuar</button>
+              </div>
             </div>
-            <button class="btn btn--primario btn--bloque" type="submit">Continuar al registro <span class="ar">&rarr;</span></button>
-          </form>
+
+            <div class="pp-step is-locked" id="pp-step-3">
+              <div class="pp-step__head">
+                <span class="pp-step__num">3</span>
+                <span class="pp-step__titulo">Sube la captura del comprobante</span>
+              </div>
+              <div class="pp-step__body">
+                <input type="file" id="pp-comprobante" accept="image/*" style="width:100%;max-width:100%;box-sizing:border-box">
+              </div>
+            </div>
+
+            <div class="pp-step is-locked" id="pp-step-4">
+              <div class="pp-step__head">
+                <span class="pp-step__num">4</span>
+                <span class="pp-step__titulo">Crea tu cuenta</span>
+              </div>
+              <div class="pp-step__body">
+                <button type="button" class="btn btn--primario btn--bloque" id="pp-continuar">Continuar al registro <span class="ar">&rarr;</span></button>
+              </div>
+            </div>
+          </div>
           <button type="button" id="pp-omitir" style="display:block;margin:14px auto 0;background:none;border:none;color:#777;font-size:13px;cursor:pointer;text-decoration:underline">Prefiero crear mi cuenta primero y pagar después</button>
         </section>
 
@@ -399,7 +435,7 @@
 
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
-  <script type="module" src="auth.js?v=71"></script>
+  <script type="module" src="auth.js?v=72"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

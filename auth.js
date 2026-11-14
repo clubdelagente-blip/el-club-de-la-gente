@@ -69,11 +69,41 @@ async function cargarLlavePago() {
   const { data } = await supabase.from("configuracion").select("valor").eq("clave", "club_llave_pago").maybeSingle();
   return data?.valor || null;
 }
+// Vuelve el checklist de pago previo a su estado inicial (solo el paso 1
+// abierto) -- hace falta llamarlo cada vez que se muestra la vista, por si
+// la persona ya la había recorrido antes (ej. volvió atrás) y quedó algún
+// paso marcado como cumplido o un comprobante viejo seleccionado.
+function resetPagoPrevioPasos() {
+  $$(".pp-step").forEach((el, i) => {
+    el.classList.toggle("is-locked", i > 0);
+    const num = el.querySelector(".pp-step__num");
+    if (num) num.textContent = String(i + 1);
+  });
+  const comprobante = $("#pp-comprobante");
+  if (comprobante) comprobante.value = "";
+}
+// Marca el paso "completado" como cumplido (✓) y abre el paso "siguiente"
+// -- mientras un paso siga bloqueado, ni su botón ni su contenido se pueden
+// usar (.is-locked trae pointer-events:none), así que no hay forma de
+// saltarse uno.
+function ppAvanzar(completado, siguiente) {
+  const stepCompletado = $(`#pp-step-${completado}`);
+  if (stepCompletado) {
+    const num = stepCompletado.querySelector(".pp-step__num");
+    if (num) num.textContent = "✓";
+  }
+  const stepSiguiente = $(`#pp-step-${siguiente}`);
+  if (stepSiguiente) {
+    stepSiguiente.classList.remove("is-locked");
+    stepSiguiente.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
 function mostrarPagoPrevio(plan) {
   $("#pp-title").textContent = `Paga tu membresía ${plan.tag || plan.nombre}.`;
   $("#pp-sub").textContent = `Vas a pagar tu membresía ${plan.tag || plan.nombre}.`;
   $("#pp-monto").textContent = new Intl.NumberFormat("es-CO").format(Number(plan.precio)) + " COP";
   $("#pp-llave").value = "Cargando…";
+  resetPagoPrevioPasos();
   mostrarVista("view-pago-previo");
   $(".stepper").style.visibility = "hidden";
   cargarLlavePago().then(llave => { $("#pp-llave").value = llave || "No configurada — escríbenos por WhatsApp"; });
@@ -356,17 +386,26 @@ document.addEventListener("DOMContentLoaded", async () => {
   $$("[data-role]").forEach(b => b.addEventListener("click", () => elegirRol(b.dataset.role)));
   $("#reg-back")?.addEventListener("click", resetRoles);
 
-  // Pantalla de pago previo
+  // Pantalla de pago previo -- checklist de 4 pasos obligatorios (ver
+  // ppAvanzar): copiar llave -> pagar por Bre-B -> subir comprobante -> crear
+  // cuenta. Copiar la llave y adjuntar el comprobante avanzan solos (ese
+  // clic / esa selección de archivo YA es la acción del paso); pagar y
+  // crear cuenta necesitan un botón porque no hay forma de confirmarlos
+  // automáticamente.
   $("#pp-copiar")?.addEventListener("click", () => {
     const btn = $("#pp-copiar");
     navigator.clipboard.writeText($("#pp-llave")?.value || "").then(() => {
       const orig = btn.textContent;
       btn.textContent = "Copiada";
       setTimeout(() => { btn.textContent = orig; }, 2000);
+      ppAvanzar(1, 2);
     });
   });
-  $("#form-pago-previo")?.addEventListener("submit", (e) => {
-    e.preventDefault();
+  $("#pp-ya-pague")?.addEventListener("click", () => ppAvanzar(2, 3));
+  $("#pp-comprobante")?.addEventListener("change", () => {
+    if ($("#pp-comprobante")?.files?.[0]) ppAvanzar(3, 4);
+  });
+  $("#pp-continuar")?.addEventListener("click", () => {
     const file = $("#pp-comprobante")?.files?.[0];
     if (!file) { alert("Sube el comprobante de pago"); return; }
     pendingPago = {
