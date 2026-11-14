@@ -193,8 +193,12 @@ Deno.serve(async (req: Request) => {
     && (hoy - fechaDetectada) <= 2 * 24 * 60 * 60 * 1000
     && (hoy - fechaDetectada) >= -24 * 60 * 60 * 1000;
 
+  // Solo se exige un mínimo (monto - tolerancia, por comisiones bancarias) --
+  // pagar DE MÁS no es un riesgo para el Club (es plata de sobra a su favor,
+  // nunca de menos), y en la práctica pasa seguido: la gente redondea hacia
+  // arriba al transferir (ej. $20.000 en vez de $19.900). Antes eso se
+  // rechazaba igual que si hubiera pagado de menos.
   const montoOk = analisis.monto != null
-    && analisis.monto <= solicitud.monto
     && analisis.monto >= solicitud.monto - TOLERANCIA_MONTO;
   const llaveClubNorm = normalizarLlave(llaveClub);
   const llaveDetectadaNorm = normalizarLlave(analisis.llave_destino);
