@@ -59,7 +59,9 @@
     .inv-resena { flex: 0 0 100%; background: rgba(241,247,246,.05); border: 1px solid rgba(241,247,246,.1); border-radius: 14px; padding: 16px 18px; text-align: left; box-sizing: border-box; }
     .inv-resena__estrellas { color: #EAB749; font-size: 13px; margin-bottom: 8px; letter-spacing: 2px; }
     .inv-resena__texto { font-size: 13.5px; color: rgba(241,247,246,.8); line-height: 1.5; margin-bottom: 10px; min-height: 3.2em; }
-    .inv-resena__autor { font-size: 12px; color: rgba(241,247,246,.45); }
+    .inv-resena__autor { font-size: 12px; color: rgba(241,247,246,.45); display: flex; align-items: center; gap: 6px; }
+    .inv-resena__logo { width: 20px; height: 20px; flex: none; border-radius: 50%; overflow: hidden; background: rgba(241,247,246,.12); }
+    .inv-resena__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .inv-resenas__dots { display: flex; justify-content: center; gap: 6px; margin: 10px 0 24px; }
     .inv-resenas__dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(241,247,246,.25); border: 0; padding: 0; cursor: pointer; }
     .inv-resenas__dot.is-active { background: #EAB749; }
@@ -263,23 +265,58 @@
               <div class="inv-resena">
                 <div class="inv-resena__estrellas">${'★'.repeat(r.estrellas)}${'☆'.repeat(5 - r.estrellas)}</div>
                 <p class="inv-resena__texto">"${esc(r.comentario)}"</p>
-                <div class="inv-resena__autor">${esc(r.miembro)}${r.aliado ? ' · ' + esc(r.aliado) : ''}</div>
+                <div class="inv-resena__autor">
+                  ${r.aliadoLogo ? `<span class="inv-resena__logo"><img src="${esc(r.aliadoLogo)}" alt=""></span>` : ''}
+                  <span>${esc(r.miembro)}${r.aliado ? ' · ' + esc(r.aliado) : ''}</span>
+                </div>
               </div>`).join('');
             dotsWrap.innerHTML = d.resenas.map((_, i) => `<button type="button" class="inv-resenas__dot${i === 0 ? ' is-active' : ''}" data-i="${i}" aria-label="Reseña ${i + 1}"></button>`).join('');
             cont.hidden = false;
             dotsWrap.hidden = d.resenas.length < 2;
 
-            let idx = 0;
             const dots = Array.from(dotsWrap.querySelectorAll('.inv-resenas__dot'));
-            function irA(i) {
-              idx = i;
-              track.style.transform = `translateX(-${idx * 100}%)`;
+            let idx = 0, arrastrando = false, startX = 0, deltaX = 0, auto = null;
+
+            function mostrar(i, animar) {
+              idx = Math.max(0, Math.min(d.resenas.length - 1, i));
+              track.style.transition = animar ? 'transform .5s cubic-bezier(.22,1,.36,1)' : 'none';
+              track.style.transform = `translateX(calc(-${idx * 100}% + ${arrastrando ? deltaX : 0}px))`;
               dots.forEach((dot, j) => dot.classList.toggle('is-active', j === idx));
             }
-            dots.forEach((dot) => dot.addEventListener('click', () => irA(+dot.dataset.i)));
-            if (d.resenas.length > 1) {
-              setInterval(() => irA((idx + 1) % d.resenas.length), 5000);
+            function reiniciarAuto() {
+              if (auto) clearInterval(auto);
+              if (d.resenas.length > 1) auto = setInterval(() => mostrar((idx + 1) % d.resenas.length, true), 5000);
             }
+            function iniciar(clientX) { arrastrando = true; startX = clientX; deltaX = 0; }
+            function mover(clientX) { if (!arrastrando) return; deltaX = clientX - startX; mostrar(idx, false); }
+            function soltar() {
+              if (!arrastrando) return;
+              const umbral = cont.offsetWidth * 0.18;
+              if (deltaX < -umbral && idx < d.resenas.length - 1) idx += 1;
+              else if (deltaX > umbral && idx > 0) idx -= 1;
+              arrastrando = false;
+              deltaX = 0;
+              mostrar(idx, true);
+              reiniciarAuto();
+            }
+            function moverMouse(e) { mover(e.clientX); }
+            function soltarMouse() {
+              window.removeEventListener('mousemove', moverMouse);
+              window.removeEventListener('mouseup', soltarMouse);
+              soltar();
+            }
+            cont.addEventListener('touchstart', (e) => iniciar(e.touches[0].clientX), { passive: true });
+            cont.addEventListener('touchmove', (e) => mover(e.touches[0].clientX), { passive: true });
+            cont.addEventListener('touchend', soltar, { passive: true });
+            cont.addEventListener('mousedown', (e) => {
+              iniciar(e.clientX);
+              e.preventDefault();
+              window.addEventListener('mousemove', moverMouse);
+              window.addEventListener('mouseup', soltarMouse);
+            });
+            dots.forEach((dot) => dot.addEventListener('click', () => { mostrar(+dot.dataset.i, true); reiniciarAuto(); }));
+            mostrar(0, false);
+            reiniciarAuto();
           }
         })
         .catch(() => {}); // sin datos reales, simplemente no se muestra nada -- nunca se inventa un número

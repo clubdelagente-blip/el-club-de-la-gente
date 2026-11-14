@@ -52,7 +52,7 @@ Deno.serve(async (req: Request) => {
     // de "descuentos" solo para sumarlas a mano acá.
     supabase.from("descuentos").select("ahorro.sum()"),
     supabase.from("aliados_resenas")
-      .select("estrellas, comentario, aliados(nombre), perfiles(nombre)")
+      .select("estrellas, comentario, aliados(nombre, imagen_url), perfiles(nombre)")
       .gte("estrellas", 4)
       .not("comentario", "is", null)
       .order("created_at", { ascending: false })
@@ -66,10 +66,11 @@ Deno.serve(async (req: Request) => {
   const resenas = (resenasRaw || [])
     .filter((r: { comentario: string | null }) => (r.comentario || "").trim().length > 0)
     .slice(0, 10)
-    .map((r: { estrellas: number; comentario: string; aliados: { nombre: string } | null; perfiles: { nombre: string } | null }) => ({
+    .map((r: { estrellas: number; comentario: string; aliados: { nombre: string; imagen_url: string | null } | null; perfiles: { nombre: string } | null }) => ({
       estrellas: r.estrellas,
       comentario: r.comentario,
       aliado: r.aliados?.nombre || null,
+      aliadoLogo: r.aliados?.imagen_url || null,
       miembro: r.perfiles?.nombre ? String(r.perfiles.nombre).split(" ")[0] : "Un miembro del Club",
     }));
 
