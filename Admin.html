@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Rye&family=Permanent+Marker&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=141">
+  <link rel="stylesheet" href="styles.css?v=142">
   <link rel="stylesheet" href="admin.css?v=22">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -2425,6 +2425,25 @@ const FECHAS_ESPECIALES=[
    que el admin va llenando en el formulario, para verla antes de guardar. */
 const ICON_WA=`<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.868-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.288.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.004 2C6.486 2 2 6.486 2 12.004c0 2.123.666 4.09 1.804 5.714L2.5 22l4.418-1.265A9.955 9.955 0 0 0 12.004 22C17.522 22 22 17.514 22 12.004 22 6.486 17.522 2 12.004 2zm0 18.18a8.14 8.14 0 0 1-4.15-1.136l-.298-.177-3.11.89.903-3.03-.194-.31a8.15 8.15 0 0 1-1.25-4.413c0-4.5 3.66-8.157 8.1-8.157 4.44 0 8.09 3.656 8.09 8.157 0 4.5-3.65 8.176-8.09 8.176z"/></svg>`;
 function pmEsVideo(u){return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(u||'');}
+// Agrupa las fotos/videos en páginas del carrusel: dos fotos seguidas
+// comparten página (una al lado de la otra), para no dejar fondo vacío a
+// los lados de una foto vertical. Un video SIEMPRE va solo en su propia
+// página (nunca se empareja) -- corta cualquier racha de fotos pendiente
+// apenas aparece uno. Mismo criterio que directorio.js/app-cms.js.
+function pmAgruparMediosParaPaginas(urls){
+  const grupos=[];let fotosPendientes=[];
+  const soltarFotos=()=>{while(fotosPendientes.length>=2)grupos.push(fotosPendientes.splice(0,2));if(fotosPendientes.length===1)grupos.push(fotosPendientes.splice(0,1));};
+  urls.forEach(url=>{if(pmEsVideo(url)){soltarFotos();grupos.push([url]);}else fotosPendientes.push(url);});
+  soltarFotos();
+  return grupos;
+}
+function pmMediaPageHtml(grupo){
+  if(grupo.length===2)return `<div class="pm-page pm-page--media-par">${grupo.map(url=>`<div class="pm-page__mitad"><img src="${url}" alt="" loading="lazy"></div>`).join('')}</div>`;
+  const url=grupo[0];
+  return pmEsVideo(url)
+    ?`<div class="pm-page pm-page--media"><video src="${url}" muted playsinline preload="metadata" loop></video></div>`
+    :`<div class="pm-page pm-page--media"><img src="${url}" alt="" loading="lazy"></div>`;
+}
 function pmBadgePreview(tipo){
   if(tipo==='porcentaje'){const pct=parseInt($("#pr-pct")?.value)||0;return pct?`${pct}%`:'% dcto.';}
   if(tipo==='2x1')return'2×1';
@@ -2466,10 +2485,10 @@ function promoCardHtmlPreview(p,al){
       ?`<video src="${primerMedia}" muted playsinline preload="metadata"></video>`
       :`<img src="${primerMedia}" alt="" loading="lazy">`)
     :`<div class="pm-thumb__ph">${ic('image')}</div>`;
-  const mediaPagesHtml=medios.map(u=>pmEsVideo(u)
-      ?`<div class="pm-page pm-page--media"><video src="${u}" muted playsinline preload="metadata" loop></video></div>`
-      :`<div class="pm-page pm-page--media"><img src="${u}" alt="" loading="lazy"></div>`).join('');
-  const totalPaginas=1+medios.length;
+  const mediosExtra=medios.slice(1);
+  const gruposExtra=pmAgruparMediosParaPaginas(mediosExtra);
+  const mediaPagesHtml=gruposExtra.map(pmMediaPageHtml).join('');
+  const totalPaginas=1+gruposExtra.length;
   const dotsHtml=totalPaginas>1?`<div class="pm-pager__dots">${Array.from({length:totalPaginas}).map((_,i)=>`<span class="${i===0?'is-on':''}"></span>`).join('')}</div>`:'';
   const waLink=al?.whatsapp?`https://wa.me/57${String(al.whatsapp).replace(/\D/g,'')}?text=${encodeURIComponent(`Hola, quiero aprovechar la promoción "${p.titulo||p.descripcion||pmBadgePreview(p.tipo)}" de ${al?.nombre||''} que vi en El Club de la Gente`)}`:null;
   const ctaHtml=waLink?`<a class="pm-wa" href="${waLink}" target="_blank" rel="noopener">${ICON_WA}WhatsApp</a>`:'';

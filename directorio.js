@@ -520,6 +520,34 @@ function minimoHtml(p) {
 function esMediaVideo(url) {
   return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url || "");
 }
+// Agrupa las fotos/videos en páginas del carrusel: dos fotos seguidas
+// comparten página (una al lado de la otra), para no dejar fondo vacío a
+// los lados de una foto vertical. Un video SIEMPRE va solo en su propia
+// página (nunca se empareja) -- corta cualquier racha de fotos pendiente
+// apenas aparece uno.
+function agruparMediosParaPaginas(urls) {
+  const grupos = [];
+  let fotosPendientes = [];
+  const soltarFotos = () => {
+    while (fotosPendientes.length >= 2) grupos.push(fotosPendientes.splice(0, 2));
+    if (fotosPendientes.length === 1) grupos.push(fotosPendientes.splice(0, 1));
+  };
+  urls.forEach(url => {
+    if (esMediaVideo(url)) { soltarFotos(); grupos.push([url]); }
+    else fotosPendientes.push(url);
+  });
+  soltarFotos();
+  return grupos;
+}
+function mediaPageHtml(grupo) {
+  if (grupo.length === 2) {
+    return `<div class="pm-page pm-page--media-par">${grupo.map(url => `<div class="pm-page__mitad"><img src="${url}" alt="" loading="lazy"></div>`).join("")}</div>`;
+  }
+  const url = grupo[0];
+  return esMediaVideo(url)
+    ? `<div class="pm-page pm-page--media"><video src="${url}" muted playsinline preload="metadata" loop></video></div>`
+    : `<div class="pm-page pm-page--media"><img src="${url}" alt="" loading="lazy"></div>`;
+}
 function promoCardHtml(p, al) {
   const cc = colorCategoria(al?.categoria);
   const medios = (Array.isArray(p.fotos_urls) && p.fotos_urls.length ? p.fotos_urls : (p.foto_url ? [p.foto_url] : [])).slice(0, 4);
@@ -533,10 +561,9 @@ function promoCardHtml(p, al) {
   // miniatura en la página de info (arriba); repetirla acá hacía que al
   // deslizar por primera vez se viera "la misma foto dos veces seguidas".
   const mediosExtra = medios.slice(1);
-  const mediaPagesHtml = mediosExtra.map(url => esMediaVideo(url)
-      ? `<div class="pm-page pm-page--media"><video src="${url}" muted playsinline preload="metadata" loop></video></div>`
-      : `<div class="pm-page pm-page--media"><img src="${url}" alt="" loading="lazy"></div>`).join("");
-  const totalPaginas = 1 + mediosExtra.length;
+  const gruposExtra = agruparMediosParaPaginas(mediosExtra);
+  const mediaPagesHtml = gruposExtra.map(mediaPageHtml).join("");
+  const totalPaginas = 1 + gruposExtra.length;
   const dotsHtml = totalPaginas > 1
     ? `<div class="pm-pager__dots">${Array.from({ length: totalPaginas }).map((_, i) => `<span class="${i === 0 ? "is-on" : ""}"></span>`).join("")}</div>`
     : "";
