@@ -1214,7 +1214,9 @@ function inicializarMiTienda(negocio) {
     const res = $("#negtab-resumen"); if (res) res.style.display = tab === "resumen" ? "" : "none";
     const tie = $("#negtab-tienda"); if (tie) tie.style.display = tab === "tienda" ? "" : "none";
     const vac = $("#negtab-vacantes"); if (vac) vac.style.display = tab === "vacantes" ? "" : "none";
+    const con = $("#negtab-contabilidad"); if (con) con.style.display = tab === "contabilidad" ? "" : "none";
     if (tab === "vacantes") cargarVacantesAliado(negocio.id);
+    if (tab === "contabilidad") cargarContabilidadNegocio(negocio.id);
   }));
 
   renderTiendaEstado(negocio);
@@ -1637,6 +1639,451 @@ async function cargarPedidosAliado(aliadoId) {
   list.querySelectorAll("[data-entregar-pedido]").forEach(btn => btn.addEventListener("click", async () => {
     await supabase.from("pedidos").update({ estado: "entregado" }).eq("id", btn.dataset.entregarPedido);
     cargarPedidosAliado(aliadoId);
+  }));
+}
+
+/* ---------- Mi Contabilidad (aliado) ----------
+   Tablas propias por negocio_id (negocio_gastos, negocio_ingresos, etc.) --
+   nunca las del Club (gastos/ingresos_manuales son de un solo tenant) ni las
+   de Mi Tienda (productos_aliado/pedidos son para miembros del Club
+   logueados, con comprobante). Ver plan "Mi Contabilidad" para el detalle. */
+let _contaNegocioId = null;
+let _contaMes = null;
+let _contaCategoriasGasto = [];
+let _contaGastos = [];
+let _contaCategoriasIngreso = [];
+let _contaIngresos = [];
+let _contaFiltroOrigen = "todos";
+let _contaCartaProductos = [];
+let _contaCartaPedidos = [];
+
+// No existían en este archivo (solo en Admin.html) -- campo de dinero en
+// texto con separador de miles en vivo, para no depender de type="number"
+// (interpreta el "." que la gente escribe para miles como decimal).
+function formatearInputMoneda(input) {
+  if (!input) return;
+  input.addEventListener("input", () => {
+    const digits = input.value.replace(/\D/g, "");
+    input.value = digits ? Number(digits).toLocaleString("es-CO") : "";
+  });
+}
+function valorMoneda(input) { return parseInt((input?.value || "").replace(/\D/g, "")) || 0; }
+
+function contaEnMes(fechaISO, ymStr) {
+  if (!fechaISO || !ymStr) return false;
+  const [yy, mm] = ymStr.split("-").map(Number);
+  const d = new Date(fechaISO + "T00:00:00");
+  return d.getFullYear() === yy && (d.getMonth() + 1) === mm;
+}
+
+// Respaldo para cuando navigator.clipboard falla o no existe (mismo
+// problema que ya tapó el botón "Copiar" del pago previo en Registro.html)
+// -- sin esto el link del QR podía quedar sin copiar y sin avisar nada.
+function copiarTextoConRespaldo(texto) {
+  if (navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(texto).catch(() => copiarTextoFallback(texto));
+  }
+  return Promise.resolve(copiarTextoFallback(texto));
+}
+function copiarTextoFallback(texto) {
+  const ta = document.createElement("textarea");
+  ta.value = texto; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); } catch {}
+  document.body.removeChild(ta);
+}
+
+async function cargarContabilidadNegocio(negocioId) {
+  _contaNegocioId = negocioId;
+  const hoy = new Date();
+  if (!_contaMes) _contaMes = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
+  const mesInput = $("#conta-mes");
+  if (mesInput) {
+    mesInput.value = _contaMes;
+    mesInput.onchange = (e) => { if (e.target.value) { _contaMes = e.target.value; renderContabilidadNegocioUI(); } };
+  }
+
+  const [{ data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }] = await Promise.all([
+    supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
+    supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
+    supabase.from("negocio_categorias_ingreso").select("*").eq("negocio_id", negocioId).order("nombre"),
+    supabase.from("negocio_ingresos").select("*, negocio_categorias_ingreso(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
+    supabase.from("negocio_carta_productos").select("*").eq("negocio_id", negocioId).order("orden"),
+    supabase.from("negocio_carta_pedidos").select("*").eq("negocio_id", negocioId).eq("estado", "pendiente").order("created_at", { ascending: false }),
+  ]);
+
+  _contaCategoriasGasto = catsG || [];
+  _contaGastos = gastos || [];
+  _contaCategoriasIngreso = catsI || [];
+  _contaIngresos = ingresos || [];
+  _contaCartaProductos = cartaProd || [];
+  _contaCartaPedidos = cartaPed || [];
+
+  // Primera vez que este negocio abre la pestaña: siembra categorías
+  // típicas para que no arranque vacío -- solo pasa una vez, porque en la
+  // siguiente carga ya no estarán vacías.
+  if (!_contaCategoriasGasto.length) {
+    const defaults = ["Insumos", "Nómina", "Arriendo", "Servicios", "Otros"].map(nombre => ({ negocio_id: negocioId, nombre }));
+    const { data: creadas } = await supabase.from("negocio_categorias_gasto").insert(defaults).select();
+    _contaCategoriasGasto = creadas || [];
+  }
+  if (!_contaCategoriasIngreso.length) {
+    const defaults = ["Ventas", "Servicios", "Otros"].map(nombre => ({ negocio_id: negocioId, nombre }));
+    const { data: creadas } = await supabase.from("negocio_categorias_ingreso").insert(defaults).select();
+    _contaCategoriasIngreso = creadas || [];
+  }
+
+  // QR de la carta -- mismo patrón que generarQR (imagen de qrserver, sin librería).
+  const cartaUrl = `https://elclubdelagente.com/Carta.html?aliado=${negocioId}`;
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(cartaUrl)}`;
+  const qrImg = $("#conta-carta-qr"); if (qrImg) qrImg.src = qrSrc;
+  const qrDescargar = $("#conta-carta-descargar"); if (qrDescargar) qrDescargar.href = qrSrc;
+  const btnCopiar = $("#conta-carta-copiar");
+  if (btnCopiar) btnCopiar.onclick = () => copiarTextoConRespaldo(cartaUrl).then(() => toast("Link copiado ✓"));
+
+  const btnGastoAdd = $("#conta-gasto-add"); if (btnGastoAdd) btnGastoAdd.onclick = () => abrirFormGastoNegocio();
+  const btnIngresoAdd = $("#conta-ingreso-add"); if (btnIngresoAdd) btnIngresoAdd.onclick = () => abrirFormIngresoNegocio();
+  const btnGastoCats = $("#conta-gastos-cats"); if (btnGastoCats) btnGastoCats.onclick = () => gestionarCategoriasNegocio("gasto");
+  const btnIngresoCats = $("#conta-ingresos-cats"); if (btnIngresoCats) btnIngresoCats.onclick = () => gestionarCategoriasNegocio("ingreso");
+  const btnCartaProdAdd = $("#conta-carta-producto-add"); if (btnCartaProdAdd) btnCartaProdAdd.onclick = () => abrirFormProductoCarta();
+
+  renderContabilidadNegocioUI();
+  cargarCartaProductos();
+  cargarCartaPedidos();
+}
+
+function renderContabilidadNegocioUI() {
+  const gastosMes = _contaGastos.filter(g => contaEnMes(g.fecha, _contaMes));
+  const ingresosMesTodos = _contaIngresos.filter(i => contaEnMes(i.fecha, _contaMes));
+  const totalGastos = gastosMes.reduce((s, g) => s + Number(g.monto || 0), 0);
+  const totalIngresos = ingresosMesTodos.reduce((s, i) => s + Number(i.monto || 0), 0);
+  const balance = totalIngresos - totalGastos;
+
+  const elIng = $("#conta-stat-ingresos"); if (elIng) elIng.textContent = COP(totalIngresos);
+  const elGas = $("#conta-stat-gastos"); if (elGas) elGas.textContent = COP(totalGastos);
+  const elBal = $("#conta-stat-balance"); if (elBal) elBal.textContent = COP(balance);
+
+  const bodyGastos = $("#conta-gastos-body");
+  if (bodyGastos) {
+    bodyGastos.innerHTML = gastosMes.length ? gastosMes.map(g => `
+      <tr>
+        <td>${esc(g.proveedor || "—")}${g.factura_url ? ` <a href="${esc(g.factura_url)}" target="_blank" title="Ver factura">${ic("paperclip")}</a>` : ""}</td>
+        <td>${esc(g.negocio_categorias_gasto?.nombre || "Sin categoría")}</td>
+        <td>${new Date(g.fecha + "T00:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</td>
+        <td>${COP(g.monto)}</td>
+        <td style="white-space:nowrap"><button data-ed-gn="${g.id}" style="border:none;background:none;cursor:pointer">${ic("pencil")}</button><button data-rm-gn="${g.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button></td>
+      </tr>`).join("") : `<tr><td colspan="5" style="text-align:center;padding:16px;color:#999">Sin gastos este mes</td></tr>`;
+    if (window.lucide) lucide.createIcons();
+    bodyGastos.querySelectorAll("[data-ed-gn]").forEach(b => b.addEventListener("click", () => {
+      const g = _contaGastos.find(x => x.id === b.dataset.edGn);
+      if (g) abrirFormGastoNegocio(g);
+    }));
+    bodyGastos.querySelectorAll("[data-rm-gn]").forEach(b => b.addEventListener("click", async () => {
+      if (!confirm("¿Eliminar este gasto?")) return;
+      await supabase.from("negocio_gastos").delete().eq("id", b.dataset.rmGn);
+      toast("Gasto eliminado");
+      cargarContabilidadNegocio(_contaNegocioId);
+    }));
+  }
+
+  const ingresosVista = _contaFiltroOrigen === "todos" ? ingresosMesTodos : ingresosMesTodos.filter(i => i.origen === _contaFiltroOrigen);
+  const bodyIngresos = $("#conta-ingresos-body");
+  if (bodyIngresos) {
+    bodyIngresos.innerHTML = ingresosVista.length ? ingresosVista.map(i => `
+      <tr>
+        <td>${esc(i.descripcion || (i.origen === "carta" ? "Pedido de la carta" : "—"))}</td>
+        <td>${esc(i.negocio_categorias_ingreso?.nombre || "—")}</td>
+        <td>${new Date(i.fecha + "T00:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</td>
+        <td>${COP(i.monto)}</td>
+        <td style="white-space:nowrap">${i.origen === "manual" ? `<button data-ed-in="${i.id}" style="border:none;background:none;cursor:pointer">${ic("pencil")}</button><button data-rm-in="${i.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button>` : ""}</td>
+      </tr>`).join("") : `<tr><td colspan="5" style="text-align:center;padding:16px;color:#999">Sin ingresos este mes</td></tr>`;
+    if (window.lucide) lucide.createIcons();
+    bodyIngresos.querySelectorAll("[data-ed-in]").forEach(b => b.addEventListener("click", () => {
+      const i = _contaIngresos.find(x => x.id === b.dataset.edIn);
+      if (i) abrirFormIngresoNegocio(i);
+    }));
+    bodyIngresos.querySelectorAll("[data-rm-in]").forEach(b => b.addEventListener("click", async () => {
+      if (!confirm("¿Eliminar este ingreso?")) return;
+      await supabase.from("negocio_ingresos").delete().eq("id", b.dataset.rmIn);
+      toast("Ingreso eliminado");
+      cargarContabilidadNegocio(_contaNegocioId);
+    }));
+  }
+
+  $$("#conta-ingresos-filtro [data-filtro-origen]").forEach(b => {
+    b.classList.toggle("is-on", b.dataset.filtroOrigen === _contaFiltroOrigen);
+    b.onclick = () => { _contaFiltroOrigen = b.dataset.filtroOrigen; renderContabilidadNegocioUI(); };
+  });
+}
+
+function abrirFormGastoNegocio(g = {}) {
+  const catOptions = _contaCategoriasGasto.map(c => `<option value="${c.id}" ${g.categoria_id === c.id ? "selected" : ""}>${esc(c.nombre)}</option>`).join("");
+  abrirModalTienda(g.id ? "Editar gasto" : "Agregar gasto", `
+    <div class="cfg-campo"><label class="cfg-label">Categoría</label>
+      <select class="cfg-input" id="cg-categoria">
+        <option value="">Sin categoría</option>
+        ${catOptions}
+        <option value="__nueva__">+ Nueva categoría…</option>
+      </select>
+      <input class="cfg-input" id="cg-categoria-nueva" type="text" placeholder="Nombre de la categoría nueva" style="display:none;margin-top:8px">
+    </div>
+    <div class="cfg-campo"><label class="cfg-label">Proveedor / Descripción</label><input class="cfg-input" id="cg-proveedor" type="text" value="${esc(g.proveedor || "")}" placeholder="Ej: Arriendo local, insumos..."></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="cfg-campo"><label class="cfg-label">Monto (COP)</label><input class="cfg-input" id="cg-monto" type="text" inputmode="numeric" value="${g.monto ? Number(g.monto).toLocaleString("es-CO") : ""}" placeholder="Ej: 62.000"></div>
+      <div class="cfg-campo"><label class="cfg-label">Fecha</label><input class="cfg-input" id="cg-fecha" type="date" value="${g.fecha || new Date().toISOString().slice(0, 10)}"></div>
+    </div>
+    <div class="cfg-campo"><label class="cfg-label">Nota (opcional)</label><textarea class="cfg-input" id="cg-nota" rows="2">${g.nota || ""}</textarea></div>
+    <div class="cfg-campo"><label class="cfg-label">Factura (foto o PDF, opcional)</label>
+      ${g.factura_url ? `<div style="margin-bottom:8px"><a href="${esc(g.factura_url)}" target="_blank" style="font-size:12px">Ver factura actual ↗</a></div>` : ""}
+      <input type="file" id="cg-factura" accept="image/*,.pdf">
+      <input type="hidden" id="cg-factura-url" value="${g.factura_url || ""}">
+    </div>
+    <button class="btn btn--primario" id="cg-save" data-id="${g.id || ""}" style="margin-top:8px">${g.id ? "Guardar cambios" : "Agregar gasto"}</button>
+  `);
+  formatearInputMoneda($("#cg-monto"));
+  $("#cg-categoria")?.addEventListener("change", (e) => {
+    const n = $("#cg-categoria-nueva"); if (n) n.style.display = e.target.value === "__nueva__" ? "block" : "none";
+  });
+  $("#cg-save")?.addEventListener("click", async () => {
+    const btn = $("#cg-save");
+    const resetBtn = () => { btn.disabled = false; btn.textContent = g.id ? "Guardar cambios" : "Agregar gasto"; };
+    let categoriaId = $("#cg-categoria")?.value;
+    const nuevaCat = $("#cg-categoria-nueva")?.value.trim();
+    const monto = valorMoneda($("#cg-monto"));
+    const fecha = $("#cg-fecha")?.value;
+    if (!monto) { toast("Ingresa un monto válido"); return; }
+    if (!fecha) { toast("Selecciona una fecha"); return; }
+    btn.disabled = true; btn.textContent = "Guardando…";
+    if (categoriaId === "__nueva__") {
+      if (!nuevaCat) { toast("Escribe el nombre de la categoría nueva"); resetBtn(); return; }
+      const { data: catData, error: catErr } = await supabase.from("negocio_categorias_gasto").insert({ negocio_id: _contaNegocioId, nombre: nuevaCat }).select().single();
+      if (catErr) { toast("Error creando categoría: " + catErr.message); resetBtn(); return; }
+      categoriaId = catData.id;
+    }
+    let facturaUrl = $("#cg-factura-url")?.value || null;
+    const facturaFile = $("#cg-factura")?.files?.[0];
+    if (facturaFile) {
+      try {
+        const file = await comprimirImagen(facturaFile);
+        const ext = file.name.split(".").pop();
+        const path = `factura-negocio-${_contaNegocioId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+        if (upErr) throw upErr;
+        facturaUrl = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+      } catch { toast("Error subiendo la factura"); resetBtn(); return; }
+    }
+    const payload = { negocio_id: _contaNegocioId, categoria_id: categoriaId || null, proveedor: $("#cg-proveedor")?.value.trim() || null, monto, fecha, nota: $("#cg-nota")?.value.trim() || null, factura_url: facturaUrl };
+    const { error } = g.id ? await supabase.from("negocio_gastos").update(payload).eq("id", g.id) : await supabase.from("negocio_gastos").insert(payload);
+    if (error) { toast("Error: " + error.message); resetBtn(); return; }
+    cerrarModalTienda();
+    toast(g.id ? "Gasto actualizado ✓" : "Gasto agregado ✓");
+    cargarContabilidadNegocio(_contaNegocioId);
+  });
+}
+
+function abrirFormIngresoNegocio(i = {}) {
+  const catOptions = _contaCategoriasIngreso.map(c => `<option value="${c.id}" ${i.categoria_id === c.id ? "selected" : ""}>${esc(c.nombre)}</option>`).join("");
+  abrirModalTienda(i.id ? "Editar ingreso" : "Agregar ingreso", `
+    <div class="cfg-campo"><label class="cfg-label">Categoría (opcional)</label>
+      <select class="cfg-input" id="ci-categoria">
+        <option value="">Sin categoría</option>
+        ${catOptions}
+        <option value="__nueva__">+ Nueva categoría…</option>
+      </select>
+      <input class="cfg-input" id="ci-categoria-nueva" type="text" placeholder="Nombre de la categoría nueva" style="display:none;margin-top:8px">
+    </div>
+    <div class="cfg-campo"><label class="cfg-label">Descripción</label><input class="cfg-input" id="ci-desc" type="text" value="${esc(i.descripcion || "")}" placeholder="Ej: Venta de mostrador"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="cfg-campo"><label class="cfg-label">Monto (COP)</label><input class="cfg-input" id="ci-monto" type="text" inputmode="numeric" value="${i.monto ? Number(i.monto).toLocaleString("es-CO") : ""}" placeholder="Ej: 62.000"></div>
+      <div class="cfg-campo"><label class="cfg-label">Fecha</label><input class="cfg-input" id="ci-fecha" type="date" value="${i.fecha || new Date().toISOString().slice(0, 10)}"></div>
+    </div>
+    <div class="cfg-campo"><label class="cfg-label">Nota (opcional)</label><textarea class="cfg-input" id="ci-nota" rows="2">${i.nota || ""}</textarea></div>
+    <button class="btn btn--primario" id="ci-save" data-id="${i.id || ""}" style="margin-top:8px">${i.id ? "Guardar cambios" : "Agregar ingreso"}</button>
+  `);
+  formatearInputMoneda($("#ci-monto"));
+  $("#ci-categoria")?.addEventListener("change", (e) => {
+    const n = $("#ci-categoria-nueva"); if (n) n.style.display = e.target.value === "__nueva__" ? "block" : "none";
+  });
+  $("#ci-save")?.addEventListener("click", async () => {
+    const btn = $("#ci-save");
+    const resetBtn = () => { btn.disabled = false; btn.textContent = i.id ? "Guardar cambios" : "Agregar ingreso"; };
+    let categoriaId = $("#ci-categoria")?.value;
+    const nuevaCat = $("#ci-categoria-nueva")?.value.trim();
+    const monto = valorMoneda($("#ci-monto"));
+    const fecha = $("#ci-fecha")?.value;
+    if (!monto) { toast("Ingresa un monto válido"); return; }
+    if (!fecha) { toast("Selecciona una fecha"); return; }
+    btn.disabled = true; btn.textContent = "Guardando…";
+    if (categoriaId === "__nueva__") {
+      if (!nuevaCat) { toast("Escribe el nombre de la categoría nueva"); resetBtn(); return; }
+      const { data: catData, error: catErr } = await supabase.from("negocio_categorias_ingreso").insert({ negocio_id: _contaNegocioId, nombre: nuevaCat }).select().single();
+      if (catErr) { toast("Error creando categoría: " + catErr.message); resetBtn(); return; }
+      categoriaId = catData.id;
+    }
+    const payload = { negocio_id: _contaNegocioId, origen: "manual", categoria_id: categoriaId || null, descripcion: $("#ci-desc")?.value.trim() || null, monto, fecha, nota: $("#ci-nota")?.value.trim() || null };
+    const { error } = i.id ? await supabase.from("negocio_ingresos").update(payload).eq("id", i.id) : await supabase.from("negocio_ingresos").insert(payload);
+    if (error) { toast("Error: " + error.message); resetBtn(); return; }
+    cerrarModalTienda();
+    toast(i.id ? "Ingreso actualizado ✓" : "Ingreso agregado ✓");
+    cargarContabilidadNegocio(_contaNegocioId);
+  });
+}
+
+// Modal chiquito reusable para renombrar/borrar categorías de gasto o
+// ingreso -- así el "100% personalizable" aplica también a las categorías
+// precargadas, no solo a agregar una nueva al vuelo desde el formulario.
+function gestionarCategoriasNegocio(tipo) {
+  const tabla = tipo === "gasto" ? "negocio_categorias_gasto" : "negocio_categorias_ingreso";
+  const cats = tipo === "gasto" ? _contaCategoriasGasto : _contaCategoriasIngreso;
+  abrirModalTienda(`Categorías de ${tipo}`, `
+    ${cats.length ? cats.map(c => `
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <input class="cfg-input" data-cat-rename="${c.id}" type="text" value="${esc(c.nombre)}" style="flex:1">
+        <button data-cat-del="${c.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button>
+      </div>`).join("") : `<p style="font-size:13px;color:#999;margin-bottom:10px">Todavía no tienes categorías.</p>`}
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <input class="cfg-input" id="cat-nueva" type="text" placeholder="Nueva categoría...">
+      <button class="btn btn--primario" id="cat-agregar" type="button">Agregar</button>
+    </div>
+  `);
+  $$("[data-cat-rename]").forEach(input => {
+    input.addEventListener("blur", async () => {
+      const nuevo = input.value.trim();
+      if (!nuevo) return;
+      await supabase.from(tabla).update({ nombre: nuevo }).eq("id", input.dataset.catRename);
+    });
+  });
+  $$("[data-cat-del]").forEach(btn => btn.addEventListener("click", async () => {
+    if (!confirm("¿Borrar esta categoría? Los movimientos que ya la tengan quedan sin categoría.")) return;
+    await supabase.from(tabla).delete().eq("id", btn.dataset.catDel);
+    await cargarContabilidadNegocio(_contaNegocioId);
+    gestionarCategoriasNegocio(tipo);
+  }));
+  $("#cat-agregar")?.addEventListener("click", async () => {
+    const input = $("#cat-nueva");
+    const nombre = input?.value.trim();
+    if (!nombre) return;
+    await supabase.from(tabla).insert({ negocio_id: _contaNegocioId, nombre });
+    await cargarContabilidadNegocio(_contaNegocioId);
+    gestionarCategoriasNegocio(tipo);
+  });
+}
+
+async function cargarCartaProductos() {
+  const list = $("#conta-carta-productos-list");
+  if (!list) return;
+  const productos = _contaCartaProductos;
+  if (!productos.length) { list.innerHTML = `<p style="padding:8px 0">Aún no has agregado productos a tu carta.</p>`; return; }
+  list.innerHTML = productos.map(p => `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #ebebeb">
+      ${p.imagen_url ? `<img src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<div style="width:44px;height:44px;border-radius:8px;background:#f0faf4;flex-shrink:0"></div>`}
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:14px">${esc(p.nombre)}</div>
+        <div style="font-size:12px;color:#777">${COP(p.precio)}${p.disponible ? "" : " · No disponible"}</div>
+      </div>
+      <button data-ed-ccp="${p.id}" style="border:none;background:none;cursor:pointer;color:#777">${ic("pencil")}</button>
+      <button data-rm-ccp="${p.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button>
+    </div>`).join("");
+  if (window.lucide) lucide.createIcons();
+  list.querySelectorAll("[data-ed-ccp]").forEach(btn => btn.addEventListener("click", () => {
+    const p = productos.find(x => x.id === btn.dataset.edCcp);
+    if (p) abrirFormProductoCarta(p);
+  }));
+  list.querySelectorAll("[data-rm-ccp]").forEach(btn => btn.addEventListener("click", async () => {
+    if (!confirm("¿Eliminar este producto de tu carta?")) return;
+    await supabase.from("negocio_carta_productos").delete().eq("id", btn.dataset.rmCcp);
+    toast("Producto eliminado");
+    cargarContabilidadNegocio(_contaNegocioId);
+  }));
+}
+
+function abrirFormProductoCarta(p = {}) {
+  abrirModalTienda(p.id ? "Editar producto" : "Agregar producto", `
+    <div class="cfg-campo"><label class="cfg-label">Nombre *</label><input class="cfg-input" id="ccp-nombre" type="text" value="${esc(p.nombre || "")}" placeholder="Ej: Hamburguesa clásica"></div>
+    <div class="cfg-campo"><label class="cfg-label">Descripción</label><textarea class="cfg-input" id="ccp-desc" rows="2">${p.descripcion || ""}</textarea></div>
+    <div class="cfg-campo"><label class="cfg-label">Precio (COP) *</label><input class="cfg-input" id="ccp-precio" type="text" inputmode="numeric" value="${p.precio ? Number(p.precio).toLocaleString("es-CO") : ""}" placeholder="Ej: 18.000"></div>
+    <div class="cfg-campo"><label class="cfg-label">Foto</label>
+      ${p.imagen_url ? `<div style="margin-bottom:8px"><img src="${esc(p.imagen_url)}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px"></div>` : ""}
+      <input type="file" id="ccp-foto" accept="image/*">
+      <input type="hidden" id="ccp-foto-url" value="${p.imagen_url || ""}">
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--tinta-60);margin:4px 0 8px;cursor:pointer">
+      <input type="checkbox" id="ccp-disponible" ${p.disponible === false ? "" : "checked"}> Disponible en la carta
+    </label>
+    <button class="btn btn--primario" id="ccp-save" data-id="${p.id || ""}">${p.id ? "Guardar cambios" : "Agregar producto"}</button>
+  `);
+  formatearInputMoneda($("#ccp-precio"));
+  $("#ccp-save")?.addEventListener("click", async () => {
+    const btn = $("#ccp-save");
+    const resetBtn = () => { btn.disabled = false; btn.textContent = p.id ? "Guardar cambios" : "Agregar producto"; };
+    const nombre = $("#ccp-nombre")?.value.trim();
+    const precio = valorMoneda($("#ccp-precio"));
+    if (!nombre) { toast("El nombre es obligatorio"); return; }
+    if (!precio) { toast("Ingresa un precio válido"); return; }
+    btn.disabled = true; btn.textContent = "Guardando…";
+    let imagenUrl = $("#ccp-foto-url")?.value || null;
+    const fotoFile = $("#ccp-foto")?.files?.[0];
+    if (fotoFile) {
+      try {
+        const file = await comprimirImagen(fotoFile);
+        const ext = file.name.split(".").pop();
+        const path = `carta-producto-${_contaNegocioId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+        if (upErr) throw upErr;
+        imagenUrl = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+      } catch { toast("Error subiendo la foto"); resetBtn(); return; }
+    }
+    const payload = { negocio_id: _contaNegocioId, nombre, descripcion: $("#ccp-desc")?.value.trim() || null, precio, imagen_url: imagenUrl, disponible: $("#ccp-disponible")?.checked ?? true };
+    const { error } = p.id ? await supabase.from("negocio_carta_productos").update(payload).eq("id", p.id) : await supabase.from("negocio_carta_productos").insert(payload);
+    if (error) { toast("Error: " + error.message); resetBtn(); return; }
+    cerrarModalTienda();
+    toast(p.id ? "Producto actualizado ✓" : "Producto agregado ✓");
+    cargarContabilidadNegocio(_contaNegocioId);
+  });
+}
+
+async function cargarCartaPedidos() {
+  const list = $("#conta-carta-pedidos-list");
+  if (!list) return;
+  const pedidos = _contaCartaPedidos;
+  if (!pedidos.length) { list.innerHTML = `<p style="padding:8px 0">No tienes pedidos pendientes de la carta.</p>`; return; }
+  list.innerHTML = pedidos.map(ped => {
+    const items = Array.isArray(ped.items) ? ped.items : [];
+    const resumenItems = items.map(it => `${it.cantidad}× ${esc(it.nombre)}`).join(", ");
+    return `
+    <div style="padding:14px 0;border-bottom:1px solid #ebebeb">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <div style="font-weight:600;font-size:14px">${esc(ped.cliente_nombre)} — ${COP(ped.monto_total)}</div>
+          <div style="font-size:12px;color:#777">${esc(resumenItems)}${ped.nota ? " · " + esc(ped.nota) : ""}${ped.cliente_whatsapp ? " · " + esc(ped.cliente_whatsapp) : ""}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button data-pagar-ccped="${ped.id}" class="btn btn--primario" style="padding:8px 14px;font-size:12px">Marcar pagado</button>
+        <button data-cancelar-ccped="${ped.id}" style="padding:8px 14px;font-size:12px;border:1px solid #ebebeb;border-radius:8px;background:none;cursor:pointer">Cancelar</button>
+      </div>
+    </div>`;
+  }).join("");
+  list.querySelectorAll("[data-pagar-ccped]").forEach(btn => btn.addEventListener("click", async () => {
+    const id = btn.dataset.pagarCcped;
+    const ped = pedidos.find(x => x.id === id);
+    if (!ped) return;
+    btn.disabled = true;
+    const { error: errUpd } = await supabase.from("negocio_carta_pedidos").update({ estado: "pagado", pagado_at: new Date().toISOString() }).eq("id", id);
+    if (errUpd) { toast("Error: " + errUpd.message); btn.disabled = false; return; }
+    await supabase.from("negocio_ingresos").insert({
+      negocio_id: _contaNegocioId, origen: "carta", pedido_id: id,
+      descripcion: `Pedido carta · ${ped.cliente_nombre}`,
+      monto: ped.monto_total, fecha: new Date().toISOString().slice(0, 10),
+    });
+    toast("Pedido marcado como pagado ✓");
+    cargarContabilidadNegocio(_contaNegocioId);
+  }));
+  list.querySelectorAll("[data-cancelar-ccped]").forEach(btn => btn.addEventListener("click", async () => {
+    if (!confirm("¿Cancelar este pedido?")) return;
+    await supabase.from("negocio_carta_pedidos").update({ estado: "cancelado" }).eq("id", btn.dataset.cancelarCcped);
+    toast("Pedido cancelado");
+    cargarContabilidadNegocio(_contaNegocioId);
   }));
 }
 

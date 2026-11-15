@@ -1,0 +1,57 @@
+/* ============================================================
+   Carta.html — carta digital por QR de un negocio (público, sin login)
+   Hereda variables y tipografía de styles.css
+   ============================================================ */
+
+body { background: var(--crema); padding-bottom: 90px; }
+
+.carta-top { background: #fff; border-bottom: 1px solid var(--linea); padding: 18px 0; }
+.carta-top__negocio { display: flex; align-items: center; gap: 14px; }
+.carta-top__logo { width: 48px; height: 48px; border-radius: 12px; background: var(--verde-soft); flex: none; overflow: hidden; }
+.carta-top__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.carta-top__nombre { font-family: var(--display); font-size: 19px; font-weight: 600; color: var(--tinta); }
+.carta-top__sub { font-size: 12px; color: var(--tinta-45); }
+
+.carta-vacio { text-align: center; padding: 60px 20px; color: var(--tinta-60); font-size: 14.5px; }
+
+.carta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; padding: 24px 0 20px; }
+.carta-card { background: #fff; border: 1px solid var(--linea); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; transition: border-color .2s, box-shadow .2s; }
+.carta-card.en-carrito { border-color: var(--verde); box-shadow: 0 0 0 1.5px var(--verde) inset; }
+.carta-card__img { width: 100%; aspect-ratio: 4/3; background: var(--verde-soft); object-fit: cover; display: block; }
+.carta-card__ph { width: 100%; aspect-ratio: 4/3; background: var(--verde-soft); display: grid; place-items: center; color: var(--verde); }
+.carta-card__body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.carta-card__nombre { font-size: 14.5px; font-weight: 700; color: var(--tinta); }
+.carta-card__desc { font-size: 12.5px; color: var(--tinta-60); line-height: 1.5; flex: 1; }
+.carta-card__fila { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 4px; }
+.carta-card__precio { font-size: 15px; font-weight: 800; color: var(--tinta); }
+
+.carta-qty { display: flex; align-items: center; gap: 10px; }
+.carta-qty button { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--linea-fuerte); background: #fff; font-size: 16px; font-weight: 700; color: var(--verde); cursor: pointer; line-height: 1; }
+.carta-qty button:active { transform: scale(.92); }
+.carta-qty__n { min-width: 16px; text-align: center; font-weight: 700; font-size: 14px; }
+.carta-add { padding: 8px 16px; border-radius: 100px; border: none; background: var(--verde); color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+.carta-barra { position: fixed; left: 0; right: 0; bottom: 0; background: var(--tinta); z-index: 40; box-shadow: 0 -4px 20px rgba(0,0,0,.15); }
+.carta-barra__inner { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0; }
+.carta-barra__items { display: block; font-size: 11.5px; color: rgba(241,247,246,.6); }
+.carta-barra__total { display: block; font-family: var(--display); font-size: 18px; color: #fff; }
+
+.carta-overlay { position: fixed; inset: 0; background: rgba(2,27,26,.55); z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+.carta-sheet { background: #fff; width: 100%; max-width: 480px; border-radius: 20px 20px 0 0; padding: 28px 22px 34px; max-height: 86vh; overflow-y: auto; position: relative; }
+.carta-sheet__cerrar { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--crema-2); font-size: 15px; cursor: pointer; }
+.carta-sheet__titulo { font-family: var(--display); font-size: 22px; font-weight: 600; margin-bottom: 14px; }
+.carta-sheet__item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--linea); font-size: 13.5px; }
+.carta-sheet__total { display: flex; align-items: center; justify-content: space-between; font-weight: 800; font-size: 16px; padding: 14px 0; margin-bottom: 10px; }
+.carta-campo { margin-bottom: 14px; }
+.carta-campo label { display: block; font-size: 12px; font-weight: 600; color: var(--tinta-60); margin-bottom: 6px; }
+.carta-campo input { width: 100%; padding: 13px 14px; border: 1px solid var(--linea-fuerte); border-radius: 10px; font-family: var(--cuerpo); font-size: 16px; box-sizing: border-box; }
+.carta-sheet__enviar { width: 100%; margin-top: 4px; }
+
+.carta-exito { text-align: center; padding: 20px 0; }
+.carta-exito__check { width: 56px; height: 56px; border-radius: 50%; background: var(--verde-soft); color: var(--verde); font-size: 26px; font-weight: 700; display: grid; place-items: center; margin: 0 auto 16px; }
+.carta-exito h3 { font-family: var(--display); font-size: 20px; margin-bottom: 8px; }
+.carta-exito p { font-size: 13.5px; color: var(--tinta-60); line-height: 1.6; }
+
+@media (max-width: 480px) {
+  .carta-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}

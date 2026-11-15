@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://js.sentry-cdn.com/c008db963bd16390827cbba643292144.min.js" crossorigin="anonymous"></script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-K062DHDKP"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-K062DHDKP');</script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carta — El Club de la Gente</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-club.png?v=2" type="image/png">
+  <link rel="apple-touch-icon" href="icon-club.png?v=2">
+  <meta name="theme-color" content="#095544">
+  <script>if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=142">
+  <link rel="stylesheet" href="carta.css?v=1">
+</head>
+<body>
+  <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
+  <script>(function(){var l=document.getElementById('page-loader');function ocultar(){if(!l)return;l.classList.add('is-hidden');setTimeout(function(){l.remove();},400);}window.addEventListener('load',ocultar);setTimeout(ocultar,4000);})();</script>
+
+  <header class="carta-top">
+    <div class="wrap">
+      <div class="carta-top__negocio">
+        <div class="carta-top__logo" id="carta-logo"></div>
+        <div>
+          <div class="carta-top__nombre" id="carta-nombre">Cargando…</div>
+          <div class="carta-top__sub">Carta digital · El Club de la Gente</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap" id="carta-main">
+    <div id="carta-estado-vacio" hidden class="carta-vacio">
+      <p>Este negocio todavía no tiene su carta lista.</p>
+    </div>
+    <div id="carta-grid" class="carta-grid"></div>
+  </main>
+
+  <div class="carta-barra" id="carta-barra" hidden>
+    <div class="wrap carta-barra__inner">
+      <div>
+        <span class="carta-barra__items" id="carta-barra-items">0 productos</span>
+        <span class="carta-barra__total" id="carta-barra-total">$0</span>
+      </div>
+      <button type="button" class="btn btn--primario" id="carta-ver-pedido">Ver pedido</button>
+    </div>
+  </div>
+
+  <!-- Resumen / checkout -->
+  <div class="carta-overlay" id="carta-overlay" hidden>
+    <div class="carta-sheet">
+      <button type="button" class="carta-sheet__cerrar" id="carta-sheet-cerrar" aria-label="Cerrar">✕</button>
+      <h2 class="carta-sheet__titulo">Tu pedido</h2>
+      <div id="carta-sheet-items"></div>
+      <div class="carta-sheet__total"><span>Total</span><span id="carta-sheet-total">$0</span></div>
+
+      <div id="carta-sheet-form">
+        <div class="carta-campo"><label>Tu nombre *</label><input id="carta-cliente-nombre" type="text" placeholder="¿Cómo te llamas?"></div>
+        <div class="carta-campo"><label>WhatsApp (opcional)</label><input id="carta-cliente-wa" type="tel" placeholder="300 000 0000"></div>
+        <div class="carta-campo"><label>Nota <span style="font-weight:400;color:var(--tinta-45)">(mesa, domicilio, etc.)</span></label><input id="carta-cliente-nota" type="text" placeholder="Ej: Mesa 4"></div>
+        <button type="button" class="btn btn--primario carta-sheet__enviar" id="carta-enviar-pedido">Enviar pedido</button>
+      </div>
+
+      <div id="carta-sheet-exito" hidden class="carta-exito">
+        <div class="carta-exito__check">✓</div>
+        <h3>¡Pedido enviado!</h3>
+        <p>El negocio lo confirmará pronto. Gracias por tu compra.</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="carta.js?v=1"></script>
+
+  <template id="__bundler_thumbnail">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100" height="100" fill="#F1F7F6"/>
+      <rect x="30" y="30" width="40" height="40" rx="4" fill="none" stroke="#021B1A" stroke-width="3"/>
+      <rect x="38" y="38" width="10" height="10" fill="#095544"/>
+      <rect x="52" y="38" width="10" height="10" fill="#021B1A"/>
+      <rect x="38" y="52" width="10" height="10" fill="#021B1A"/>
+      <rect x="52" y="52" width="10" height="10" fill="#095544"/>
+    </svg>
+  </template>
+
+</body>
+</html>
