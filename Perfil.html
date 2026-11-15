@@ -517,25 +517,28 @@
              PANEL: MI NEGOCIO (solo aliados)
              ============================================================ -->
         <section class="panel-view" data-panel="negocio" data-screen-label="Mi negocio">
-          <div class="dash-greet">
-            <h1>Mi negocio</h1>
-            <p>El desempeño de <b id="negocio-nombre">tu negocio</b> dentro de El Club de la Gente.</p>
-          </div>
-
-          <div class="cfg-campo" style="max-width:360px;margin-bottom:24px">
-            <label class="cfg-label">Tu código de aliado</label>
-            <div style="display:flex;gap:8px">
-              <input class="cfg-input" id="negocio-codigo" readonly value="—" style="flex:1;font-weight:700;letter-spacing:.05em">
-              <button type="button" class="btn" id="negocio-codigo-copiar" style="padding:0 16px;white-space:nowrap">Copiar</button>
+          <div id="neg-chrome">
+            <div class="dash-greet">
+              <h1>Mi negocio</h1>
+              <p>El desempeño de <b id="negocio-nombre">tu negocio</b> dentro de El Club de la Gente.</p>
             </div>
-            <span style="font-size:12px;color:#777;display:block;margin-top:4px">Te lo van a pedir cada vez que un miembro aplique un descuento en tu negocio desde el Directorio -- lo escribes tú, en su pantalla, para confirmarlo.</span>
+
+            <div class="cfg-campo" style="max-width:360px;margin-bottom:24px">
+              <label class="cfg-label">Tu código de aliado</label>
+              <div style="display:flex;gap:8px">
+                <input class="cfg-input" id="negocio-codigo" readonly value="—" style="flex:1;font-weight:700;letter-spacing:.05em">
+                <button type="button" class="btn" id="negocio-codigo-copiar" style="padding:0 16px;white-space:nowrap">Copiar</button>
+              </div>
+              <span style="font-size:12px;color:#777;display:block;margin-top:4px">Te lo van a pedir cada vez que un miembro aplique un descuento en tu negocio desde el Directorio -- lo escribes tú, en su pantalla, para confirmarlo.</span>
+            </div>
           </div>
 
-          <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+          <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap" id="neg-tabs-row">
             <button class="neg-tab-btn is-active" data-negtab="resumen" type="button">Resumen</button>
             <button class="neg-tab-btn" data-negtab="tienda" type="button">Mi tienda</button>
             <button class="neg-tab-btn" data-negtab="vacantes" type="button">Vacantes</button>
             <button class="neg-tab-btn" data-negtab="contabilidad" type="button">Mi Contabilidad</button>
+            <button type="button" id="neg-volver" hidden style="display:flex;align-items:center;gap:6px;border:none;background:none;color:var(--verde);font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit">← Volver a Mi negocio</button>
           </div>
 
           <div id="negtab-resumen">
@@ -712,89 +715,149 @@
           </div>
 
           <div id="negtab-contabilidad" style="display:none">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-              <label class="cfg-label" style="margin:0">Mostrando</label>
-              <input type="month" id="conta-mes" class="cfg-input" style="width:auto;max-width:170px">
+            <div class="seg-opts" style="margin-bottom:22px" id="contasub-nav">
+              <button class="seg-opt is-on" data-contasub="balance" type="button">📊 Balance</button>
+              <button class="seg-opt" data-contasub="pedido" type="button">🧾 Nuevo pedido</button>
+              <button class="seg-opt" data-contasub="gasto" type="button">➖ Nuevo gasto</button>
             </div>
 
-            <div class="stats" style="margin-bottom:20px">
-              <div class="stat">
-                <div class="stat__top"><span class="stat__ic"><i data-lucide="banknote"></i></span></div>
-                <div class="stat__num" id="conta-stat-ingresos">—</div>
-                <div class="stat__lbl">Ingresos del mes</div>
+            <!-- ---------- BALANCE ---------- -->
+            <div id="contasub-balance">
+              <div class="seg-opts" style="margin-bottom:14px" id="conta-periodo-filtro">
+                <button class="seg-opt" data-periodo="dia" type="button" style="padding:7px 14px;font-size:12.5px">Día</button>
+                <button class="seg-opt" data-periodo="semana" type="button" style="padding:7px 14px;font-size:12.5px">Semana</button>
+                <button class="seg-opt is-on" data-periodo="mes" type="button" style="padding:7px 14px;font-size:12.5px">Mes</button>
+                <button class="seg-opt" data-periodo="rango" type="button" style="padding:7px 14px;font-size:12.5px">Rango</button>
               </div>
-              <div class="stat">
-                <div class="stat__top"><span class="stat__ic"><i data-lucide="receipt"></i></span></div>
-                <div class="stat__num" id="conta-stat-gastos">—</div>
-                <div class="stat__lbl">Gastos del mes</div>
-              </div>
-              <div class="stat">
-                <div class="stat__top"><span class="stat__ic"><i data-lucide="scale"></i></span></div>
-                <div class="stat__num" id="conta-stat-balance">—</div>
-                <div class="stat__lbl">Balance del mes</div>
-              </div>
-            </div>
-
-            <div class="card" style="margin-bottom:20px">
-              <div class="card__head">
-                <span class="card__title">Gastos</span>
-                <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-                  <button class="card__link" id="conta-gastos-cats" type="button" style="cursor:pointer;border:none;background:none;font:inherit">Categorías</button>
-                  <button class="card__link" id="conta-gasto-add" type="button" style="cursor:pointer;border:none;background:none;font:inherit">+ Agregar gasto</button>
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+                <input type="month" id="conta-mes" class="cfg-input" style="width:auto;max-width:170px">
+                <div id="conta-rango-wrap" hidden style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <input type="date" id="conta-rango-desde" class="cfg-input" style="width:auto">
+                  <span style="color:var(--tinta-45)">a</span>
+                  <input type="date" id="conta-rango-hasta" class="cfg-input" style="width:auto">
                 </div>
               </div>
-              <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-                <table class="tabla" style="min-width:560px">
-                  <thead><tr><th>Proveedor / Descripción</th><th>Categoría</th><th>Fecha</th><th>Monto</th><th></th></tr></thead>
-                  <tbody id="conta-gastos-body"><tr><td colspan="5" style="text-align:center;padding:16px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
-                </table>
-              </div>
-            </div>
 
-            <div class="card" style="margin-bottom:20px">
-              <div class="card__head">
-                <span class="card__title">Ingresos</span>
-                <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-                  <button class="card__link" id="conta-ingresos-cats" type="button" style="cursor:pointer;border:none;background:none;font:inherit">Categorías</button>
-                  <button class="card__link" id="conta-ingreso-add" type="button" style="cursor:pointer;border:none;background:none;font:inherit">+ Agregar ingreso</button>
+              <div class="stats" style="margin-bottom:20px">
+                <div class="stat">
+                  <div class="stat__top"><span class="stat__ic"><i data-lucide="banknote"></i></span></div>
+                  <div class="stat__num" id="conta-stat-ingresos">—</div>
+                  <div class="stat__lbl">Ingresos<span id="conta-stat-ingresos-chip" style="display:block;font-size:11px;font-weight:700"></span></div>
+                </div>
+                <div class="stat">
+                  <div class="stat__top"><span class="stat__ic"><i data-lucide="receipt"></i></span></div>
+                  <div class="stat__num" id="conta-stat-gastos">—</div>
+                  <div class="stat__lbl">Gastos<span id="conta-stat-gastos-chip" style="display:block;font-size:11px;font-weight:700"></span></div>
+                </div>
+                <div class="stat">
+                  <div class="stat__top"><span class="stat__ic"><i data-lucide="scale"></i></span></div>
+                  <div class="stat__num" id="conta-stat-balance">—</div>
+                  <div class="stat__lbl">Balance</div>
+                </div>
+                <div class="stat">
+                  <div class="stat__top"><span class="stat__ic"><i data-lucide="trending-up"></i></span></div>
+                  <div class="stat__num" id="conta-stat-rentabilidad">—</div>
+                  <div class="stat__lbl">Rentabilidad</div>
                 </div>
               </div>
-              <div class="seg-opts" style="margin-bottom:14px" id="conta-ingresos-filtro">
-                <button class="seg-opt is-on" data-filtro-origen="todos" type="button" style="padding:7px 14px;font-size:12.5px">Todos</button>
-                <button class="seg-opt" data-filtro-origen="manual" type="button" style="padding:7px 14px;font-size:12.5px">Manual</button>
-                <button class="seg-opt" data-filtro-origen="carta" type="button" style="padding:7px 14px;font-size:12.5px">Carta</button>
-              </div>
-              <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-                <table class="tabla" style="min-width:560px">
-                  <thead><tr><th>Descripción</th><th>Categoría</th><th>Fecha</th><th>Monto</th><th></th></tr></thead>
-                  <tbody id="conta-ingresos-body"><tr><td colspan="5" style="text-align:center;padding:16px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
-                </table>
-              </div>
-            </div>
 
-            <div class="card" style="margin-bottom:20px">
-              <div class="card__head"><span class="card__title">Mi carta (pedidos por QR)</span></div>
-              <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;padding:8px 0 16px">
-                <img id="conta-carta-qr" src="" alt="Código QR de tu carta" style="width:140px;height:140px;border-radius:10px;border:1px solid var(--linea)">
-                <div style="flex:1;min-width:220px">
-                  <p style="font-size:13px;color:var(--tinta-60);line-height:1.6;margin-bottom:10px">Imprime este código y ponlo en tus mesas o mostrador. Tus clientes lo escanean, escogen de tu carta y el pedido te llega aquí mismo, pendiente de cobrar.</p>
-                  <div style="display:flex;gap:8px;flex-wrap:wrap">
-                    <a id="conta-carta-descargar" class="btn" download="carta-qr.png">Descargar QR</a>
-                    <button class="btn" id="conta-carta-copiar" type="button">Copiar link</button>
+              <div class="card" id="conta-chart-wrap" style="margin-bottom:20px">
+                <div class="card__head">
+                  <span class="card__title">Ingresos vs. gastos · últimos 6 meses</span>
+                  <div style="display:flex;gap:16px;font-size:12px;color:var(--tinta-60)">
+                    <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:2px;background:var(--verde);display:inline-block"></span>Ingresos</span>
+                    <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:2px;background:#D97757;display:inline-block"></span>Gastos</span>
+                    <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:2px;background:#EAB749;display:inline-block"></span>Utilidad</span>
                   </div>
                 </div>
+                <div id="conta-chart" style="overflow-x:auto"></div>
               </div>
 
-              <details class="card" style="margin-bottom:16px">
-                <summary style="cursor:pointer;font-family:'Anton',sans-serif;font-size:17px;font-weight:700">Productos de mi carta</summary>
-                <div style="padding:16px 0 4px">
-                  <button class="btn btn--primario" id="conta-carta-producto-add" type="button" style="margin-bottom:14px">+ Agregar producto</button>
-                  <div id="conta-carta-productos-list"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
+              <div class="card" style="margin-bottom:20px">
+                <div class="card__head">
+                  <span class="card__title">Gastos</span>
+                  <button class="card__link" id="conta-gastos-cats" type="button" style="cursor:pointer;border:none;background:none;font:inherit">Categorías</button>
                 </div>
-              </details>
+                <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+                  <table class="tabla" style="min-width:560px">
+                    <thead><tr><th>Proveedor / Descripción</th><th>Categoría</th><th>Fecha</th><th>Monto</th><th></th></tr></thead>
+                    <tbody id="conta-gastos-body"><tr><td colspan="5" style="text-align:center;padding:16px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
+                  </table>
+                </div>
+              </div>
 
-              <div class="card__head" style="padding:0 0 10px"><span class="card__title">Pedidos pendientes</span></div>
-              <div id="conta-carta-pedidos-list" style="padding:4px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
+              <div class="card" style="margin-bottom:20px">
+                <div class="card__head">
+                  <span class="card__title">Ingresos</span>
+                  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+                    <button class="card__link" id="conta-ingresos-cats" type="button" style="cursor:pointer;border:none;background:none;font:inherit">Categorías</button>
+                    <button class="card__link" id="conta-ingreso-add" type="button" style="cursor:pointer;border:none;background:none;font:inherit">+ Ingreso manual</button>
+                  </div>
+                </div>
+                <div class="seg-opts" style="margin-bottom:14px" id="conta-ingresos-filtro">
+                  <button class="seg-opt is-on" data-filtro-origen="todos" type="button" style="padding:7px 14px;font-size:12.5px">Todos</button>
+                  <button class="seg-opt" data-filtro-origen="manual" type="button" style="padding:7px 14px;font-size:12.5px">Manual</button>
+                  <button class="seg-opt" data-filtro-origen="carta" type="button" style="padding:7px 14px;font-size:12.5px">Carta</button>
+                </div>
+                <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+                  <table class="tabla" style="min-width:560px">
+                    <thead><tr><th>Descripción</th><th>Categoría</th><th>Fecha</th><th>Monto</th><th></th></tr></thead>
+                    <tbody id="conta-ingresos-body"><tr><td colspan="5" style="text-align:center;padding:16px"><span class="brand-loader"><img src="icon-club.png" alt=""></span></td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- ---------- NUEVO PEDIDO ---------- -->
+            <div id="contasub-pedido" style="display:none">
+              <button class="btn btn--primario" id="conta-nuevo-pedido-btn" type="button" style="margin-bottom:20px;width:100%;justify-content:center">🧾 Nuevo pedido</button>
+
+              <div class="card" style="margin-bottom:20px">
+                <div class="card__head"><span class="card__title">Mi carta digital (pedidos por QR)</span></div>
+                <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;padding:8px 0 16px">
+                  <img id="conta-carta-qr" src="" alt="Código QR de tu carta" style="width:140px;height:140px;border-radius:10px;border:1px solid var(--linea)">
+                  <div style="flex:1;min-width:220px">
+                    <p style="font-size:13px;color:var(--tinta-60);line-height:1.6;margin-bottom:10px">Imprime este código y ponlo en tus mesas o mostrador. Tus clientes lo escanean, escogen de tu carta y el pedido te llega aquí mismo.</p>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                      <a id="conta-carta-descargar" class="btn" download="carta-qr.png">Descargar QR</a>
+                      <button class="btn" id="conta-carta-copiar" type="button">Copiar link</button>
+                    </div>
+                  </div>
+                </div>
+
+                <details style="margin-bottom:16px">
+                  <summary style="cursor:pointer;font-family:'Anton',sans-serif;font-size:15px;font-weight:700">Personalizar mi carta</summary>
+                  <div style="padding:14px 0 4px">
+                    <div class="cfg-campo">
+                      <label class="cfg-label">Color de acento</label>
+                      <input type="color" id="conta-carta-color" value="#095544" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
+                    </div>
+                    <div class="cfg-campo">
+                      <label class="cfg-label">Imagen de portada (opcional)</label>
+                      <input type="file" id="conta-carta-portada" accept="image/*">
+                      <input type="hidden" id="conta-carta-portada-url">
+                    </div>
+                    <button class="btn btn--primario" id="conta-carta-personalizar-guardar" type="button">Guardar personalización</button>
+                  </div>
+                </details>
+
+                <details class="card" style="margin-bottom:16px">
+                  <summary style="cursor:pointer;font-family:'Anton',sans-serif;font-size:17px;font-weight:700">Productos de mi carta</summary>
+                  <div style="padding:16px 0 4px">
+                    <button class="btn btn--primario" id="conta-carta-producto-add" type="button" style="margin-bottom:14px">+ Agregar producto</button>
+                    <div id="conta-carta-productos-list"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
+                  </div>
+                </details>
+
+                <div class="card__head" style="padding:0 0 10px"><span class="card__title">Pedidos</span></div>
+                <div id="conta-carta-pedidos-list" style="padding:4px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
+              </div>
+            </div>
+
+            <!-- ---------- NUEVO GASTO ---------- -->
+            <div id="contasub-gasto" style="display:none">
+              <button class="btn btn--primario" id="conta-gasto-add" type="button" style="margin-bottom:14px;width:100%;justify-content:center">➖ Nuevo gasto</button>
+              <p style="font-size:12.5px;color:var(--tinta-45);text-align:center">El historial completo de gastos está en la pestaña Balance.</p>
             </div>
           </div>
         </section>
@@ -1223,7 +1286,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=216"></script>
+  <script type="module" src="dashboard.js?v=217"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">

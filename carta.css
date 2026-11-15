@@ -5,6 +5,9 @@
 
 body { background: var(--crema); padding-bottom: 90px; }
 
+.carta-portada { width: 100%; height: 160px; overflow: hidden; background: var(--verde-soft); }
+.carta-portada img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
 .carta-top { background: #fff; border-bottom: 1px solid var(--linea); padding: 18px 0; }
 .carta-top__negocio { display: flex; align-items: center; gap: 14px; }
 .carta-top__logo { width: 48px; height: 48px; border-radius: 12px; background: var(--verde-soft); flex: none; overflow: hidden; }
@@ -14,7 +17,9 @@ body { background: var(--crema); padding-bottom: 90px; }
 
 .carta-vacio { text-align: center; padding: 60px 20px; color: var(--tinta-60); font-size: 14.5px; }
 
-.carta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; padding: 24px 0 20px; }
+.carta-grupo { padding-top: 22px; }
+.carta-grupo__titulo { font-family: var(--display); font-size: 18px; font-weight: 600; color: var(--tinta); margin-bottom: 12px; }
+.carta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; padding-bottom: 4px; }
 .carta-card { background: #fff; border: 1px solid var(--linea); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; transition: border-color .2s, box-shadow .2s; }
 .carta-card.en-carrito { border-color: var(--verde); box-shadow: 0 0 0 1.5px var(--verde) inset; }
 .carta-card__img { width: 100%; aspect-ratio: 4/3; background: var(--verde-soft); object-fit: cover; display: block; }

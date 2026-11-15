@@ -16,11 +16,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=142">
-  <link rel="stylesheet" href="carta.css?v=1">
+  <link rel="stylesheet" href="carta.css?v=2">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
   <script>(function(){var l=document.getElementById('page-loader');function ocultar(){if(!l)return;l.classList.add('is-hidden');setTimeout(function(){l.remove();},400);}window.addEventListener('load',ocultar);setTimeout(ocultar,4000);})();</script>
+
+  <div id="carta-portada" class="carta-portada" hidden></div>
 
   <header class="carta-top">
     <div class="wrap">
@@ -38,7 +40,7 @@
     <div id="carta-estado-vacio" hidden class="carta-vacio">
       <p>Este negocio todavía no tiene su carta lista.</p>
     </div>
-    <div id="carta-grid" class="carta-grid"></div>
+    <div id="carta-grid"></div>
   </main>
 
   <div class="carta-barra" id="carta-barra" hidden>
@@ -74,7 +76,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=1"></script>
+  <script type="module" src="carta.js?v=2"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

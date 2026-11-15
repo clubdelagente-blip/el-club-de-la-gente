@@ -68,6 +68,21 @@ function cardHtml(p) {
   </div>`;
 }
 
+// Agrupa por categoría (texto libre que el negocio escribe por producto),
+// respetando el orden de primera aparición -- "Otros" (sin categoría)
+// siempre al final, para que no se vea como la categoría "principal".
+function agruparPorCategoria(items) {
+  const grupos = new Map();
+  items.forEach(p => {
+    const cat = (p.categoria || "").trim() || "Otros";
+    if (!grupos.has(cat)) grupos.set(cat, []);
+    grupos.get(cat).push(p);
+  });
+  const entradas = [...grupos.entries()];
+  entradas.sort((a, b) => (a[0] === "Otros") - (b[0] === "Otros"));
+  return entradas;
+}
+
 async function iniciar() {
   const nombreEl = $("#carta-nombre");
   const logoEl = $("#carta-logo");
@@ -80,8 +95,13 @@ async function iniciar() {
     return;
   }
 
+  // select('*') a propósito (no una lista fija de columnas): así esta
+  // página sigue funcionando aunque "carta_color"/"carta_portada_url"
+  // todavía no existan en la vista pública (se agregan en una migración
+  // aparte) -- si faltan, simplemente no hay personalización, en vez de
+  // que toda la carta se rompa por una columna que no existe aún.
   const [{ data: negocio }, { data: productos }] = await Promise.all([
-    supabase.from("aliados_publico").select("id, nombre, imagen_url").eq("id", aliadoId).maybeSingle(),
+    supabase.from("aliados_publico").select("*").eq("id", aliadoId).maybeSingle(),
     supabase.from("negocio_carta_productos").select("*").eq("negocio_id", aliadoId).eq("disponible", true).order("orden"),
   ]);
 
@@ -94,6 +114,11 @@ async function iniciar() {
   if (nombreEl) nombreEl.textContent = negocio.nombre;
   document.title = `Carta de ${negocio.nombre} — El Club de la Gente`;
   if (logoEl && negocio.imagen_url) logoEl.innerHTML = `<img src="${esc(negocio.imagen_url)}" alt="">`;
+  if (negocio.carta_color) document.documentElement.style.setProperty('--verde', negocio.carta_color);
+  if (negocio.carta_portada_url) {
+    const portada = $("#carta-portada");
+    if (portada) { portada.hidden = false; portada.innerHTML = `<img src="${esc(negocio.carta_portada_url)}" alt="">`; }
+  }
 
   const items = productos || [];
   if (!items.length) {
@@ -102,7 +127,12 @@ async function iniciar() {
   }
 
   if (grid) {
-    grid.innerHTML = items.map(cardHtml).join("");
+    const grupos = agruparPorCategoria(items);
+    grid.innerHTML = grupos.map(([cat, prods]) => `
+      <div class="carta-grupo">
+        ${grupos.length > 1 ? `<h2 class="carta-grupo__titulo">${esc(cat)}</h2>` : ""}
+        <div class="carta-grid">${prods.map(cardHtml).join("")}</div>
+      </div>`).join("");
     items.forEach(p => {
       grid.querySelector(`[data-qty-mas="${p.id}"]`)?.addEventListener("click", () => sumarProducto(p, 1));
       grid.querySelector(`[data-qty-menos="${p.id}"]`)?.addEventListener("click", () => sumarProducto(p, -1));
@@ -125,13 +155,16 @@ async function iniciar() {
   $("#carta-sheet-cerrar")?.addEventListener("click", () => { overlay.hidden = true; });
   overlay?.addEventListener("click", (e) => { if (e.target === overlay) overlay.hidden = true; });
 
+  let _cartaEnviando = false;
   $("#carta-enviar-pedido")?.addEventListener("click", async () => {
     const btn = $("#carta-enviar-pedido");
+    if (_cartaEnviando) return; // blindaje extra contra doble clic/doble submit, además de disabled
     const nombre = $("#carta-cliente-nombre")?.value.trim();
     const wa = $("#carta-cliente-wa")?.value.trim();
     const nota = $("#carta-cliente-nota")?.value.trim();
     if (!nombre) { alert("Escribe tu nombre para enviar el pedido"); return; }
     if (!carrito.size) { alert("Agrega al menos un producto"); return; }
+    _cartaEnviando = true;
     btn.disabled = true; btn.textContent = "Enviando…";
     const { total } = totalCarrito();
     const payload = {
@@ -145,6 +178,7 @@ async function iniciar() {
     };
     const { error } = await supabase.from("negocio_carta_pedidos").insert(payload);
     btn.disabled = false; btn.textContent = "Enviar pedido";
+    _cartaEnviando = false;
     if (error) { alert("No pudimos enviar tu pedido. Intenta de nuevo."); return; }
     carrito.clear();
     items.forEach(p => renderQty(p.id));

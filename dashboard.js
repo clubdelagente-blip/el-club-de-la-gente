@@ -1208,16 +1208,24 @@ function renderTiendaEstado(negocio) {
 function inicializarMiTienda(negocio) {
   _tiendaAliadoId = negocio.id;
 
-  $$(".neg-tab-btn").forEach(b => b.addEventListener("click", () => {
-    $$(".neg-tab-btn").forEach(x => x.classList.toggle("is-active", x === b));
-    const tab = b.dataset.negtab;
+  function irANegTab(tab) {
+    $$(".neg-tab-btn").forEach(x => x.classList.toggle("is-active", x.dataset.negtab === tab));
     const res = $("#negtab-resumen"); if (res) res.style.display = tab === "resumen" ? "" : "none";
     const tie = $("#negtab-tienda"); if (tie) tie.style.display = tab === "tienda" ? "" : "none";
     const vac = $("#negtab-vacantes"); if (vac) vac.style.display = tab === "vacantes" ? "" : "none";
     const con = $("#negtab-contabilidad"); if (con) con.style.display = tab === "contabilidad" ? "" : "none";
+    // Mi Contabilidad es una vista enfocada propia -- mientras se usa, se
+    // esconden el resto de pestañas de "Mi negocio" y la caja del código
+    // de aliado (nada se borra, solo se oculta; "Volver" restaura todo).
+    const esContabilidad = tab === "contabilidad";
+    const chrome = $("#neg-chrome"); if (chrome) chrome.style.display = esContabilidad ? "none" : "";
+    $$(".neg-tab-btn").forEach(x => { if (x.dataset.negtab !== "contabilidad") x.hidden = esContabilidad; });
+    const volver = $("#neg-volver"); if (volver) volver.hidden = !esContabilidad;
     if (tab === "vacantes") cargarVacantesAliado(negocio.id);
     if (tab === "contabilidad") cargarContabilidadNegocio(negocio.id);
-  }));
+  }
+  $$(".neg-tab-btn").forEach(b => b.addEventListener("click", () => irANegTab(b.dataset.negtab)));
+  $("#neg-volver")?.addEventListener("click", () => irANegTab("resumen"));
 
   renderTiendaEstado(negocio);
 
@@ -1648,7 +1656,11 @@ async function cargarPedidosAliado(aliadoId) {
    de Mi Tienda (productos_aliado/pedidos son para miembros del Club
    logueados, con comprobante). Ver plan "Mi Contabilidad" para el detalle. */
 let _contaNegocioId = null;
+let _contaNegocio = null;
+let _contaPeriodo = "mes"; // dia | semana | mes | rango
 let _contaMes = null;
+let _contaRangoDesde = null;
+let _contaRangoHasta = null;
 let _contaCategoriasGasto = [];
 let _contaGastos = [];
 let _contaCategoriasIngreso = [];
@@ -1657,12 +1669,14 @@ let _contaFiltroOrigen = "todos";
 let _contaCartaProductos = [];
 let _contaCartaPedidos = [];
 
-function contaEnMes(fechaISO, ymStr) {
-  if (!fechaISO || !ymStr) return false;
-  const [yy, mm] = ymStr.split("-").map(Number);
-  const d = new Date(fechaISO + "T00:00:00");
-  return d.getFullYear() === yy && (d.getMonth() + 1) === mm;
-}
+const ESTADO_PEDIDO_CARTA = {
+  pendiente:      { c: "#b45309", bg: "#fef3c7", t: "Pendiente",      siguiente: "aceptado",       siguienteLbl: "Aceptar pedido" },
+  aceptado:       { c: "#1d4ed8", bg: "#dbeafe", t: "Aceptado",       siguiente: "en_preparacion",  siguienteLbl: "Pasar a preparación" },
+  en_preparacion: { c: "#7c3aed", bg: "#ede9fe", t: "En preparación", siguiente: "listo",           siguienteLbl: "Marcar listo" },
+  listo:          { c: "#0e7a3e", bg: "#dcfce7", t: "Listo",          siguiente: "entregado",       siguienteLbl: "Marcar entregado" },
+  entregado:      { c: "#095544", bg: "#e8f5ee", t: "Entregado",      siguiente: null,              siguienteLbl: null },
+  cancelado:      { c: "#c0392b", bg: "#fdecea", t: "Cancelado",      siguiente: null,              siguienteLbl: null },
+};
 
 // Respaldo para cuando navigator.clipboard falla o no existe (mismo
 // problema que ya tapó el botón "Copiar" del pago previo en Registro.html)
@@ -1681,6 +1695,55 @@ function copiarTextoFallback(texto) {
   document.body.removeChild(ta);
 }
 
+function contaFechaISO(d) { return d.toISOString().slice(0, 10); }
+function contaEnRango(fechaISO, desde, hasta) { return !!fechaISO && fechaISO >= desde && fechaISO <= hasta; }
+
+// Devuelve el rango de fechas del periodo elegido (día/semana/mes/rango) y
+// el rango equivalente INMEDIATAMENTE ANTERIOR (misma duración), para poder
+// comparar "cuánto vs. el periodo pasado" -- mismo patrón que ya usa
+// Admin.html para "mes anterior", generalizado a los 4 tipos de periodo.
+function calcularRangoConta() {
+  const hoy = new Date();
+  if (_contaPeriodo === "dia") {
+    const ayer = new Date(hoy); ayer.setDate(ayer.getDate() - 1);
+    const d = contaFechaISO(hoy), a = contaFechaISO(ayer);
+    return { desde: d, hasta: d, desdeAnt: a, hastaAnt: a };
+  }
+  if (_contaPeriodo === "semana") {
+    const dow = (hoy.getDay() + 6) % 7; // lunes = 0
+    const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - dow);
+    const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
+    const lunesAnt = new Date(lunes); lunesAnt.setDate(lunes.getDate() - 7);
+    const domingoAnt = new Date(lunesAnt); domingoAnt.setDate(lunesAnt.getDate() + 6);
+    return { desde: contaFechaISO(lunes), hasta: contaFechaISO(domingo), desdeAnt: contaFechaISO(lunesAnt), hastaAnt: contaFechaISO(domingoAnt) };
+  }
+  if (_contaPeriodo === "rango") {
+    const desde = _contaRangoDesde || contaFechaISO(hoy);
+    const hasta = _contaRangoHasta || contaFechaISO(hoy);
+    const dias = Math.max(1, Math.round((new Date(hasta) - new Date(desde)) / 86400000) + 1);
+    const hastaAntD = new Date(desde); hastaAntD.setDate(hastaAntD.getDate() - 1);
+    const desdeAntD = new Date(hastaAntD); desdeAntD.setDate(desdeAntD.getDate() - dias + 1);
+    return { desde, hasta, desdeAnt: contaFechaISO(desdeAntD), hastaAnt: contaFechaISO(hastaAntD) };
+  }
+  // "mes" (por defecto)
+  const ym = _contaMes || `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
+  const [yy, mm] = ym.split("-").map(Number);
+  const ultimoDia = new Date(yy, mm, 0).getDate();
+  const mesAntYm = mm === 1 ? `${yy - 1}-12` : `${yy}-${String(mm - 1).padStart(2, "0")}`;
+  const [yyA, mmA] = mesAntYm.split("-").map(Number);
+  const ultimoDiaAnt = new Date(yyA, mmA, 0).getDate();
+  return {
+    desde: `${ym}-01`, hasta: `${ym}-${String(ultimoDia).padStart(2, "0")}`,
+    desdeAnt: `${mesAntYm}-01`, hastaAnt: `${mesAntYm}-${String(ultimoDiaAnt).padStart(2, "0")}`,
+  };
+}
+
+function pctChipConta(actual, anterior) {
+  if (!anterior) return "";
+  const pct = Math.round((actual - anterior) / anterior * 100);
+  return `<span style="color:${pct >= 0 ? "#0E7A3E" : "#B23B2E"}">${pct >= 0 ? "+" : ""}${pct}% vs. anterior</span>`;
+}
+
 async function cargarContabilidadNegocio(negocioId) {
   _contaNegocioId = negocioId;
   const hoy = new Date();
@@ -1688,18 +1751,40 @@ async function cargarContabilidadNegocio(negocioId) {
   const mesInput = $("#conta-mes");
   if (mesInput) {
     mesInput.value = _contaMes;
+    mesInput.hidden = _contaPeriodo !== "mes";
     mesInput.onchange = (e) => { if (e.target.value) { _contaMes = e.target.value; renderContabilidadNegocioUI(); } };
   }
+  const rangoWrap = $("#conta-rango-wrap"); if (rangoWrap) rangoWrap.hidden = _contaPeriodo !== "rango";
+  const rDesde = $("#conta-rango-desde"); if (rDesde) rDesde.onchange = (e) => { _contaRangoDesde = e.target.value; renderContabilidadNegocioUI(); };
+  const rHasta = $("#conta-rango-hasta"); if (rHasta) rHasta.onchange = (e) => { _contaRangoHasta = e.target.value; renderContabilidadNegocioUI(); };
+  $$("#conta-periodo-filtro [data-periodo]").forEach(b => {
+    b.classList.toggle("is-on", b.dataset.periodo === _contaPeriodo);
+    b.onclick = () => {
+      _contaPeriodo = b.dataset.periodo;
+      $$("#conta-periodo-filtro [data-periodo]").forEach(x => x.classList.toggle("is-on", x === b));
+      if (mesInput) mesInput.hidden = _contaPeriodo !== "mes";
+      if (rangoWrap) rangoWrap.hidden = _contaPeriodo !== "rango";
+      renderContabilidadNegocioUI();
+    };
+  });
+  $$("#contasub-nav [data-contasub]").forEach(b => {
+    b.onclick = () => {
+      $$("#contasub-nav [data-contasub]").forEach(x => x.classList.toggle("is-on", x === b));
+      ["balance", "pedido", "gasto"].forEach(s => { const el = $(`#contasub-${s}`); if (el) el.style.display = s === b.dataset.contasub ? "" : "none"; });
+    };
+  });
 
-  const [{ data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }] = await Promise.all([
+  const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }] = await Promise.all([
+    supabase.from("aliados").select("carta_color, carta_portada_url").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
     supabase.from("negocio_categorias_ingreso").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_ingresos").select("*, negocio_categorias_ingreso(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
     supabase.from("negocio_carta_productos").select("*").eq("negocio_id", negocioId).order("orden"),
-    supabase.from("negocio_carta_pedidos").select("*").eq("negocio_id", negocioId).eq("estado", "pendiente").order("created_at", { ascending: false }),
+    supabase.from("negocio_carta_pedidos").select("*").eq("negocio_id", negocioId).order("created_at", { ascending: false }).limit(100),
   ]);
 
+  _contaNegocio = negocio || {};
   _contaCategoriasGasto = catsG || [];
   _contaGastos = gastos || [];
   _contaCategoriasIngreso = catsI || [];
@@ -1711,7 +1796,7 @@ async function cargarContabilidadNegocio(negocioId) {
   // típicas para que no arranque vacío -- solo pasa una vez, porque en la
   // siguiente carga ya no estarán vacías.
   if (!_contaCategoriasGasto.length) {
-    const defaults = ["Insumos", "Nómina", "Arriendo", "Servicios", "Otros"].map(nombre => ({ negocio_id: negocioId, nombre }));
+    const defaults = ["Inventario", "Nómina", "Arriendo", "Servicios públicos", "Transporte", "Publicidad", "Mantenimiento", "Otros"].map(nombre => ({ negocio_id: negocioId, nombre }));
     const { data: creadas } = await supabase.from("negocio_categorias_gasto").insert(defaults).select();
     _contaCategoriasGasto = creadas || [];
   }
@@ -1728,12 +1813,32 @@ async function cargarContabilidadNegocio(negocioId) {
   const qrDescargar = $("#conta-carta-descargar"); if (qrDescargar) qrDescargar.href = qrSrc;
   const btnCopiar = $("#conta-carta-copiar");
   if (btnCopiar) btnCopiar.onclick = () => copiarTextoConRespaldo(cartaUrl).then(() => toast("Link copiado ✓"));
+  const colorInput = $("#conta-carta-color"); if (colorInput) colorInput.value = _contaNegocio.carta_color || "#095544";
+  const portadaUrlInput = $("#conta-carta-portada-url"); if (portadaUrlInput) portadaUrlInput.value = _contaNegocio.carta_portada_url || "";
 
   const btnGastoAdd = $("#conta-gasto-add"); if (btnGastoAdd) btnGastoAdd.onclick = () => abrirFormGastoNegocio();
   const btnIngresoAdd = $("#conta-ingreso-add"); if (btnIngresoAdd) btnIngresoAdd.onclick = () => abrirFormIngresoNegocio();
   const btnGastoCats = $("#conta-gastos-cats"); if (btnGastoCats) btnGastoCats.onclick = () => gestionarCategoriasNegocio("gasto");
   const btnIngresoCats = $("#conta-ingresos-cats"); if (btnIngresoCats) btnIngresoCats.onclick = () => gestionarCategoriasNegocio("ingreso");
   const btnCartaProdAdd = $("#conta-carta-producto-add"); if (btnCartaProdAdd) btnCartaProdAdd.onclick = () => abrirFormProductoCarta();
+  const btnNuevoPedido = $("#conta-nuevo-pedido-btn"); if (btnNuevoPedido) btnNuevoPedido.onclick = () => abrirConstructorPedido();
+  const btnPersonalizar = $("#conta-carta-personalizar-guardar"); if (btnPersonalizar) btnPersonalizar.onclick = () => guardarPersonalizacionCarta();
+  const inputPortada = $("#conta-carta-portada");
+  if (inputPortada) inputPortada.onchange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const comprimido = await comprimirImagen(file);
+      const ext = comprimido.name.split(".").pop();
+      const path = `carta-portada-${_contaNegocioId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("contenido").upload(path, comprimido, { upsert: true });
+      if (upErr) throw upErr;
+      const url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+      const urlInput = $("#conta-carta-portada-url"); if (urlInput) urlInput.value = url;
+      toast("Portada lista -- dale a \"Guardar personalización\"");
+    } catch { toast("Error subiendo la portada"); }
+  };
 
   renderContabilidadNegocioUI();
   cargarCartaProductos();
@@ -1741,26 +1846,40 @@ async function cargarContabilidadNegocio(negocioId) {
 }
 
 function renderContabilidadNegocioUI() {
-  const gastosMes = _contaGastos.filter(g => contaEnMes(g.fecha, _contaMes));
-  const ingresosMesTodos = _contaIngresos.filter(i => contaEnMes(i.fecha, _contaMes));
-  const totalGastos = gastosMes.reduce((s, g) => s + Number(g.monto || 0), 0);
-  const totalIngresos = ingresosMesTodos.reduce((s, i) => s + Number(i.monto || 0), 0);
+  const { desde, hasta, desdeAnt, hastaAnt } = calcularRangoConta();
+  const gastosPeriodo = _contaGastos.filter(g => contaEnRango(g.fecha, desde, hasta));
+  const ingresosPeriodoTodos = _contaIngresos.filter(i => contaEnRango(i.fecha, desde, hasta));
+  const gastosAnt = _contaGastos.filter(g => contaEnRango(g.fecha, desdeAnt, hastaAnt)).reduce((s, g) => s + Number(g.monto || 0), 0);
+  const ingresosAnt = _contaIngresos.filter(i => contaEnRango(i.fecha, desdeAnt, hastaAnt)).reduce((s, i) => s + Number(i.monto || 0), 0);
+
+  const totalGastos = gastosPeriodo.reduce((s, g) => s + Number(g.monto || 0), 0);
+  const totalIngresos = ingresosPeriodoTodos.reduce((s, i) => s + Number(i.monto || 0), 0);
   const balance = totalIngresos - totalGastos;
+  const rentabilidad = totalIngresos > 0 ? (balance / totalIngresos * 100) : 0;
 
   const elIng = $("#conta-stat-ingresos"); if (elIng) elIng.textContent = COP(totalIngresos);
+  const elIngChip = $("#conta-stat-ingresos-chip"); if (elIngChip) elIngChip.innerHTML = pctChipConta(totalIngresos, ingresosAnt);
   const elGas = $("#conta-stat-gastos"); if (elGas) elGas.textContent = COP(totalGastos);
+  const elGasChip = $("#conta-stat-gastos-chip"); if (elGasChip) elGasChip.innerHTML = pctChipConta(totalGastos, gastosAnt);
   const elBal = $("#conta-stat-balance"); if (elBal) elBal.textContent = COP(balance);
+  const elRent = $("#conta-stat-rentabilidad"); if (elRent) elRent.textContent = rentabilidad.toFixed(1) + "%";
+
+  const chartWrap = $("#conta-chart-wrap");
+  if (chartWrap) {
+    chartWrap.style.display = _contaPeriodo === "mes" ? "" : "none";
+    if (_contaPeriodo === "mes") renderGraficaConta();
+  }
 
   const bodyGastos = $("#conta-gastos-body");
   if (bodyGastos) {
-    bodyGastos.innerHTML = gastosMes.length ? gastosMes.map(g => `
+    bodyGastos.innerHTML = gastosPeriodo.length ? gastosPeriodo.map(g => `
       <tr>
-        <td>${esc(g.proveedor || "—")}${g.factura_url ? ` <a href="${esc(g.factura_url)}" target="_blank" title="Ver factura">${ic("paperclip")}</a>` : ""}</td>
+        <td>${esc(g.proveedor || "—")}${g.factura_url ? ` <a href="${esc(g.factura_url)}" target="_blank" title="Ver factura">${ic("paperclip")}</a>` : ""}${g.metodo_pago ? ` <span style="font-size:11px;color:#999">· ${esc(g.metodo_pago)}</span>` : ""}</td>
         <td>${esc(g.negocio_categorias_gasto?.nombre || "Sin categoría")}</td>
         <td>${new Date(g.fecha + "T00:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</td>
         <td>${COP(g.monto)}</td>
         <td style="white-space:nowrap"><button data-ed-gn="${g.id}" style="border:none;background:none;cursor:pointer">${ic("pencil")}</button><button data-rm-gn="${g.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button></td>
-      </tr>`).join("") : `<tr><td colspan="5" style="text-align:center;padding:16px;color:#999">Sin gastos este mes</td></tr>`;
+      </tr>`).join("") : `<tr><td colspan="5" style="text-align:center;padding:16px;color:#999">Sin gastos en este periodo</td></tr>`;
     if (window.lucide) lucide.createIcons();
     bodyGastos.querySelectorAll("[data-ed-gn]").forEach(b => b.addEventListener("click", () => {
       const g = _contaGastos.find(x => x.id === b.dataset.edGn);
@@ -1774,7 +1893,7 @@ function renderContabilidadNegocioUI() {
     }));
   }
 
-  const ingresosVista = _contaFiltroOrigen === "todos" ? ingresosMesTodos : ingresosMesTodos.filter(i => i.origen === _contaFiltroOrigen);
+  const ingresosVista = _contaFiltroOrigen === "todos" ? ingresosPeriodoTodos : ingresosPeriodoTodos.filter(i => i.origen === _contaFiltroOrigen);
   const bodyIngresos = $("#conta-ingresos-body");
   if (bodyIngresos) {
     bodyIngresos.innerHTML = ingresosVista.length ? ingresosVista.map(i => `
@@ -1784,7 +1903,7 @@ function renderContabilidadNegocioUI() {
         <td>${new Date(i.fecha + "T00:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</td>
         <td>${COP(i.monto)}</td>
         <td style="white-space:nowrap">${i.origen === "manual" ? `<button data-ed-in="${i.id}" style="border:none;background:none;cursor:pointer">${ic("pencil")}</button><button data-rm-in="${i.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button>` : ""}</td>
-      </tr>`).join("") : `<tr><td colspan="5" style="text-align:center;padding:16px;color:#999">Sin ingresos este mes</td></tr>`;
+      </tr>`).join("") : `<tr><td colspan="5" style="text-align:center;padding:16px;color:#999">Sin ingresos en este periodo</td></tr>`;
     if (window.lucide) lucide.createIcons();
     bodyIngresos.querySelectorAll("[data-ed-in]").forEach(b => b.addEventListener("click", () => {
       const i = _contaIngresos.find(x => x.id === b.dataset.edIn);
@@ -1804,8 +1923,55 @@ function renderContabilidadNegocioUI() {
   });
 }
 
+// Gráfica simple (SVG a mano, sin librería): ingresos vs. gastos de los
+// últimos 6 meses + una línea de utilidad superpuesta. Solo se usa en el
+// filtro "Mes" -- Día/Semana/Rango no tienen una secuencia natural de 6
+// periodos previos igual de útil, así que ahí solo se muestra el total +
+// el chip de comparación (simplificación consciente).
+function renderGraficaConta() {
+  const cont = $("#conta-chart");
+  if (!cont) return;
+  const hoy = new Date();
+  const meses = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+    meses.push({ ym: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`, label: d.toLocaleDateString("es-CO", { month: "short" }) });
+  }
+  const datos = meses.map(m => {
+    const [yy, mm] = m.ym.split("-").map(Number);
+    const desde = `${m.ym}-01`;
+    const hasta = `${m.ym}-${String(new Date(yy, mm, 0).getDate()).padStart(2, "0")}`;
+    const ingresos = _contaIngresos.filter(i => contaEnRango(i.fecha, desde, hasta)).reduce((s, i) => s + Number(i.monto || 0), 0);
+    const gastos = _contaGastos.filter(g => contaEnRango(g.fecha, desde, hasta)).reduce((s, g) => s + Number(g.monto || 0), 0);
+    return { label: m.label, ingresos, gastos, utilidad: ingresos - gastos };
+  });
+  const max = Math.max(1, ...datos.map(d => Math.max(d.ingresos, d.gastos)));
+  const alto = 150, anchoGrupo = 110, baseline = alto + 22;
+  const escala = (v) => (v / max) * alto;
+  const w = anchoGrupo * datos.length;
+
+  let svg = `<line x1="0" y1="${baseline}" x2="${w}" y2="${baseline}" stroke="rgba(2,27,26,.12)" stroke-width="1"></line>`;
+  const puntos = [];
+  datos.forEach((d, i) => {
+    const gx = i * anchoGrupo;
+    const hIng = escala(d.ingresos), hGas = escala(d.gastos);
+    svg += `<rect x="${gx + 20}" y="${baseline - hIng}" width="26" height="${hIng}" rx="3" fill="var(--verde)"></rect>`;
+    svg += `<rect x="${gx + 52}" y="${baseline - hGas}" width="26" height="${hGas}" rx="3" fill="#D97757"></rect>`;
+    svg += `<text x="${gx + anchoGrupo / 2}" y="${baseline + 18}" text-anchor="middle" font-size="11" fill="rgba(2,27,26,.5)">${esc(d.label)}</text>`;
+    if (i === datos.length - 1) {
+      svg += `<text x="${gx + 33}" y="${baseline - hIng - 6}" text-anchor="middle" font-size="10" font-weight="700" fill="#021B1A">${COP(d.ingresos)}</text>`;
+      svg += `<text x="${gx + 65}" y="${baseline - hGas - 6}" text-anchor="middle" font-size="10" font-weight="700" fill="rgba(2,27,26,.6)">${COP(d.gastos)}</text>`;
+    }
+    const cy = d.utilidad > 0 ? baseline - escala(d.utilidad) : baseline;
+    puntos.push(`${gx + anchoGrupo / 2},${cy}`);
+  });
+  svg += `<polyline points="${puntos.join(" ")}" fill="none" stroke="#EAB749" stroke-width="2"></polyline>`;
+  cont.innerHTML = `<svg viewBox="0 0 ${w} ${baseline + 26}" style="width:${Math.max(w, 320)}px;height:auto;display:block">${svg}</svg>`;
+}
+
 function abrirFormGastoNegocio(g = {}) {
   const catOptions = _contaCategoriasGasto.map(c => `<option value="${c.id}" ${g.categoria_id === c.id ? "selected" : ""}>${esc(c.nombre)}</option>`).join("");
+  const metodosPago = ["Efectivo", "Transferencia", "Tarjeta", "Otro"];
   abrirModalTienda(g.id ? "Editar gasto" : "Agregar gasto", `
     <div class="cfg-campo"><label class="cfg-label">Categoría</label>
       <select class="cfg-input" id="cg-categoria">
@@ -1819,6 +1985,12 @@ function abrirFormGastoNegocio(g = {}) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="cfg-campo"><label class="cfg-label">Monto (COP)</label><input class="cfg-input" id="cg-monto" type="text" inputmode="numeric" value="${g.monto ? Number(g.monto).toLocaleString("es-CO") : ""}" placeholder="Ej: 62.000"></div>
       <div class="cfg-campo"><label class="cfg-label">Fecha</label><input class="cfg-input" id="cg-fecha" type="date" value="${g.fecha || new Date().toISOString().slice(0, 10)}"></div>
+    </div>
+    <div class="cfg-campo"><label class="cfg-label">Método de pago</label>
+      <select class="cfg-input" id="cg-metodo">
+        <option value="">Sin especificar</option>
+        ${metodosPago.map(m => `<option value="${m}" ${g.metodo_pago === m ? "selected" : ""}>${m}</option>`).join("")}
+      </select>
     </div>
     <div class="cfg-campo"><label class="cfg-label">Nota (opcional)</label><textarea class="cfg-input" id="cg-nota" rows="2">${g.nota || ""}</textarea></div>
     <div class="cfg-campo"><label class="cfg-label">Factura (foto o PDF, opcional)</label>
@@ -1860,13 +2032,88 @@ function abrirFormGastoNegocio(g = {}) {
         facturaUrl = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
       } catch { toast("Error subiendo la factura"); resetBtn(); return; }
     }
-    const payload = { negocio_id: _contaNegocioId, categoria_id: categoriaId || null, proveedor: $("#cg-proveedor")?.value.trim() || null, monto, fecha, nota: $("#cg-nota")?.value.trim() || null, factura_url: facturaUrl };
+    const payload = { negocio_id: _contaNegocioId, categoria_id: categoriaId || null, proveedor: $("#cg-proveedor")?.value.trim() || null, monto, fecha, metodo_pago: $("#cg-metodo")?.value || null, nota: $("#cg-nota")?.value.trim() || null, factura_url: facturaUrl };
     const { error } = g.id ? await supabase.from("negocio_gastos").update(payload).eq("id", g.id) : await supabase.from("negocio_gastos").insert(payload);
     if (error) { toast("Error: " + error.message); resetBtn(); return; }
     cerrarModalTienda();
     toast(g.id ? "Gasto actualizado ✓" : "Gasto agregado ✓");
     cargarContabilidadNegocio(_contaNegocioId);
   });
+}
+
+// Constructor de venta manual ("Nuevo pedido") -- usa el catálogo de la
+// Carta (_contaCartaProductos) para que nunca haya precios distintos entre
+// lo que se vende por QR y lo que se vende desde el mostrador. A diferencia
+// de un pedido por QR, acá el negocio ya tiene la plata en mano al momento
+// de registrarlo, así que cuenta como ingreso de inmediato (sin pasar por
+// "pendiente" ni por un "marcar pagado" aparte).
+function abrirConstructorPedido() {
+  if (!_contaCartaProductos.length) { toast("Agrega productos a tu carta antes de crear un pedido"); return; }
+  const carrito = new Map(); // producto_id -> {nombre, precio, cantidad}
+  const filasHtml = _contaCartaProductos.map(p => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #ebebeb">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13.5px">${esc(p.nombre)}</div>
+        <div style="font-size:12px;color:#777">${COP(p.precio)}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" data-cp-menos="${p.id}" style="width:28px;height:28px;border-radius:50%;border:1px solid #ddd;background:#fff;font-weight:700;cursor:pointer">−</button>
+        <span style="min-width:16px;text-align:center;font-weight:700" data-cp-n="${p.id}">0</span>
+        <button type="button" data-cp-mas="${p.id}" style="width:28px;height:28px;border-radius:50%;border:1px solid #ddd;background:#fff;font-weight:700;cursor:pointer">+</button>
+      </div>
+    </div>`).join("");
+  abrirModalTienda("Nuevo pedido", `
+    <div style="max-height:40vh;overflow-y:auto;margin-bottom:14px">${filasHtml}</div>
+    <div class="cfg-campo"><label class="cfg-label">Nota (opcional)</label><input class="cfg-input" id="cp-nota" type="text" placeholder="Ej: Mesa 3, para llevar..."></div>
+    <div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;padding:10px 0;margin-bottom:10px">
+      <span>Total</span><span id="cp-total">${COP(0)}</span>
+    </div>
+    <button class="btn btn--primario" id="cp-confirmar" style="width:100%;justify-content:center">Confirmar venta</button>
+  `);
+  const actualizarTotal = () => {
+    let total = 0;
+    carrito.forEach(it => { total += it.precio * it.cantidad; });
+    const t = $("#cp-total"); if (t) t.textContent = COP(total);
+  };
+  _contaCartaProductos.forEach(p => {
+    const cambiar = (delta) => {
+      const actual = carrito.get(p.id)?.cantidad || 0;
+      const nueva = Math.max(0, actual + delta);
+      if (nueva === 0) carrito.delete(p.id); else carrito.set(p.id, { nombre: p.nombre, precio: p.precio, cantidad: nueva });
+      const n = $(`[data-cp-n="${p.id}"]`); if (n) n.textContent = String(nueva);
+      actualizarTotal();
+    };
+    $(`[data-cp-mas="${p.id}"]`)?.addEventListener("click", () => cambiar(1));
+    $(`[data-cp-menos="${p.id}"]`)?.addEventListener("click", () => cambiar(-1));
+  });
+  $("#cp-confirmar")?.addEventListener("click", async () => {
+    const btn = $("#cp-confirmar");
+    if (!carrito.size) { toast("Elige al menos un producto"); return; }
+    btn.disabled = true; btn.textContent = "Guardando…";
+    const items = [...carrito.entries()].map(([producto_id, it]) => ({ producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad }));
+    const total = items.reduce((s, it) => s + it.precio * it.cantidad, 0);
+    const descripcion = items.map(it => `${it.cantidad}× ${it.nombre}`).join(", ");
+    const { error } = await supabase.from("negocio_ingresos").insert({
+      negocio_id: _contaNegocioId, origen: "manual", descripcion, items, monto: total,
+      fecha: new Date().toISOString().slice(0, 10), nota: $("#cp-nota")?.value.trim() || null,
+    });
+    if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Confirmar venta"; return; }
+    cerrarModalTienda();
+    toast("Venta registrada ✓");
+    cargarContabilidadNegocio(_contaNegocioId);
+  });
+}
+
+async function guardarPersonalizacionCarta() {
+  const btn = $("#conta-carta-personalizar-guardar");
+  const color = $("#conta-carta-color")?.value || "#095544";
+  const portadaUrl = $("#conta-carta-portada-url")?.value || null;
+  if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
+  const { error } = await supabase.from("aliados").update({ carta_color: color, carta_portada_url: portadaUrl }).eq("id", _contaNegocioId);
+  if (btn) { btn.disabled = false; btn.textContent = "Guardar personalización"; }
+  if (error) { toast("Error: " + error.message); return; }
+  if (_contaNegocio) { _contaNegocio.carta_color = color; _contaNegocio.carta_portada_url = portadaUrl; }
+  toast("Carta personalizada ✓");
 }
 
 function abrirFormIngresoNegocio(i = {}) {
@@ -1967,7 +2214,7 @@ async function cargarCartaProductos() {
       ${p.imagen_url ? `<img src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<div style="width:44px;height:44px;border-radius:8px;background:#f0faf4;flex-shrink:0"></div>`}
       <div style="flex:1;min-width:0">
         <div style="font-weight:600;font-size:14px">${esc(p.nombre)}</div>
-        <div style="font-size:12px;color:#777">${COP(p.precio)}${p.disponible ? "" : " · No disponible"}</div>
+        <div style="font-size:12px;color:#777">${COP(p.precio)}${p.categoria ? " · " + esc(p.categoria) : ""}${p.disponible ? "" : " · No disponible"}</div>
       </div>
       <button data-ed-ccp="${p.id}" style="border:none;background:none;cursor:pointer;color:#777">${ic("pencil")}</button>
       <button data-rm-ccp="${p.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button>
@@ -1990,6 +2237,7 @@ function abrirFormProductoCarta(p = {}) {
     <div class="cfg-campo"><label class="cfg-label">Nombre *</label><input class="cfg-input" id="ccp-nombre" type="text" value="${esc(p.nombre || "")}" placeholder="Ej: Hamburguesa clásica"></div>
     <div class="cfg-campo"><label class="cfg-label">Descripción</label><textarea class="cfg-input" id="ccp-desc" rows="2">${p.descripcion || ""}</textarea></div>
     <div class="cfg-campo"><label class="cfg-label">Precio (COP) *</label><input class="cfg-input" id="ccp-precio" type="text" inputmode="numeric" value="${p.precio ? Number(p.precio).toLocaleString("es-CO") : ""}" placeholder="Ej: 18.000"></div>
+    <div class="cfg-campo"><label class="cfg-label">Categoría <span style="font-weight:400;color:var(--tinta-45)">(para agrupar en la carta, ej. "Entradas", "Platos fuertes")</span></label><input class="cfg-input" id="ccp-categoria" type="text" value="${esc(p.categoria || "")}" placeholder="Ej: Platos fuertes"></div>
     <div class="cfg-campo"><label class="cfg-label">Foto</label>
       ${p.imagen_url ? `<div style="margin-bottom:8px"><img src="${esc(p.imagen_url)}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px"></div>` : ""}
       <input type="file" id="ccp-foto" accept="image/*">
@@ -2021,7 +2269,7 @@ function abrirFormProductoCarta(p = {}) {
         imagenUrl = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
       } catch { toast("Error subiendo la foto"); resetBtn(); return; }
     }
-    const payload = { negocio_id: _contaNegocioId, nombre, descripcion: $("#ccp-desc")?.value.trim() || null, precio, imagen_url: imagenUrl, disponible: $("#ccp-disponible")?.checked ?? true };
+    const payload = { negocio_id: _contaNegocioId, nombre, descripcion: $("#ccp-desc")?.value.trim() || null, precio, categoria: $("#ccp-categoria")?.value.trim() || null, imagen_url: imagenUrl, disponible: $("#ccp-disponible")?.checked ?? true };
     const { error } = p.id ? await supabase.from("negocio_carta_productos").update(payload).eq("id", p.id) : await supabase.from("negocio_carta_productos").insert(payload);
     if (error) { toast("Error: " + error.message); resetBtn(); return; }
     cerrarModalTienda();
@@ -2030,47 +2278,67 @@ function abrirFormProductoCarta(p = {}) {
   });
 }
 
+// Lista solo los pedidos "activos" -- no cancelados, y no (entregados Y ya
+// pagados), que es cuando un pedido queda realmente cerrado (su ingreso ya
+// quedó registrado en Balance, no hace falta seguir viéndolo acá). Estado
+// operativo (cocina/mostrador) y estado de pago son independientes a
+// propósito: un pedido puede estar "Entregado" sin estar pagado (fiado) o
+// "Pendiente" y ya pagado (pago anticipado) -- cada botón mueve solo lo suyo.
 async function cargarCartaPedidos() {
   const list = $("#conta-carta-pedidos-list");
   if (!list) return;
-  const pedidos = _contaCartaPedidos;
-  if (!pedidos.length) { list.innerHTML = `<p style="padding:8px 0">No tienes pedidos pendientes de la carta.</p>`; return; }
+  const pedidos = _contaCartaPedidos.filter(p => p.estado !== "cancelado" && !(p.estado === "entregado" && p.pagado));
+  if (!pedidos.length) { list.innerHTML = `<p style="padding:8px 0">No tienes pedidos activos de la carta.</p>`; return; }
   list.innerHTML = pedidos.map(ped => {
+    const est = ESTADO_PEDIDO_CARTA[ped.estado] || ESTADO_PEDIDO_CARTA.pendiente;
     const items = Array.isArray(ped.items) ? ped.items : [];
     const resumenItems = items.map(it => `${it.cantidad}× ${esc(it.nombre)}`).join(", ");
+    const folio = "#" + String(ped.id).slice(0, 8).toUpperCase();
     return `
     <div style="padding:14px 0;border-bottom:1px solid #ebebeb">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <div style="flex:1;min-width:180px">
-          <div style="font-weight:600;font-size:14px">${esc(ped.cliente_nombre)} — ${COP(ped.monto_total)}</div>
+          <div style="font-weight:600;font-size:14px">${folio} · ${esc(ped.cliente_nombre)} — ${COP(ped.monto_total)}</div>
           <div style="font-size:12px;color:#777">${esc(resumenItems)}${ped.nota ? " · " + esc(ped.nota) : ""}${ped.cliente_whatsapp ? " · " + esc(ped.cliente_whatsapp) : ""}</div>
         </div>
+        <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};white-space:nowrap">${est.t}</span>
+        ${ped.pagado ? `<span style="font-size:11px;font-weight:700;color:#0e7a3e;white-space:nowrap">Pagado ✓</span>` : ""}
       </div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button data-pagar-ccped="${ped.id}" class="btn btn--primario" style="padding:8px 14px;font-size:12px">Marcar pagado</button>
-        <button data-cancelar-ccped="${ped.id}" style="padding:8px 14px;font-size:12px;border:1px solid #ebebeb;border-radius:8px;background:none;cursor:pointer">Cancelar</button>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        ${est.siguiente ? `<button data-avanzar-ccped="${ped.id}" class="btn btn--primario" style="padding:8px 14px;font-size:12px">${est.siguienteLbl}</button>` : ""}
+        ${ped.estado !== "cancelado" && ped.estado !== "entregado" ? `<button data-cancelar-ccped="${ped.id}" style="padding:8px 14px;font-size:12px;border:1px solid #ebebeb;border-radius:8px;background:none;cursor:pointer">Cancelar</button>` : ""}
+        ${!ped.pagado ? `<button data-pagar-ccped="${ped.id}" style="padding:8px 14px;font-size:12px;border:1px solid var(--verde);border-radius:8px;background:none;color:var(--verde);cursor:pointer;font-weight:700">Marcar pagado</button>` : ""}
       </div>
     </div>`;
   }).join("");
-  list.querySelectorAll("[data-pagar-ccped]").forEach(btn => btn.addEventListener("click", async () => {
-    const id = btn.dataset.pagarCcped;
+  list.querySelectorAll("[data-avanzar-ccped]").forEach(btn => btn.addEventListener("click", async () => {
+    const id = btn.dataset.avanzarCcped;
     const ped = pedidos.find(x => x.id === id);
-    if (!ped) return;
+    const est = ped && (ESTADO_PEDIDO_CARTA[ped.estado] || ESTADO_PEDIDO_CARTA.pendiente);
+    if (!ped || !est?.siguiente) return;
     btn.disabled = true;
-    const { error: errUpd } = await supabase.from("negocio_carta_pedidos").update({ estado: "pagado", pagado_at: new Date().toISOString() }).eq("id", id);
-    if (errUpd) { toast("Error: " + errUpd.message); btn.disabled = false; return; }
-    await supabase.from("negocio_ingresos").insert({
-      negocio_id: _contaNegocioId, origen: "carta", pedido_id: id,
-      descripcion: `Pedido carta · ${ped.cliente_nombre}`,
-      monto: ped.monto_total, fecha: new Date().toISOString().slice(0, 10),
-    });
-    toast("Pedido marcado como pagado ✓");
+    await supabase.from("negocio_carta_pedidos").update({ estado: est.siguiente }).eq("id", id);
     cargarContabilidadNegocio(_contaNegocioId);
   }));
   list.querySelectorAll("[data-cancelar-ccped]").forEach(btn => btn.addEventListener("click", async () => {
     if (!confirm("¿Cancelar este pedido?")) return;
     await supabase.from("negocio_carta_pedidos").update({ estado: "cancelado" }).eq("id", btn.dataset.cancelarCcped);
     toast("Pedido cancelado");
+    cargarContabilidadNegocio(_contaNegocioId);
+  }));
+  list.querySelectorAll("[data-pagar-ccped]").forEach(btn => btn.addEventListener("click", async () => {
+    const id = btn.dataset.pagarCcped;
+    const ped = pedidos.find(x => x.id === id);
+    if (!ped) return;
+    btn.disabled = true;
+    const { error: errUpd } = await supabase.from("negocio_carta_pedidos").update({ pagado: true, pagado_at: new Date().toISOString() }).eq("id", id);
+    if (errUpd) { toast("Error: " + errUpd.message); btn.disabled = false; return; }
+    await supabase.from("negocio_ingresos").insert({
+      negocio_id: _contaNegocioId, origen: "carta", pedido_id: id,
+      descripcion: `Pedido carta · ${ped.cliente_nombre}`,
+      items: ped.items, monto: ped.monto_total, fecha: new Date().toISOString().slice(0, 10),
+    });
+    toast("Pedido marcado como pagado ✓");
     cargarContabilidadNegocio(_contaNegocioId);
   }));
 }
