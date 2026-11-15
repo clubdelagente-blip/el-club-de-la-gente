@@ -1657,18 +1657,6 @@ let _contaFiltroOrigen = "todos";
 let _contaCartaProductos = [];
 let _contaCartaPedidos = [];
 
-// No existían en este archivo (solo en Admin.html) -- campo de dinero en
-// texto con separador de miles en vivo, para no depender de type="number"
-// (interpreta el "." que la gente escribe para miles como decimal).
-function formatearInputMoneda(input) {
-  if (!input) return;
-  input.addEventListener("input", () => {
-    const digits = input.value.replace(/\D/g, "");
-    input.value = digits ? Number(digits).toLocaleString("es-CO") : "";
-  });
-}
-function valorMoneda(input) { return parseInt((input?.value || "").replace(/\D/g, "")) || 0; }
-
 function contaEnMes(fechaISO, ymStr) {
   if (!fechaISO || !ymStr) return false;
   const [yy, mm] = ymStr.split("-").map(Number);
