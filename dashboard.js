@@ -1779,6 +1779,28 @@ function reproducirSonidoPedido() {
   tono(1180, 0.18, 0.3);
 }
 
+// Voz "Nuevo pedido" con la API de síntesis de voz del navegador (sin
+// archivo de audio). Igual que el AudioContext, la primera vez que se usa
+// speechSynthesis.speak() tiene que pasar en respuesta a un gesto real del
+// usuario para que no quede muda luego -- por eso se "calienta" con un
+// decir vacío (volumen 0) en el mismo punto donde se desbloquea el audio.
+function desbloquearVozPedido() {
+  try {
+    if (!("speechSynthesis" in window)) return;
+    const utterVacio = new SpeechSynthesisUtterance("");
+    utterVacio.volume = 0;
+    speechSynthesis.speak(utterVacio);
+  } catch {}
+}
+function anunciarPedidoNuevo() {
+  try {
+    if (!("speechSynthesis" in window)) return;
+    const utter = new SpeechSynthesisUtterance("Nuevo pedido");
+    utter.lang = "es-CO";
+    speechSynthesis.speak(utter);
+  } catch {}
+}
+
 // Banner fijo arriba de la pantalla -- a diferencia de un toast, se queda
 // puesto hasta que el negocio lo vea de verdad (lo cierra o entra a ver el
 // pedido), igual de persistente que el banner de "No pudimos cargar tu
@@ -1815,6 +1837,7 @@ function suscribirPedidosCartaRealtime(negocioId) {
   _cartaPedidosRealtimeCh = supabase.channel("carta-pedidos-" + negocioId)
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "negocio_carta_pedidos", filter: `negocio_id=eq.${negocioId}` }, async () => {
       reproducirSonidoPedido();
+      anunciarPedidoNuevo();
       mostrarBannerPedidoNuevo();
       const { data } = await supabase.from("negocio_carta_pedidos").select("*").eq("negocio_id", negocioId).order("created_at", { ascending: false }).limit(100);
       _contaCartaPedidos = data || [];
@@ -1826,6 +1849,7 @@ function suscribirPedidosCartaRealtime(negocioId) {
 async function cargarContabilidadNegocio(negocioId) {
   _contaNegocioId = negocioId;
   obtenerAudioCtxPedido();
+  desbloquearVozPedido();
   suscribirPedidosCartaRealtime(negocioId);
   const hoy = new Date();
   if (!_contaMes) _contaMes = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
