@@ -1673,6 +1673,50 @@ let _contaAvisosCarta = [];
 let _cartaPedidosRealtimeCh = null;
 let _audioCtxPedido = null;
 let _pedidosNuevosSinVer = 0;
+let _tipoNegocioModalMostrado = false;
+
+// Config por tipo de negocio -- al activar Mi Contabilidad por primera vez
+// se le pregunta al aliado qué tipo de negocio tiene, y con eso se le deja
+// la carta lista de una vez (color sugerido + categorías típicas de
+// ejemplo), sin inventar productos falsos, solo un empujón inicial que
+// después puede cambiar como quiera.
+const TIPOS_NEGOCIO_CARTA = {
+  restaurante: { nombre: "Restaurante", color: "#164a2c", categorias: ["Entradas", "Platos fuertes", "Postres", "Bebidas"] },
+  heladeria:   { nombre: "Heladería", color: "#9d174d", categorias: ["Sabores", "Toppings", "Combos"] },
+  cafeteria:   { nombre: "Cafetería / Panadería", color: "#92400e", categorias: ["Panes", "Pasteles", "Bebidas calientes", "Bebidas frías"] },
+  estetica:    { nombre: "Belleza y estética", color: "#86198f", categorias: ["Servicios", "Paquetes", "Productos"] },
+  barberia:    { nombre: "Barbería", color: "#1e3a5f", categorias: ["Cortes", "Combos", "Productos"] },
+  tienda:      { nombre: "Tienda / Supermercado", color: "#14532d", categorias: ["Ofertas", "Nuevo"] },
+  otro:        { nombre: "Otro", color: "#095544", categorias: [] },
+};
+
+// Modal de bienvenida, una sola vez por negocio (mientras carta_tipo_negocio
+// siga sin elegir) -- al confirmar, guarda el tipo Y aplica de una vez el
+// color sugerido (tanto el de acento como el del aviso), para que la carta
+// no arranque genérica.
+function abrirSelectorTipoNegocio() {
+  const opciones = Object.entries(TIPOS_NEGOCIO_CARTA).map(([key, t]) => `<option value="${key}">${t.nombre}</option>`).join("");
+  abrirModalTienda("¿Qué tipo de negocio tienes?", `
+    <p style="font-size:13px;color:var(--tinta-60);line-height:1.5;margin-bottom:14px">Con esto dejamos tu carta lista de una vez: un color sugerido y categorías típicas para tus productos. Lo puedes cambiar después cuando quieras.</p>
+    <div class="cfg-campo"><label class="cfg-label">Tipo de negocio</label>
+      <select class="cfg-input" id="tn-tipo"><option value="">Selecciona...</option>${opciones}</select>
+    </div>
+    <button class="btn btn--primario" id="tn-guardar" style="width:100%;justify-content:center">Continuar</button>
+  `);
+  $("#tn-guardar")?.addEventListener("click", async () => {
+    const tipo = $("#tn-tipo")?.value;
+    if (!tipo) { toast("Elige un tipo de negocio"); return; }
+    const cfg = TIPOS_NEGOCIO_CARTA[tipo];
+    const btn = $("#tn-guardar"); btn.disabled = true; btn.textContent = "Guardando…";
+    const payload = { carta_tipo_negocio: tipo, carta_color: cfg.color, carta_aviso_color: cfg.color };
+    const { error } = await supabase.from("aliados").update(payload).eq("id", _contaNegocioId);
+    if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Continuar"; return; }
+    if (_contaNegocio) Object.assign(_contaNegocio, payload);
+    cerrarModalTienda();
+    toast(`Listo, dejamos tu carta lista para un negocio tipo ${cfg.nombre.toLowerCase()} ✓`);
+    cargarContabilidadNegocio(_contaNegocioId);
+  });
+}
 
 const ESTADO_PEDIDO_CARTA = {
   pendiente:      { c: "#b45309", bg: "#fef3c7", t: "Pendiente",      siguiente: "aceptado",       siguienteLbl: "Aceptar pedido" },
@@ -1987,7 +2031,7 @@ async function cargarContabilidadNegocio(negocioId) {
   });
 
   const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }] = await Promise.all([
-    supabase.from("aliados").select("carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color").eq("id", negocioId).maybeSingle(),
+    supabase.from("aliados").select("carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
     supabase.from("negocio_categorias_ingreso").select("*").eq("negocio_id", negocioId).order("nombre"),
@@ -2100,6 +2144,27 @@ async function cargarContabilidadNegocio(negocioId) {
   renderContabilidadNegocioUI();
   cargarCartaProductos();
   cargarCartaPedidos();
+  mostrarSugerenciaCategorias();
+
+  if (!_contaNegocio.carta_tipo_negocio && !_tipoNegocioModalMostrado) {
+    _tipoNegocioModalMostrado = true;
+    abrirSelectorTipoNegocio();
+  }
+}
+
+// Debajo de "Productos de mi carta", un recordatorio chiquito con las
+// categorías típicas del tipo de negocio elegido (si lo eligieron) -- es
+// solo una sugerencia de texto, no crea productos de mentira.
+function mostrarSugerenciaCategorias() {
+  const el = $("#conta-carta-tipo-hint");
+  if (!el) return;
+  const cfg = TIPOS_NEGOCIO_CARTA[_contaNegocio.carta_tipo_negocio];
+  if (cfg && cfg.categorias.length) {
+    el.hidden = false;
+    el.textContent = `💡 Para un negocio tipo ${cfg.nombre.toLowerCase()}, te recomendamos usar categorías como: ${cfg.categorias.join(", ")}.`;
+  } else {
+    el.hidden = true;
+  }
 }
 
 function renderContabilidadNegocioUI() {
