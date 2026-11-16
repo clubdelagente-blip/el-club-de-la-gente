@@ -181,35 +181,71 @@ async function iniciar() {
 
   // ---------- Foto en grande con efecto de inclinación (no es 3D real --
   // eso necesitaría varias fotos o un modelo 3D que el negocio no tiene;
-  // esto es un truco visual con rotateX/rotateY según dónde se mueve el
-  // dedo, para dar sensación de profundidad) ----------
+  // esto es un truco visual con rotateX/rotateY + un brillo que se mueve
+  // al contrario, como el reflejo de la luz sobre algo que se inclina,
+  // suavizado con una animación propia en vez de pegarse directo al dedo) ----------
   const fotoOverlay = $("#carta-foto-overlay");
+  const fotoWrap = $("#carta-foto-wrap");
   const fotoGrande = $("#carta-foto-grande");
+  const fotoGlare = $("#carta-foto-glare");
+  let tiltTarget = { x: 0, y: 0 };
+  let tiltActual = { x: 0, y: 0 };
+  let tiltRAF = null;
+  let tiltDemoTimers = [];
+
+  function pintarTilt() {
+    // Interpolación simple hacia el objetivo -- más fluido que mover el
+    // transform pegado 1:1 al dedo, se siente con algo de "peso".
+    tiltActual.x += (tiltTarget.x - tiltActual.x) * 0.14;
+    tiltActual.y += (tiltTarget.y - tiltActual.y) * 0.14;
+    if (fotoWrap) fotoWrap.style.transform = `rotateY(${tiltActual.x}deg) rotateX(${tiltActual.y}deg) scale(${1 + Math.min(Math.abs(tiltActual.x) + Math.abs(tiltActual.y), 14) / 280})`;
+    if (fotoGlare) fotoGlare.style.background = `radial-gradient(circle at ${50 - tiltActual.x * 2.4}% ${50 + tiltActual.y * 2.4}%, rgba(255,255,255,.55), transparent 55%)`;
+    if (fotoGrande) fotoGrande.style.boxShadow = `${-tiltActual.x * 1.6}px ${22 + tiltActual.y * 1.6}px 46px -16px rgba(0,0,0,.6)`;
+    tiltRAF = requestAnimationFrame(pintarTilt);
+  }
+  function limpiarDemoTilt() { tiltDemoTimers.forEach(clearTimeout); tiltDemoTimers = []; }
+  function demoTilt() {
+    // Barrido corto al abrir, para que se note el efecto aunque nadie
+    // mueva el dedo (sobre todo en celular, donde no hay "hover" que lo
+    // revele solo).
+    limpiarDemoTilt();
+    [[-9, 5], [8, -6], [0, 0]].forEach(([x, y], i) => {
+      tiltDemoTimers.push(setTimeout(() => { tiltTarget = { x, y }; }, 260 + i * 420));
+    });
+  }
   function abrirFotoGrande(src) {
     if (!src || !fotoOverlay || !fotoGrande) return;
     fotoGrande.src = src;
     fotoOverlay.hidden = false;
+    tiltTarget = { x: 0, y: 0 }; tiltActual = { x: 0, y: 0 };
+    if (!tiltRAF) pintarTilt();
+    demoTilt();
   }
   function cerrarFotoGrande() {
     if (!fotoOverlay) return;
+    limpiarDemoTilt();
     fotoOverlay.hidden = true;
-    if (fotoGrande) fotoGrande.style.transform = "";
+    if (tiltRAF) { cancelAnimationFrame(tiltRAF); tiltRAF = null; }
+    tiltTarget = { x: 0, y: 0 }; tiltActual = { x: 0, y: 0 };
+    if (fotoWrap) fotoWrap.style.transform = "";
   }
   function inclinarFoto(clientX, clientY) {
-    if (!fotoGrande) return;
-    const r = fotoGrande.getBoundingClientRect();
+    if (!fotoWrap) return;
+    limpiarDemoTilt(); // si ya está moviendo el dedo, se cancela el barrido de demostración
+    const r = fotoWrap.getBoundingClientRect();
     const px = (clientX - r.left) / r.width - 0.5;
     const py = (clientY - r.top) / r.height - 0.5;
-    fotoGrande.style.transform = `rotateY(${px * 18}deg) rotateX(${-py * 18}deg) scale(1.04)`;
+    tiltTarget = { x: px * 20, y: -py * 20 };
   }
   $("#carta-foto-cerrar")?.addEventListener("click", cerrarFotoGrande);
   fotoOverlay?.addEventListener("click", (e) => { if (e.target === fotoOverlay) cerrarFotoGrande(); });
   fotoOverlay?.addEventListener("mousemove", (e) => inclinarFoto(e.clientX, e.clientY));
-  fotoOverlay?.addEventListener("mouseleave", () => { if (fotoGrande) fotoGrande.style.transform = ""; });
+  fotoOverlay?.addEventListener("mouseleave", () => { tiltTarget = { x: 0, y: 0 }; });
   fotoOverlay?.addEventListener("touchmove", (e) => {
     const t = e.touches[0];
     if (t) inclinarFoto(t.clientX, t.clientY);
   }, { passive: true });
+  fotoOverlay?.addEventListener("touchend", () => { tiltTarget = { x: 0, y: 0 }; });
 
   // ---------- Mini pasarela de pago: efectivo (pagar en caja) o
   // transferencia (llave del negocio + comprobante) ----------
