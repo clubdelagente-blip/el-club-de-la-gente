@@ -1702,14 +1702,20 @@ let _tipoNegocioModalMostrado = false;
 // la carta lista de una vez (color sugerido + categorías típicas de
 // ejemplo), sin inventar productos falsos, solo un empujón inicial que
 // después puede cambiar como quiera.
+// "mesas: false" para los tipos de negocio donde "varias personas en la
+// misma mesa" no tiene sentido (un servicio de peluquería/barbería se
+// atiende una persona a la vez, una tienda no tiene mesas) -- en esos casos
+// se esconde toda la sección de Mesas en vez de dejarla ahí sin usarla. Si
+// el negocio todavía no eligió tipo (o eligió "Otro"), se deja visible por
+// si acaso, ya que no se sabe si aplica o no.
 const TIPOS_NEGOCIO_CARTA = {
-  restaurante: { nombre: "Restaurante", color: "#164a2c", categorias: ["Entradas", "Platos fuertes", "Postres", "Bebidas"] },
-  heladeria:   { nombre: "Heladería", color: "#9d174d", categorias: ["Sabores", "Toppings", "Combos"] },
-  cafeteria:   { nombre: "Cafetería / Panadería", color: "#92400e", categorias: ["Panes", "Pasteles", "Bebidas calientes", "Bebidas frías"] },
-  estetica:    { nombre: "Belleza y estética", color: "#86198f", categorias: ["Servicios", "Paquetes", "Productos"] },
-  barberia:    { nombre: "Barbería", color: "#1e3a5f", categorias: ["Cortes", "Combos", "Productos"] },
-  tienda:      { nombre: "Tienda / Supermercado", color: "#14532d", categorias: ["Ofertas", "Nuevo"] },
-  otro:        { nombre: "Otro", color: "#095544", categorias: [] },
+  restaurante: { nombre: "Restaurante", color: "#164a2c", categorias: ["Entradas", "Platos fuertes", "Postres", "Bebidas"], mesas: true },
+  heladeria:   { nombre: "Heladería", color: "#9d174d", categorias: ["Sabores", "Toppings", "Combos"], mesas: true },
+  cafeteria:   { nombre: "Cafetería / Panadería", color: "#92400e", categorias: ["Panes", "Pasteles", "Bebidas calientes", "Bebidas frías"], mesas: true },
+  estetica:    { nombre: "Belleza y estética", color: "#86198f", categorias: ["Servicios", "Paquetes", "Productos"], mesas: false },
+  barberia:    { nombre: "Barbería", color: "#1e3a5f", categorias: ["Cortes", "Combos", "Productos"], mesas: false },
+  tienda:      { nombre: "Tienda / Supermercado", color: "#14532d", categorias: ["Ofertas", "Nuevo"], mesas: false },
+  otro:        { nombre: "Otro", color: "#095544", categorias: [], mesas: true },
 };
 
 // Modal de bienvenida, una sola vez por negocio (mientras carta_tipo_negocio
@@ -2809,6 +2815,11 @@ function abrirFormModGrupo(g = {}) {
 // abrir_o_unir_sesion_mesa) y sus pedidos se agrupan solos en "Pedidos",
 // sin que nadie tenga que pagar individual (se cobra la mesa completa).
 function cargarMesas() {
+  const seccion = $("#conta-mesas-seccion");
+  if (seccion) {
+    const cfg = TIPOS_NEGOCIO_CARTA[_contaNegocio.carta_tipo_negocio];
+    seccion.hidden = cfg?.mesas === false;
+  }
   const list = $("#conta-mesas-list");
   if (!list) return;
   if (!_contaMesas.length) { list.innerHTML = `<p style="padding:8px 0">Aún no tienes mesas. Crea una y pega su QR en ella.</p>`; return; }
