@@ -42,6 +42,10 @@ body { background: var(--crema); padding-bottom: 90px; }
 .carta-barra__total { display: block; font-family: var(--display); font-size: 18px; color: #fff; }
 
 .carta-overlay { position: fixed; inset: 0; background: rgba(2,27,26,.55); z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+/* display:flex le gana al estilo por defecto del atributo "hidden" -- sin
+   esto el overlay del pedido se veía SIEMPRE, tapando los productos desde
+   que se abre el link (mismo problema que ya se tapó antes en .wa-card). */
+.carta-overlay[hidden] { display: none; }
 .carta-sheet { background: #fff; width: 100%; max-width: 480px; border-radius: 20px 20px 0 0; padding: 28px 22px 34px; max-height: 86vh; overflow-y: auto; position: relative; }
 .carta-sheet__cerrar { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--crema-2); font-size: 15px; cursor: pointer; }
 .carta-sheet__titulo { font-family: var(--display); font-size: 22px; font-weight: 600; margin-bottom: 14px; }
