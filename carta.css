@@ -87,15 +87,22 @@ body { background: var(--crema); padding-bottom: 90px; position: relative; }
 .carta-qty__menos { background: #fff !important; border: 1.5px solid var(--linea-fuerte) !important; color: var(--tinta) !important; }
 .carta-qty__n { min-width: 16px; background: none; text-align: center; font-weight: 700; font-size: 14px; color: var(--tinta); cursor: default; }
 
-/* Lightbox de foto con efecto de inclinación al mover el dedo -- no es un
-   3D real (eso necesitaría varias fotos o un modelo 3D que el negocio no
-   tiene), es un truco visual: rotateX/rotateY según la posición del dedo. */
-.carta-foto-overlay { position: fixed; inset: 0; background: rgba(2,27,26,.92); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 24px; perspective: 1000px; }
+/* Lightbox de foto con efecto de "la foto se sale de la pantalla" -- no es
+   un 360 real (eso necesitaría varias fotos del producto desde distintos
+   ángulos), es un truco de capas en 3D: un "marco" fijo que queda clavado
+   en el plano de la pantalla + la foto empujada hacia adelante en el eje Z
+   (más cerca del espectador = se ve más grande bajo la perspectiva, así que
+   se "sale" visualmente del marco) + una sombra en el piso que se mueve y
+   se agranda/achica, para vender la sensación de que está flotando. */
+.carta-foto-overlay { position: fixed; inset: 0; background: rgba(2,27,26,.92); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .carta-foto-overlay[hidden] { display: none; }
 .carta-foto-cerrar { position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; border-radius: 50%; border: none; background: rgba(255,255,255,.15); color: #fff; font-size: 18px; cursor: pointer; z-index: 2; }
+.carta-foto-escenario { position: relative; display: flex; align-items: center; justify-content: center; perspective: 900px; max-width: 100%; max-height: 80vh; }
+.carta-foto-piso { position: absolute; left: 50%; bottom: -18px; width: 62%; height: 22px; border-radius: 50%; background: radial-gradient(ellipse at center, rgba(0,0,0,.6), transparent 72%); filter: blur(5px); pointer-events: none; }
 .carta-foto-wrap { position: relative; max-width: 100%; max-height: 80vh; transform-style: preserve-3d; will-change: transform; }
-.carta-foto-grande { display: block; max-width: 100%; max-height: 80vh; border-radius: 16px; object-fit: contain; }
-.carta-foto-glare { position: absolute; inset: 0; border-radius: 16px; pointer-events: none; mix-blend-mode: overlay; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.55), transparent 55%); }
+.carta-foto-marco { position: absolute; inset: 0; border-radius: 16px; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.04); box-shadow: inset 0 0 24px rgba(0,0,0,.35); }
+.carta-foto-grande { display: block; max-width: 100%; max-height: 80vh; border-radius: 16px; object-fit: contain; position: relative; will-change: transform; }
+.carta-foto-glare { position: absolute; inset: 0; border-radius: 16px; pointer-events: none; mix-blend-mode: overlay; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.55), transparent 55%); will-change: transform; }
 
 .carta-barra { position: fixed; left: 0; right: 0; bottom: 0; background: var(--tinta); z-index: 40; box-shadow: 0 -4px 20px rgba(0,0,0,.15); }
 .carta-barra__inner { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 0; }

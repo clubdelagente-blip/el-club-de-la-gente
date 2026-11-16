@@ -247,15 +247,21 @@ async function iniciar() {
     });
   }
 
-  // ---------- Foto en grande con efecto de inclinación (no es 3D real --
-  // eso necesitaría varias fotos o un modelo 3D que el negocio no tiene;
-  // esto es un truco visual con rotateX/rotateY + un brillo que se mueve
-  // al contrario, como el reflejo de la luz sobre algo que se inclina,
-  // suavizado con una animación propia en vez de pegarse directo al dedo) ----------
+  // ---------- Foto en grande con efecto "se sale de la pantalla" (no es un
+  // 360 real -- eso necesitaría varias fotos del producto desde distintos
+  // ángulos, que el negocio no tiene). El truco: el marco (.carta-foto-marco)
+  // se queda quieto en el plano de la pantalla (Z=0) mientras la foto se
+  // empuja hacia adelante en el eje Z -- bajo la perspectiva 3D, lo que está
+  // más cerca del espectador se ve más grande, así que la foto "crece" y
+  // sobresale del marco. Al inclinar (rotateX/rotateY) ese desfase de
+  // profundidad se nota más, como si la foto flotara por delante del marco.
+  // La sombra del piso (#carta-foto-piso) se mueve/agranda junto con la
+  // inclinación para vender la sensación de que está flotando en el aire. ----------
   const fotoOverlay = $("#carta-foto-overlay");
   const fotoWrap = $("#carta-foto-wrap");
   const fotoGrande = $("#carta-foto-grande");
   const fotoGlare = $("#carta-foto-glare");
+  const fotoPiso = $("#carta-foto-piso");
   let tiltTarget = { x: 0, y: 0 };
   let tiltActual = { x: 0, y: 0 };
   let tiltRAF = null;
@@ -266,9 +272,21 @@ async function iniciar() {
     // transform pegado 1:1 al dedo, se siente con algo de "peso".
     tiltActual.x += (tiltTarget.x - tiltActual.x) * 0.14;
     tiltActual.y += (tiltTarget.y - tiltActual.y) * 0.14;
-    if (fotoWrap) fotoWrap.style.transform = `rotateY(${tiltActual.x}deg) rotateX(${tiltActual.y}deg) scale(${1 + Math.min(Math.abs(tiltActual.x) + Math.abs(tiltActual.y), 14) / 280})`;
-    if (fotoGlare) fotoGlare.style.background = `radial-gradient(circle at ${50 - tiltActual.x * 2.4}% ${50 + tiltActual.y * 2.4}%, rgba(255,255,255,.55), transparent 55%)`;
-    if (fotoGrande) fotoGrande.style.boxShadow = `${-tiltActual.x * 1.6}px ${22 + tiltActual.y * 1.6}px 46px -16px rgba(0,0,0,.6)`;
+    const mag = Math.min(Math.abs(tiltActual.x) + Math.abs(tiltActual.y), 22);
+    const pop = 46 + mag * 2.6; // cuánto se "empuja" la foto hacia el espectador
+    if (fotoWrap) fotoWrap.style.transform = `rotateY(${tiltActual.x}deg) rotateX(${tiltActual.y}deg)`;
+    if (fotoGrande) {
+      fotoGrande.style.transform = `translateZ(${pop}px)`;
+      fotoGrande.style.boxShadow = `${-tiltActual.x * 1.8}px ${24 + tiltActual.y * 1.8}px 50px -14px rgba(0,0,0,.65)`;
+    }
+    if (fotoGlare) {
+      fotoGlare.style.transform = `translateZ(${pop + 1}px)`;
+      fotoGlare.style.background = `radial-gradient(circle at ${50 - tiltActual.x * 2.4}% ${50 + tiltActual.y * 2.4}%, rgba(255,255,255,.55), transparent 55%)`;
+    }
+    if (fotoPiso) {
+      fotoPiso.style.transform = `translateX(calc(-50% + ${tiltActual.x * -2.4}px)) scaleX(${1 + mag / 55})`;
+      fotoPiso.style.opacity = String(Math.max(0.2, 0.6 - mag / 45));
+    }
     tiltRAF = requestAnimationFrame(pintarTilt);
   }
   function limpiarDemoTilt() { tiltDemoTimers.forEach(clearTimeout); tiltDemoTimers = []; }
@@ -296,6 +314,8 @@ async function iniciar() {
     if (tiltRAF) { cancelAnimationFrame(tiltRAF); tiltRAF = null; }
     tiltTarget = { x: 0, y: 0 }; tiltActual = { x: 0, y: 0 };
     if (fotoWrap) fotoWrap.style.transform = "";
+    if (fotoGrande) fotoGrande.style.transform = "";
+    if (fotoGlare) fotoGlare.style.transform = "";
   }
   function inclinarFoto(clientX, clientY) {
     if (!fotoWrap) return;
