@@ -563,19 +563,52 @@ async function iniciar() {
   if (llaveInput) llaveInput.value = negocio.tienda_llave_pago || "Este negocio no configuró su llave -- paga en efectivo";
   // Si el negocio subió una foto de su QR real (Nequi/Daviplata...), se
   // muestra tal cual -- mucho más rápido de escanear que copiar la llave.
+  // También se puede descargar: el atributo "download" de un link no
+  // funciona cuando el archivo está en otro dominio (Supabase Storage), así
+  // que se baja por JS y se arma un blob URL antes de guardarlo.
   const pagoQrEl = $("#carta-pago-qr");
+  const pagoQrDescargarBtn = $("#carta-pago-qr-descargar");
   if (pagoQrEl) {
-    if (negocio.tienda_llave_qr_url) { pagoQrEl.src = negocio.tienda_llave_qr_url; pagoQrEl.hidden = false; }
-    else pagoQrEl.hidden = true;
+    if (negocio.tienda_llave_qr_url) {
+      pagoQrEl.src = negocio.tienda_llave_qr_url; pagoQrEl.hidden = false;
+      if (pagoQrDescargarBtn) pagoQrDescargarBtn.hidden = false;
+    } else {
+      pagoQrEl.hidden = true;
+      if (pagoQrDescargarBtn) pagoQrDescargarBtn.hidden = true;
+    }
   }
+  pagoQrDescargarBtn?.addEventListener("click", async () => {
+    try {
+      const resp = await fetch(negocio.tienda_llave_qr_url);
+      const blob = await resp.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl; a.download = "qr-de-pago.png";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+    } catch {
+      alert("No pudimos descargar el QR -- mantén presionada la imagen para guardarla.");
+    }
+  });
   // Muestra el monto exacto a pagar/transferir dentro del propio recuadro de
-  // efectivo/transferencia -- antes solo se veía arriba de todo el resumen,
-  // lejos de donde de verdad hace falta a la hora de pagar.
+  // efectivo/transferencia (grande, con botón de copiar) -- antes solo se
+  // veía chiquito arriba de todo el resumen, lejos de donde de verdad hace
+  // falta a la hora de pagar.
   function sincronizarMontoPago() {
     const montoTxt = $("#carta-sheet-total")?.textContent || "$0";
     const efMonto = $("#carta-pago-efectivo-monto"); if (efMonto) efMonto.textContent = montoTxt;
     const trMonto = $("#carta-pago-transferencia-monto"); if (trMonto) trMonto.textContent = montoTxt;
   }
+  $$(".carta-pago-monto-copiar").forEach(btn => btn.addEventListener("click", () => {
+    const montoEl = $(`#carta-pago-${btn.dataset.copiarMonto}-monto`);
+    const digitos = (montoEl?.textContent || "").replace(/\D/g, "");
+    if (!digitos) return;
+    copiarTextoConRespaldo(digitos).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = "Copiado";
+      setTimeout(() => { btn.textContent = orig; }, 1500);
+    });
+  }));
   let metodoPago = null;
   $$(".carta-metodo-btn[data-metodo]").forEach(b => b.addEventListener("click", () => {
     metodoPago = b.dataset.metodo;

@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=142">
-  <link rel="stylesheet" href="carta.css?v=17">
+  <link rel="stylesheet" href="carta.css?v=18">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -131,13 +131,20 @@
         </div>
 
         <div id="carta-pago-efectivo" hidden class="carta-pago-detalle">
-          <p class="carta-pago-monto" id="carta-pago-efectivo-monto">$0</p>
+          <div class="carta-pago-monto-fila">
+            <p class="carta-pago-monto" id="carta-pago-efectivo-monto">$0</p>
+            <button type="button" class="carta-pago-monto-copiar" data-copiar-monto="efectivo">Copiar valor</button>
+          </div>
           <p>Ve a la caja y paga ese valor en efectivo. Cuando ya hayas pagado, dale a "Ya pagué".</p>
         </div>
 
         <div id="carta-pago-transferencia" hidden class="carta-pago-detalle">
-          <p class="carta-pago-monto" id="carta-pago-transferencia-monto">$0</p>
+          <div class="carta-pago-monto-fila">
+            <p class="carta-pago-monto" id="carta-pago-transferencia-monto">$0</p>
+            <button type="button" class="carta-pago-monto-copiar" data-copiar-monto="transferencia">Copiar valor</button>
+          </div>
           <img id="carta-pago-qr" src="" alt="QR de pago del negocio" hidden>
+          <button type="button" id="carta-pago-qr-descargar" class="btn" hidden>Descargar QR</button>
           <div class="carta-campo">
             <label>Llave de pago (Nequi, Bre-B...)</label>
             <div style="display:flex;gap:8px">
@@ -163,7 +170,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=21"></script>
+  <script type="module" src="carta.js?v=22"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
