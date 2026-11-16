@@ -2526,10 +2526,13 @@ function abrirConstructorPedido() {
     carrito.forEach(it => { total += it.precio * it.cantidad; });
     const t = $("#cp-total"); if (t) t.textContent = COP(total);
   };
+  // Tope de stock también acá -- antes solo se respetaba en la carta por QR;
+  // una venta de mostrador tampoco puede vender más de lo que de verdad hay.
+  const tope = (p) => p.stock_activo ? Math.max(0, p.stock_cantidad ?? 0) : Infinity;
   _contaCartaProductos.forEach(p => {
     const cambiar = (delta) => {
       const actual = carrito.get(p.id)?.cantidad || 0;
-      const nueva = Math.max(0, actual + delta);
+      const nueva = Math.min(Math.max(0, actual + delta), tope(p));
       if (nueva === 0) carrito.delete(p.id); else carrito.set(p.id, { nombre: p.nombre, precio: p.precio, cantidad: nueva });
       const n = $(`[data-cp-n="${p.id}"]`); if (n) n.textContent = String(nueva);
       actualizarTotal();
@@ -2549,6 +2552,17 @@ function abrirConstructorPedido() {
       fecha: new Date().toISOString().slice(0, 10), nota: $("#cp-nota")?.value.trim() || null,
     });
     if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Confirmar venta"; return; }
+    // Una venta manual nunca pasa por negocio_carta_pedidos (ahí vive el
+    // trigger que descuenta stock de los pedidos por QR), así que acá hay
+    // que descontarlo a mano -- si no, el stock quedaría desactualizado
+    // para cualquier negocio que también venda de mostrador.
+    for (const it of items) {
+      const prod = _contaCartaProductos.find(p => p.id === it.producto_id);
+      if (prod?.stock_activo) {
+        const nuevoStock = Math.max((prod.stock_cantidad ?? 0) - it.cantidad, 0);
+        await supabase.from("negocio_carta_productos").update({ stock_cantidad: nuevoStock }).eq("id", prod.id);
+      }
+    }
     cerrarModalTienda();
     toast("Venta registrada ✓");
     cargarContabilidadNegocio(_contaNegocioId);
@@ -2881,16 +2895,26 @@ async function cargarCartaProductos() {
   const productos = _contaCartaProductos;
   renderOrdenCategoriasCarta(); // por si cambiaron las categorías disponibles
   if (!productos.length) { list.innerHTML = `<p style="padding:8px 0">Aún no has agregado productos a tu carta.</p>`; return; }
-  list.innerHTML = productos.map(p => `
-    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #ebebeb">
+  const STOCK_BAJO = 3; // a partir de cuántas unidades se considera "se está acabando"
+  list.innerHTML = productos.map(p => {
+    const stockBajo = p.stock_activo && (p.stock_cantidad ?? 0) > 0 && (p.stock_cantidad ?? 0) <= STOCK_BAJO;
+    const agotado = p.stock_activo && (p.stock_cantidad ?? 0) <= 0;
+    return `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #ebebeb;flex-wrap:wrap">
       ${p.imagen_url ? `<img src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<div style="width:44px;height:44px;border-radius:8px;background:#f0faf4;flex-shrink:0"></div>`}
-      <div style="flex:1;min-width:0">
+      <div style="flex:1;min-width:140px">
         <div style="font-weight:600;font-size:14px">${esc(p.nombre)}</div>
-        <div style="font-size:12px;color:#777">${COP(p.precio)}${p.categoria ? " · " + esc(p.categoria) : ""}${p.disponible ? "" : " · No disponible"}${p.stock_activo ? ` · Stock: ${p.stock_cantidad ?? 0}${(p.stock_cantidad ?? 0) <= 0 ? " (agotado)" : ""}` : ""}</div>
+        <div style="font-size:12px;color:#777">${COP(p.precio)}${p.categoria ? " · " + esc(p.categoria) : ""}${p.disponible ? "" : " · No disponible"}</div>
+        ${p.stock_activo ? `
+        <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+          <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:${agotado ? "#fdecea" : stockBajo ? "#fef3c7" : "var(--crema-2)"};color:${agotado ? "#c0392b" : stockBajo ? "#b45309" : "#777"}">${agotado ? "Agotado" : stockBajo ? `⚠️ Quedan ${p.stock_cantidad}` : `Stock: ${p.stock_cantidad ?? 0}`}</span>
+          <input type="number" min="0" data-stock-rapido="${p.id}" value="${p.stock_cantidad ?? 0}" style="width:60px;padding:4px 6px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px" title="Ajustar stock rápido">
+        </div>` : ""}
       </div>
       <button data-ed-ccp="${p.id}" style="border:none;background:none;cursor:pointer;color:#777">${ic("pencil")}</button>
       <button data-rm-ccp="${p.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button>
-    </div>`).join("");
+    </div>`;
+  }).join("");
   if (window.lucide) lucide.createIcons();
   list.querySelectorAll("[data-ed-ccp]").forEach(btn => btn.addEventListener("click", () => {
     const p = productos.find(x => x.id === btn.dataset.edCcp);
@@ -2900,6 +2924,16 @@ async function cargarCartaProductos() {
     if (!confirm("¿Eliminar este producto de tu carta?")) return;
     await supabase.from("negocio_carta_productos").delete().eq("id", btn.dataset.rmCcp);
     toast("Producto eliminado");
+    cargarContabilidadNegocio(_contaNegocioId);
+  }));
+  // Ajuste rápido de stock sin abrir "Editar producto" -- útil cuando llega
+  // mercancía nueva y solo hay que actualizar el número.
+  list.querySelectorAll("[data-stock-rapido]").forEach(input => input.addEventListener("change", async () => {
+    const nuevo = Math.max(0, parseInt(input.value) || 0);
+    input.value = nuevo;
+    const { error } = await supabase.from("negocio_carta_productos").update({ stock_cantidad: nuevo }).eq("id", input.dataset.stockRapido);
+    if (error) { toast("Error: " + error.message); return; }
+    toast("Stock actualizado ✓");
     cargarContabilidadNegocio(_contaNegocioId);
   }));
 }
