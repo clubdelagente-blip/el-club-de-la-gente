@@ -266,6 +266,41 @@ async function iniciar() {
   let tiltActual = { x: 0, y: 0 };
   let tiltRAF = null;
   let tiltDemoTimers = [];
+  // Además de arrastrar con el dedo, si el celular tiene giroscopio la foto
+  // también se inclina al mover el celular hacia un lado (como la foto de
+  // apertura de las apps de clima). "arrastrando" le da prioridad al dedo
+  // sobre el giroscopio cuando se usan los dos a la vez.
+  let arrastrando = false;
+  let orientacionActiva = false;
+  let orientacionBase = null;
+  let permisoOrientacionConcedido = typeof DeviceOrientationEvent === "undefined" || typeof DeviceOrientationEvent.requestPermission !== "function";
+
+  function manejarOrientacion(e) {
+    if (arrastrando || e.gamma == null || e.beta == null) return;
+    if (!orientacionBase) { orientacionBase = { gamma: e.gamma, beta: e.beta }; return; }
+    const dx = e.gamma - orientacionBase.gamma; // izquierda/derecha
+    const dy = e.beta - orientacionBase.beta;   // adelante/atrás
+    tiltTarget = {
+      x: Math.max(-20, Math.min(20, dx)),
+      y: Math.max(-20, Math.min(20, -dy)),
+    };
+  }
+  function activarOrientacion() {
+    if (typeof DeviceOrientationEvent === "undefined" || orientacionActiva) return;
+    orientacionBase = null;
+    const encender = () => { orientacionActiva = true; window.addEventListener("deviceorientation", manejarOrientacion); };
+    if (permisoOrientacionConcedido) { encender(); return; }
+    // iOS 13+ exige pedir permiso, y solo funciona si se pide como reacción
+    // directa a un toque -- abrirFotoGrande ya se dispara desde un click.
+    DeviceOrientationEvent.requestPermission().then((r) => {
+      if (r === "granted") { permisoOrientacionConcedido = true; encender(); }
+    }).catch(() => {});
+  }
+  function desactivarOrientacion() {
+    if (!orientacionActiva) return;
+    window.removeEventListener("deviceorientation", manejarOrientacion);
+    orientacionActiva = false;
+  }
 
   function pintarTilt() {
     // Interpolación simple hacia el objetivo -- más fluido que mover el
@@ -306,10 +341,12 @@ async function iniciar() {
     tiltTarget = { x: 0, y: 0 }; tiltActual = { x: 0, y: 0 };
     if (!tiltRAF) pintarTilt();
     demoTilt();
+    activarOrientacion();
   }
   function cerrarFotoGrande() {
     if (!fotoOverlay) return;
     limpiarDemoTilt();
+    desactivarOrientacion();
     fotoOverlay.hidden = true;
     if (tiltRAF) { cancelAnimationFrame(tiltRAF); tiltRAF = null; }
     tiltTarget = { x: 0, y: 0 }; tiltActual = { x: 0, y: 0 };
@@ -329,11 +366,22 @@ async function iniciar() {
   fotoOverlay?.addEventListener("click", (e) => { if (e.target === fotoOverlay) cerrarFotoGrande(); });
   fotoOverlay?.addEventListener("mousemove", (e) => inclinarFoto(e.clientX, e.clientY));
   fotoOverlay?.addEventListener("mouseleave", () => { tiltTarget = { x: 0, y: 0 }; });
-  fotoOverlay?.addEventListener("touchmove", (e) => {
+  fotoOverlay?.addEventListener("touchstart", (e) => {
+    arrastrando = true;
     const t = e.touches[0];
     if (t) inclinarFoto(t.clientX, t.clientY);
   }, { passive: true });
-  fotoOverlay?.addEventListener("touchend", () => { tiltTarget = { x: 0, y: 0 }; });
+  fotoOverlay?.addEventListener("touchmove", (e) => {
+    arrastrando = true;
+    const t = e.touches[0];
+    if (t) inclinarFoto(t.clientX, t.clientY);
+  }, { passive: true });
+  fotoOverlay?.addEventListener("touchend", () => {
+    arrastrando = false;
+    // si hay giroscopio activo, se deja que retome el control en vez de
+    // volver siempre al centro -- si no, se comporta como antes.
+    if (!orientacionActiva) tiltTarget = { x: 0, y: 0 };
+  });
 
   // ---------- Mini pasarela de pago: efectivo (pagar en caja) o
   // transferencia (llave del negocio + comprobante) ----------
