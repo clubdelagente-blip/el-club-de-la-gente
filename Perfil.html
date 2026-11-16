@@ -837,6 +837,24 @@
                       <input type="file" id="conta-carta-portada" accept="image/*">
                       <input type="hidden" id="conta-carta-portada-url">
                     </div>
+
+                    <div style="background:rgba(9,85,68,.08);border:1px solid rgba(9,85,68,.3);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+                      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--tinta-70);margin-bottom:10px">
+                        <input id="conta-carta-sellos-activo" type="checkbox" style="width:16px;height:16px;accent-color:#095544">
+                        🎟️ Tarjeta de sellos para quien pide por la carta
+                      </label>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                        <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Pedidos necesarios</label><input class="cfg-input" id="conta-carta-sellos-meta" type="number" min="1" value="10"></div>
+                        <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Tipo de premio</label>
+                          <select class="cfg-input" id="conta-carta-sellos-tipo">
+                            <option value="descuento">Descuento</option>
+                            <option value="gratis">Gratis</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="cfg-campo" style="margin-bottom:0"><label class="cfg-label">Describe el premio</label><input class="cfg-input" id="conta-carta-sellos-premio" type="text" placeholder="Ej: Un postre gratis / 20% de descuento"></div>
+                    </div>
+
                     <button class="btn btn--primario" id="conta-carta-personalizar-guardar" type="button">Guardar personalización</button>
                   </div>
                 </details>
@@ -1286,7 +1304,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=217"></script>
+  <script type="module" src="dashboard.js?v=218"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">

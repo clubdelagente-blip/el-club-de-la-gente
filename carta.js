@@ -119,6 +119,14 @@ async function iniciar() {
     const portada = $("#carta-portada");
     if (portada) { portada.hidden = false; portada.innerHTML = `<img src="${esc(negocio.carta_portada_url)}" alt="">`; }
   }
+  if (negocio.carta_sellos_activo) {
+    const hint = $("#carta-sellos-hint");
+    if (hint) {
+      hint.hidden = false;
+      const premio = negocio.carta_sellos_premio_desc || (negocio.carta_sellos_premio_tipo === "gratis" ? "un premio gratis" : "un descuento");
+      hint.textContent = `🎟️ Este negocio tiene tarjeta de sellos -- escribe tu WhatsApp para sumar puntos y ganar: ${premio}`;
+    }
+  }
 
   const items = productos || [];
   if (!items.length) {
@@ -185,6 +193,23 @@ async function iniciar() {
     renderBarra();
     $("#carta-sheet-form").hidden = true;
     $("#carta-sheet-exito").hidden = false;
+
+    // Tarjeta de sellos del negocio (si la activó) -- se deriva de contar
+    // pedidos reales con ese mismo WhatsApp (nunca un contador que se
+    // pudiera inflar a mano), vía una función segura en la base de datos
+    // que además reinicia el ciclo sola en cuanto se completa.
+    const resultadoEl = $("#carta-sellos-resultado");
+    if (wa && negocio.carta_sellos_activo && resultadoEl) {
+      try {
+        const { data: estado } = await supabase.rpc("sellos_carta_estado", { p_negocio_id: aliadoId, p_whatsapp: wa });
+        if (estado?.activo) {
+          resultadoEl.hidden = false;
+          resultadoEl.textContent = estado.completado
+            ? `🎉 ¡Completaste tu tarjeta de sellos! Premio: ${estado.premio_desc || (estado.premio_tipo === "gratis" ? "Gratis" : "Descuento")}. Muéstrale esto al negocio.`
+            : `🎟️ Llevas ${estado.sellos} de ${estado.meta} sellos en este negocio.`;
+        }
+      } catch {} // si falla, no pasa nada -- el pedido ya quedó guardado igual
+    }
   });
 }
 
