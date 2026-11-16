@@ -113,10 +113,11 @@
         <div class="carta-campo"><label>Nota <span style="font-weight:400;color:var(--tinta-45)">(mesa, domicilio, etc.)</span></label><input id="carta-cliente-nota" type="text" placeholder="Ej: Mesa 4"></div>
 
         <div class="carta-campo" id="carta-campo-mesa-alcance" hidden>
-          <label>¿Qué vas a pagar? *</label>
-          <div class="carta-metodo-pago">
-            <button type="button" class="carta-metodo-btn" data-alcance="mio">Solo lo mío</button>
-            <button type="button" class="carta-metodo-btn" data-alcance="mesa">Toda la mesa</button>
+          <label>¿Vas a pagar tú? *</label>
+          <div class="carta-metodo-pago" style="flex-wrap:wrap">
+            <button type="button" class="carta-metodo-btn" data-alcance="mio">Pago lo mío</button>
+            <button type="button" class="carta-metodo-btn" data-alcance="mesa">Pago toda la mesa</button>
+            <button type="button" class="carta-metodo-btn" data-alcance="nadie">Alguien más paga</button>
           </div>
           <p id="carta-mesa-alcance-total" style="font-size:12.5px;color:var(--verde);margin-top:8px"></p>
         </div>
@@ -159,7 +160,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=17"></script>
+  <script type="module" src="carta.js?v=18"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
