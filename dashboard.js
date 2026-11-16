@@ -1668,6 +1668,8 @@ let _contaIngresos = [];
 let _contaFiltroOrigen = "todos";
 let _contaCartaProductos = [];
 let _contaCartaPedidos = [];
+let _cartaPedidosRealtimeCh = null;
+let _audioCtxPedido = null;
 
 const ESTADO_PEDIDO_CARTA = {
   pendiente:      { c: "#b45309", bg: "#fef3c7", t: "Pendiente",      siguiente: "aceptado",       siguienteLbl: "Aceptar pedido" },
@@ -1744,8 +1746,59 @@ function pctChipConta(actual, anterior) {
   return `<span style="color:${pct >= 0 ? "#0E7A3E" : "#B23B2E"}">${pct >= 0 ? "+" : ""}${pct}% vs. anterior</span>`;
 }
 
+// Dos tonos cortos generados con Web Audio (sin archivo de sonido que
+// cargar) para avisar un pedido nuevo de la carta. El AudioContext se crea
+// la primera vez dentro de cargarContabilidadNegocio, en la misma llamada
+// síncrona que dispara el clic de la pestaña "Mi Contabilidad" -- eso
+// "desbloquea" el audio para el resto de la sesión, porque los navegadores
+// exigen que el primer sonido salga en respuesta a un gesto real del
+// usuario; sin este truco, el sonido de un pedido que llega después (vía
+// Realtime, sin ningún clic de por medio) se quedaría mudo en iOS/Chrome.
+function obtenerAudioCtxPedido() {
+  if (!_audioCtxPedido) {
+    try { _audioCtxPedido = new (window.AudioContext || window.webkitAudioContext)(); } catch { return null; }
+  }
+  if (_audioCtxPedido.state === "suspended") _audioCtxPedido.resume().catch(() => {});
+  return _audioCtxPedido;
+}
+function reproducirSonidoPedido() {
+  const ctx = obtenerAudioCtxPedido();
+  if (!ctx) return;
+  const tono = (freq, inicio, dur) => {
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + inicio);
+    gain.gain.setValueAtTime(0.18, ctx.currentTime + inicio);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + inicio + dur);
+    osc.start(ctx.currentTime + inicio);
+    osc.stop(ctx.currentTime + inicio + dur);
+  };
+  tono(880, 0, 0.35);
+  tono(1180, 0.18, 0.3);
+}
+
+// Suscripción en vivo a pedidos nuevos de la carta -- apenas alguien manda
+// un pedido por el QR, aparece solo en la lista (sin recargar la página) y
+// suena un aviso. Una sola suscripción por sesión (igual que
+// suscribirPlanRealtime), filtrada por este negocio.
+function suscribirPedidosCartaRealtime(negocioId) {
+  if (_cartaPedidosRealtimeCh) return;
+  _cartaPedidosRealtimeCh = supabase.channel("carta-pedidos-" + negocioId)
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "negocio_carta_pedidos", filter: `negocio_id=eq.${negocioId}` }, async () => {
+      reproducirSonidoPedido();
+      toast("🧾 ¡Nuevo pedido de la carta!");
+      const { data } = await supabase.from("negocio_carta_pedidos").select("*").eq("negocio_id", negocioId).order("created_at", { ascending: false }).limit(100);
+      _contaCartaPedidos = data || [];
+      cargarCartaPedidos();
+    })
+    .subscribe();
+}
+
 async function cargarContabilidadNegocio(negocioId) {
   _contaNegocioId = negocioId;
+  obtenerAudioCtxPedido();
+  suscribirPedidosCartaRealtime(negocioId);
   const hoy = new Date();
   if (!_contaMes) _contaMes = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`;
   const mesInput = $("#conta-mes");
