@@ -1748,6 +1748,25 @@ function copiarTextoFallback(texto) {
   document.body.removeChild(ta);
 }
 
+// El atributo "download" de un <a> no fuerza la descarga cuando el archivo
+// está en otro dominio (ej. Supabase Storage) -- la mayoría de navegadores
+// simplemente abren la imagen en vez de guardarla. Bajándola por JS y
+// armando un blob URL (que sí es "del mismo origen" para este efecto) el
+// atributo download funciona de verdad en cualquier navegador.
+async function descargarImagenComoArchivo(url, nombreArchivo) {
+  try {
+    const resp = await fetch(url);
+    const blob = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl; a.download = nombreArchivo;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+  } catch {
+    toast("No se pudo descargar -- mantén presionada la imagen para guardarla.");
+  }
+}
+
 function contaFechaISO(d) { return d.toISOString().slice(0, 10); }
 function contaEnRango(fechaISO, desde, hasta) { return !!fechaISO && fechaISO >= desde && fechaISO <= hasta; }
 
@@ -2100,6 +2119,11 @@ async function cargarContabilidadNegocio(negocioId) {
       if (llaveQrDescargar) llaveQrDescargar.style.display = "none";
     }
   }
+  if (llaveQrDescargar) llaveQrDescargar.onclick = (e) => {
+    e.preventDefault();
+    const url = $("#conta-carta-llave-qr-url")?.value;
+    if (url) descargarImagenComoArchivo(url, "qr-de-pago.png");
+  };
   const colorTarjetaInput = $("#conta-carta-color-tarjeta"); if (colorTarjetaInput) colorTarjetaInput.value = _contaNegocio.carta_color_tarjeta || "#ffffff";
   const colorBordeInput = $("#conta-carta-color-borde"); if (colorBordeInput) colorBordeInput.value = _contaNegocio.carta_color_borde || "#e5e5e5";
   const colorPedidoInput = $("#conta-carta-color-pedido"); if (colorPedidoInput) colorPedidoInput.value = _contaNegocio.carta_color_pedido || "#ffffff";
