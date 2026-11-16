@@ -1668,6 +1668,7 @@ let _contaIngresos = [];
 let _contaFiltroOrigen = "todos";
 let _contaCartaProductos = [];
 let _contaCartaPedidos = [];
+let _contaCategoriasOrdenCarta = [];
 let _cartaPedidosRealtimeCh = null;
 let _audioCtxPedido = null;
 let _pedidosNuevosSinVer = 0;
@@ -1846,6 +1847,75 @@ function suscribirPedidosCartaRealtime(negocioId) {
     .subscribe();
 }
 
+// Categorías distintas ya usadas en los productos de la carta (sin "Otros",
+// que siempre va al final sin excepción, no tiene sentido ordenarla a mano).
+function categoriasDisponiblesCarta() {
+  const set = new Set();
+  _contaCartaProductos.forEach(p => { const c = (p.categoria || "").trim(); if (c) set.add(c); });
+  return [...set];
+}
+
+// Lista reordenable (subir/bajar) de categorías -- arranca del orden que el
+// negocio ya haya guardado, y le agrega al final cualquier categoría nueva
+// que todavía no estuviera ahí (ej. porque acaba de agregar un producto con
+// una categoría distinta).
+function renderOrdenCategoriasCarta() {
+  const cont = $("#conta-carta-cat-orden");
+  if (!cont) return;
+  const disponibles = categoriasDisponiblesCarta();
+  const guardado = Array.isArray(_contaNegocio.carta_categorias_orden) ? _contaNegocio.carta_categorias_orden : [];
+  if (!_contaCategoriasOrdenCarta.length) {
+    _contaCategoriasOrdenCarta = guardado.filter(c => disponibles.includes(c));
+  } else {
+    _contaCategoriasOrdenCarta = _contaCategoriasOrdenCarta.filter(c => disponibles.includes(c));
+  }
+  disponibles.forEach(c => { if (!_contaCategoriasOrdenCarta.includes(c)) _contaCategoriasOrdenCarta.push(c); });
+
+  if (!_contaCategoriasOrdenCarta.length) { cont.innerHTML = `<p style="font-size:12.5px;color:#999">Todavía no usas categorías en tus productos.</p>`; return; }
+  cont.innerHTML = _contaCategoriasOrdenCarta.map((cat, i) => `
+    <div style="display:flex;align-items:center;gap:8px;background:var(--crema-2);border-radius:8px;padding:8px 10px">
+      <span style="flex:1;font-size:13px;font-weight:600">${esc(cat)}</span>
+      <button type="button" data-cat-subir="${i}" ${i === 0 ? "disabled" : ""} style="border:none;background:none;cursor:pointer;opacity:${i === 0 ? ".3" : "1"}">${ic("chevron-up")}</button>
+      <button type="button" data-cat-bajar="${i}" ${i === _contaCategoriasOrdenCarta.length - 1 ? "disabled" : ""} style="border:none;background:none;cursor:pointer;opacity:${i === _contaCategoriasOrdenCarta.length - 1 ? ".3" : "1"}">${ic("chevron-down")}</button>
+    </div>`).join("");
+  if (window.lucide) lucide.createIcons();
+  cont.querySelectorAll("[data-cat-subir]").forEach(b => b.addEventListener("click", () => {
+    const i = +b.dataset.catSubir;
+    if (i > 0) {
+      [_contaCategoriasOrdenCarta[i - 1], _contaCategoriasOrdenCarta[i]] = [_contaCategoriasOrdenCarta[i], _contaCategoriasOrdenCarta[i - 1]];
+      renderOrdenCategoriasCarta();
+    }
+  }));
+  cont.querySelectorAll("[data-cat-bajar]").forEach(b => b.addEventListener("click", () => {
+    const i = +b.dataset.catBajar;
+    if (i < _contaCategoriasOrdenCarta.length - 1) {
+      [_contaCategoriasOrdenCarta[i + 1], _contaCategoriasOrdenCarta[i]] = [_contaCategoriasOrdenCarta[i], _contaCategoriasOrdenCarta[i + 1]];
+      renderOrdenCategoriasCarta();
+    }
+  }));
+}
+
+// "Pincha" los colores/aviso en vivo dentro del iframe de la vista previa
+// (mismo origen que Perfil.html, así que se puede tocar su DOM directo, sin
+// postMessage) -- nada de esto toca la base de datos todavía.
+function aplicarPreviewCarta() {
+  const iframe = $("#conta-carta-preview");
+  let doc;
+  try { doc = iframe?.contentWindow?.document; } catch { return; }
+  if (!doc || !doc.documentElement) return;
+  const root = doc.documentElement;
+  root.style.setProperty("--verde", $("#conta-carta-color")?.value || "#095544");
+  root.style.setProperty("--carta-tarjeta-bg", $("#conta-carta-color-tarjeta")?.value || "#ffffff");
+  root.style.setProperty("--carta-tarjeta-borde", $("#conta-carta-color-borde")?.value || "#e5e5e5");
+  root.style.setProperty("--carta-pedido-bg", $("#conta-carta-color-pedido")?.value || "#ffffff");
+  const avisoEl = doc.getElementById("carta-aviso");
+  if (avisoEl) {
+    const activo = $("#conta-carta-aviso-activo")?.checked;
+    const texto = $("#conta-carta-aviso-texto")?.value.trim();
+    if (activo && texto) { avisoEl.hidden = false; avisoEl.textContent = texto; } else { avisoEl.hidden = true; }
+  }
+}
+
 async function cargarContabilidadNegocio(negocioId) {
   _contaNegocioId = negocioId;
   obtenerAudioCtxPedido();
@@ -1880,7 +1950,7 @@ async function cargarContabilidadNegocio(negocioId) {
   });
 
   const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }] = await Promise.all([
-    supabase.from("aliados").select("carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido").eq("id", negocioId).maybeSingle(),
+    supabase.from("aliados").select("carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_aviso_texto").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
     supabase.from("negocio_categorias_ingreso").select("*").eq("negocio_id", negocioId).order("nombre"),
@@ -1928,6 +1998,22 @@ async function cargarContabilidadNegocio(negocioId) {
   const colorTarjetaInput = $("#conta-carta-color-tarjeta"); if (colorTarjetaInput) colorTarjetaInput.value = _contaNegocio.carta_color_tarjeta || "#ffffff";
   const colorBordeInput = $("#conta-carta-color-borde"); if (colorBordeInput) colorBordeInput.value = _contaNegocio.carta_color_borde || "#e5e5e5";
   const colorPedidoInput = $("#conta-carta-color-pedido"); if (colorPedidoInput) colorPedidoInput.value = _contaNegocio.carta_color_pedido || "#ffffff";
+  const avisoActivoInput = $("#conta-carta-aviso-activo"); if (avisoActivoInput) avisoActivoInput.checked = !!_contaNegocio.carta_aviso_activo;
+  const avisoTextoInput = $("#conta-carta-aviso-texto"); if (avisoTextoInput) avisoTextoInput.value = _contaNegocio.carta_aviso_texto || "";
+
+  // Vista previa en vivo -- un iframe cargando la carta real (se carga una
+  // sola vez por sesión), y cada color/aviso se "pincha" directo en su DOM
+  // (mismo origen, sin postMessage) apenas cambia el valor -- nada de esto
+  // toca la base de datos hasta que se le dé a "Guardar personalización".
+  const previewIframe = $("#conta-carta-preview");
+  if (previewIframe && !previewIframe.dataset.cargado) {
+    previewIframe.src = `Carta.html?aliado=${negocioId}`;
+    previewIframe.dataset.cargado = "1";
+    previewIframe.addEventListener("load", aplicarPreviewCarta);
+  }
+  ["conta-carta-color", "conta-carta-color-tarjeta", "conta-carta-color-borde", "conta-carta-color-pedido", "conta-carta-aviso-activo", "conta-carta-aviso-texto"].forEach(id => {
+    const el = $("#" + id); if (el) el.oninput = aplicarPreviewCarta;
+  });
 
   const btnGastoAdd = $("#conta-gasto-add"); if (btnGastoAdd) btnGastoAdd.onclick = () => abrirFormGastoNegocio();
   const btnIngresoAdd = $("#conta-ingreso-add"); if (btnIngresoAdd) btnIngresoAdd.onclick = () => abrirFormIngresoNegocio();
@@ -1941,6 +2027,18 @@ async function cargarContabilidadNegocio(negocioId) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+    // Vista previa instantánea con la foto elegida, antes de subirla de
+    // verdad -- URL.createObjectURL funciona directo en el iframe porque
+    // es un <img>/background-image normal, sin esperar la subida.
+    try {
+      const previewUrl = URL.createObjectURL(file);
+      const doc = $("#conta-carta-preview")?.contentWindow?.document;
+      const fondoFijoPreview = doc?.getElementById("fondo-fijo");
+      if (fondoFijoPreview) {
+        fondoFijoPreview.classList.add("con-portada");
+        fondoFijoPreview.style.backgroundImage = `linear-gradient(rgba(241,247,246,.45), rgba(241,247,246,.88) 340px), url("${previewUrl}")`;
+      }
+    } catch {}
     try {
       const comprimido = await comprimirImagen(file);
       const ext = comprimido.name.split(".").pop();
@@ -2229,6 +2327,8 @@ async function guardarPersonalizacionCarta() {
   const colorTarjeta = $("#conta-carta-color-tarjeta")?.value || null;
   const colorBorde = $("#conta-carta-color-borde")?.value || null;
   const colorPedido = $("#conta-carta-color-pedido")?.value || null;
+  const avisoActivo = $("#conta-carta-aviso-activo")?.checked || false;
+  const avisoTexto = $("#conta-carta-aviso-texto")?.value.trim() || null;
   if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
   const payload = {
     carta_color: color, carta_portada_url: portadaUrl,
@@ -2236,6 +2336,8 @@ async function guardarPersonalizacionCarta() {
     carta_sellos_premio_tipo: sellosTipo, carta_sellos_premio_desc: sellosPremio,
     tienda_llave_pago: llave,
     carta_color_tarjeta: colorTarjeta, carta_color_borde: colorBorde, carta_color_pedido: colorPedido,
+    carta_aviso_activo: avisoActivo, carta_aviso_texto: avisoTexto,
+    carta_categorias_orden: _contaCategoriasOrdenCarta.length ? _contaCategoriasOrdenCarta : null,
   };
   const { error } = await supabase.from("aliados").update(payload).eq("id", _contaNegocioId);
   if (btn) { btn.disabled = false; btn.textContent = "Guardar personalización"; }
@@ -2336,6 +2438,7 @@ async function cargarCartaProductos() {
   const list = $("#conta-carta-productos-list");
   if (!list) return;
   const productos = _contaCartaProductos;
+  renderOrdenCategoriasCarta(); // por si cambiaron las categorías disponibles
   if (!productos.length) { list.innerHTML = `<p style="padding:8px 0">Aún no has agregado productos a tu carta.</p>`; return; }
   list.innerHTML = productos.map(p => `
     <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #ebebeb">

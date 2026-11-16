@@ -828,6 +828,13 @@
                 <details style="margin-bottom:16px">
                   <summary style="cursor:pointer;font-family:'Anton',sans-serif;font-size:15px;font-weight:700">Personalizar mi carta</summary>
                   <div style="padding:14px 0 4px">
+                    <div style="margin-bottom:18px">
+                      <label class="cfg-label" style="margin-bottom:8px;display:block;text-align:center">Vista previa en vivo</label>
+                      <div style="max-width:300px;margin:0 auto;border:8px solid #021B1A;border-radius:28px;overflow:hidden;box-shadow:0 10px 30px -10px rgba(0,0,0,.35)">
+                        <iframe id="conta-carta-preview" style="width:100%;height:520px;border:none;display:block" title="Vista previa de tu carta" loading="lazy"></iframe>
+                      </div>
+                      <p style="font-size:11.5px;color:var(--tinta-45);text-align:center;margin-top:8px">Se actualiza al momento mientras cambias los colores -- nada se publica hasta que le des a "Guardar personalización".</p>
+                    </div>
                     <div class="cfg-campo">
                       <label class="cfg-label">Llave de pago para la carta (Nequi, Bre-B...)</label>
                       <input class="cfg-input" id="conta-carta-llave" type="text" placeholder="Ej: 300 123 4567">
@@ -866,6 +873,20 @@
                         </div>
                       </div>
                       <div class="cfg-campo" style="margin-bottom:0"><label class="cfg-label">Describe el premio</label><input class="cfg-input" id="conta-carta-sellos-premio" type="text" placeholder="Ej: Un postre gratis / 20% de descuento"></div>
+                    </div>
+
+                    <div style="background:rgba(234,183,73,.12);border:1px solid rgba(234,183,73,.4);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+                      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--tinta-70);margin-bottom:10px">
+                        <input id="conta-carta-aviso-activo" type="checkbox" style="width:16px;height:16px;accent-color:#095544">
+                        📣 Mostrar un aviso fijo arriba de la carta
+                      </label>
+                      <input class="cfg-input" id="conta-carta-aviso-texto" type="text" placeholder="Ej: Hoy solo domicilios después de las 6pm">
+                    </div>
+
+                    <div class="cfg-campo">
+                      <label class="cfg-label">Orden de las categorías</label>
+                      <div id="conta-carta-cat-orden" style="display:flex;flex-direction:column;gap:6px"></div>
+                      <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Solo aparecen las categorías que ya usaste en "Productos de mi carta" (abajo).</span>
                     </div>
 
                     <button class="btn btn--primario" id="conta-carta-personalizar-guardar" type="button">Guardar personalización</button>
@@ -1317,7 +1338,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=223"></script>
+  <script type="module" src="dashboard.js?v=224"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">

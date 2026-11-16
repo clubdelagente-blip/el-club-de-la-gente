@@ -44,6 +44,9 @@ body { background: var(--crema); padding-bottom: 90px; position: relative; }
 .carta-top__ig { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--crema-2); color: var(--tinta); display: grid; place-items: center; transition: background .2s, color .2s; }
 .carta-top__ig:hover { background: var(--verde); color: #fff; }
 
+.carta-aviso { background: #FEF3C7; color: #92400E; font-size: 13px; font-weight: 600; text-align: center; padding: 10px 16px; border-bottom: 1px solid rgba(146,64,14,.15); }
+.carta-aviso[hidden] { display: none; }
+
 .carta-vacio { text-align: center; padding: 60px 20px; color: var(--tinta-60); font-size: 14.5px; }
 
 .carta-grupo { padding-top: 22px; }

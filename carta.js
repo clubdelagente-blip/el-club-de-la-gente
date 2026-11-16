@@ -88,10 +88,12 @@ function cardHtml(p) {
   </div>`;
 }
 
-// Agrupa por categoría (texto libre que el negocio escribe por producto),
-// respetando el orden de primera aparición -- "Otros" (sin categoría)
-// siempre al final, para que no se vea como la categoría "principal".
-function agruparPorCategoria(items) {
+// Agrupa por categoría (texto libre que el negocio escribe por producto).
+// Si el negocio definió un orden propio (carta_categorias_orden, desde Mi
+// Contabilidad), se respeta ese orden; si no, cae al orden de primera
+// aparición. "Otros" (sin categoría) siempre al final en cualquier caso,
+// para que no se vea como la categoría "principal".
+function agruparPorCategoria(items, ordenConfig) {
   const grupos = new Map();
   items.forEach(p => {
     const cat = (p.categoria || "").trim() || "Otros";
@@ -99,7 +101,13 @@ function agruparPorCategoria(items) {
     grupos.get(cat).push(p);
   });
   const entradas = [...grupos.entries()];
-  entradas.sort((a, b) => (a[0] === "Otros") - (b[0] === "Otros"));
+  if (Array.isArray(ordenConfig) && ordenConfig.length) {
+    const indice = (cat) => { const i = ordenConfig.indexOf(cat); return i === -1 ? 999 : i; };
+    entradas.sort((a, b) => indice(a[0]) - indice(b[0]));
+  } else {
+    entradas.sort((a, b) => (a[0] === "Otros") - (b[0] === "Otros"));
+  }
+  entradas.sort((a, b) => (a[0] === "Otros") - (b[0] === "Otros")); // "Otros" siempre al final, pase lo que pase arriba
   return entradas;
 }
 
@@ -160,6 +168,10 @@ async function iniciar() {
       hint.textContent = `🎟️ Este negocio tiene tarjeta de sellos -- escribe tu WhatsApp para sumar puntos y ganar: ${premio}`;
     }
   }
+  if (negocio.carta_aviso_activo && negocio.carta_aviso_texto) {
+    const avisoEl = $("#carta-aviso");
+    if (avisoEl) { avisoEl.hidden = false; avisoEl.textContent = negocio.carta_aviso_texto; }
+  }
 
   const items = productos || [];
   if (!items.length) {
@@ -168,7 +180,7 @@ async function iniciar() {
   }
 
   if (grid) {
-    const grupos = agruparPorCategoria(items);
+    const grupos = agruparPorCategoria(items, negocio.carta_categorias_orden);
     // Se muestra el título de cada categoría (Malteadas, Wafles, Obleas...)
     // siempre que el negocio de verdad las use -- solo se esconde cuando
     // NADIE puso categoría en ningún producto (ahí "Otros" sería el único
