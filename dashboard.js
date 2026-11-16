@@ -81,6 +81,24 @@ function formatearInputMoneda(input) {
 }
 function valorMoneda(input) { return parseInt((input?.value || "").replace(/\D/g, "")) || 0; }
 
+// Dos formas de elegir el mismo color -- la ruedita nativa (fácil para
+// quien no conoce códigos) y un campo de texto para pegar un código hex
+// directo (fácil para quien ya tiene su color de marca definido, ej. de un
+// manual de marca). Quedan sincronizados entre sí sin importar cuál se use;
+// el resto del código sigue leyendo solo el input de color de siempre.
+function vincularColorHex(colorId, hexId, alCambiar) {
+  const colorInput = $("#" + colorId);
+  const hexInput = $("#" + hexId);
+  if (!colorInput || !hexInput) return;
+  hexInput.value = colorInput.value;
+  colorInput.oninput = () => { hexInput.value = colorInput.value; if (alCambiar) alCambiar(); };
+  hexInput.oninput = () => {
+    let v = hexInput.value.trim();
+    if (v && !v.startsWith("#")) v = "#" + v;
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) { colorInput.value = v; if (alCambiar) alCambiar(); }
+  };
+}
+
 /* ---------- TOAST ---------- */
 let _toastT;
 function toast(msg) {
@@ -2181,8 +2199,9 @@ async function cargarContabilidadNegocio(negocioId) {
     previewIframe.dataset.cargado = "1";
     previewIframe.addEventListener("load", aplicarPreviewCarta);
   }
-  ["conta-carta-color", "conta-carta-color-tarjeta", "conta-carta-color-borde", "conta-carta-color-pedido", "conta-carta-aviso-activo", "conta-carta-aviso-color"].forEach(id => {
-    const el = $("#" + id); if (el) el.oninput = aplicarPreviewCarta;
+  const avisoActivoEl = $("#conta-carta-aviso-activo"); if (avisoActivoEl) avisoActivoEl.oninput = aplicarPreviewCarta;
+  ["conta-carta-color", "conta-carta-color-tarjeta", "conta-carta-color-borde", "conta-carta-color-pedido", "conta-carta-aviso-color"].forEach(id => {
+    vincularColorHex(id, id + "-hex", aplicarPreviewCarta);
   });
 
   const btnGastoAdd = $("#conta-gasto-add"); if (btnGastoAdd) btnGastoAdd.onclick = () => abrirFormGastoNegocio();

@@ -854,7 +854,10 @@
                     </div>
                     <div class="cfg-campo">
                       <label class="cfg-label">Color de acento</label>
-                      <input type="color" id="conta-carta-color" value="#095544" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
+                      <div style="display:flex;gap:8px;align-items:center">
+                        <input type="color" id="conta-carta-color" value="#095544" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
+                        <input type="text" id="conta-carta-color-hex" placeholder="#095544" style="width:92px;padding:9px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
+                      </div>
                     </div>
                     <div class="cfg-campo">
                       <label class="cfg-label">Imagen de portada (opcional)</label>
@@ -862,12 +865,25 @@
                       <input type="hidden" id="conta-carta-portada-url">
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                      <div class="cfg-campo"><label class="cfg-label">Fondo de los productos</label><input type="color" id="conta-carta-color-tarjeta" value="#ffffff" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px"></div>
-                      <div class="cfg-campo"><label class="cfg-label">Borde de los productos</label><input type="color" id="conta-carta-color-borde" value="#e5e5e5" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px"></div>
+                      <div class="cfg-campo"><label class="cfg-label">Fondo de los productos</label>
+                        <div style="display:flex;gap:8px;align-items:center">
+                          <input type="color" id="conta-carta-color-tarjeta" value="#ffffff" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
+                          <input type="text" id="conta-carta-color-tarjeta-hex" placeholder="#ffffff" style="width:92px;padding:9px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
+                        </div>
+                      </div>
+                      <div class="cfg-campo"><label class="cfg-label">Borde de los productos</label>
+                        <div style="display:flex;gap:8px;align-items:center">
+                          <input type="color" id="conta-carta-color-borde" value="#e5e5e5" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
+                          <input type="text" id="conta-carta-color-borde-hex" placeholder="#e5e5e5" style="width:92px;padding:9px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
+                        </div>
+                      </div>
                     </div>
                     <div class="cfg-campo">
                       <label class="cfg-label">Fondo de la caja "Tu pedido"</label>
-                      <input type="color" id="conta-carta-color-pedido" value="#ffffff" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
+                      <div style="display:flex;gap:8px;align-items:center">
+                        <input type="color" id="conta-carta-color-pedido" value="#ffffff" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
+                        <input type="text" id="conta-carta-color-pedido-hex" placeholder="#ffffff" style="width:92px;padding:9px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
+                      </div>
                     </div>
 
                     <div style="background:rgba(9,85,68,.08);border:1px solid rgba(9,85,68,.3);border-radius:10px;padding:12px 14px;margin-bottom:14px">
@@ -894,7 +910,10 @@
                       </label>
                       <div class="cfg-campo" style="margin-bottom:10px">
                         <label class="cfg-label">Color del aviso</label>
-                        <input type="color" id="conta-carta-aviso-color" value="#164a2c" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
+                        <div style="display:flex;gap:8px;align-items:center">
+                          <input type="color" id="conta-carta-aviso-color" value="#164a2c" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
+                          <input type="text" id="conta-carta-aviso-color-hex" placeholder="#164a2c" style="width:92px;padding:9px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
+                        </div>
                       </div>
                       <div id="conta-carta-avisos-lista"></div>
                       <button class="btn" type="button" id="conta-carta-aviso-add" style="font-size:12.5px">+ Agregar aviso</button>
@@ -1375,7 +1394,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=236"></script>
+  <script type="module" src="dashboard.js?v=237"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">
