@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=142">
-  <link rel="stylesheet" href="carta.css?v=12">
+  <link rel="stylesheet" href="carta.css?v=13">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -63,6 +63,24 @@
         <div class="carta-foto-marco"></div>
         <img class="carta-foto-grande" id="carta-foto-grande" src="" alt="">
         <div class="carta-foto-glare" id="carta-foto-glare"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Personalizar producto: toppings/salsas/tamaño antes de agregarlo -->
+  <div class="carta-mod-overlay" id="carta-mod-overlay" hidden>
+    <div class="carta-mod-sheet">
+      <button type="button" class="carta-sheet__cerrar" id="carta-mod-cerrar" aria-label="Cerrar">✕</button>
+      <h2 class="carta-sheet__titulo" id="carta-mod-nombre"></h2>
+      <p class="carta-mod-desc" id="carta-mod-desc"></p>
+      <div id="carta-mod-grupos"></div>
+      <div class="carta-mod-footer">
+        <div class="carta-qty en-uso" id="carta-mod-qty-wrap">
+          <button type="button" class="carta-qty__menos" id="carta-mod-qty-menos" aria-label="Quitar uno">−</button>
+          <span class="carta-qty__n" id="carta-mod-qty-n">1</span>
+          <button type="button" id="carta-mod-qty-mas" aria-label="Agregar uno">+</button>
+        </div>
+        <button type="button" class="btn btn--primario" id="carta-mod-agregar">Añadir</button>
       </div>
     </div>
   </div>
@@ -132,7 +150,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=13"></script>
+  <script type="module" src="carta.js?v=14"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

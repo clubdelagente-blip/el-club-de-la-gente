@@ -1668,6 +1668,9 @@ let _contaIngresos = [];
 let _contaFiltroOrigen = "todos";
 let _contaCartaProductos = [];
 let _contaCartaPedidos = [];
+let _contaModGrupos = [];
+let _contaModOpciones = [];
+let _contaModProdGrupos = [];
 let _contaCategoriasOrdenCarta = [];
 let _contaAvisosCarta = [];
 let _cartaPedidosRealtimeCh = null;
@@ -2030,7 +2033,7 @@ async function cargarContabilidadNegocio(negocioId) {
     };
   });
 
-  const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }] = await Promise.all([
+  const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }] = await Promise.all([
     supabase.from("aliados").select("carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
@@ -2038,6 +2041,9 @@ async function cargarContabilidadNegocio(negocioId) {
     supabase.from("negocio_ingresos").select("*, negocio_categorias_ingreso(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
     supabase.from("negocio_carta_productos").select("*").eq("negocio_id", negocioId).order("orden"),
     supabase.from("negocio_carta_pedidos").select("*").eq("negocio_id", negocioId).order("created_at", { ascending: false }).limit(100),
+    supabase.from("negocio_carta_grupos_mod").select("*").eq("negocio_id", negocioId).order("orden"),
+    supabase.from("negocio_carta_opciones_mod").select("*").eq("negocio_id", negocioId).order("orden"),
+    supabase.from("negocio_carta_producto_grupos").select("*").eq("negocio_id", negocioId),
   ]);
 
   _contaNegocio = negocio || {};
@@ -2047,6 +2053,9 @@ async function cargarContabilidadNegocio(negocioId) {
   _contaIngresos = ingresos || [];
   _contaCartaProductos = cartaProd || [];
   _contaCartaPedidos = cartaPed || [];
+  _contaModGrupos = modGrupos || [];
+  _contaModOpciones = modOpciones || [];
+  _contaModProdGrupos = modProdGrupos || [];
 
   // Primera vez que este negocio abre la pestaña: siembra categorías
   // típicas para que no arranque vacío -- solo pasa una vez, porque en la
@@ -2110,6 +2119,7 @@ async function cargarContabilidadNegocio(negocioId) {
   const btnGastoCats = $("#conta-gastos-cats"); if (btnGastoCats) btnGastoCats.onclick = () => gestionarCategoriasNegocio("gasto");
   const btnIngresoCats = $("#conta-ingresos-cats"); if (btnIngresoCats) btnIngresoCats.onclick = () => gestionarCategoriasNegocio("ingreso");
   const btnCartaProdAdd = $("#conta-carta-producto-add"); if (btnCartaProdAdd) btnCartaProdAdd.onclick = () => abrirFormProductoCarta();
+  const btnModGrupoAdd = $("#conta-mod-grupo-add"); if (btnModGrupoAdd) btnModGrupoAdd.onclick = () => abrirFormModGrupo();
   const btnNuevoPedido = $("#conta-nuevo-pedido-btn"); if (btnNuevoPedido) btnNuevoPedido.onclick = () => abrirConstructorPedido();
   const btnPersonalizar = $("#conta-carta-personalizar-guardar"); if (btnPersonalizar) btnPersonalizar.onclick = () => guardarPersonalizacionCarta();
   const inputPortada = $("#conta-carta-portada");
@@ -2142,6 +2152,7 @@ async function cargarContabilidadNegocio(negocioId) {
   };
 
   renderContabilidadNegocioUI();
+  cargarModGrupos();
   cargarCartaProductos();
   cargarCartaPedidos();
   mostrarSugerenciaCategorias();
@@ -2546,6 +2557,108 @@ function gestionarCategoriasNegocio(tipo) {
   });
 }
 
+// Grupos de toppings/modificadores (ej. "Salsas", "Tamaño") -- se arman una
+// sola vez por negocio y se pegan a los productos que los necesiten desde su
+// propio formulario, en vez de repetir la misma lista de salsas producto por
+// producto. "única" = el cliente elige exactamente 1 (obligatorio, como un
+// radio); "múltiple" = marca las que quiera (opcional, como checkboxes).
+function cargarModGrupos() {
+  const list = $("#conta-mod-grupos-list");
+  if (!list) return;
+  if (!_contaModGrupos.length) { list.innerHTML = `<p style="padding:8px 0">Aún no tienes grupos de toppings. Crea uno como "Salsas" o "Tamaño".</p>`; return; }
+  list.innerHTML = _contaModGrupos.map(g => {
+    const opciones = _contaModOpciones.filter(o => o.grupo_id === g.id);
+    return `
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #ebebeb">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:14px">${esc(g.nombre)}</div>
+        <div style="font-size:12px;color:#777">${g.tipo === "unica" ? "Selección única · obligatorio" : "Selección múltiple · opcional"} · ${opciones.length} opción${opciones.length === 1 ? "" : "es"}</div>
+      </div>
+      <button data-ed-modgrupo="${g.id}" style="border:none;background:none;cursor:pointer;color:#777">${ic("pencil")}</button>
+      <button data-rm-modgrupo="${g.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button>
+    </div>`;
+  }).join("");
+  if (window.lucide) lucide.createIcons();
+  list.querySelectorAll("[data-ed-modgrupo]").forEach(btn => btn.addEventListener("click", () => {
+    const g = _contaModGrupos.find(x => x.id === btn.dataset.edModgrupo);
+    if (g) abrirFormModGrupo(g);
+  }));
+  list.querySelectorAll("[data-rm-modgrupo]").forEach(btn => btn.addEventListener("click", async () => {
+    if (!confirm("¿Eliminar este grupo? Se quita de todos los productos que lo usen.")) return;
+    await supabase.from("negocio_carta_grupos_mod").delete().eq("id", btn.dataset.rmModgrupo);
+    toast("Grupo eliminado");
+    cargarContabilidadNegocio(_contaNegocioId);
+  }));
+}
+
+function abrirFormModGrupo(g = {}) {
+  const opciones = g.id ? _contaModOpciones.filter(o => o.grupo_id === g.id) : [];
+  const filaOpcionHtml = (o = {}) => `
+    <div class="mod-opcion-fila" style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+      <input class="cfg-input mod-opcion-nombre" type="text" value="${esc(o.nombre || "")}" placeholder="Ej: Chocolate" style="flex:1">
+      <input class="cfg-input mod-opcion-precio" type="text" inputmode="numeric" value="${o.precio_adicional ? Number(o.precio_adicional).toLocaleString("es-CO") : ""}" placeholder="$0 si va incluido" style="width:130px">
+      <button type="button" class="mod-opcion-quitar" style="border:none;background:none;cursor:pointer;color:#c0392b;font-size:16px">✕</button>
+    </div>`;
+  abrirModalTienda(g.id ? "Editar grupo" : "Nuevo grupo de toppings", `
+    <div class="cfg-campo"><label class="cfg-label">Nombre del grupo *</label><input class="cfg-input" id="modg-nombre" type="text" value="${esc(g.nombre || "")}" placeholder="Ej: Salsas, Tamaño, Sabor de helado"></div>
+    <div class="cfg-campo">
+      <label class="cfg-label">Tipo *</label>
+      <select class="cfg-input" id="modg-tipo">
+        <option value="unica" ${g.tipo !== "multiple" ? "selected" : ""}>Selección única (el cliente elige exactamente 1, obligatorio)</option>
+        <option value="multiple" ${g.tipo === "multiple" ? "selected" : ""}>Selección múltiple (el cliente marca las que quiera, opcional)</option>
+      </select>
+    </div>
+    <label class="cfg-label" style="display:block;margin-top:10px">Opciones <span style="font-weight:400;color:var(--tinta-45)">(deja el precio en $0 si va incluida sin costo extra)</span></label>
+    <div id="modg-opciones">${opciones.length ? opciones.map(filaOpcionHtml).join("") : filaOpcionHtml()}</div>
+    <button type="button" class="btn" id="modg-opcion-add" style="margin-bottom:14px">+ Agregar opción</button>
+    <button class="btn btn--primario" id="modg-save" data-id="${g.id || ""}">${g.id ? "Guardar cambios" : "Crear grupo"}</button>
+  `);
+  $$(".mod-opcion-precio").forEach(formatearInputMoneda);
+  const reenlazarQuitar = () => {
+    $$(".mod-opcion-quitar").forEach(btn => btn.onclick = () => {
+      if ($$(".mod-opcion-fila").length <= 1) { btn.closest(".mod-opcion-fila").querySelectorAll("input").forEach(i => i.value = ""); return; }
+      btn.closest(".mod-opcion-fila").remove();
+    });
+  };
+  reenlazarQuitar();
+  $("#modg-opcion-add")?.addEventListener("click", () => {
+    const cont = $("#modg-opciones");
+    cont.insertAdjacentHTML("beforeend", filaOpcionHtml());
+    formatearInputMoneda(cont.lastElementChild.querySelector(".mod-opcion-precio"));
+    reenlazarQuitar();
+  });
+  $("#modg-save")?.addEventListener("click", async () => {
+    const btn = $("#modg-save");
+    const resetBtn = () => { btn.disabled = false; btn.textContent = g.id ? "Guardar cambios" : "Crear grupo"; };
+    const nombre = $("#modg-nombre")?.value.trim();
+    const tipo = $("#modg-tipo")?.value;
+    if (!nombre) { toast("El nombre del grupo es obligatorio"); return; }
+    const filasOpciones = $$(".mod-opcion-fila").map(fila => ({
+      nombre: fila.querySelector(".mod-opcion-nombre")?.value.trim(),
+      precio_adicional: valorMoneda(fila.querySelector(".mod-opcion-precio")) || 0,
+    })).filter(o => o.nombre);
+    if (!filasOpciones.length) { toast("Agrega al menos una opción"); return; }
+    btn.disabled = true; btn.textContent = "Guardando…";
+    let grupoId = g.id;
+    if (grupoId) {
+      const { error } = await supabase.from("negocio_carta_grupos_mod").update({ nombre, tipo }).eq("id", grupoId);
+      if (error) { toast("Error: " + error.message); resetBtn(); return; }
+      await supabase.from("negocio_carta_opciones_mod").delete().eq("grupo_id", grupoId);
+    } else {
+      const { data: nuevo, error } = await supabase.from("negocio_carta_grupos_mod").insert({ negocio_id: _contaNegocioId, nombre, tipo, orden: _contaModGrupos.length }).select().single();
+      if (error) { toast("Error: " + error.message); resetBtn(); return; }
+      grupoId = nuevo.id;
+    }
+    const { error: errOpc } = await supabase.from("negocio_carta_opciones_mod").insert(
+      filasOpciones.map((o, i) => ({ negocio_id: _contaNegocioId, grupo_id: grupoId, nombre: o.nombre, precio_adicional: o.precio_adicional, orden: i }))
+    );
+    if (errOpc) { toast("Error: " + errOpc.message); resetBtn(); return; }
+    cerrarModalTienda();
+    toast(g.id ? "Grupo actualizado ✓" : "Grupo creado ✓");
+    cargarContabilidadNegocio(_contaNegocioId);
+  });
+}
+
 async function cargarCartaProductos() {
   const list = $("#conta-carta-productos-list");
   if (!list) return;
@@ -2589,6 +2702,13 @@ function abrirFormProductoCarta(p = {}) {
     <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--tinta-60);margin:4px 0 8px;cursor:pointer">
       <input type="checkbox" id="ccp-disponible" ${p.disponible === false ? "" : "checked"}> Disponible en la carta
     </label>
+    ${_contaModGrupos.length ? `
+    <div class="cfg-campo"><label class="cfg-label">Grupos de toppings que usa este producto <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label>
+      ${_contaModGrupos.map(g => `
+        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--tinta-60);margin-bottom:6px;cursor:pointer">
+          <input type="checkbox" data-ccp-grupo value="${g.id}" ${p.id && _contaModProdGrupos.some(pg => pg.producto_id === p.id && pg.grupo_id === g.id) ? "checked" : ""}> ${esc(g.nombre)}
+        </label>`).join("")}
+    </div>` : ""}
     <button class="btn btn--primario" id="ccp-save" data-id="${p.id || ""}">${p.id ? "Guardar cambios" : "Agregar producto"}</button>
   `);
   formatearInputMoneda($("#ccp-precio"));
@@ -2613,8 +2733,16 @@ function abrirFormProductoCarta(p = {}) {
       } catch { toast("Error subiendo la foto"); resetBtn(); return; }
     }
     const payload = { negocio_id: _contaNegocioId, nombre, descripcion: $("#ccp-desc")?.value.trim() || null, precio, categoria: $("#ccp-categoria")?.value.trim() || null, imagen_url: imagenUrl, disponible: $("#ccp-disponible")?.checked ?? true };
-    const { error } = p.id ? await supabase.from("negocio_carta_productos").update(payload).eq("id", p.id) : await supabase.from("negocio_carta_productos").insert(payload);
+    const { data: guardado, error } = p.id
+      ? await supabase.from("negocio_carta_productos").update(payload).eq("id", p.id).select().single()
+      : await supabase.from("negocio_carta_productos").insert(payload).select().single();
     if (error) { toast("Error: " + error.message); resetBtn(); return; }
+    const productoId = guardado?.id || p.id;
+    const gruposSeleccionados = $$("[data-ccp-grupo]:checked").map(cb => cb.value);
+    await supabase.from("negocio_carta_producto_grupos").delete().eq("producto_id", productoId);
+    if (gruposSeleccionados.length) {
+      await supabase.from("negocio_carta_producto_grupos").insert(gruposSeleccionados.map(grupo_id => ({ negocio_id: _contaNegocioId, producto_id: productoId, grupo_id })));
+    }
     cerrarModalTienda();
     toast(p.id ? "Producto actualizado ✓" : "Producto agregado ✓");
     cargarContabilidadNegocio(_contaNegocioId);
@@ -2635,7 +2763,10 @@ async function cargarCartaPedidos() {
   list.innerHTML = pedidos.map(ped => {
     const est = ESTADO_PEDIDO_CARTA[ped.estado] || ESTADO_PEDIDO_CARTA.pendiente;
     const items = Array.isArray(ped.items) ? ped.items : [];
-    const resumenItems = items.map(it => `${it.cantidad}× ${esc(it.nombre)}`).join(", ");
+    const resumenItems = items.map(it => {
+      const mods = Array.isArray(it.modificadores) && it.modificadores.length ? ` (${it.modificadores.map(m => esc(m.opcion)).join(", ")})` : "";
+      return `${it.cantidad}× ${esc(it.nombre)}${mods}`;
+    }).join(", ");
     const folio = "#" + String(ped.id).slice(0, 8).toUpperCase();
     return `
     <div style="padding:14px 0;border-bottom:1px solid #ebebeb">

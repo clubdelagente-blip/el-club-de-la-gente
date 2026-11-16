@@ -61,15 +61,26 @@ function sumarProducto(p, delta) {
   const actual = carrito.get(p.id)?.cantidad || 0;
   const nueva = Math.max(0, actual + delta);
   if (nueva === 0) carrito.delete(p.id);
-  else carrito.set(p.id, { nombre: p.nombre, precio: p.precio, cantidad: nueva });
+  else carrito.set(p.id, { producto_id: p.id, nombre: p.nombre, precio: p.precio, cantidad: nueva });
   renderQty(p.id);
   renderBarra();
 }
 
-function cardHtml(p) {
+// Si el producto tiene grupos de toppings/modificadores configurados (ej.
+// "Salsas"), no se puede sumar directo con un +/- en la tarjeta -- primero
+// hay que elegir, así que la tarjeta muestra un botón "Elegir" que abre el
+// modal de personalización en vez del stepper de siempre.
+function cardHtml(p, tieneGrupos) {
   const img = p.imagen_url
     ? `<img class="carta-card__img" src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" loading="lazy" data-ver-foto="${p.id}">`
     : `<div class="carta-card__ph"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
+  const accion = tieneGrupos
+    ? `<button type="button" class="carta-card__personalizar" data-personalizar="${p.id}">Elegir</button>`
+    : `<div class="carta-qty" data-qty-wrap="${p.id}">
+          <button type="button" class="carta-qty__menos" data-qty-menos="${p.id}" aria-label="Quitar uno">−</button>
+          <span class="carta-qty__n" data-qty-n="${p.id}">0</span>
+          <button type="button" data-qty-mas="${p.id}" aria-label="Agregar uno">+</button>
+        </div>`;
   return `
   <div class="carta-card" data-carta-card="${p.id}">
     ${img}
@@ -78,11 +89,7 @@ function cardHtml(p) {
       ${p.descripcion ? `<div class="carta-card__desc">${esc(p.descripcion)}</div>` : ""}
       <div class="carta-card__fila">
         <span class="carta-card__precio">${COP(p.precio)}</span>
-        <div class="carta-qty" data-qty-wrap="${p.id}">
-          <button type="button" class="carta-qty__menos" data-qty-menos="${p.id}" aria-label="Quitar uno">−</button>
-          <span class="carta-qty__n" data-qty-n="${p.id}">0</span>
-          <button type="button" data-qty-mas="${p.id}" aria-label="Agregar uno">+</button>
-        </div>
+        ${accion}
       </div>
     </div>
   </div>`;
@@ -128,10 +135,24 @@ async function iniciar() {
   // todavía no existan en la vista pública (se agregan en una migración
   // aparte) -- si faltan, simplemente no hay personalización, en vez de
   // que toda la carta se rompa por una columna que no existe aún.
-  const [{ data: negocio }, { data: productos }] = await Promise.all([
+  const [{ data: negocio }, { data: productos }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }] = await Promise.all([
     supabase.from("aliados_publico").select("*").eq("id", aliadoId).maybeSingle(),
     supabase.from("negocio_carta_productos").select("*").eq("negocio_id", aliadoId).eq("disponible", true).order("orden"),
+    supabase.from("negocio_carta_grupos_mod").select("*").eq("negocio_id", aliadoId).order("orden"),
+    supabase.from("negocio_carta_opciones_mod").select("*").eq("negocio_id", aliadoId).order("orden"),
+    supabase.from("negocio_carta_producto_grupos").select("*").eq("negocio_id", aliadoId),
   ]);
+
+  // Grupos de toppings por producto (ej. "Salsas" -> Chocolate/Arequipe/...),
+  // armados una sola vez acá para no repetir filtros en cada tarjeta.
+  const gruposById = new Map((modGrupos || []).map(g => [g.id, { ...g, opciones: (modOpciones || []).filter(o => o.grupo_id === g.id) }]));
+  const gruposPorProducto = new Map();
+  (modProdGrupos || []).forEach(pg => {
+    const g = gruposById.get(pg.grupo_id);
+    if (!g) return;
+    if (!gruposPorProducto.has(pg.producto_id)) gruposPorProducto.set(pg.producto_id, []);
+    gruposPorProducto.get(pg.producto_id).push(g);
+  });
 
   if (!negocio) {
     if (nombreEl) nombreEl.textContent = "Carta no encontrada";
@@ -217,7 +238,7 @@ async function iniciar() {
     grid.innerHTML = grupos.map(([cat, prods]) => `
       <div class="carta-grupo" data-categoria="${esc(cat)}">
         ${mostrarTitulos ? `<h2 class="carta-grupo__titulo">${esc(cat)}</h2>` : ""}
-        <div class="carta-grid">${prods.map(cardHtml).join("")}</div>
+        <div class="carta-grid">${prods.map(p => cardHtml(p, gruposPorProducto.has(p.id))).join("")}</div>
       </div>`).join("");
 
     // Cápsulas de categoría arriba, para filtrar de una sola vez en vez de
@@ -241,11 +262,135 @@ async function iniciar() {
       }
     }
     items.forEach(p => {
-      grid.querySelector(`[data-qty-mas="${p.id}"]`)?.addEventListener("click", () => sumarProducto(p, 1));
-      grid.querySelector(`[data-qty-menos="${p.id}"]`)?.addEventListener("click", () => sumarProducto(p, -1));
+      const grupos = gruposPorProducto.get(p.id);
+      if (grupos && grupos.length) {
+        grid.querySelector(`[data-personalizar="${p.id}"]`)?.addEventListener("click", () => abrirModalProducto(p, grupos));
+      } else {
+        grid.querySelector(`[data-qty-mas="${p.id}"]`)?.addEventListener("click", () => sumarProducto(p, 1));
+        grid.querySelector(`[data-qty-menos="${p.id}"]`)?.addEventListener("click", () => sumarProducto(p, -1));
+      }
       grid.querySelector(`[data-ver-foto="${p.id}"]`)?.addEventListener("click", () => abrirFotoGrande(p.imagen_url));
     });
   }
+
+  // ---------- Modal de personalización: toppings/salsas/tamaño antes de
+  // agregar un producto que los tenga configurados. Cada "Añadir" crea una
+  // línea NUEVA en el carrito (no se suma a otra con distinta elección), así
+  // que dos churros con salsas distintas aparecen como 2 líneas separadas en
+  // "Tu pedido" -- igual a como se ve en cualquier app de pedidos real. ----------
+  const modOverlay = $("#carta-mod-overlay");
+  const modNombreEl = $("#carta-mod-nombre");
+  const modDescEl = $("#carta-mod-desc");
+  const modGruposEl = $("#carta-mod-grupos");
+  const modQtyNEl = $("#carta-mod-qty-n");
+  const modAgregarBtn = $("#carta-mod-agregar");
+  let modProductoActual = null;
+  let modGruposActual = [];
+  let modSeleccion = new Map(); // grupo_id -> Set(opcion_id)
+  let modQty = 1;
+
+  function modCalcularTotal() {
+    let extra = 0;
+    modGruposActual.forEach(g => {
+      const sel = modSeleccion.get(g.id);
+      if (!sel) return;
+      g.opciones.forEach(o => { if (sel.has(o.id)) extra += Number(o.precio_adicional) || 0; });
+    });
+    return (Number(modProductoActual.precio) + extra) * modQty;
+  }
+  function modGrupoCompleto(g) {
+    if (g.tipo !== "unica") return true;
+    const sel = modSeleccion.get(g.id);
+    return !!sel && sel.size === 1;
+  }
+  function pintarModal() {
+    if (modQtyNEl) modQtyNEl.textContent = String(modQty);
+    const faltante = modGruposActual.find(g => !modGrupoCompleto(g));
+    if (!modAgregarBtn) return;
+    if (faltante) {
+      modAgregarBtn.disabled = true;
+      modAgregarBtn.textContent = `Elige "${faltante.nombre}" para continuar`;
+    } else {
+      modAgregarBtn.disabled = false;
+      modAgregarBtn.textContent = `Añadir ${COP(modCalcularTotal())}`;
+    }
+  }
+  function renderModGrupos() {
+    if (!modGruposEl) return;
+    modGruposEl.innerHTML = modGruposActual.map(g => `
+      <div class="carta-mod-grupo">
+        <div class="carta-mod-grupo__head">
+          <span class="carta-mod-grupo__titulo">${esc(g.nombre)}</span>
+          <span class="carta-mod-grupo__tag">${g.tipo === "unica" ? "1 de 1 · obligatorio" : "Opcional"}</span>
+        </div>
+        ${g.opciones.map(o => `
+          <div class="carta-mod-opcion ${g.tipo === "unica" ? "es-radio" : "es-check"}" data-mod-opcion="${o.id}" data-mod-grupo="${g.id}">
+            <span class="carta-mod-opcion__marca">✓</span>
+            <span class="carta-mod-opcion__nombre">${esc(o.nombre)}</span>
+            ${Number(o.precio_adicional) > 0 ? `<span class="carta-mod-opcion__precio">+${COP(o.precio_adicional)}</span>` : ""}
+          </div>`).join("")}
+      </div>`).join("");
+    modGruposEl.querySelectorAll("[data-mod-opcion]").forEach(row => row.addEventListener("click", () => {
+      const grupoId = row.dataset.modGrupo;
+      const opcionId = row.dataset.modOpcion;
+      const g = modGruposActual.find(x => x.id === grupoId);
+      if (!g) return;
+      if (g.tipo === "unica") {
+        modSeleccion.set(grupoId, new Set([opcionId]));
+      } else {
+        const sel = modSeleccion.get(grupoId) || new Set();
+        if (sel.has(opcionId)) sel.delete(opcionId); else sel.add(opcionId);
+        modSeleccion.set(grupoId, sel);
+      }
+      const activos = modSeleccion.get(grupoId) || new Set();
+      modGruposEl.querySelectorAll(`[data-mod-grupo="${grupoId}"]`).forEach(r => {
+        r.classList.toggle("is-on", activos.has(r.dataset.modOpcion));
+      });
+      pintarModal();
+    }));
+  }
+  function abrirModalProducto(p, grupos) {
+    if (!modOverlay) return;
+    modProductoActual = p;
+    modGruposActual = grupos;
+    modSeleccion = new Map();
+    modQty = 1;
+    if (modNombreEl) modNombreEl.textContent = p.nombre;
+    if (modDescEl) { modDescEl.textContent = p.descripcion || ""; modDescEl.hidden = !p.descripcion; }
+    renderModGrupos();
+    pintarModal();
+    modOverlay.hidden = false;
+  }
+  function cerrarModalProducto() { if (modOverlay) modOverlay.hidden = true; }
+  $("#carta-mod-cerrar")?.addEventListener("click", cerrarModalProducto);
+  modOverlay?.addEventListener("click", (e) => { if (e.target === modOverlay) cerrarModalProducto(); });
+  $("#carta-mod-qty-mas")?.addEventListener("click", () => { modQty++; pintarModal(); });
+  $("#carta-mod-qty-menos")?.addEventListener("click", () => { if (modQty > 1) { modQty--; pintarModal(); } });
+  modAgregarBtn?.addEventListener("click", () => {
+    if (!modProductoActual) return;
+    const modificadores = [];
+    let extra = 0;
+    modGruposActual.forEach(g => {
+      const sel = modSeleccion.get(g.id) || new Set();
+      g.opciones.forEach(o => {
+        if (sel.has(o.id)) {
+          modificadores.push({ grupo: g.nombre, opcion: o.nombre, precio_adicional: Number(o.precio_adicional) || 0 });
+          extra += Number(o.precio_adicional) || 0;
+        }
+      });
+    });
+    const lineKey = `${modProductoActual.id}:${Date.now()}:${Math.random().toString(36).slice(2, 7)}`;
+    carrito.set(lineKey, {
+      producto_id: modProductoActual.id,
+      nombre: modProductoActual.nombre,
+      precio: Number(modProductoActual.precio) + extra,
+      cantidad: modQty,
+      modificadores,
+      modText: modificadores.map(m => m.opcion).join(", "),
+    });
+    renderBarra();
+    cerrarModalProducto();
+  });
 
   // ---------- Foto en grande con efecto "se sale de la pantalla" (no es un
   // 360 real -- eso necesitaría varias fotos del producto desde distintos
@@ -409,7 +554,7 @@ async function iniciar() {
   const abrirResumen = () => {
     const { total } = totalCarrito();
     const itemsHtml = [...carrito.values()].map(it => `
-      <div class="carta-sheet__item"><span>${it.cantidad}× ${esc(it.nombre)}</span><span>${COP(it.precio * it.cantidad)}</span></div>`).join("");
+      <div class="carta-sheet__item"><span>${it.cantidad}× ${esc(it.nombre)}${it.modText ? `<br><small style="color:var(--tinta-45);font-weight:400">${esc(it.modText)}</small>` : ""}</span><span>${COP(it.precio * it.cantidad)}</span></div>`).join("");
     const cont = $("#carta-sheet-items"); if (cont) cont.innerHTML = itemsHtml;
     const totSpan = $("#carta-sheet-total"); if (totSpan) totSpan.textContent = COP(total);
     // Reinicia la elección de método de pago en cada pedido nuevo -- no
@@ -464,7 +609,10 @@ async function iniciar() {
       cliente_nombre: nombre,
       cliente_whatsapp: wa || null,
       nota: nota || null,
-      items: [...carrito.entries()].map(([producto_id, it]) => ({ producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad })),
+      items: [...carrito.values()].map(it => ({
+        producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad,
+        ...(it.modificadores?.length ? { modificadores: it.modificadores } : {}),
+      })),
       monto_total: total,
       estado: "pendiente",
       metodo_pago: metodoPago,
