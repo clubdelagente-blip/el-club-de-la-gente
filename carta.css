@@ -6,6 +6,15 @@
 html, body { overflow-x: hidden; }
 body { background: var(--crema); padding-bottom: 90px; position: relative; }
 
+/* Personalización por negocio (se setean desde JS vía
+   style.setProperty cuando el negocio las configura; si no, quedan estos
+   valores por defecto -- blanco de siempre). */
+:root {
+  --carta-tarjeta-bg: #fff;
+  --carta-tarjeta-borde: var(--linea);
+  --carta-pedido-bg: #fff;
+}
+
 /* Mismo patrón que el resto de la plataforma (Directorio, Perfil...): un
    panel fijo de verdad detrás de todo en vez de pintarlo en el body, para
    que quede de verdad estático al hacer scroll en celular. Si el negocio
@@ -32,6 +41,8 @@ body { background: var(--crema); padding-bottom: 90px; position: relative; }
 .carta-top__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .carta-top__nombre { font-family: var(--display); font-size: 19px; font-weight: 600; color: var(--tinta); }
 .carta-top__sub { font-size: 12px; color: var(--tinta-45); }
+.carta-top__ig { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--crema-2); color: var(--tinta); display: grid; place-items: center; transition: background .2s, color .2s; }
+.carta-top__ig:hover { background: var(--verde); color: #fff; }
 
 .carta-vacio { text-align: center; padding: 60px 20px; color: var(--tinta-60); font-size: 14.5px; }
 
@@ -42,7 +53,7 @@ body { background: var(--crema); padding-bottom: 90px; position: relative; }
    auto-fill con mínimo 170px en pantallas más anchas. */
 .carta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding-bottom: 4px; width: 100%; }
 @media (min-width: 480px) { .carta-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); } }
-.carta-card { background: #fff; border: 1px solid var(--linea); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; transition: border-color .2s, box-shadow .2s, transform .2s; box-shadow: 0 2px 10px rgba(0,0,0,.04); }
+.carta-card { background: var(--carta-tarjeta-bg); border: 1px solid var(--carta-tarjeta-borde); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; transition: border-color .2s, box-shadow .2s, transform .2s; box-shadow: 0 2px 10px rgba(0,0,0,.04); }
 .carta-card.en-carrito { border-color: var(--verde); box-shadow: 0 0 0 1.5px var(--verde) inset; }
 .carta-card__img { width: 100%; aspect-ratio: 1/1; background: var(--verde-soft); object-fit: cover; display: block; cursor: pointer; }
 .carta-card__ph { width: 100%; aspect-ratio: 1/1; background: var(--verde-soft); display: grid; place-items: center; color: var(--verde); }
@@ -84,7 +95,7 @@ body { background: var(--crema); padding-bottom: 90px; position: relative; }
    esto el overlay del pedido se veía SIEMPRE, tapando los productos desde
    que se abre el link (mismo problema que ya se tapó antes en .wa-card). */
 .carta-overlay[hidden] { display: none; }
-.carta-sheet { background: #fff; width: 100%; max-width: 480px; border-radius: 20px 20px 0 0; padding: 28px 22px 34px; max-height: 86vh; overflow-y: auto; position: relative; }
+.carta-sheet { background: var(--carta-pedido-bg); width: 100%; max-width: 480px; border-radius: 20px 20px 0 0; padding: 28px 22px 34px; max-height: 86vh; overflow-y: auto; position: relative; }
 .carta-sheet__cerrar { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--crema-2); font-size: 15px; cursor: pointer; }
 .carta-sheet__titulo { font-family: var(--display); font-size: 22px; font-weight: 600; margin-bottom: 14px; }
 .carta-sheet__item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--linea); font-size: 13.5px; }

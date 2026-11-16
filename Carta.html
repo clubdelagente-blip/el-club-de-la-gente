@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=142">
-  <link rel="stylesheet" href="carta.css?v=7">
+  <link rel="stylesheet" href="carta.css?v=8">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -28,10 +28,13 @@
     <div class="wrap">
       <div class="carta-top__negocio">
         <div class="carta-top__logo" id="carta-logo"></div>
-        <div>
+        <div style="flex:1;min-width:0">
           <div class="carta-top__nombre" id="carta-nombre">Cargando…</div>
           <div class="carta-top__sub">Carta digital · El Club de la Gente</div>
         </div>
+        <a href="#" target="_blank" rel="noopener" class="carta-top__ig" id="carta-instagram" hidden aria-label="Instagram del negocio">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+        </a>
       </div>
     </div>
   </header>
@@ -116,7 +119,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=7"></script>
+  <script type="module" src="carta.js?v=8"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

@@ -134,7 +134,14 @@ async function iniciar() {
   if (nombreEl) nombreEl.textContent = negocio.nombre;
   document.title = `Carta de ${negocio.nombre} — El Club de la Gente`;
   if (logoEl && negocio.imagen_url) logoEl.innerHTML = `<img src="${esc(negocio.imagen_url)}" alt="">`;
+  if (negocio.instagram) {
+    const igEl = $("#carta-instagram");
+    if (igEl) { igEl.href = negocio.instagram; igEl.hidden = false; }
+  }
   if (negocio.carta_color) document.documentElement.style.setProperty('--verde', negocio.carta_color);
+  if (negocio.carta_color_tarjeta) document.documentElement.style.setProperty('--carta-tarjeta-bg', negocio.carta_color_tarjeta);
+  if (negocio.carta_color_borde) document.documentElement.style.setProperty('--carta-tarjeta-borde', negocio.carta_color_borde);
+  if (negocio.carta_color_pedido) document.documentElement.style.setProperty('--carta-pedido-bg', negocio.carta_color_pedido);
   if (negocio.carta_portada_url) {
     // La foto del negocio pasa a ser el fondo fijo de TODA la carta (no una
     // tira chica arriba) -- full prevalencia a la foto, con el mismo efecto

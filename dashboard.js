@@ -1880,7 +1880,7 @@ async function cargarContabilidadNegocio(negocioId) {
   });
 
   const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }] = await Promise.all([
-    supabase.from("aliados").select("carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago").eq("id", negocioId).maybeSingle(),
+    supabase.from("aliados").select("carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
     supabase.from("negocio_categorias_ingreso").select("*").eq("negocio_id", negocioId).order("nombre"),
@@ -1925,6 +1925,9 @@ async function cargarContabilidadNegocio(negocioId) {
   const sellosTipoInput = $("#conta-carta-sellos-tipo"); if (sellosTipoInput) sellosTipoInput.value = _contaNegocio.carta_sellos_premio_tipo || "descuento";
   const sellosPremioInput = $("#conta-carta-sellos-premio"); if (sellosPremioInput) sellosPremioInput.value = _contaNegocio.carta_sellos_premio_desc || "";
   const llaveInput = $("#conta-carta-llave"); if (llaveInput) llaveInput.value = _contaNegocio.tienda_llave_pago || "";
+  const colorTarjetaInput = $("#conta-carta-color-tarjeta"); if (colorTarjetaInput) colorTarjetaInput.value = _contaNegocio.carta_color_tarjeta || "#ffffff";
+  const colorBordeInput = $("#conta-carta-color-borde"); if (colorBordeInput) colorBordeInput.value = _contaNegocio.carta_color_borde || "#e5e5e5";
+  const colorPedidoInput = $("#conta-carta-color-pedido"); if (colorPedidoInput) colorPedidoInput.value = _contaNegocio.carta_color_pedido || "#ffffff";
 
   const btnGastoAdd = $("#conta-gasto-add"); if (btnGastoAdd) btnGastoAdd.onclick = () => abrirFormGastoNegocio();
   const btnIngresoAdd = $("#conta-ingreso-add"); if (btnIngresoAdd) btnIngresoAdd.onclick = () => abrirFormIngresoNegocio();
@@ -2223,12 +2226,16 @@ async function guardarPersonalizacionCarta() {
   const sellosTipo = $("#conta-carta-sellos-tipo")?.value || "descuento";
   const sellosPremio = $("#conta-carta-sellos-premio")?.value.trim() || null;
   const llave = $("#conta-carta-llave")?.value.trim() || null;
+  const colorTarjeta = $("#conta-carta-color-tarjeta")?.value || null;
+  const colorBorde = $("#conta-carta-color-borde")?.value || null;
+  const colorPedido = $("#conta-carta-color-pedido")?.value || null;
   if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
   const payload = {
     carta_color: color, carta_portada_url: portadaUrl,
     carta_sellos_activo: sellosActivo, carta_sellos_meta: sellosMeta,
     carta_sellos_premio_tipo: sellosTipo, carta_sellos_premio_desc: sellosPremio,
     tienda_llave_pago: llave,
+    carta_color_tarjeta: colorTarjeta, carta_color_borde: colorBorde, carta_color_pedido: colorPedido,
   };
   const { error } = await supabase.from("aliados").update(payload).eq("id", _contaNegocioId);
   if (btn) { btn.disabled = false; btn.textContent = "Guardar personalización"; }
