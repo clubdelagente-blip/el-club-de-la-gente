@@ -2090,9 +2090,15 @@ async function cargarContabilidadNegocio(negocioId) {
   const llaveInput = $("#conta-carta-llave"); if (llaveInput) llaveInput.value = _contaNegocio.tienda_llave_pago || "";
   const llaveQrUrlInput = $("#conta-carta-llave-qr-url"); if (llaveQrUrlInput) llaveQrUrlInput.value = _contaNegocio.tienda_llave_qr_url || "";
   const llaveQrPreview = $("#conta-carta-llave-qr-preview");
+  const llaveQrDescargar = $("#conta-carta-llave-qr-descargar");
   if (llaveQrPreview) {
-    if (_contaNegocio.tienda_llave_qr_url) { llaveQrPreview.src = _contaNegocio.tienda_llave_qr_url; llaveQrPreview.style.display = "block"; }
-    else { llaveQrPreview.style.display = "none"; }
+    if (_contaNegocio.tienda_llave_qr_url) {
+      llaveQrPreview.src = _contaNegocio.tienda_llave_qr_url; llaveQrPreview.style.display = "block";
+      if (llaveQrDescargar) { llaveQrDescargar.href = _contaNegocio.tienda_llave_qr_url; llaveQrDescargar.style.display = "inline-flex"; }
+    } else {
+      llaveQrPreview.style.display = "none";
+      if (llaveQrDescargar) llaveQrDescargar.style.display = "none";
+    }
   }
   const colorTarjetaInput = $("#conta-carta-color-tarjeta"); if (colorTarjetaInput) colorTarjetaInput.value = _contaNegocio.carta_color_tarjeta || "#ffffff";
   const colorBordeInput = $("#conta-carta-color-borde"); if (colorBordeInput) colorBordeInput.value = _contaNegocio.carta_color_borde || "#e5e5e5";
@@ -2176,6 +2182,7 @@ async function cargarContabilidadNegocio(negocioId) {
       if (upErr) throw upErr;
       const url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
       const urlInput = $("#conta-carta-llave-qr-url"); if (urlInput) urlInput.value = url;
+      const descargar = $("#conta-carta-llave-qr-descargar"); if (descargar) { descargar.href = url; descargar.style.display = "inline-flex"; }
       toast("QR listo -- dale a \"Guardar personalización\"");
     } catch { toast("Error subiendo el QR"); }
   };
