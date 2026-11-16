@@ -603,8 +603,11 @@ async function iniciar() {
     }
     let totalMesa = totalMio;
     try {
-      const { data: pendientes } = await supabase.from("negocio_carta_pedidos").select("monto_total").eq("mesa_sesion_id", mesaSesionId).eq("pagado", false);
-      totalMesa += (pendientes || []).reduce((s, p) => s + Number(p.monto_total || 0), 0);
+      // negocio_carta_pedidos no tiene lectura pública (expondría nombres,
+      // WhatsApp, comprobantes de otros clientes) -- esta función segura
+      // solo devuelve la suma, sin exponer ninguna fila real.
+      const { data: sumaPendiente } = await supabase.rpc("total_pendiente_mesa", { p_mesa_sesion_id: mesaSesionId });
+      totalMesa += Number(sumaPendiente || 0);
     } catch {}
     if (totSpan) totSpan.textContent = COP(totalMesa);
     if (notaEl) notaEl.textContent = `Pagas el total de la mesa: ${COP(totalMesa)} (lo tuyo + lo que ya pidieron y no han pagado).`;
