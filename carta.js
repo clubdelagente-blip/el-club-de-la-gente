@@ -48,10 +48,13 @@ function renderBarra() {
 }
 
 function renderQty(productoId) {
+  const cantidad = carrito.get(productoId)?.cantidad || 0;
   const el = document.querySelector(`[data-qty-n="${productoId}"]`);
-  if (el) el.textContent = carrito.get(productoId)?.cantidad || 0;
+  if (el) el.textContent = cantidad;
   const card = document.querySelector(`[data-carta-card="${productoId}"]`);
-  if (card) card.classList.toggle('en-carrito', (carrito.get(productoId)?.cantidad || 0) > 0);
+  if (card) card.classList.toggle('en-carrito', cantidad > 0);
+  const qtyWrap = document.querySelector(`[data-qty-wrap="${productoId}"]`);
+  if (qtyWrap) qtyWrap.classList.toggle('en-uso', cantidad > 0);
 }
 
 function sumarProducto(p, delta) {
@@ -65,7 +68,7 @@ function sumarProducto(p, delta) {
 
 function cardHtml(p) {
   const img = p.imagen_url
-    ? `<img class="carta-card__img" src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" loading="lazy">`
+    ? `<img class="carta-card__img" src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" loading="lazy" data-ver-foto="${p.id}">`
     : `<div class="carta-card__ph"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
   return `
   <div class="carta-card" data-carta-card="${p.id}">
@@ -76,7 +79,7 @@ function cardHtml(p) {
       <div class="carta-card__fila">
         <span class="carta-card__precio">${COP(p.precio)}</span>
         <div class="carta-qty" data-qty-wrap="${p.id}">
-          <button type="button" data-qty-menos="${p.id}" aria-label="Quitar uno">−</button>
+          <button type="button" class="carta-qty__menos" data-qty-menos="${p.id}" aria-label="Quitar uno">−</button>
           <span class="carta-qty__n" data-qty-n="${p.id}">0</span>
           <button type="button" data-qty-mas="${p.id}" aria-label="Agregar uno">+</button>
         </div>
@@ -172,8 +175,41 @@ async function iniciar() {
     items.forEach(p => {
       grid.querySelector(`[data-qty-mas="${p.id}"]`)?.addEventListener("click", () => sumarProducto(p, 1));
       grid.querySelector(`[data-qty-menos="${p.id}"]`)?.addEventListener("click", () => sumarProducto(p, -1));
+      grid.querySelector(`[data-ver-foto="${p.id}"]`)?.addEventListener("click", () => abrirFotoGrande(p.imagen_url));
     });
   }
+
+  // ---------- Foto en grande con efecto de inclinación (no es 3D real --
+  // eso necesitaría varias fotos o un modelo 3D que el negocio no tiene;
+  // esto es un truco visual con rotateX/rotateY según dónde se mueve el
+  // dedo, para dar sensación de profundidad) ----------
+  const fotoOverlay = $("#carta-foto-overlay");
+  const fotoGrande = $("#carta-foto-grande");
+  function abrirFotoGrande(src) {
+    if (!src || !fotoOverlay || !fotoGrande) return;
+    fotoGrande.src = src;
+    fotoOverlay.hidden = false;
+  }
+  function cerrarFotoGrande() {
+    if (!fotoOverlay) return;
+    fotoOverlay.hidden = true;
+    if (fotoGrande) fotoGrande.style.transform = "";
+  }
+  function inclinarFoto(clientX, clientY) {
+    if (!fotoGrande) return;
+    const r = fotoGrande.getBoundingClientRect();
+    const px = (clientX - r.left) / r.width - 0.5;
+    const py = (clientY - r.top) / r.height - 0.5;
+    fotoGrande.style.transform = `rotateY(${px * 18}deg) rotateX(${-py * 18}deg) scale(1.04)`;
+  }
+  $("#carta-foto-cerrar")?.addEventListener("click", cerrarFotoGrande);
+  fotoOverlay?.addEventListener("click", (e) => { if (e.target === fotoOverlay) cerrarFotoGrande(); });
+  fotoOverlay?.addEventListener("mousemove", (e) => inclinarFoto(e.clientX, e.clientY));
+  fotoOverlay?.addEventListener("mouseleave", () => { if (fotoGrande) fotoGrande.style.transform = ""; });
+  fotoOverlay?.addEventListener("touchmove", (e) => {
+    const t = e.touches[0];
+    if (t) inclinarFoto(t.clientX, t.clientY);
+  }, { passive: true });
 
   // ---------- Mini pasarela de pago: efectivo (pagar en caja) o
   // transferencia (llave del negocio + comprobante) ----------
