@@ -1671,6 +1671,7 @@ let _contaCartaPedidos = [];
 let _contaModGrupos = [];
 let _contaModOpciones = [];
 let _contaModProdGrupos = [];
+let _contaMesas = [];
 let _contaCategoriasOrdenCarta = [];
 let _contaAvisosCarta = [];
 let _cartaPedidosRealtimeCh = null;
@@ -2033,7 +2034,7 @@ async function cargarContabilidadNegocio(negocioId) {
     };
   });
 
-  const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }] = await Promise.all([
+  const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }, { data: mesas }] = await Promise.all([
     supabase.from("aliados").select("carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
@@ -2044,6 +2045,7 @@ async function cargarContabilidadNegocio(negocioId) {
     supabase.from("negocio_carta_grupos_mod").select("*").eq("negocio_id", negocioId).order("orden"),
     supabase.from("negocio_carta_opciones_mod").select("*").eq("negocio_id", negocioId).order("orden"),
     supabase.from("negocio_carta_producto_grupos").select("*").eq("negocio_id", negocioId),
+    supabase.from("negocio_mesas").select("*").eq("negocio_id", negocioId).order("orden"),
   ]);
 
   _contaNegocio = negocio || {};
@@ -2056,6 +2058,7 @@ async function cargarContabilidadNegocio(negocioId) {
   _contaModGrupos = modGrupos || [];
   _contaModOpciones = modOpciones || [];
   _contaModProdGrupos = modProdGrupos || [];
+  _contaMesas = mesas || [];
 
   // Primera vez que este negocio abre la pestaña: siembra categorías
   // típicas para que no arranque vacío -- solo pasa una vez, porque en la
@@ -2120,6 +2123,7 @@ async function cargarContabilidadNegocio(negocioId) {
   const btnIngresoCats = $("#conta-ingresos-cats"); if (btnIngresoCats) btnIngresoCats.onclick = () => gestionarCategoriasNegocio("ingreso");
   const btnCartaProdAdd = $("#conta-carta-producto-add"); if (btnCartaProdAdd) btnCartaProdAdd.onclick = () => abrirFormProductoCarta();
   const btnModGrupoAdd = $("#conta-mod-grupo-add"); if (btnModGrupoAdd) btnModGrupoAdd.onclick = () => abrirFormModGrupo();
+  const btnMesaAdd = $("#conta-mesa-add"); if (btnMesaAdd) btnMesaAdd.onclick = () => abrirFormMesa();
   const btnNuevoPedido = $("#conta-nuevo-pedido-btn"); if (btnNuevoPedido) btnNuevoPedido.onclick = () => abrirConstructorPedido();
   const btnPersonalizar = $("#conta-carta-personalizar-guardar"); if (btnPersonalizar) btnPersonalizar.onclick = () => guardarPersonalizacionCarta();
   const inputPortada = $("#conta-carta-portada");
@@ -2153,6 +2157,7 @@ async function cargarContabilidadNegocio(negocioId) {
 
   renderContabilidadNegocioUI();
   cargarModGrupos();
+  cargarMesas();
   cargarCartaProductos();
   cargarCartaPedidos();
   mostrarSugerenciaCategorias();
@@ -2691,6 +2696,66 @@ function abrirFormModGrupo(g = {}) {
   });
 }
 
+// Mesas (pedidos compartidos): cada mesa tiene su propio QR -- todo el que
+// lo escanee entra a la misma "sesión de mesa" (ver RPC
+// abrir_o_unir_sesion_mesa) y sus pedidos se agrupan solos en "Pedidos",
+// sin que nadie tenga que pagar individual (se cobra la mesa completa).
+function cargarMesas() {
+  const list = $("#conta-mesas-list");
+  if (!list) return;
+  if (!_contaMesas.length) { list.innerHTML = `<p style="padding:8px 0">Aún no tienes mesas. Crea una y pega su QR en ella.</p>`; return; }
+  list.innerHTML = _contaMesas.map(m => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #ebebeb">
+      <div style="flex:1;font-weight:600;font-size:14px">🍽️ ${esc(m.nombre)}</div>
+      <button data-ver-mesa="${m.id}" class="btn" style="padding:7px 12px;font-size:12px">Ver QR</button>
+      <button data-rm-mesa="${m.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button>
+    </div>`).join("");
+  if (window.lucide) lucide.createIcons();
+  list.querySelectorAll("[data-ver-mesa]").forEach(btn => btn.addEventListener("click", () => {
+    const m = _contaMesas.find(x => x.id === btn.dataset.verMesa);
+    if (m) abrirQrMesa(m);
+  }));
+  list.querySelectorAll("[data-rm-mesa]").forEach(btn => btn.addEventListener("click", async () => {
+    if (!confirm("¿Eliminar esta mesa?")) return;
+    await supabase.from("negocio_mesas").delete().eq("id", btn.dataset.rmMesa);
+    toast("Mesa eliminada");
+    cargarContabilidadNegocio(_contaNegocioId);
+  }));
+}
+
+function abrirQrMesa(m) {
+  const url = `https://elclubdelagente.com/Carta.html?aliado=${_contaNegocioId}&mesa=${m.id}`;
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(url)}`;
+  abrirModalTienda(m.nombre, `
+    <div style="text-align:center">
+      <img src="${qrSrc}" alt="QR de ${esc(m.nombre)}" style="width:200px;height:200px;border-radius:10px;border:1px solid var(--linea);margin-bottom:14px">
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <a href="${qrSrc}" download="${esc(m.nombre)}-qr.png" class="btn">Descargar QR</a>
+        <button class="btn" id="mesa-qr-copiar" type="button">Copiar link</button>
+      </div>
+    </div>
+  `);
+  $("#mesa-qr-copiar")?.addEventListener("click", () => copiarTextoConRespaldo(url).then(() => toast("Link copiado ✓")));
+}
+
+function abrirFormMesa() {
+  abrirModalTienda("Nueva mesa", `
+    <div class="cfg-campo"><label class="cfg-label">Nombre de la mesa *</label><input class="cfg-input" id="mesa-nombre" type="text" placeholder="Ej: Mesa 1"></div>
+    <button class="btn btn--primario" id="mesa-save">Crear mesa</button>
+  `);
+  $("#mesa-save")?.addEventListener("click", async () => {
+    const btn = $("#mesa-save");
+    const nombre = $("#mesa-nombre")?.value.trim();
+    if (!nombre) { toast("El nombre es obligatorio"); return; }
+    btn.disabled = true; btn.textContent = "Creando…";
+    const { error } = await supabase.from("negocio_mesas").insert({ negocio_id: _contaNegocioId, nombre, orden: _contaMesas.length });
+    if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Crear mesa"; return; }
+    cerrarModalTienda();
+    toast("Mesa creada ✓");
+    cargarContabilidadNegocio(_contaNegocioId);
+  });
+}
+
 async function cargarCartaProductos() {
   const list = $("#conta-carta-productos-list");
   if (!list) return;
@@ -2787,37 +2852,77 @@ function abrirFormProductoCarta(p = {}) {
 // operativo (cocina/mostrador) y estado de pago son independientes a
 // propósito: un pedido puede estar "Entregado" sin estar pagado (fiado) o
 // "Pendiente" y ya pagado (pago anticipado) -- cada botón mueve solo lo suyo.
+// Un pedido de mesa compartida (mesa_sesion_id) nunca se paga individual --
+// nadie eligió método de pago al mandarlo (ver carta.js), así que acá nunca
+// se le muestra "Marcar pagado" propio; eso vive en el botón "Cobrar mesa
+// completa" del grupo entero, una sola vez por mesa.
+function filaPedidoHtml(ped, { ocultarPagar } = {}) {
+  const est = ESTADO_PEDIDO_CARTA[ped.estado] || ESTADO_PEDIDO_CARTA.pendiente;
+  const items = Array.isArray(ped.items) ? ped.items : [];
+  const resumenItems = items.map(it => {
+    const mods = Array.isArray(it.modificadores) && it.modificadores.length ? ` (${it.modificadores.map(m => esc(m.opcion)).join(", ")})` : "";
+    return `${it.cantidad}× ${esc(it.nombre)}${mods}`;
+  }).join(", ");
+  const folio = "#" + String(ped.id).slice(0, 8).toUpperCase();
+  return `
+  <div style="padding:14px 0;border-bottom:1px solid #ebebeb">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px">
+        <div style="font-weight:600;font-size:14px">${folio} · ${esc(ped.cliente_nombre)} — ${COP(ped.monto_total)}</div>
+        <div style="font-size:12px;color:#777">${esc(resumenItems)}${ped.nota ? " · " + esc(ped.nota) : ""}${ped.cliente_whatsapp ? " · " + esc(ped.cliente_whatsapp) : ""}</div>
+        <div style="font-size:12px;color:#777;margin-top:2px">${ped.metodo_pago === "transferencia" ? "🏦 Transferencia" : ped.metodo_pago === "efectivo" ? "💵 Efectivo" : ""}${ped.comprobante_url ? ` · <a href="${esc(ped.comprobante_url)}" target="_blank" style="color:var(--verde)">Ver comprobante ↗</a>` : ""}</div>
+      </div>
+      <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};white-space:nowrap">${est.t}</span>
+      ${ped.pagado ? `<span style="font-size:11px;font-weight:700;color:#0e7a3e;white-space:nowrap">Pagado ✓</span>` : ""}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      ${est.siguiente ? `<button data-avanzar-ccped="${ped.id}" class="btn btn--primario" style="padding:8px 14px;font-size:12px">${est.siguienteLbl}</button>` : ""}
+      ${ped.estado !== "cancelado" && ped.estado !== "entregado" ? `<button data-cancelar-ccped="${ped.id}" style="padding:8px 14px;font-size:12px;border:1px solid #ebebeb;border-radius:8px;background:none;cursor:pointer">Cancelar</button>` : ""}
+      ${!ped.pagado && !ocultarPagar ? `<button data-pagar-ccped="${ped.id}" style="padding:8px 14px;font-size:12px;border:1px solid var(--verde);border-radius:8px;background:none;color:var(--verde);cursor:pointer;font-weight:700">Marcar pagado</button>` : ""}
+    </div>
+  </div>`;
+}
+
+// Lista solo los pedidos "activos" -- no cancelados, y no (entregados Y ya
+// pagados), que es cuando un pedido queda realmente cerrado (su ingreso ya
+// quedó registrado en Balance, no hace falta seguir viéndolo acá). Estado
+// operativo (cocina/mostrador) y estado de pago son independientes a
+// propósito: un pedido puede estar "Entregado" sin estar pagado (fiado) o
+// "Pendiente" y ya pagado (pago anticipado) -- cada botón mueve solo lo suyo.
+//
+// Los pedidos que vienen de una mesa compartida (varias personas escanearon
+// el mismo QR de mesa) se agrupan bajo un solo encabezado con un botón único
+// "Cobrar mesa completa" -- cada persona sigue viéndose por separado adentro
+// (quién pidió qué), pero el cobro y el ingreso contable son UNO solo.
 async function cargarCartaPedidos() {
   const list = $("#conta-carta-pedidos-list");
   if (!list) return;
   const pedidos = _contaCartaPedidos.filter(p => p.estado !== "cancelado" && !(p.estado === "entregado" && p.pagado));
   if (!pedidos.length) { list.innerHTML = `<p style="padding:8px 0">No tienes pedidos activos de la carta.</p>`; return; }
-  list.innerHTML = pedidos.map(ped => {
-    const est = ESTADO_PEDIDO_CARTA[ped.estado] || ESTADO_PEDIDO_CARTA.pendiente;
-    const items = Array.isArray(ped.items) ? ped.items : [];
-    const resumenItems = items.map(it => {
-      const mods = Array.isArray(it.modificadores) && it.modificadores.length ? ` (${it.modificadores.map(m => esc(m.opcion)).join(", ")})` : "";
-      return `${it.cantidad}× ${esc(it.nombre)}${mods}`;
-    }).join(", ");
-    const folio = "#" + String(ped.id).slice(0, 8).toUpperCase();
+
+  const sueltos = pedidos.filter(p => !p.mesa_sesion_id);
+  const porSesion = new Map();
+  pedidos.filter(p => p.mesa_sesion_id).forEach(p => {
+    if (!porSesion.has(p.mesa_sesion_id)) porSesion.set(p.mesa_sesion_id, []);
+    porSesion.get(p.mesa_sesion_id).push(p);
+  });
+
+  const gruposHtml = [...porSesion.entries()].map(([sesionId, peds]) => {
+    const total = peds.reduce((s, p) => s + Number(p.monto_total || 0), 0);
     return `
-    <div style="padding:14px 0;border-bottom:1px solid #ebebeb">
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <div style="flex:1;min-width:180px">
-          <div style="font-weight:600;font-size:14px">${folio} · ${esc(ped.cliente_nombre)} — ${COP(ped.monto_total)}</div>
-          <div style="font-size:12px;color:#777">${esc(resumenItems)}${ped.nota ? " · " + esc(ped.nota) : ""}${ped.cliente_whatsapp ? " · " + esc(ped.cliente_whatsapp) : ""}</div>
-          <div style="font-size:12px;color:#777;margin-top:2px">${ped.metodo_pago === "transferencia" ? "🏦 Transferencia" : ped.metodo_pago === "efectivo" ? "💵 Efectivo" : ""}${ped.comprobante_url ? ` · <a href="${esc(ped.comprobante_url)}" target="_blank" style="color:var(--verde)">Ver comprobante ↗</a>` : ""}</div>
-        </div>
-        <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};white-space:nowrap">${est.t}</span>
-        ${ped.pagado ? `<span style="font-size:11px;font-weight:700;color:#0e7a3e;white-space:nowrap">Pagado ✓</span>` : ""}
+    <div style="border:1.5px solid var(--verde);border-radius:12px;padding:12px 14px;margin-bottom:14px;background:var(--verde-soft)">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+        <div style="flex:1;min-width:180px;font-weight:700;font-size:14.5px">🍽️ ${esc(peds[0].mesa_nombre || "Mesa")} · ${peds.length} pedido${peds.length === 1 ? "" : "s"} · ${COP(total)}</div>
+        <button data-cobrar-mesa="${sesionId}" class="btn btn--primario" style="padding:8px 14px;font-size:12px">Cobrar mesa completa</button>
       </div>
-      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-        ${est.siguiente ? `<button data-avanzar-ccped="${ped.id}" class="btn btn--primario" style="padding:8px 14px;font-size:12px">${est.siguienteLbl}</button>` : ""}
-        ${ped.estado !== "cancelado" && ped.estado !== "entregado" ? `<button data-cancelar-ccped="${ped.id}" style="padding:8px 14px;font-size:12px;border:1px solid #ebebeb;border-radius:8px;background:none;cursor:pointer">Cancelar</button>` : ""}
-        ${!ped.pagado ? `<button data-pagar-ccped="${ped.id}" style="padding:8px 14px;font-size:12px;border:1px solid var(--verde);border-radius:8px;background:none;color:var(--verde);cursor:pointer;font-weight:700">Marcar pagado</button>` : ""}
+      <div style="background:#fff;border-radius:10px;padding:0 12px">
+        ${peds.map(p => filaPedidoHtml(p, { ocultarPagar: true })).join("")}
       </div>
     </div>`;
   }).join("");
+
+  list.innerHTML = gruposHtml + sueltos.map(p => filaPedidoHtml(p)).join("");
+
   list.querySelectorAll("[data-avanzar-ccped]").forEach(btn => btn.addEventListener("click", async () => {
     const id = btn.dataset.avanzarCcped;
     const ped = pedidos.find(x => x.id === id);
@@ -2846,6 +2951,26 @@ async function cargarCartaPedidos() {
       items: ped.items, monto: ped.monto_total, fecha: new Date().toISOString().slice(0, 10),
     });
     toast("Pedido marcado como pagado ✓");
+    cargarContabilidadNegocio(_contaNegocioId);
+  }));
+  list.querySelectorAll("[data-cobrar-mesa]").forEach(btn => btn.addEventListener("click", async () => {
+    const sesionId = btn.dataset.cobrarMesa;
+    const peds = porSesion.get(sesionId) || [];
+    if (!peds.length) return;
+    if (!confirm(`¿Cobrar la mesa completa? Se marcan ${peds.length} pedido(s) como pagados y se registra un solo ingreso.`)) return;
+    btn.disabled = true;
+    const ids = peds.map(p => p.id);
+    const { error: errUpd } = await supabase.from("negocio_carta_pedidos").update({ pagado: true, pagado_at: new Date().toISOString() }).in("id", ids);
+    if (errUpd) { toast("Error: " + errUpd.message); btn.disabled = false; return; }
+    const itemsCombinados = peds.flatMap(p => (Array.isArray(p.items) ? p.items : []).map(it => ({ ...it, cliente: p.cliente_nombre })));
+    const totalCombinado = peds.reduce((s, p) => s + Number(p.monto_total || 0), 0);
+    await supabase.from("negocio_ingresos").insert({
+      negocio_id: _contaNegocioId, origen: "carta",
+      descripcion: `Mesa ${peds[0].mesa_nombre || ""} · ${peds.length} pedido(s)`,
+      items: itemsCombinados, monto: totalCombinado, fecha: new Date().toISOString().slice(0, 10),
+    });
+    await supabase.from("negocio_mesas_sesiones").update({ estado: "cerrada", cerrada_at: new Date().toISOString() }).eq("id", sesionId);
+    toast("Mesa cobrada ✓");
     cargarContabilidadNegocio(_contaNegocioId);
   }));
 }

@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=142">
-  <link rel="stylesheet" href="carta.css?v=14">
+  <link rel="stylesheet" href="carta.css?v=15">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -112,13 +112,14 @@
         </div>
         <div class="carta-campo"><label>Nota <span style="font-weight:400;color:var(--tinta-45)">(mesa, domicilio, etc.)</span></label><input id="carta-cliente-nota" type="text" placeholder="Ej: Mesa 4"></div>
 
-        <div class="carta-campo">
+        <div class="carta-campo" id="carta-campo-pago">
           <label>¿Cómo vas a pagar? *</label>
           <div class="carta-metodo-pago">
             <button type="button" class="carta-metodo-btn" data-metodo="efectivo">💵 Efectivo</button>
             <button type="button" class="carta-metodo-btn" data-metodo="transferencia">🏦 Transferencia</button>
           </div>
         </div>
+        <p class="carta-mesa-aviso" id="carta-mesa-aviso" hidden>Tu pedido se agrega a la mesa -- no pagas aquí, el mesero cobra la mesa completa al final.</p>
 
         <div id="carta-pago-efectivo" hidden class="carta-pago-detalle">
           <p>Ve a la caja para efectuar el pago. Cuando ya hayas pagado, dale a "Ya pagué".</p>
@@ -150,7 +151,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=15"></script>
+  <script type="module" src="carta.js?v=16"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

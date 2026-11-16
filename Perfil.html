@@ -917,6 +917,15 @@
                   </div>
                 </details>
 
+                <details class="card" style="margin-bottom:16px">
+                  <summary style="cursor:pointer;font-family:'Anton',sans-serif;font-size:17px;font-weight:700">Mesas (pedidos compartidos)</summary>
+                  <div style="padding:16px 0 4px">
+                    <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:14px">Crea una mesa y pega su QR en ella -- todos los que lo escaneen arman su propio pedido, pero te llegan agrupados como uno solo en "Pedidos". Nadie paga individual: cobras la mesa completa cuando termina.</p>
+                    <button class="btn btn--primario" id="conta-mesa-add" type="button" style="margin-bottom:14px">+ Nueva mesa</button>
+                    <div id="conta-mesas-list"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
+                  </div>
+                </details>
+
                 <div class="card__head" style="padding:0 0 10px"><span class="card__title">Pedidos</span></div>
                 <div id="conta-carta-pedidos-list" style="padding:4px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
               </div>
@@ -1354,7 +1363,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=229"></script>
+  <script type="module" src="dashboard.js?v=230"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">

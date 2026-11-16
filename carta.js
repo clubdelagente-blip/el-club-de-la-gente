@@ -30,6 +30,11 @@ function copiarFallback(texto) {
 }
 
 const aliadoId = new URLSearchParams(location.search).get('aliado');
+// Si el link trae ?mesa=, varias personas en la misma mesa escanean el MISMO
+// QR y todas se unen a la misma "sesión de mesa" (ver abrirSesionMesa más
+// abajo) -- cada quien manda su propio pedido, pero nadie paga individual:
+// el negocio cobra la mesa completa cuando termina.
+const mesaId = new URLSearchParams(location.search).get('mesa');
 const carrito = new Map(); // producto_id -> { nombre, precio, cantidad }
 
 function totalCarrito() {
@@ -158,6 +163,29 @@ async function iniciar() {
     if (nombreEl) nombreEl.textContent = "Carta no encontrada";
     if (vacio) { vacio.hidden = false; vacio.querySelector("p").textContent = "No encontramos este negocio."; }
     return;
+  }
+
+  // Si el link trae ?mesa=, se abre (o se une a) la sesión de esa mesa --
+  // abrir_o_unir_sesion_mesa es una función segura en la base de datos que
+  // evita que dos celulares escaneando al mismo tiempo creen 2 sesiones
+  // distintas para la misma mesa vacía (ver comentario de la función en la
+  // migración SQL). Si algo falla (mesa inválida, de otro negocio, etc.) la
+  // carta sigue funcionando normal, solo que sin agrupar por mesa.
+  let mesaSesionId = null;
+  let mesaNombre = null;
+  if (mesaId) {
+    try {
+      const { data: mesa } = await supabase.from("negocio_mesas").select("*").eq("id", mesaId).eq("negocio_id", aliadoId).maybeSingle();
+      if (mesa) {
+        mesaNombre = mesa.nombre;
+        const { data: sesionId } = await supabase.rpc("abrir_o_unir_sesion_mesa", { p_mesa_id: mesaId });
+        if (sesionId) mesaSesionId = sesionId;
+      }
+    } catch {}
+  }
+  if (mesaNombre) {
+    const subEl = document.querySelector(".carta-top__sub");
+    if (subEl) subEl.textContent = `Pedido para ${mesaNombre}`;
   }
 
   if (nombreEl) nombreEl.textContent = negocio.nombre;
@@ -565,6 +593,11 @@ async function iniciar() {
     const efEl = $("#carta-pago-efectivo"); if (efEl) efEl.hidden = true;
     const trEl = $("#carta-pago-transferencia"); if (trEl) trEl.hidden = true;
     const compInput = $("#carta-comprobante"); if (compInput) compInput.value = "";
+    // En una mesa compartida nadie paga individual -- se oculta el paso de
+    // "cómo vas a pagar" y el botón pasa de "Ya pagué" a "Enviar a la mesa".
+    const campoPago = $("#carta-campo-pago"); if (campoPago) campoPago.hidden = !!mesaSesionId;
+    const avisoMesa = $("#carta-mesa-aviso"); if (avisoMesa) avisoMesa.hidden = !mesaSesionId;
+    const enviarBtn = $("#carta-enviar-pedido"); if (enviarBtn) enviarBtn.textContent = mesaSesionId ? "Enviar a la mesa" : "Ya pagué";
     $("#carta-sheet-form").hidden = false;
     $("#carta-sheet-exito").hidden = true;
     overlay.hidden = false;
@@ -582,14 +615,16 @@ async function iniciar() {
     const nota = $("#carta-cliente-nota")?.value.trim();
     if (!nombre) { alert("Escribe tu nombre para enviar el pedido"); return; }
     if (!carrito.size) { alert("Agrega al menos un producto"); return; }
-    if (!metodoPago) { alert("Elige cómo vas a pagar"); return; }
+    if (!mesaSesionId && !metodoPago) { alert("Elige cómo vas a pagar"); return; }
     const comprobanteFile = $("#carta-comprobante")?.files?.[0];
-    if (metodoPago === "transferencia" && !comprobanteFile) { alert("Sube el comprobante de pago"); return; }
+    if (!mesaSesionId && metodoPago === "transferencia" && !comprobanteFile) { alert("Sube el comprobante de pago"); return; }
     _cartaEnviando = true;
-    btn.disabled = true; btn.textContent = "Enviando…";
+    const textoEnviando = mesaSesionId ? "Enviando a la mesa…" : "Enviando…";
+    const textoBoton = mesaSesionId ? "Enviar a la mesa" : "Ya pagué";
+    btn.disabled = true; btn.textContent = textoEnviando;
 
     let comprobanteUrl = null;
-    if (metodoPago === "transferencia" && comprobanteFile) {
+    if (!mesaSesionId && metodoPago === "transferencia" && comprobanteFile) {
       try {
         const file = await comprimirImagen(comprobanteFile);
         const ext = file.name.split(".").pop();
@@ -598,7 +633,7 @@ async function iniciar() {
         if (upErr) throw upErr;
         comprobanteUrl = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
       } catch {
-        _cartaEnviando = false; btn.disabled = false; btn.textContent = "Ya pagué";
+        _cartaEnviando = false; btn.disabled = false; btn.textContent = textoBoton;
         alert("No pudimos subir el comprobante. Intenta de nuevo.");
         return;
       }
@@ -616,11 +651,12 @@ async function iniciar() {
       })),
       monto_total: total,
       estado: "pendiente",
-      metodo_pago: metodoPago,
+      metodo_pago: mesaSesionId ? null : metodoPago,
       comprobante_url: comprobanteUrl,
+      ...(mesaSesionId ? { mesa_id: mesaId, mesa_sesion_id: mesaSesionId, mesa_nombre: mesaNombre } : {}),
     };
     const { error } = await supabase.from("negocio_carta_pedidos").insert(payload);
-    btn.disabled = false; btn.textContent = "Ya pagué";
+    btn.disabled = false; btn.textContent = textoBoton;
     _cartaEnviando = false;
     if (error) { alert("No pudimos enviar tu pedido. Intenta de nuevo."); return; }
     carrito.clear();
@@ -628,6 +664,15 @@ async function iniciar() {
     renderBarra();
     $("#carta-sheet-form").hidden = true;
     $("#carta-sheet-exito").hidden = false;
+    const tituloExito = $("#carta-sheet-exito h3");
+    const textoExito = $("#carta-sheet-exito p");
+    if (mesaSesionId) {
+      if (tituloExito) tituloExito.textContent = "¡Pedido agregado a la mesa!";
+      if (textoExito) textoExito.textContent = `Se sumó a ${mesaNombre || "tu mesa"}. El mesero cobra todo junto al final.`;
+    } else {
+      if (tituloExito) tituloExito.textContent = "¡Pedido enviado!";
+      if (textoExito) textoExito.textContent = "El negocio lo confirmará pronto. Gracias por tu compra.";
+    }
 
     // Tarjeta de sellos del negocio (si la activó) -- se deriva de contar
     // pedidos reales con ese mismo WhatsApp (nunca un contador que se
