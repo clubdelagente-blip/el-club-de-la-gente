@@ -164,7 +164,10 @@ body { background: var(--crema); padding-bottom: 90px; position: relative; }
    arriba de todo el resumen, lejos del paso donde de verdad importa saber
    cuánto hay que entregar/transferir. */
 .carta-pago-monto-fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
-.carta-pago-monto { font-family: var(--display); font-size: 52px; font-weight: 800; color: var(--verde); margin: 0 !important; line-height: 1; word-break: break-word; }
+/* Selector compuesto a propósito -- ".carta-pago-detalle p" (más abajo) le
+   ganaba por especificidad a ".carta-pago-monto" sola y dejaba el monto en
+   13px sin que se notara el motivo con solo mirar esta regla. */
+.carta-pago-detalle .carta-pago-monto { font-family: var(--display); font-size: 52px; font-weight: 800; color: var(--verde); margin: 0 !important; line-height: 1; word-break: break-word; }
 .carta-pago-monto-copiar { flex: none; padding: 9px 16px; border-radius: 100px; border: 1.5px solid var(--verde); background: #fff; color: var(--verde); font-family: var(--cuerpo); font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 #carta-pago-qr { display: block; width: 160px; height: 160px; margin: 0 auto 10px; border-radius: 10px; border: 1px solid var(--linea-fuerte); background: #fff; object-fit: contain; }
 #carta-pago-qr[hidden] { display: none; }
