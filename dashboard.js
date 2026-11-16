@@ -1670,6 +1670,7 @@ let _contaCartaProductos = [];
 let _contaCartaPedidos = [];
 let _cartaPedidosRealtimeCh = null;
 let _audioCtxPedido = null;
+let _pedidosNuevosSinVer = 0;
 
 const ESTADO_PEDIDO_CARTA = {
   pendiente:      { c: "#b45309", bg: "#fef3c7", t: "Pendiente",      siguiente: "aceptado",       siguienteLbl: "Aceptar pedido" },
@@ -1778,6 +1779,33 @@ function reproducirSonidoPedido() {
   tono(1180, 0.18, 0.3);
 }
 
+// Banner fijo arriba de la pantalla -- a diferencia de un toast, se queda
+// puesto hasta que el negocio lo vea de verdad (lo cierra o entra a ver el
+// pedido), igual de persistente que el banner de "No pudimos cargar tu
+// cuenta" (mostrarErrorCargaDash) que ya existe para errores de carga.
+function mostrarBannerPedidoNuevo() {
+  _pedidosNuevosSinVer++;
+  const texto = _pedidosNuevosSinVer > 1 ? `🧾 ¡${_pedidosNuevosSinVer} pedidos nuevos de la carta!` : "🧾 ¡Nuevo pedido de la carta!";
+  let banner = document.getElementById("conta-banner-pedido");
+  if (banner) { const span = banner.querySelector("span"); if (span) span.textContent = texto; return; }
+  banner = document.createElement("div");
+  banner.id = "conta-banner-pedido";
+  banner.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:9999;background:#095544;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;font-size:14px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.15)";
+  banner.innerHTML = `
+    <span>${texto}</span>
+    <button id="conta-banner-pedido-ver" type="button" style="background:#fff;color:#095544;border:none;padding:8px 16px;border-radius:20px;font-weight:700;cursor:pointer">Ver pedido</button>
+    <button id="conta-banner-pedido-cerrar" type="button" aria-label="Cerrar" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1;padding:4px">✕</button>
+  `;
+  document.body.prepend(banner);
+  const cerrar = () => { banner.remove(); _pedidosNuevosSinVer = 0; };
+  document.getElementById("conta-banner-pedido-cerrar").addEventListener("click", cerrar);
+  document.getElementById("conta-banner-pedido-ver").addEventListener("click", () => {
+    cerrar();
+    document.querySelector('#contasub-nav [data-contasub="pedido"]')?.click();
+    document.getElementById("conta-carta-pedidos-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
 // Suscripción en vivo a pedidos nuevos de la carta -- apenas alguien manda
 // un pedido por el QR, aparece solo en la lista (sin recargar la página) y
 // suena un aviso. Una sola suscripción por sesión (igual que
@@ -1787,7 +1815,7 @@ function suscribirPedidosCartaRealtime(negocioId) {
   _cartaPedidosRealtimeCh = supabase.channel("carta-pedidos-" + negocioId)
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "negocio_carta_pedidos", filter: `negocio_id=eq.${negocioId}` }, async () => {
       reproducirSonidoPedido();
-      toast("🧾 ¡Nuevo pedido de la carta!");
+      mostrarBannerPedidoNuevo();
       const { data } = await supabase.from("negocio_carta_pedidos").select("*").eq("negocio_id", negocioId).order("created_at", { ascending: false }).limit(100);
       _contaCartaPedidos = data || [];
       cargarCartaPedidos();
