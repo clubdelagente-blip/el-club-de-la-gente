@@ -2594,9 +2594,14 @@ function cargarModGrupos() {
 function abrirFormModGrupo(g = {}) {
   const opciones = g.id ? _contaModOpciones.filter(o => o.grupo_id === g.id) : [];
   const filaOpcionHtml = (o = {}) => `
-    <div class="mod-opcion-fila" style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-      <input class="cfg-input mod-opcion-nombre" type="text" value="${esc(o.nombre || "")}" placeholder="Ej: Chocolate" style="flex:1">
-      <input class="cfg-input mod-opcion-precio" type="text" inputmode="numeric" value="${o.precio_adicional ? Number(o.precio_adicional).toLocaleString("es-CO") : ""}" placeholder="$0 si va incluido" style="width:130px">
+    <div class="mod-opcion-fila" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+      <label style="cursor:pointer;flex-shrink:0" title="Foto de esta opción (opcional)">
+        <input type="file" accept="image/*" class="mod-opcion-foto" style="display:none">
+        <span class="mod-opcion-foto-preview" style="width:36px;height:36px;border-radius:8px;background:#f0faf4 center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:15px;color:#999;${o.imagen_url ? `background-image:url('${esc(o.imagen_url)}')` : ""}">${o.imagen_url ? "" : "📷"}</span>
+      </label>
+      <input class="cfg-input mod-opcion-nombre" type="text" value="${esc(o.nombre || "")}" placeholder="Ej: Chocolate" style="flex:1;min-width:110px">
+      <input class="cfg-input mod-opcion-precio" type="text" inputmode="numeric" value="${o.precio_adicional ? Number(o.precio_adicional).toLocaleString("es-CO") : ""}" placeholder="$0 si va incluido" style="width:120px">
+      <input type="hidden" class="mod-opcion-foto-url" value="${o.imagen_url || ""}">
       <button type="button" class="mod-opcion-quitar" style="border:none;background:none;cursor:pointer;color:#c0392b;font-size:16px">✕</button>
     </div>`;
   abrirModalTienda(g.id ? "Editar grupo" : "Nuevo grupo de toppings", `
@@ -2608,7 +2613,7 @@ function abrirFormModGrupo(g = {}) {
         <option value="multiple" ${g.tipo === "multiple" ? "selected" : ""}>Selección múltiple (el cliente marca las que quiera, opcional)</option>
       </select>
     </div>
-    <label class="cfg-label" style="display:block;margin-top:10px">Opciones <span style="font-weight:400;color:var(--tinta-45)">(deja el precio en $0 si va incluida sin costo extra)</span></label>
+    <label class="cfg-label" style="display:block;margin-top:10px">Opciones <span style="font-weight:400;color:var(--tinta-45)">(deja el precio en $0 si va incluida sin costo extra; la foto es opcional)</span></label>
     <div id="modg-opciones">${opciones.length ? opciones.map(filaOpcionHtml).join("") : filaOpcionHtml()}</div>
     <button type="button" class="btn" id="modg-opcion-add" style="margin-bottom:14px">+ Agregar opción</button>
     <button class="btn btn--primario" id="modg-save" data-id="${g.id || ""}">${g.id ? "Guardar cambios" : "Crear grupo"}</button>
@@ -2616,16 +2621,26 @@ function abrirFormModGrupo(g = {}) {
   $$(".mod-opcion-precio").forEach(formatearInputMoneda);
   const reenlazarQuitar = () => {
     $$(".mod-opcion-quitar").forEach(btn => btn.onclick = () => {
-      if ($$(".mod-opcion-fila").length <= 1) { btn.closest(".mod-opcion-fila").querySelectorAll("input").forEach(i => i.value = ""); return; }
+      if ($$(".mod-opcion-fila").length <= 1) { btn.closest(".mod-opcion-fila").querySelectorAll("input").forEach(i => { if (i.type !== "file") i.value = ""; }); return; }
       btn.closest(".mod-opcion-fila").remove();
     });
   };
+  const reenlazarFoto = () => {
+    $$(".mod-opcion-foto").forEach(input => input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const preview = input.closest("label").querySelector(".mod-opcion-foto-preview");
+      if (preview) { preview.style.backgroundImage = `url('${URL.createObjectURL(file)}')`; preview.textContent = ""; }
+    });
+  };
   reenlazarQuitar();
+  reenlazarFoto();
   $("#modg-opcion-add")?.addEventListener("click", () => {
     const cont = $("#modg-opciones");
     cont.insertAdjacentHTML("beforeend", filaOpcionHtml());
     formatearInputMoneda(cont.lastElementChild.querySelector(".mod-opcion-precio"));
     reenlazarQuitar();
+    reenlazarFoto();
   });
   $("#modg-save")?.addEventListener("click", async () => {
     const btn = $("#modg-save");
@@ -2633,12 +2648,29 @@ function abrirFormModGrupo(g = {}) {
     const nombre = $("#modg-nombre")?.value.trim();
     const tipo = $("#modg-tipo")?.value;
     if (!nombre) { toast("El nombre del grupo es obligatorio"); return; }
-    const filasOpciones = $$(".mod-opcion-fila").map(fila => ({
-      nombre: fila.querySelector(".mod-opcion-nombre")?.value.trim(),
-      precio_adicional: valorMoneda(fila.querySelector(".mod-opcion-precio")) || 0,
-    })).filter(o => o.nombre);
-    if (!filasOpciones.length) { toast("Agrega al menos una opción"); return; }
+    const filas = $$(".mod-opcion-fila").filter(fila => fila.querySelector(".mod-opcion-nombre")?.value.trim());
+    if (!filas.length) { toast("Agrega al menos una opción"); return; }
     btn.disabled = true; btn.textContent = "Guardando…";
+    let filasOpciones;
+    try {
+      filasOpciones = await Promise.all(filas.map(async (fila) => {
+        let imagenUrl = fila.querySelector(".mod-opcion-foto-url")?.value || null;
+        const fotoFile = fila.querySelector(".mod-opcion-foto")?.files?.[0];
+        if (fotoFile) {
+          const file = await comprimirImagen(fotoFile);
+          const ext = file.name.split(".").pop();
+          const path = `carta-topping-${_contaNegocioId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${ext}`;
+          const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+          if (upErr) throw upErr;
+          imagenUrl = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+        }
+        return {
+          nombre: fila.querySelector(".mod-opcion-nombre")?.value.trim(),
+          precio_adicional: valorMoneda(fila.querySelector(".mod-opcion-precio")) || 0,
+          imagen_url: imagenUrl,
+        };
+      }));
+    } catch { toast("Error subiendo una foto"); resetBtn(); return; }
     let grupoId = g.id;
     if (grupoId) {
       const { error } = await supabase.from("negocio_carta_grupos_mod").update({ nombre, tipo }).eq("id", grupoId);
@@ -2650,7 +2682,7 @@ function abrirFormModGrupo(g = {}) {
       grupoId = nuevo.id;
     }
     const { error: errOpc } = await supabase.from("negocio_carta_opciones_mod").insert(
-      filasOpciones.map((o, i) => ({ negocio_id: _contaNegocioId, grupo_id: grupoId, nombre: o.nombre, precio_adicional: o.precio_adicional, orden: i }))
+      filasOpciones.map((o, i) => ({ negocio_id: _contaNegocioId, grupo_id: grupoId, nombre: o.nombre, precio_adicional: o.precio_adicional, imagen_url: o.imagen_url, orden: i }))
     );
     if (errOpc) { toast("Error: " + errOpc.message); resetBtn(); return; }
     cerrarModalTienda();

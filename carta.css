@@ -109,6 +109,7 @@ body { background: var(--crema); padding-bottom: 90px; position: relative; }
 .carta-mod-opcion.es-radio .carta-mod-opcion__marca { border-radius: 50%; }
 .carta-mod-opcion.es-check .carta-mod-opcion__marca { border-radius: 6px; }
 .carta-mod-opcion.is-on .carta-mod-opcion__marca { border-color: var(--verde); background: var(--verde); color: #fff; }
+.carta-mod-opcion__foto { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; flex: none; }
 .carta-mod-opcion__nombre { flex: 1; font-size: 13.5px; color: var(--tinta); }
 .carta-mod-opcion__precio { font-size: 12.5px; font-weight: 600; color: var(--tinta-45); }
 .carta-mod-footer { position: sticky; bottom: -22px; background: #fff; margin: 16px -22px -22px; padding: 14px 22px; border-top: 1px solid var(--linea); display: flex; gap: 12px; align-items: center; }

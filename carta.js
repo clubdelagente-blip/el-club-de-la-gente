@@ -325,6 +325,7 @@ async function iniciar() {
         </div>
         ${g.opciones.map(o => `
           <div class="carta-mod-opcion ${g.tipo === "unica" ? "es-radio" : "es-check"}" data-mod-opcion="${o.id}" data-mod-grupo="${g.id}">
+            ${o.imagen_url ? `<img class="carta-mod-opcion__foto" src="${esc(o.imagen_url)}" alt="">` : ""}
             <span class="carta-mod-opcion__marca">✓</span>
             <span class="carta-mod-opcion__nombre">${esc(o.nombre)}</span>
             ${Number(o.precio_adicional) > 0 ? `<span class="carta-mod-opcion__precio">+${COP(o.precio_adicional)}</span>` : ""}
