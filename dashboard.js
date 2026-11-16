@@ -2140,6 +2140,7 @@ async function cargarContabilidadNegocio(negocioId) {
   _contaModOpciones = modOpciones || [];
   _contaModProdGrupos = modProdGrupos || [];
   _contaMesas = mesas || [];
+  await renovarGastosRecurrentes();
 
   // Primera vez que este negocio abre la pestaña: siembra categorías
   // típicas para que no arranque vacío -- solo pasa una vez, porque en la
@@ -2333,11 +2334,17 @@ function renderContabilidadNegocioUI() {
     if (_contaPeriodo === "mes") renderGraficaConta();
   }
 
+  const chartCatWrap = $("#conta-chart-gastos-cat-wrap");
+  if (chartCatWrap) {
+    chartCatWrap.style.display = gastosPeriodo.length ? "" : "none";
+    if (gastosPeriodo.length) renderGraficaGastosCategoria(gastosPeriodo, totalGastos);
+  }
+
   const bodyGastos = $("#conta-gastos-body");
   if (bodyGastos) {
     bodyGastos.innerHTML = gastosPeriodo.length ? gastosPeriodo.map(g => `
       <tr>
-        <td>${esc(g.proveedor || "—")}${g.factura_url ? ` <a href="${esc(g.factura_url)}" target="_blank" title="Ver factura">${ic("paperclip")}</a>` : ""}${g.metodo_pago ? ` <span style="font-size:11px;color:#999">· ${esc(g.metodo_pago)}</span>` : ""}</td>
+        <td>${esc(g.proveedor || "—")}${g.recurrente || g.gasto_origen_id ? ` <span title="Gasto recurrente">🔁</span>` : ""}${g.factura_url ? ` <a href="${esc(g.factura_url)}" target="_blank" title="Ver factura">${ic("paperclip")}</a>` : ""}${g.metodo_pago ? ` <span style="font-size:11px;color:#999">· ${esc(g.metodo_pago)}</span>` : ""}</td>
         <td>${esc(g.negocio_categorias_gasto?.nombre || "Sin categoría")}</td>
         <td>${new Date(g.fecha + "T00:00:00").toLocaleDateString("es-CO", { day: "numeric", month: "short" })}</td>
         <td>${COP(g.monto)}</td>
@@ -2432,6 +2439,73 @@ function renderGraficaConta() {
   cont.innerHTML = `<svg viewBox="0 0 ${w} ${baseline + 26}" style="width:${Math.max(w, 320)}px;height:auto;display:block">${svg}</svg>`;
 }
 
+// Gastos recurrentes (ej. arriendo mensual): en vez de un cron aparte, se
+// revisa de forma perezosa cada vez que el negocio entra a Mi Contabilidad
+// -- si ya tocaba la siguiente repetición (y puede que hayan pasado varias
+// mientras no entraba), se crean todas las que falten, encadenadas al
+// original vía "gasto_origen_id" (nunca el original mismo -- cada repetición
+// es su propia fila, editable/borrable sin afectar a las demás). Si se
+// apaga "recurrente" en el original, sencillamente deja de generar nuevas.
+function siguienteFechaGasto(fechaISO, frecuencia) {
+  const d = new Date(fechaISO + "T00:00:00");
+  if (frecuencia === "semanal") d.setDate(d.getDate() + 7);
+  else if (frecuencia === "anual") d.setFullYear(d.getFullYear() + 1);
+  else d.setMonth(d.getMonth() + 1); // mensual (por defecto)
+  return d.toISOString().slice(0, 10);
+}
+async function renovarGastosRecurrentes() {
+  const originales = _contaGastos.filter(g => g.recurrente && !g.gasto_origen_id);
+  if (!originales.length) return;
+  const hoy = new Date().toISOString().slice(0, 10);
+  const nuevas = [];
+  originales.forEach(original => {
+    const familia = [original, ..._contaGastos.filter(g => g.gasto_origen_id === original.id)];
+    const ultima = familia.reduce((max, g) => (g.fecha > max.fecha ? g : max), familia[0]);
+    let siguiente = siguienteFechaGasto(ultima.fecha, original.frecuencia);
+    while (siguiente <= hoy) {
+      nuevas.push({
+        negocio_id: _contaNegocioId, categoria_id: original.categoria_id, proveedor: original.proveedor,
+        monto: original.monto, fecha: siguiente, metodo_pago: original.metodo_pago, nota: original.nota,
+        gasto_origen_id: original.id,
+      });
+      siguiente = siguienteFechaGasto(siguiente, original.frecuencia);
+    }
+  });
+  if (!nuevas.length) return;
+  const { data: insertadas } = await supabase.from("negocio_gastos").insert(nuevas).select("*, negocio_categorias_gasto(nombre)");
+  if (insertadas?.length) _contaGastos.push(...insertadas);
+}
+
+// "¿A dónde se va la plata?" -- barras horizontales ordenadas de mayor a
+// menor en vez de una torta/dona: para comparar y rankear categorías el ojo
+// compara mejor barras sobre una misma línea base que pedazos de un
+// círculo, y escala sin problema a más de 5-6 categorías.
+function renderGraficaGastosCategoria(gastosPeriodo, totalGastos) {
+  const cont = $("#conta-chart-gastos-cat");
+  if (!cont) return;
+  const porCategoria = new Map();
+  gastosPeriodo.forEach(g => {
+    const nombre = g.negocio_categorias_gasto?.nombre || "Sin categoría";
+    porCategoria.set(nombre, (porCategoria.get(nombre) || 0) + Number(g.monto || 0));
+  });
+  const filas = [...porCategoria.entries()].sort((a, b) => b[1] - a[1]);
+  const max = Math.max(1, ...filas.map(([, v]) => v));
+  cont.innerHTML = filas.map(([nombre, monto]) => {
+    const pct = totalGastos > 0 ? (monto / totalGastos * 100) : 0;
+    const anchoPct = (monto / max) * 100;
+    return `
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;gap:10px;font-size:12.5px;margin-bottom:4px">
+        <span style="font-weight:600">${esc(nombre)}</span>
+        <span style="color:var(--tinta-60);white-space:nowrap">${COP(monto)} · ${pct.toFixed(0)}%</span>
+      </div>
+      <div style="background:var(--crema-2);border-radius:100px;height:10px;overflow:hidden">
+        <div style="width:${anchoPct}%;height:100%;background:var(--verde);border-radius:100px"></div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
 function abrirFormGastoNegocio(g = {}) {
   const catOptions = _contaCategoriasGasto.map(c => `<option value="${c.id}" ${g.categoria_id === c.id ? "selected" : ""}>${esc(c.nombre)}</option>`).join("");
   const metodosPago = ["Efectivo", "Transferencia", "Tarjeta", "Otro"];
@@ -2461,11 +2535,27 @@ function abrirFormGastoNegocio(g = {}) {
       <input type="file" id="cg-factura" accept="image/*,.pdf">
       <input type="hidden" id="cg-factura-url" value="${g.factura_url || ""}">
     </div>
+    ${!g.gasto_origen_id ? `
+    <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--tinta-60);margin:4px 0 8px;cursor:pointer">
+      <input type="checkbox" id="cg-recurrente" ${g.recurrente ? "checked" : ""}> Este gasto se repite solo (ej. arriendo mensual)
+    </label>
+    <div class="cfg-campo" id="cg-frecuencia-campo" ${g.recurrente ? "" : "hidden"}>
+      <label class="cfg-label">Cada cuánto se repite</label>
+      <select class="cfg-input" id="cg-frecuencia">
+        <option value="mensual" ${g.frecuencia !== "semanal" && g.frecuencia !== "anual" ? "selected" : ""}>Cada mes</option>
+        <option value="semanal" ${g.frecuencia === "semanal" ? "selected" : ""}>Cada semana</option>
+        <option value="anual" ${g.frecuencia === "anual" ? "selected" : ""}>Cada año</option>
+      </select>
+      <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Cada vez que entres a Mi Contabilidad, se crea solo cuando ya toque la siguiente repetición -- mismo monto, categoría y descripción. Lo puedes apagar cuando quieras.</span>
+    </div>` : ""}
     <button class="btn btn--primario" id="cg-save" data-id="${g.id || ""}" style="margin-top:8px">${g.id ? "Guardar cambios" : "Agregar gasto"}</button>
   `);
   formatearInputMoneda($("#cg-monto"));
   $("#cg-categoria")?.addEventListener("change", (e) => {
     const n = $("#cg-categoria-nueva"); if (n) n.style.display = e.target.value === "__nueva__" ? "block" : "none";
+  });
+  $("#cg-recurrente")?.addEventListener("change", (e) => {
+    const campo = $("#cg-frecuencia-campo"); if (campo) campo.hidden = !e.target.checked;
   });
   $("#cg-save")?.addEventListener("click", async () => {
     const btn = $("#cg-save");
@@ -2495,7 +2585,12 @@ function abrirFormGastoNegocio(g = {}) {
         facturaUrl = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
       } catch { toast("Error subiendo la factura"); resetBtn(); return; }
     }
-    const payload = { negocio_id: _contaNegocioId, categoria_id: categoriaId || null, proveedor: $("#cg-proveedor")?.value.trim() || null, monto, fecha, metodo_pago: $("#cg-metodo")?.value || null, nota: $("#cg-nota")?.value.trim() || null, factura_url: facturaUrl };
+    const recurrente = $("#cg-recurrente")?.checked || false;
+    const payload = {
+      negocio_id: _contaNegocioId, categoria_id: categoriaId || null, proveedor: $("#cg-proveedor")?.value.trim() || null,
+      monto, fecha, metodo_pago: $("#cg-metodo")?.value || null, nota: $("#cg-nota")?.value.trim() || null, factura_url: facturaUrl,
+      ...(g.gasto_origen_id ? {} : { recurrente, frecuencia: recurrente ? ($("#cg-frecuencia")?.value || "mensual") : null }),
+    };
     const { error } = g.id ? await supabase.from("negocio_gastos").update(payload).eq("id", g.id) : await supabase.from("negocio_gastos").insert(payload);
     if (error) { toast("Error: " + error.message); resetBtn(); return; }
     cerrarModalTienda();
