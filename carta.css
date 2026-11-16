@@ -55,6 +55,11 @@ body { background: var(--crema); padding-bottom: 90px; position: relative; }
 .carta-cat-pills::-webkit-scrollbar { display: none; }
 .carta-cat-pill { flex: none; padding: 9px 16px; border-radius: 100px; border: 1.5px solid var(--linea-fuerte); background: #fff; font-family: var(--cuerpo); font-size: 13px; font-weight: 600; color: var(--tinta); cursor: pointer; white-space: nowrap; transition: background .2s, border-color .2s, color .2s; }
 .carta-cat-pill.is-on { background: var(--verde); border-color: var(--verde); color: #fff; }
+/* Color propio por categoría (ej. "Bananos" en amarillo) -- --cat-color lo
+   pone JS inline por cápsula; sin tocar, el aro se ve en ese color y al
+   seleccionarla se rellena con ese mismo color en vez del verde genérico. */
+.carta-cat-pill.con-color { border-color: var(--cat-color); color: var(--cat-color); }
+.carta-cat-pill.con-color.is-on { background: var(--cat-color); border-color: var(--cat-color); color: #fff; }
 
 .carta-vacio { text-align: center; padding: 60px 20px; color: var(--tinta-60); font-size: 14.5px; }
 

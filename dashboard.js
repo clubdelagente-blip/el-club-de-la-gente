@@ -1928,22 +1928,34 @@ function categoriasDisponiblesCarta() {
 // negocio ya haya guardado, y le agrega al final cualquier categoría nueva
 // que todavía no estuviera ahí (ej. porque acaba de agregar un producto con
 // una categoría distinta).
+// "carta_categorias_orden" ahora guarda objetos {nombre, color} en vez de
+// solo el nombre -- esta pareja de funciones deja leer negocios viejos que
+// todavía tengan el arreglo de puros strings guardado, sin romper nada.
+function catOrdenNombre(c) { return typeof c === "string" ? c : c?.nombre; }
+function catOrdenColor(c) { return (typeof c === "string" ? null : c?.color) || null; }
+
 function renderOrdenCategoriasCarta() {
   const cont = $("#conta-carta-cat-orden");
   if (!cont) return;
   const disponibles = categoriasDisponiblesCarta();
   const guardado = Array.isArray(_contaNegocio.carta_categorias_orden) ? _contaNegocio.carta_categorias_orden : [];
   if (!_contaCategoriasOrdenCarta.length) {
-    _contaCategoriasOrdenCarta = guardado.filter(c => disponibles.includes(c));
+    _contaCategoriasOrdenCarta = guardado
+      .filter(c => disponibles.includes(catOrdenNombre(c)))
+      .map(c => ({ nombre: catOrdenNombre(c), color: catOrdenColor(c) }));
   } else {
-    _contaCategoriasOrdenCarta = _contaCategoriasOrdenCarta.filter(c => disponibles.includes(c));
+    _contaCategoriasOrdenCarta = _contaCategoriasOrdenCarta.filter(c => disponibles.includes(c.nombre));
   }
-  disponibles.forEach(c => { if (!_contaCategoriasOrdenCarta.includes(c)) _contaCategoriasOrdenCarta.push(c); });
+  disponibles.forEach(cat => {
+    if (!_contaCategoriasOrdenCarta.some(c => c.nombre === cat)) _contaCategoriasOrdenCarta.push({ nombre: cat, color: null });
+  });
 
   if (!_contaCategoriasOrdenCarta.length) { cont.innerHTML = `<p style="font-size:12.5px;color:#999">Todavía no usas categorías en tus productos.</p>`; return; }
-  cont.innerHTML = _contaCategoriasOrdenCarta.map((cat, i) => `
-    <div style="display:flex;align-items:center;gap:8px;background:var(--crema-2);border-radius:8px;padding:8px 10px">
-      <span style="flex:1;font-size:13px;font-weight:600">${esc(cat)}</span>
+  cont.innerHTML = _contaCategoriasOrdenCarta.map((c, i) => `
+    <div style="display:flex;align-items:center;gap:8px;background:var(--crema-2);border-radius:8px;padding:8px 10px;flex-wrap:wrap">
+      <span style="flex:1;font-size:13px;font-weight:600;min-width:90px">${esc(c.nombre)}</span>
+      <input type="color" data-cat-color="${i}" value="${c.color || "#095544"}" title="Color de esta categoría" style="width:32px;height:32px;padding:0;border:1px solid var(--linea-fuerte);border-radius:6px;flex:none;cursor:pointer">
+      <input type="text" data-cat-color-hex="${i}" value="${c.color || ""}" placeholder="#095544" style="width:92px;flex:none;padding:7px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
       <button type="button" data-cat-subir="${i}" ${i === 0 ? "disabled" : ""} style="border:none;background:none;cursor:pointer;opacity:${i === 0 ? ".3" : "1"}">${ic("chevron-up")}</button>
       <button type="button" data-cat-bajar="${i}" ${i === _contaCategoriasOrdenCarta.length - 1 ? "disabled" : ""} style="border:none;background:none;cursor:pointer;opacity:${i === _contaCategoriasOrdenCarta.length - 1 ? ".3" : "1"}">${ic("chevron-down")}</button>
     </div>`).join("");
@@ -1960,6 +1972,25 @@ function renderOrdenCategoriasCarta() {
     if (i < _contaCategoriasOrdenCarta.length - 1) {
       [_contaCategoriasOrdenCarta[i + 1], _contaCategoriasOrdenCarta[i]] = [_contaCategoriasOrdenCarta[i], _contaCategoriasOrdenCarta[i + 1]];
       renderOrdenCategoriasCarta();
+    }
+  }));
+  // El selector nativo y el campo de texto se mantienen sincronizados entre
+  // sí -- así quien prefiera pegar un código de color a mano (de su manual
+  // de marca, por ejemplo) no tiene que usar la ruedita de colores.
+  cont.querySelectorAll("[data-cat-color]").forEach(input => input.addEventListener("input", () => {
+    const i = +input.dataset.catColor;
+    _contaCategoriasOrdenCarta[i].color = input.value;
+    const hexInput = cont.querySelector(`[data-cat-color-hex="${i}"]`);
+    if (hexInput) hexInput.value = input.value;
+  }));
+  cont.querySelectorAll("[data-cat-color-hex]").forEach(input => input.addEventListener("input", () => {
+    const i = +input.dataset.catColorHex;
+    let v = input.value.trim();
+    if (v && !v.startsWith("#")) v = "#" + v;
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+      _contaCategoriasOrdenCarta[i].color = v;
+      const colorInput = cont.querySelector(`[data-cat-color="${i}"]`);
+      if (colorInput) colorInput.value = v;
     }
   }));
 }

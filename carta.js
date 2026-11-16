@@ -114,7 +114,11 @@ function agruparPorCategoria(items, ordenConfig) {
   });
   const entradas = [...grupos.entries()];
   if (Array.isArray(ordenConfig) && ordenConfig.length) {
-    const indice = (cat) => { const i = ordenConfig.indexOf(cat); return i === -1 ? 999 : i; };
+    // Cada entrada puede ser un string (negocios viejos, antes de poder
+    // personalizar el color) o un {nombre, color} -- se compara por nombre
+    // en los dos casos.
+    const nombres = ordenConfig.map(c => (typeof c === "string" ? c : c?.nombre));
+    const indice = (cat) => { const i = nombres.indexOf(cat); return i === -1 ? 999 : i; };
     entradas.sort((a, b) => indice(a[0]) - indice(b[0]));
   } else {
     entradas.sort((a, b) => (a[0] === "Otros") - (b[0] === "Otros"));
@@ -256,6 +260,15 @@ async function iniciar() {
     return;
   }
 
+  // Color personalizado por categoría (ej. "Bananos" en amarillo, "Hamburguesas"
+  // en rojo) -- se guarda junto con el orden (carta_categorias_orden), igual
+  // sirve para negocios viejos que todavía tengan ahí solo el nombre sin color.
+  function colorDeCategoria(cat) {
+    const cfg = Array.isArray(negocio.carta_categorias_orden) ? negocio.carta_categorias_orden : [];
+    const entry = cfg.find(c => (typeof c === "string" ? c : c?.nombre) === cat);
+    return (entry && typeof entry !== "string" && entry.color) || null;
+  }
+
   if (grid) {
     const grupos = agruparPorCategoria(items, negocio.carta_categorias_orden);
     // Se muestra el título de cada categoría (Malteadas, Wafles, Obleas...)
@@ -263,11 +276,14 @@ async function iniciar() {
     // NADIE puso categoría en ningún producto (ahí "Otros" sería el único
     // grupo y se vería raro como si fuera el nombre real de una sección).
     const mostrarTitulos = !(grupos.length === 1 && grupos[0][0] === "Otros");
-    grid.innerHTML = grupos.map(([cat, prods]) => `
+    grid.innerHTML = grupos.map(([cat, prods]) => {
+      const color = colorDeCategoria(cat);
+      return `
       <div class="carta-grupo" data-categoria="${esc(cat)}">
-        ${mostrarTitulos ? `<h2 class="carta-grupo__titulo">${esc(cat)}</h2>` : ""}
+        ${mostrarTitulos ? `<h2 class="carta-grupo__titulo"${color ? ` style="color:${esc(color)}"` : ""}>${esc(cat)}</h2>` : ""}
         <div class="carta-grid">${prods.map(p => cardHtml(p, gruposPorProducto.has(p.id))).join("")}</div>
-      </div>`).join("");
+      </div>`;
+    }).join("");
 
     // Cápsulas de categoría arriba, para filtrar de una sola vez en vez de
     // tener que ir bajando a pulso -- solo tiene sentido mostrarlas si de
@@ -276,7 +292,10 @@ async function iniciar() {
     if (pillsEl) {
       if (mostrarTitulos && grupos.length > 1) {
         pillsEl.innerHTML = [`<button type="button" class="carta-cat-pill is-on" data-filtro-cat="todos">Todos</button>`]
-          .concat(grupos.map(([cat]) => `<button type="button" class="carta-cat-pill" data-filtro-cat="${esc(cat)}">${esc(cat)}</button>`))
+          .concat(grupos.map(([cat]) => {
+            const color = colorDeCategoria(cat);
+            return `<button type="button" class="carta-cat-pill${color ? " con-color" : ""}" data-filtro-cat="${esc(cat)}"${color ? ` style="--cat-color:${esc(color)}"` : ""}>${esc(cat)}</button>`;
+          }))
           .join("");
         pillsEl.querySelectorAll("[data-filtro-cat]").forEach(btn => btn.addEventListener("click", () => {
           const filtro = btn.dataset.filtroCat;
