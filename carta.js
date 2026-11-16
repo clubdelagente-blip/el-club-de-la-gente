@@ -7,10 +7,27 @@
    Club, con comprobante y verificación IA).
    ============================================================ */
 import { supabase } from './supabase.js';
+import { comprimirImagen } from './imagen.js';
 
 const $ = (s, c = document) => c.querySelector(s);
+const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const COP = (n) => n != null ? '$' + Number(n).toLocaleString('es-CO') : '$0';
+
+// Mismo respaldo que ya hizo falta en otras copias de "Copiar" de este sitio
+// (navigator.clipboard puede fallar o no existir) -- sin esto el botón
+// podía no copiar nada y quedarse callado, sin avisar.
+function copiarTextoConRespaldo(texto) {
+  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(texto).catch(() => copiarFallback(texto));
+  return Promise.resolve(copiarFallback(texto));
+}
+function copiarFallback(texto) {
+  const ta = document.createElement("textarea");
+  ta.value = texto; ta.style.position = "fixed"; ta.style.opacity = "0";
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); } catch {}
+  document.body.removeChild(ta);
+}
 
 const aliadoId = new URLSearchParams(location.search).get('aliado');
 const carrito = new Map(); // producto_id -> { nombre, precio, cantidad }
@@ -147,6 +164,27 @@ async function iniciar() {
     });
   }
 
+  // ---------- Mini pasarela de pago: efectivo (pagar en caja) o
+  // transferencia (llave del negocio + comprobante) ----------
+  const llaveInput = $("#carta-pago-llave");
+  if (llaveInput) llaveInput.value = negocio.tienda_llave_pago || "Este negocio no configuró su llave -- paga en efectivo";
+  let metodoPago = null;
+  $$(".carta-metodo-btn").forEach(b => b.addEventListener("click", () => {
+    metodoPago = b.dataset.metodo;
+    $$(".carta-metodo-btn").forEach(x => x.classList.toggle("is-on", x === b));
+    const efEl = $("#carta-pago-efectivo"); if (efEl) efEl.hidden = metodoPago !== "efectivo";
+    const trEl = $("#carta-pago-transferencia"); if (trEl) trEl.hidden = metodoPago !== "transferencia";
+  }));
+  $("#carta-pago-llave-copiar")?.addEventListener("click", () => {
+    const btnCopiar = $("#carta-pago-llave-copiar");
+    copiarTextoConRespaldo(llaveInput?.value || "").then(() => {
+      if (!btnCopiar) return;
+      const orig = btnCopiar.textContent;
+      btnCopiar.textContent = "Copiada";
+      setTimeout(() => { btnCopiar.textContent = orig; }, 1500);
+    });
+  });
+
   // ---------- Resumen / checkout ----------
   const overlay = $("#carta-overlay");
   const abrirResumen = () => {
@@ -155,6 +193,13 @@ async function iniciar() {
       <div class="carta-sheet__item"><span>${it.cantidad}× ${esc(it.nombre)}</span><span>${COP(it.precio * it.cantidad)}</span></div>`).join("");
     const cont = $("#carta-sheet-items"); if (cont) cont.innerHTML = itemsHtml;
     const totSpan = $("#carta-sheet-total"); if (totSpan) totSpan.textContent = COP(total);
+    // Reinicia la elección de método de pago en cada pedido nuevo -- no
+    // debe quedar pegada la del pedido anterior.
+    metodoPago = null;
+    $$(".carta-metodo-btn").forEach(x => x.classList.remove("is-on"));
+    const efEl = $("#carta-pago-efectivo"); if (efEl) efEl.hidden = true;
+    const trEl = $("#carta-pago-transferencia"); if (trEl) trEl.hidden = true;
+    const compInput = $("#carta-comprobante"); if (compInput) compInput.value = "";
     $("#carta-sheet-form").hidden = false;
     $("#carta-sheet-exito").hidden = true;
     overlay.hidden = false;
@@ -172,8 +217,28 @@ async function iniciar() {
     const nota = $("#carta-cliente-nota")?.value.trim();
     if (!nombre) { alert("Escribe tu nombre para enviar el pedido"); return; }
     if (!carrito.size) { alert("Agrega al menos un producto"); return; }
+    if (!metodoPago) { alert("Elige cómo vas a pagar"); return; }
+    const comprobanteFile = $("#carta-comprobante")?.files?.[0];
+    if (metodoPago === "transferencia" && !comprobanteFile) { alert("Sube el comprobante de pago"); return; }
     _cartaEnviando = true;
     btn.disabled = true; btn.textContent = "Enviando…";
+
+    let comprobanteUrl = null;
+    if (metodoPago === "transferencia" && comprobanteFile) {
+      try {
+        const file = await comprimirImagen(comprobanteFile);
+        const ext = file.name.split(".").pop();
+        const path = `comprobante-carta-${aliadoId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+        if (upErr) throw upErr;
+        comprobanteUrl = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+      } catch {
+        _cartaEnviando = false; btn.disabled = false; btn.textContent = "Ya pagué";
+        alert("No pudimos subir el comprobante. Intenta de nuevo.");
+        return;
+      }
+    }
+
     const { total } = totalCarrito();
     const payload = {
       negocio_id: aliadoId,
@@ -183,9 +248,11 @@ async function iniciar() {
       items: [...carrito.entries()].map(([producto_id, it]) => ({ producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad })),
       monto_total: total,
       estado: "pendiente",
+      metodo_pago: metodoPago,
+      comprobante_url: comprobanteUrl,
     };
     const { error } = await supabase.from("negocio_carta_pedidos").insert(payload);
-    btn.disabled = false; btn.textContent = "Enviar pedido";
+    btn.disabled = false; btn.textContent = "Ya pagué";
     _cartaEnviando = false;
     if (error) { alert("No pudimos enviar tu pedido. Intenta de nuevo."); return; }
     carrito.clear();

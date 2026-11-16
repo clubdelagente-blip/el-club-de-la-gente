@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=142">
-  <link rel="stylesheet" href="carta.css?v=3">
+  <link rel="stylesheet" href="carta.css?v=4">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -69,7 +69,34 @@
           <p id="carta-sellos-hint" hidden style="font-size:12px;color:var(--verde);margin-top:6px;line-height:1.5"></p>
         </div>
         <div class="carta-campo"><label>Nota <span style="font-weight:400;color:var(--tinta-45)">(mesa, domicilio, etc.)</span></label><input id="carta-cliente-nota" type="text" placeholder="Ej: Mesa 4"></div>
-        <button type="button" class="btn btn--primario carta-sheet__enviar" id="carta-enviar-pedido">Enviar pedido</button>
+
+        <div class="carta-campo">
+          <label>¿Cómo vas a pagar? *</label>
+          <div class="carta-metodo-pago">
+            <button type="button" class="carta-metodo-btn" data-metodo="efectivo">💵 Efectivo</button>
+            <button type="button" class="carta-metodo-btn" data-metodo="transferencia">🏦 Transferencia</button>
+          </div>
+        </div>
+
+        <div id="carta-pago-efectivo" hidden class="carta-pago-detalle">
+          <p>Ve a la caja para efectuar el pago. Cuando ya hayas pagado, dale a "Ya pagué".</p>
+        </div>
+
+        <div id="carta-pago-transferencia" hidden class="carta-pago-detalle">
+          <div class="carta-campo">
+            <label>Llave de pago (Nequi, Bre-B...)</label>
+            <div style="display:flex;gap:8px">
+              <input id="carta-pago-llave" readonly style="flex:1;min-width:0">
+              <button type="button" class="btn" id="carta-pago-llave-copiar" style="white-space:nowrap">Copiar</button>
+            </div>
+          </div>
+          <div class="carta-campo">
+            <label>Comprobante de pago *</label>
+            <input type="file" id="carta-comprobante" accept="image/*">
+          </div>
+        </div>
+
+        <button type="button" class="btn btn--primario carta-sheet__enviar" id="carta-enviar-pedido">Ya pagué</button>
       </div>
 
       <div id="carta-sheet-exito" hidden class="carta-exito">
@@ -81,7 +108,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=3"></script>
+  <script type="module" src="carta.js?v=4"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

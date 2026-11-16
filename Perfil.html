@@ -829,6 +829,11 @@
                   <summary style="cursor:pointer;font-family:'Anton',sans-serif;font-size:15px;font-weight:700">Personalizar mi carta</summary>
                   <div style="padding:14px 0 4px">
                     <div class="cfg-campo">
+                      <label class="cfg-label">Llave de pago para la carta (Nequi, Bre-B...)</label>
+                      <input class="cfg-input" id="conta-carta-llave" type="text" placeholder="Ej: 300 123 4567">
+                      <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Es la misma llave de "Mi tienda" -- si la cambias acá, también se actualiza ahí.</span>
+                    </div>
+                    <div class="cfg-campo">
                       <label class="cfg-label">Color de acento</label>
                       <input type="color" id="conta-carta-color" value="#095544" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
                     </div>
@@ -1304,7 +1309,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=221"></script>
+  <script type="module" src="dashboard.js?v=222"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">

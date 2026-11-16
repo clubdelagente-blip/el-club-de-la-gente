@@ -1880,7 +1880,7 @@ async function cargarContabilidadNegocio(negocioId) {
   });
 
   const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }] = await Promise.all([
-    supabase.from("aliados").select("carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc").eq("id", negocioId).maybeSingle(),
+    supabase.from("aliados").select("carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
     supabase.from("negocio_categorias_ingreso").select("*").eq("negocio_id", negocioId).order("nombre"),
@@ -1924,6 +1924,7 @@ async function cargarContabilidadNegocio(negocioId) {
   const sellosMetaInput = $("#conta-carta-sellos-meta"); if (sellosMetaInput) sellosMetaInput.value = _contaNegocio.carta_sellos_meta || 10;
   const sellosTipoInput = $("#conta-carta-sellos-tipo"); if (sellosTipoInput) sellosTipoInput.value = _contaNegocio.carta_sellos_premio_tipo || "descuento";
   const sellosPremioInput = $("#conta-carta-sellos-premio"); if (sellosPremioInput) sellosPremioInput.value = _contaNegocio.carta_sellos_premio_desc || "";
+  const llaveInput = $("#conta-carta-llave"); if (llaveInput) llaveInput.value = _contaNegocio.tienda_llave_pago || "";
 
   const btnGastoAdd = $("#conta-gasto-add"); if (btnGastoAdd) btnGastoAdd.onclick = () => abrirFormGastoNegocio();
   const btnIngresoAdd = $("#conta-ingreso-add"); if (btnIngresoAdd) btnIngresoAdd.onclick = () => abrirFormIngresoNegocio();
@@ -2221,11 +2222,13 @@ async function guardarPersonalizacionCarta() {
   const sellosMeta = parseInt($("#conta-carta-sellos-meta")?.value) || 10;
   const sellosTipo = $("#conta-carta-sellos-tipo")?.value || "descuento";
   const sellosPremio = $("#conta-carta-sellos-premio")?.value.trim() || null;
+  const llave = $("#conta-carta-llave")?.value.trim() || null;
   if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
   const payload = {
     carta_color: color, carta_portada_url: portadaUrl,
     carta_sellos_activo: sellosActivo, carta_sellos_meta: sellosMeta,
     carta_sellos_premio_tipo: sellosTipo, carta_sellos_premio_desc: sellosPremio,
+    tienda_llave_pago: llave,
   };
   const { error } = await supabase.from("aliados").update(payload).eq("id", _contaNegocioId);
   if (btn) { btn.disabled = false; btn.textContent = "Guardar personalización"; }
@@ -2418,6 +2421,7 @@ async function cargarCartaPedidos() {
         <div style="flex:1;min-width:180px">
           <div style="font-weight:600;font-size:14px">${folio} · ${esc(ped.cliente_nombre)} — ${COP(ped.monto_total)}</div>
           <div style="font-size:12px;color:#777">${esc(resumenItems)}${ped.nota ? " · " + esc(ped.nota) : ""}${ped.cliente_whatsapp ? " · " + esc(ped.cliente_whatsapp) : ""}</div>
+          <div style="font-size:12px;color:#777;margin-top:2px">${ped.metodo_pago === "transferencia" ? "🏦 Transferencia" : ped.metodo_pago === "efectivo" ? "💵 Efectivo" : ""}${ped.comprobante_url ? ` · <a href="${esc(ped.comprobante_url)}" target="_blank" style="color:var(--verde)">Ver comprobante ↗</a>` : ""}</div>
         </div>
         <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};white-space:nowrap">${est.t}</span>
         ${ped.pagado ? `<span style="font-size:11px;font-weight:700;color:#0e7a3e;white-space:nowrap">Pagado ✓</span>` : ""}
