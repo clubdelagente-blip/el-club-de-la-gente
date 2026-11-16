@@ -578,17 +578,23 @@ async function iniciar() {
     }
   }
   pagoQrDescargarBtn?.addEventListener("click", async () => {
+    const url = negocio.tienda_llave_qr_url;
+    // En iPhone, Safari no respeta el atributo "download" para imágenes --
+    // en vez de guardarla, abre una vista previa rara. Lo que sí funciona en
+    // cualquier celular moderno es el botón nativo de "compartir" (deja
+    // guardar en Fotos con un toque); si el navegador no lo soporta, se abre
+    // la imagen sola para guardarla manteniéndola presionada, como siempre.
     try {
-      const resp = await fetch(negocio.tienda_llave_qr_url);
+      const resp = await fetch(url);
       const blob = await resp.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl; a.download = "qr-de-pago.png";
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
-    } catch {
-      alert("No pudimos descargar el QR -- mantén presionada la imagen para guardarla.");
-    }
+      const ext = blob.type.includes("png") ? "png" : "jpg";
+      const file = new File([blob], `qr-de-pago.${ext}`, { type: blob.type });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] });
+        return;
+      }
+    } catch {}
+    window.open(url, "_blank");
   });
   // Muestra el monto exacto a pagar/transferir dentro del propio recuadro de
   // efectivo/transferencia (grande, con botón de copiar) -- antes solo se

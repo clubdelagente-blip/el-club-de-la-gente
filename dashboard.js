@@ -1748,23 +1748,24 @@ function copiarTextoFallback(texto) {
   document.body.removeChild(ta);
 }
 
-// El atributo "download" de un <a> no fuerza la descarga cuando el archivo
-// está en otro dominio (ej. Supabase Storage) -- la mayoría de navegadores
-// simplemente abren la imagen en vez de guardarla. Bajándola por JS y
-// armando un blob URL (que sí es "del mismo origen" para este efecto) el
-// atributo download funciona de verdad en cualquier navegador.
+// El atributo "download" de un <a> no sirve de mucho acá: en otro dominio
+// (Supabase Storage) casi ningún navegador lo respeta, y en iPhone Safari
+// directamente lo ignora para imágenes (abre una vista previa rara en vez
+// de guardar). Lo que sí funciona en cualquier celular moderno es el botón
+// nativo de "compartir" (deja guardar en Fotos con un toque); si el
+// navegador no lo soporta, se abre la imagen sola para guardarla
+// manteniéndola presionada, como siempre se ha podido con cualquier foto.
 async function descargarImagenComoArchivo(url, nombreArchivo) {
   try {
     const resp = await fetch(url);
     const blob = await resp.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = blobUrl; a.download = nombreArchivo;
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
-  } catch {
-    toast("No se pudo descargar -- mantén presionada la imagen para guardarla.");
-  }
+    const file = new File([blob], nombreArchivo, { type: blob.type });
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({ files: [file] });
+      return;
+    }
+  } catch {}
+  window.open(url, "_blank");
 }
 
 function contaFechaISO(d) { return d.toISOString().slice(0, 10); }
