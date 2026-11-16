@@ -878,9 +878,15 @@
                     <div style="background:rgba(234,183,73,.12);border:1px solid rgba(234,183,73,.4);border-radius:10px;padding:12px 14px;margin-bottom:14px">
                       <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--tinta-70);margin-bottom:10px">
                         <input id="conta-carta-aviso-activo" type="checkbox" style="width:16px;height:16px;accent-color:#095544">
-                        📣 Mostrar un aviso fijo arriba de la carta
+                        📣 Mostrar avisos arriba de la carta
                       </label>
-                      <input class="cfg-input" id="conta-carta-aviso-texto" type="text" placeholder="Ej: Hoy solo domicilios después de las 6pm">
+                      <div class="cfg-campo" style="margin-bottom:10px">
+                        <label class="cfg-label">Color del aviso</label>
+                        <input type="color" id="conta-carta-aviso-color" value="#164a2c" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
+                      </div>
+                      <div id="conta-carta-avisos-lista"></div>
+                      <button class="btn" type="button" id="conta-carta-aviso-add" style="font-size:12.5px">+ Agregar aviso</button>
+                      <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:8px">Si agregas más de uno, se ven como un carrusel que la gente puede deslizar.</span>
                     </div>
 
                     <div class="cfg-campo">
@@ -1338,7 +1344,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=224"></script>
+  <script type="module" src="dashboard.js?v=225"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">

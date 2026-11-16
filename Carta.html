@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=142">
-  <link rel="stylesheet" href="carta.css?v=9">
+  <link rel="stylesheet" href="carta.css?v=10">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -39,7 +39,12 @@
     </div>
   </header>
 
-  <div class="carta-aviso" id="carta-aviso" hidden></div>
+  <div class="carta-aviso-wrap" id="carta-aviso-wrap" hidden>
+    <div class="wrap" style="padding-top:16px">
+      <div class="tienda-banner-track" id="carta-aviso-track"></div>
+      <div class="tienda-banner-dots" id="carta-aviso-dots"></div>
+    </div>
+  </div>
 
   <main class="wrap" id="carta-main">
     <div id="carta-estado-vacio" hidden class="carta-vacio">
@@ -121,7 +126,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=9"></script>
+  <script type="module" src="carta.js?v=10"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

@@ -1669,6 +1669,7 @@ let _contaFiltroOrigen = "todos";
 let _contaCartaProductos = [];
 let _contaCartaPedidos = [];
 let _contaCategoriasOrdenCarta = [];
+let _contaAvisosCarta = [];
 let _cartaPedidosRealtimeCh = null;
 let _audioCtxPedido = null;
 let _pedidosNuevosSinVer = 0;
@@ -1895,7 +1896,25 @@ function renderOrdenCategoriasCarta() {
   }));
 }
 
-// "Pincha" los colores/aviso en vivo dentro del iframe de la vista previa
+// Lista editable de avisos (título + subtítulo cada uno) -- si hay más de
+// uno, en la carta se ven como un carrusel (mismo patrón que el banner de
+// "Tienda del Club", .tienda-hero/.tienda-banner-track/.tienda-banner-dots).
+function renderAvisosCarta() {
+  const cont = $("#conta-carta-avisos-lista");
+  if (!cont) return;
+  if (!_contaAvisosCarta.length) _contaAvisosCarta = [{ titulo: "", subtitulo: "" }];
+  cont.innerHTML = _contaAvisosCarta.map((a, i) => `
+    <div style="background:#fff;border:1px solid var(--linea);border-radius:10px;padding:10px;margin-bottom:8px">
+      <input class="cfg-input" data-aviso-titulo="${i}" type="text" placeholder="Título (ej: Hoy solo domicilios)" value="${esc(a.titulo || "")}" style="margin-bottom:6px">
+      <input class="cfg-input" data-aviso-subtitulo="${i}" type="text" placeholder="Texto más chico (opcional)" value="${esc(a.subtitulo || "")}">
+      ${_contaAvisosCarta.length > 1 ? `<button type="button" data-aviso-quitar="${i}" style="margin-top:6px;border:none;background:none;color:#c0392b;font-size:12px;cursor:pointer">Quitar este aviso</button>` : ""}
+    </div>`).join("");
+  cont.querySelectorAll("[data-aviso-titulo]").forEach(inp => inp.oninput = (e) => { _contaAvisosCarta[+e.target.dataset.avisoTitulo].titulo = e.target.value; aplicarPreviewCarta(); });
+  cont.querySelectorAll("[data-aviso-subtitulo]").forEach(inp => inp.oninput = (e) => { _contaAvisosCarta[+e.target.dataset.avisoSubtitulo].subtitulo = e.target.value; aplicarPreviewCarta(); });
+  cont.querySelectorAll("[data-aviso-quitar]").forEach(btn => btn.onclick = () => { _contaAvisosCarta.splice(+btn.dataset.avisoQuitar, 1); renderAvisosCarta(); aplicarPreviewCarta(); });
+}
+
+// "Pincha" los colores/avisos en vivo dentro del iframe de la vista previa
 // (mismo origen que Perfil.html, así que se puede tocar su DOM directo, sin
 // postMessage) -- nada de esto toca la base de datos todavía.
 function aplicarPreviewCarta() {
@@ -1908,11 +1927,27 @@ function aplicarPreviewCarta() {
   root.style.setProperty("--carta-tarjeta-bg", $("#conta-carta-color-tarjeta")?.value || "#ffffff");
   root.style.setProperty("--carta-tarjeta-borde", $("#conta-carta-color-borde")?.value || "#e5e5e5");
   root.style.setProperty("--carta-pedido-bg", $("#conta-carta-color-pedido")?.value || "#ffffff");
-  const avisoEl = doc.getElementById("carta-aviso");
-  if (avisoEl) {
+
+  const avisoWrap = doc.getElementById("carta-aviso-wrap");
+  const avisoTrack = doc.getElementById("carta-aviso-track");
+  const avisoDots = doc.getElementById("carta-aviso-dots");
+  if (avisoWrap && avisoTrack) {
     const activo = $("#conta-carta-aviso-activo")?.checked;
-    const texto = $("#conta-carta-aviso-texto")?.value.trim();
-    if (activo && texto) { avisoEl.hidden = false; avisoEl.textContent = texto; } else { avisoEl.hidden = true; }
+    const colorBase = $("#conta-carta-aviso-color")?.value || "#164a2c";
+    const avisosValidos = _contaAvisosCarta.filter(a => a.titulo?.trim());
+    if (activo && avisosValidos.length) {
+      avisoWrap.hidden = false;
+      avisoTrack.innerHTML = avisosValidos.map(a => `
+        <div class="tienda-hero" style="background:radial-gradient(120% 140% at 15% 0%, ${colorBase} 0%, #0c2e1b 55%, #05160d 100%)">
+          <span class="tienda-hero__eyebrow">Aviso</span>
+          <h2>${esc(a.titulo)}</h2>
+          ${a.subtitulo ? `<p>${esc(a.subtitulo)}</p>` : ""}
+        </div>`).join("");
+      if (avisosValidos.length > 1 && avisoDots) { avisoDots.innerHTML = avisosValidos.map((_, i) => `<span class="${i === 0 ? "is-on" : ""}"></span>`).join(""); avisoDots.style.display = ""; }
+      else if (avisoDots) avisoDots.style.display = "none";
+    } else {
+      avisoWrap.hidden = true;
+    }
   }
 }
 
@@ -1950,7 +1985,7 @@ async function cargarContabilidadNegocio(negocioId) {
   });
 
   const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }] = await Promise.all([
-    supabase.from("aliados").select("carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_aviso_texto").eq("id", negocioId).maybeSingle(),
+    supabase.from("aliados").select("carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
     supabase.from("negocio_categorias_ingreso").select("*").eq("negocio_id", negocioId).order("nombre"),
@@ -1999,7 +2034,16 @@ async function cargarContabilidadNegocio(negocioId) {
   const colorBordeInput = $("#conta-carta-color-borde"); if (colorBordeInput) colorBordeInput.value = _contaNegocio.carta_color_borde || "#e5e5e5";
   const colorPedidoInput = $("#conta-carta-color-pedido"); if (colorPedidoInput) colorPedidoInput.value = _contaNegocio.carta_color_pedido || "#ffffff";
   const avisoActivoInput = $("#conta-carta-aviso-activo"); if (avisoActivoInput) avisoActivoInput.checked = !!_contaNegocio.carta_aviso_activo;
-  const avisoTextoInput = $("#conta-carta-aviso-texto"); if (avisoTextoInput) avisoTextoInput.value = _contaNegocio.carta_aviso_texto || "";
+  const avisoColorInput = $("#conta-carta-aviso-color"); if (avisoColorInput) avisoColorInput.value = _contaNegocio.carta_aviso_color || "#164a2c";
+  // Solo se siembra la primera vez (igual que el orden de categorías) --
+  // si ya se armó a mano en esta sesión (ej. se agregó un aviso nuevo), no
+  // se vuelve a pisar con lo guardado cada vez que se cambia de pestaña.
+  if (!_contaAvisosCarta.length && Array.isArray(_contaNegocio.carta_avisos) && _contaNegocio.carta_avisos.length) {
+    _contaAvisosCarta = _contaNegocio.carta_avisos.map(a => ({ titulo: a.titulo || "", subtitulo: a.subtitulo || "" }));
+  }
+  renderAvisosCarta();
+  const btnAvisoAdd = $("#conta-carta-aviso-add");
+  if (btnAvisoAdd) btnAvisoAdd.onclick = () => { _contaAvisosCarta.push({ titulo: "", subtitulo: "" }); renderAvisosCarta(); };
 
   // Vista previa en vivo -- un iframe cargando la carta real (se carga una
   // sola vez por sesión), y cada color/aviso se "pincha" directo en su DOM
@@ -2011,7 +2055,7 @@ async function cargarContabilidadNegocio(negocioId) {
     previewIframe.dataset.cargado = "1";
     previewIframe.addEventListener("load", aplicarPreviewCarta);
   }
-  ["conta-carta-color", "conta-carta-color-tarjeta", "conta-carta-color-borde", "conta-carta-color-pedido", "conta-carta-aviso-activo", "conta-carta-aviso-texto"].forEach(id => {
+  ["conta-carta-color", "conta-carta-color-tarjeta", "conta-carta-color-borde", "conta-carta-color-pedido", "conta-carta-aviso-activo", "conta-carta-aviso-color"].forEach(id => {
     const el = $("#" + id); if (el) el.oninput = aplicarPreviewCarta;
   });
 
@@ -2328,7 +2372,8 @@ async function guardarPersonalizacionCarta() {
   const colorBorde = $("#conta-carta-color-borde")?.value || null;
   const colorPedido = $("#conta-carta-color-pedido")?.value || null;
   const avisoActivo = $("#conta-carta-aviso-activo")?.checked || false;
-  const avisoTexto = $("#conta-carta-aviso-texto")?.value.trim() || null;
+  const avisoColor = $("#conta-carta-aviso-color")?.value || null;
+  const avisosLimpios = _contaAvisosCarta.filter(a => a.titulo?.trim()).map(a => ({ titulo: a.titulo.trim(), subtitulo: a.subtitulo?.trim() || null }));
   if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
   const payload = {
     carta_color: color, carta_portada_url: portadaUrl,
@@ -2336,7 +2381,7 @@ async function guardarPersonalizacionCarta() {
     carta_sellos_premio_tipo: sellosTipo, carta_sellos_premio_desc: sellosPremio,
     tienda_llave_pago: llave,
     carta_color_tarjeta: colorTarjeta, carta_color_borde: colorBorde, carta_color_pedido: colorPedido,
-    carta_aviso_activo: avisoActivo, carta_aviso_texto: avisoTexto,
+    carta_aviso_activo: avisoActivo, carta_aviso_color: avisoColor, carta_avisos: avisosLimpios.length ? avisosLimpios : null,
     carta_categorias_orden: _contaCategoriasOrdenCarta.length ? _contaCategoriasOrdenCarta : null,
   };
   const { error } = await supabase.from("aliados").update(payload).eq("id", _contaNegocioId);

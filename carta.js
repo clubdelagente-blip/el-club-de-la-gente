@@ -168,9 +168,34 @@ async function iniciar() {
       hint.textContent = `🎟️ Este negocio tiene tarjeta de sellos -- escribe tu WhatsApp para sumar puntos y ganar: ${premio}`;
     }
   }
-  if (negocio.carta_aviso_activo && negocio.carta_aviso_texto) {
-    const avisoEl = $("#carta-aviso");
-    if (avisoEl) { avisoEl.hidden = false; avisoEl.textContent = negocio.carta_aviso_texto; }
+  // Carrusel de avisos -- mismo patrón que renderBannerTienda() de
+  // dashboard.js (reutiliza .tienda-hero/.tienda-banner-track/
+  // .tienda-banner-dots de styles.css), con el color de base que el
+  // negocio haya elegido.
+  const avisosValidos = (Array.isArray(negocio.carta_avisos) ? negocio.carta_avisos : []).filter(a => a?.titulo?.trim());
+  if (negocio.carta_aviso_activo && avisosValidos.length) {
+    const avisoWrap = $("#carta-aviso-wrap");
+    const avisoTrack = $("#carta-aviso-track");
+    const avisoDots = $("#carta-aviso-dots");
+    if (avisoWrap && avisoTrack) {
+      avisoWrap.hidden = false;
+      const colorBase = negocio.carta_aviso_color || "#164a2c";
+      avisoTrack.innerHTML = avisosValidos.map(a => `
+        <div class="tienda-hero" style="background:radial-gradient(120% 140% at 15% 0%, ${esc(colorBase)} 0%, #0c2e1b 55%, #05160d 100%)">
+          <span class="tienda-hero__eyebrow">Aviso</span>
+          <h2>${esc(a.titulo)}</h2>
+          ${a.subtitulo ? `<p>${esc(a.subtitulo)}</p>` : ""}
+        </div>`).join("");
+      if (avisosValidos.length > 1 && avisoDots) {
+        avisoDots.innerHTML = avisosValidos.map((_, i) => `<span class="${i === 0 ? "is-on" : ""}"></span>`).join("");
+        avisoDots.style.display = "";
+        const dots = [...avisoDots.children];
+        avisoTrack.addEventListener("scroll", () => {
+          const i = Math.round(avisoTrack.scrollLeft / avisoTrack.clientWidth);
+          dots.forEach((d, idx) => d.classList.toggle("is-on", idx === i));
+        });
+      } else if (avisoDots) avisoDots.style.display = "none";
+    }
   }
 
   const items = productos || [];
