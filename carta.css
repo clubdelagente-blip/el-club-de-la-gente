@@ -72,6 +72,8 @@ body { background: var(--crema); padding-bottom: 90px; position: relative; }
 @media (min-width: 480px) { .carta-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); } }
 .carta-card { background: var(--carta-tarjeta-bg); border: 1px solid var(--carta-tarjeta-borde); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; transition: border-color .2s, box-shadow .2s, transform .2s; box-shadow: 0 2px 10px rgba(0,0,0,.04); }
 .carta-card.en-carrito { border-color: var(--verde); box-shadow: 0 0 0 1.5px var(--verde) inset; }
+.carta-card.agotada .carta-card__img, .carta-card.agotada .carta-card__ph { opacity: .45; filter: grayscale(.4); }
+.carta-card__agotado { font-size: 12px; font-weight: 700; color: #c0392b; background: #fdecea; padding: 7px 12px; border-radius: 100px; white-space: nowrap; }
 .carta-card__img { width: 100%; aspect-ratio: 1/1; background: var(--verde-soft); object-fit: cover; display: block; cursor: pointer; }
 .carta-card__ph { width: 100%; aspect-ratio: 1/1; background: var(--verde-soft); display: grid; place-items: center; color: var(--verde); }
 .carta-card__body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }

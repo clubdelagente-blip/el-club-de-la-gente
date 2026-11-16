@@ -62,9 +62,17 @@ function renderQty(productoId) {
   if (qtyWrap) qtyWrap.classList.toggle('en-uso', cantidad > 0);
 }
 
+// Cuando el negocio activó control de stock para un producto, no se puede
+// agregar más unidades de las que de verdad quedan -- el stock real lo cuida
+// un trigger en la base de datos (se descuenta solo al llegar el pedido, se
+// devuelve si se cancela), esto de acá es solo para no dejar que el cliente
+// intente pedir de más desde su lado.
+function stockDisponible(p) { return p.stock_activo ? Math.max(0, p.stock_cantidad ?? 0) : Infinity; }
+function estaAgotado(p) { return p.stock_activo && (p.stock_cantidad ?? 0) <= 0; }
+
 function sumarProducto(p, delta) {
   const actual = carrito.get(p.id)?.cantidad || 0;
-  const nueva = Math.max(0, actual + delta);
+  const nueva = Math.min(Math.max(0, actual + delta), stockDisponible(p));
   if (nueva === 0) carrito.delete(p.id);
   else carrito.set(p.id, { producto_id: p.id, nombre: p.nombre, precio: p.precio, cantidad: nueva });
   renderQty(p.id);
@@ -74,12 +82,16 @@ function sumarProducto(p, delta) {
 // Si el producto tiene grupos de toppings/modificadores configurados (ej.
 // "Salsas"), no se puede sumar directo con un +/- en la tarjeta -- primero
 // hay que elegir, así que la tarjeta muestra un botón "Elegir" que abre el
-// modal de personalización en vez del stepper de siempre.
+// modal de personalización en vez del stepper de siempre. Si está agotado,
+// ninguna de las dos formas aparece -- solo el aviso.
 function cardHtml(p, tieneGrupos) {
+  const agotado = estaAgotado(p);
   const img = p.imagen_url
     ? `<img class="carta-card__img" src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" loading="lazy" data-ver-foto="${p.id}">`
     : `<div class="carta-card__ph"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
-  const accion = tieneGrupos
+  const accion = agotado
+    ? `<span class="carta-card__agotado">Agotado</span>`
+    : tieneGrupos
     ? `<button type="button" class="carta-card__personalizar" data-personalizar="${p.id}">Elegir</button>`
     : `<div class="carta-qty" data-qty-wrap="${p.id}">
           <button type="button" class="carta-qty__menos" data-qty-menos="${p.id}" aria-label="Quitar uno">−</button>
@@ -87,7 +99,7 @@ function cardHtml(p, tieneGrupos) {
           <button type="button" data-qty-mas="${p.id}" aria-label="Agregar uno">+</button>
         </div>`;
   return `
-  <div class="carta-card" data-carta-card="${p.id}">
+  <div class="carta-card${agotado ? " agotada" : ""}" data-carta-card="${p.id}">
     ${img}
     <div class="carta-card__body">
       <div class="carta-card__nombre">${esc(p.nombre)}</div>
@@ -412,7 +424,9 @@ async function iniciar() {
   function cerrarModalProducto() { if (modOverlay) modOverlay.hidden = true; }
   $("#carta-mod-cerrar")?.addEventListener("click", cerrarModalProducto);
   modOverlay?.addEventListener("click", (e) => { if (e.target === modOverlay) cerrarModalProducto(); });
-  $("#carta-mod-qty-mas")?.addEventListener("click", () => { modQty++; pintarModal(); });
+  $("#carta-mod-qty-mas")?.addEventListener("click", () => {
+    if (modQty < stockDisponible(modProductoActual)) { modQty++; pintarModal(); }
+  });
   $("#carta-mod-qty-menos")?.addEventListener("click", () => { if (modQty > 1) { modQty--; pintarModal(); } });
   modAgregarBtn?.addEventListener("click", () => {
     if (!modProductoActual) return;

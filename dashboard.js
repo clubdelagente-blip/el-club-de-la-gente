@@ -2886,7 +2886,7 @@ async function cargarCartaProductos() {
       ${p.imagen_url ? `<img src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<div style="width:44px;height:44px;border-radius:8px;background:#f0faf4;flex-shrink:0"></div>`}
       <div style="flex:1;min-width:0">
         <div style="font-weight:600;font-size:14px">${esc(p.nombre)}</div>
-        <div style="font-size:12px;color:#777">${COP(p.precio)}${p.categoria ? " · " + esc(p.categoria) : ""}${p.disponible ? "" : " · No disponible"}</div>
+        <div style="font-size:12px;color:#777">${COP(p.precio)}${p.categoria ? " · " + esc(p.categoria) : ""}${p.disponible ? "" : " · No disponible"}${p.stock_activo ? ` · Stock: ${p.stock_cantidad ?? 0}${(p.stock_cantidad ?? 0) <= 0 ? " (agotado)" : ""}` : ""}</div>
       </div>
       <button data-ed-ccp="${p.id}" style="border:none;background:none;cursor:pointer;color:#777">${ic("pencil")}</button>
       <button data-rm-ccp="${p.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button>
@@ -2918,6 +2918,14 @@ function abrirFormProductoCarta(p = {}) {
     <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--tinta-60);margin:4px 0 8px;cursor:pointer">
       <input type="checkbox" id="ccp-disponible" ${p.disponible === false ? "" : "checked"}> Disponible en la carta
     </label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--tinta-60);margin:4px 0 8px;cursor:pointer">
+      <input type="checkbox" id="ccp-stock-activo" ${p.stock_activo ? "checked" : ""}> Controlar cuántos tengo disponibles (stock)
+    </label>
+    <div class="cfg-campo" id="ccp-stock-campo" ${p.stock_activo ? "" : "hidden"}>
+      <label class="cfg-label">Cantidad disponible</label>
+      <input class="cfg-input" id="ccp-stock-cantidad" type="number" min="0" value="${p.stock_cantidad ?? ""}" placeholder="Ej: 12">
+      <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Baja sola cuando llega un pedido, y sube de nuevo si lo cancelas. Cuando llegue a 0, se muestra como "Agotado" y nadie lo puede pedir.</span>
+    </div>
     ${_contaModGrupos.length ? `
     <div class="cfg-campo"><label class="cfg-label">Grupos de toppings que usa este producto <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label>
       ${_contaModGrupos.map(g => `
@@ -2928,6 +2936,9 @@ function abrirFormProductoCarta(p = {}) {
     <button class="btn btn--primario" id="ccp-save" data-id="${p.id || ""}">${p.id ? "Guardar cambios" : "Agregar producto"}</button>
   `);
   formatearInputMoneda($("#ccp-precio"));
+  $("#ccp-stock-activo")?.addEventListener("change", (e) => {
+    const campo = $("#ccp-stock-campo"); if (campo) campo.hidden = !e.target.checked;
+  });
   $("#ccp-save")?.addEventListener("click", async () => {
     const btn = $("#ccp-save");
     const resetBtn = () => { btn.disabled = false; btn.textContent = p.id ? "Guardar cambios" : "Agregar producto"; };
@@ -2948,7 +2959,12 @@ function abrirFormProductoCarta(p = {}) {
         imagenUrl = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
       } catch { toast("Error subiendo la foto"); resetBtn(); return; }
     }
-    const payload = { negocio_id: _contaNegocioId, nombre, descripcion: $("#ccp-desc")?.value.trim() || null, precio, categoria: $("#ccp-categoria")?.value.trim() || null, imagen_url: imagenUrl, disponible: $("#ccp-disponible")?.checked ?? true };
+    const stockActivo = $("#ccp-stock-activo")?.checked || false;
+    const payload = {
+      negocio_id: _contaNegocioId, nombre, descripcion: $("#ccp-desc")?.value.trim() || null, precio,
+      categoria: $("#ccp-categoria")?.value.trim() || null, imagen_url: imagenUrl, disponible: $("#ccp-disponible")?.checked ?? true,
+      stock_activo: stockActivo, stock_cantidad: stockActivo ? (parseInt($("#ccp-stock-cantidad")?.value) || 0) : null,
+    };
     const { data: guardado, error } = p.id
       ? await supabase.from("negocio_carta_productos").update(payload).eq("id", p.id).select().single()
       : await supabase.from("negocio_carta_productos").insert(payload).select().single();
