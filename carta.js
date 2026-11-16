@@ -133,8 +133,14 @@ async function iniciar() {
   if (logoEl && negocio.imagen_url) logoEl.innerHTML = `<img src="${esc(negocio.imagen_url)}" alt="">`;
   if (negocio.carta_color) document.documentElement.style.setProperty('--verde', negocio.carta_color);
   if (negocio.carta_portada_url) {
-    const portada = $("#carta-portada");
-    if (portada) { portada.hidden = false; portada.innerHTML = `<img src="${esc(negocio.carta_portada_url)}" alt="">`; }
+    // La foto del negocio pasa a ser el fondo fijo de TODA la carta (no una
+    // tira chica arriba) -- full prevalencia a la foto, con el mismo efecto
+    // de fondo estático que ya usa el resto de la plataforma.
+    const fondoFijo = $("#fondo-fijo");
+    if (fondoFijo) {
+      fondoFijo.classList.add("con-portada");
+      fondoFijo.style.backgroundImage = `linear-gradient(rgba(241,247,246,.45), rgba(241,247,246,.88) 340px), url("${negocio.carta_portada_url}")`;
+    }
   }
   if (negocio.carta_sellos_activo) {
     const hint = $("#carta-sellos-hint");
@@ -153,9 +159,14 @@ async function iniciar() {
 
   if (grid) {
     const grupos = agruparPorCategoria(items);
+    // Se muestra el título de cada categoría (Malteadas, Wafles, Obleas...)
+    // siempre que el negocio de verdad las use -- solo se esconde cuando
+    // NADIE puso categoría en ningún producto (ahí "Otros" sería el único
+    // grupo y se vería raro como si fuera el nombre real de una sección).
+    const mostrarTitulos = !(grupos.length === 1 && grupos[0][0] === "Otros");
     grid.innerHTML = grupos.map(([cat, prods]) => `
       <div class="carta-grupo">
-        ${grupos.length > 1 ? `<h2 class="carta-grupo__titulo">${esc(cat)}</h2>` : ""}
+        ${mostrarTitulos ? `<h2 class="carta-grupo__titulo">${esc(cat)}</h2>` : ""}
         <div class="carta-grid">${prods.map(cardHtml).join("")}</div>
       </div>`).join("");
     items.forEach(p => {
