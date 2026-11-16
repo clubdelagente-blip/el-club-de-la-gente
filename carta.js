@@ -561,12 +561,21 @@ async function iniciar() {
   // transferencia (llave del negocio + comprobante) ----------
   const llaveInput = $("#carta-pago-llave");
   if (llaveInput) llaveInput.value = negocio.tienda_llave_pago || "Este negocio no configuró su llave -- paga en efectivo";
+  // Muestra el monto exacto a pagar/transferir dentro del propio recuadro de
+  // efectivo/transferencia -- antes solo se veía arriba de todo el resumen,
+  // lejos de donde de verdad hace falta a la hora de pagar.
+  function sincronizarMontoPago() {
+    const montoTxt = $("#carta-sheet-total")?.textContent || "$0";
+    const efMonto = $("#carta-pago-efectivo-monto"); if (efMonto) efMonto.textContent = montoTxt;
+    const trMonto = $("#carta-pago-transferencia-monto"); if (trMonto) trMonto.textContent = montoTxt;
+  }
   let metodoPago = null;
   $$(".carta-metodo-btn[data-metodo]").forEach(b => b.addEventListener("click", () => {
     metodoPago = b.dataset.metodo;
     $$(".carta-metodo-btn[data-metodo]").forEach(x => x.classList.toggle("is-on", x === b));
     const efEl = $("#carta-pago-efectivo"); if (efEl) efEl.hidden = metodoPago !== "efectivo";
     const trEl = $("#carta-pago-transferencia"); if (trEl) trEl.hidden = metodoPago !== "transferencia";
+    sincronizarMontoPago();
   }));
   $("#carta-pago-llave-copiar")?.addEventListener("click", () => {
     const btnCopiar = $("#carta-pago-llave-copiar");
@@ -594,11 +603,13 @@ async function iniciar() {
     if (mesaAlcance === "nadie") {
       if (totSpan) totSpan.textContent = COP(totalMio);
       if (notaEl) notaEl.textContent = "Tu pedido se agrega a la mesa sin que pagues ahora -- alguien más de la mesa paga todo al final.";
+      sincronizarMontoPago();
       return;
     }
     if (mesaAlcance !== "mesa") {
       if (totSpan) totSpan.textContent = COP(totalMio);
       if (notaEl) notaEl.textContent = "";
+      sincronizarMontoPago();
       return;
     }
     let totalMesa = totalMio;
@@ -611,12 +622,17 @@ async function iniciar() {
     } catch {}
     if (totSpan) totSpan.textContent = COP(totalMesa);
     if (notaEl) notaEl.textContent = `Pagas el total de la mesa: ${COP(totalMesa)} (lo tuyo + lo que ya pidieron y no han pagado).`;
+    sincronizarMontoPago();
   }
   $$("#carta-campo-mesa-alcance [data-alcance]").forEach(b => b.addEventListener("click", () => {
     mesaAlcance = b.dataset.alcance;
     $$("#carta-campo-mesa-alcance [data-alcance]").forEach(x => x.classList.toggle("is-on", x === b));
     const enviarBtn = $("#carta-enviar-pedido");
     if (enviarBtn) enviarBtn.textContent = mesaAlcance === "nadie" ? "Enviar pedido" : "Ya pagué";
+    // Los sellos son una recompensa por pagar -- si alguien más va a pagar
+    // por esta persona, no tiene sentido ofrecerle sellos a ella acá.
+    const hintEl = $("#carta-sellos-hint");
+    if (hintEl && negocio.carta_sellos_activo) hintEl.hidden = mesaAlcance === "nadie";
     actualizarTotalMesa();
   }));
 
@@ -628,6 +644,7 @@ async function iniciar() {
       <div class="carta-sheet__item"><span>${it.cantidad}× ${esc(it.nombre)}${it.modText ? `<br><small style="color:var(--tinta-45);font-weight:400">${esc(it.modText)}</small>` : ""}</span><span>${COP(it.precio * it.cantidad)}</span></div>`).join("");
     const cont = $("#carta-sheet-items"); if (cont) cont.innerHTML = itemsHtml;
     const totSpan = $("#carta-sheet-total"); if (totSpan) totSpan.textContent = COP(total);
+    sincronizarMontoPago();
     // Reinicia la elección de método de pago (y de alcance, si hay mesa) en
     // cada pedido nuevo -- no debe quedar pegada la del pedido anterior.
     metodoPago = null;
@@ -639,8 +656,11 @@ async function iniciar() {
     const trEl = $("#carta-pago-transferencia"); if (trEl) trEl.hidden = true;
     const compInput = $("#carta-comprobante"); if (compInput) compInput.value = "";
     const campoAlcance = $("#carta-campo-mesa-alcance"); if (campoAlcance) campoAlcance.hidden = !mesaSesionId;
-    const campoPago = $("#carta-campo-pago"); if (campoPago) campoPago.hidden = false;
+    // En mesa, la pasarela de pago se queda oculta hasta que elija "pago lo
+    // mío" o "pago toda la mesa" -- si no hay mesa, se ve siempre de una vez.
+    const campoPago = $("#carta-campo-pago"); if (campoPago) campoPago.hidden = !!mesaSesionId;
     const enviarBtn = $("#carta-enviar-pedido"); if (enviarBtn) enviarBtn.textContent = "Ya pagué";
+    const hintEl = $("#carta-sellos-hint"); if (hintEl && negocio.carta_sellos_activo) hintEl.hidden = false;
     $("#carta-sheet-form").hidden = false;
     $("#carta-sheet-exito").hidden = true;
     overlay.hidden = false;
@@ -724,9 +744,11 @@ async function iniciar() {
     // Tarjeta de sellos del negocio (si la activó) -- se deriva de contar
     // pedidos reales con ese mismo WhatsApp (nunca un contador que se
     // pudiera inflar a mano), vía una función segura en la base de datos
-    // que además reinicia el ciclo sola en cuanto se completa.
+    // que además reinicia el ciclo sola en cuanto se completa. Si alguien
+    // más va a pagar por esta persona (sinPagoPropio), no se le suma sello
+    // -- es una recompensa para quien paga, no para cualquiera que escanee.
     const resultadoEl = $("#carta-sellos-resultado");
-    if (wa && negocio.carta_sellos_activo && resultadoEl) {
+    if (wa && negocio.carta_sellos_activo && resultadoEl && !sinPagoPropio) {
       try {
         const { data: estado } = await supabase.rpc("sellos_carta_estado", { p_negocio_id: aliadoId, p_whatsapp: wa });
         if (estado?.activo) {

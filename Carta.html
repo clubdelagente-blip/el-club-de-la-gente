@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=142">
-  <link rel="stylesheet" href="carta.css?v=16">
+  <link rel="stylesheet" href="carta.css?v=17">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -115,9 +115,9 @@
         <div class="carta-campo" id="carta-campo-mesa-alcance" hidden>
           <label>¿Vas a pagar tú? *</label>
           <div class="carta-metodo-pago" style="flex-wrap:wrap">
-            <button type="button" class="carta-metodo-btn" data-alcance="mio">Pago lo mío</button>
-            <button type="button" class="carta-metodo-btn" data-alcance="mesa">Pago toda la mesa</button>
-            <button type="button" class="carta-metodo-btn" data-alcance="nadie">Alguien más paga</button>
+            <button type="button" class="carta-metodo-btn" data-alcance="mio">🙋 Pago lo mío</button>
+            <button type="button" class="carta-metodo-btn" data-alcance="mesa">🍽️ Pago toda la mesa</button>
+            <button type="button" class="carta-metodo-btn" data-alcance="nadie">🙌 Alguien más paga</button>
           </div>
           <p id="carta-mesa-alcance-total" style="font-size:12.5px;color:var(--verde);margin-top:8px"></p>
         </div>
@@ -131,10 +131,13 @@
         </div>
 
         <div id="carta-pago-efectivo" hidden class="carta-pago-detalle">
-          <p>Ve a la caja para efectuar el pago. Cuando ya hayas pagado, dale a "Ya pagué".</p>
+          <p class="carta-pago-monto" id="carta-pago-efectivo-monto">$0</p>
+          <p>Ve a la caja y paga ese valor en efectivo. Cuando ya hayas pagado, dale a "Ya pagué".</p>
         </div>
 
         <div id="carta-pago-transferencia" hidden class="carta-pago-detalle">
+          <p class="carta-pago-monto" id="carta-pago-transferencia-monto">$0</p>
+          <img id="carta-pago-qr" src="" alt="QR de pago del negocio" hidden>
           <div class="carta-campo">
             <label>Llave de pago (Nequi, Bre-B...)</label>
             <div style="display:flex;gap:8px">
@@ -160,7 +163,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=19"></script>
+  <script type="module" src="carta.js?v=20"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

@@ -157,9 +157,15 @@ body { background: var(--crema); padding-bottom: 90px; position: relative; }
 .carta-metodo-pago { display: flex; gap: 10px; }
 .carta-metodo-btn { flex: 1; padding: 13px 10px; border: 1.5px solid var(--linea-fuerte); border-radius: 10px; background: #fff; font-family: var(--cuerpo); font-size: 13.5px; font-weight: 600; color: var(--tinta); cursor: pointer; transition: background .2s, border-color .2s, color .2s; }
 .carta-metodo-btn.is-on { background: var(--verde); border-color: var(--verde); color: #fff; }
-.carta-pago-detalle { background: var(--crema-2); border-radius: 10px; padding: 14px; margin-bottom: 14px; }
-.carta-pago-detalle p { font-size: 13px; color: var(--tinta-70, var(--tinta-60)); line-height: 1.6; margin: 0; }
+.carta-pago-detalle { background: var(--crema-2); border-radius: 14px; padding: 16px; margin-bottom: 14px; border: 1px solid var(--linea); }
+.carta-pago-detalle p { font-size: 13px; color: var(--tinta-70, var(--tinta-60)); line-height: 1.6; margin: 0 0 10px; }
 .carta-pago-detalle .carta-campo:last-child { margin-bottom: 0; }
+/* El monto a pagar/transferir en grande -- antes solo se veía el total
+   arriba de todo el resumen, lejos del paso donde de verdad importa saber
+   cuánto hay que entregar/transferir. */
+.carta-pago-monto { font-family: var(--display); font-size: 24px; font-weight: 700; color: var(--verde); margin-bottom: 10px !important; }
+#carta-pago-qr { display: block; width: 160px; height: 160px; margin: 0 auto 14px; border-radius: 10px; border: 1px solid var(--linea-fuerte); background: #fff; object-fit: contain; }
+#carta-pago-qr[hidden] { display: none; }
 
 .carta-exito { text-align: center; padding: 20px 0; }
 .carta-exito__check { width: 56px; height: 56px; border-radius: 50%; background: var(--verde-soft); color: var(--verde); font-size: 26px; font-weight: 700; display: grid; place-items: center; margin: 0 auto 16px; }
