@@ -160,8 +160,6 @@ body { background: var(--crema); padding-bottom: 90px; position: relative; }
 .carta-pago-detalle { background: var(--crema-2); border-radius: 10px; padding: 14px; margin-bottom: 14px; }
 .carta-pago-detalle p { font-size: 13px; color: var(--tinta-70, var(--tinta-60)); line-height: 1.6; margin: 0; }
 .carta-pago-detalle .carta-campo:last-child { margin-bottom: 0; }
-.carta-mesa-aviso { font-size: 12.5px; color: var(--verde); background: var(--verde-soft); border-radius: 10px; padding: 11px 13px; margin: -4px 0 14px; line-height: 1.5; }
-.carta-mesa-aviso[hidden] { display: none; }
 
 .carta-exito { text-align: center; padding: 20px 0; }
 .carta-exito__check { width: 56px; height: 56px; border-radius: 50%; background: var(--verde-soft); color: var(--verde); font-size: 26px; font-weight: 700; display: grid; place-items: center; margin: 0 auto 16px; }

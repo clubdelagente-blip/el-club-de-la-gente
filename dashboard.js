@@ -2852,11 +2852,13 @@ function abrirFormProductoCarta(p = {}) {
 // operativo (cocina/mostrador) y estado de pago son independientes a
 // propósito: un pedido puede estar "Entregado" sin estar pagado (fiado) o
 // "Pendiente" y ya pagado (pago anticipado) -- cada botón mueve solo lo suyo.
-// Un pedido de mesa compartida (mesa_sesion_id) nunca se paga individual --
-// nadie eligió método de pago al mandarlo (ver carta.js), así que acá nunca
-// se le muestra "Marcar pagado" propio; eso vive en el botón "Cobrar mesa
-// completa" del grupo entero, una sola vez por mesa.
-function filaPedidoHtml(ped, { ocultarPagar } = {}) {
+// En mesa compartida, cada persona paga de verdad al enviar (eligió
+// efectivo/transferencia igual que cualquier pedido) -- la diferencia es si
+// pagó SOLO lo suyo o el total de la mesa hasta ese momento
+// (cubre_mesa_completa). Por eso "Marcar pagado" individual sigue
+// disponible aquí también; "Cobrar mesa completa" (en el grupo) es para
+// cuando alguien ya pagó por todos y hay que saldar el resto de una vez.
+function filaPedidoHtml(ped) {
   const est = ESTADO_PEDIDO_CARTA[ped.estado] || ESTADO_PEDIDO_CARTA.pendiente;
   const items = Array.isArray(ped.items) ? ped.items : [];
   const resumenItems = items.map(it => {
@@ -2871,6 +2873,7 @@ function filaPedidoHtml(ped, { ocultarPagar } = {}) {
         <div style="font-weight:600;font-size:14px">${folio} · ${esc(ped.cliente_nombre)} — ${COP(ped.monto_total)}</div>
         <div style="font-size:12px;color:#777">${esc(resumenItems)}${ped.nota ? " · " + esc(ped.nota) : ""}${ped.cliente_whatsapp ? " · " + esc(ped.cliente_whatsapp) : ""}</div>
         <div style="font-size:12px;color:#777;margin-top:2px">${ped.metodo_pago === "transferencia" ? "🏦 Transferencia" : ped.metodo_pago === "efectivo" ? "💵 Efectivo" : ""}${ped.comprobante_url ? ` · <a href="${esc(ped.comprobante_url)}" target="_blank" style="color:var(--verde)">Ver comprobante ↗</a>` : ""}</div>
+        ${ped.cubre_mesa_completa ? `<div style="font-size:12px;font-weight:700;color:#b8860b;margin-top:4px">💰 Este comprobante cubre TODA la mesa -- revísalo y usa "Cobrar mesa completa"</div>` : ""}
       </div>
       <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};white-space:nowrap">${est.t}</span>
       ${ped.pagado ? `<span style="font-size:11px;font-weight:700;color:#0e7a3e;white-space:nowrap">Pagado ✓</span>` : ""}
@@ -2878,7 +2881,7 @@ function filaPedidoHtml(ped, { ocultarPagar } = {}) {
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
       ${est.siguiente ? `<button data-avanzar-ccped="${ped.id}" class="btn btn--primario" style="padding:8px 14px;font-size:12px">${est.siguienteLbl}</button>` : ""}
       ${ped.estado !== "cancelado" && ped.estado !== "entregado" ? `<button data-cancelar-ccped="${ped.id}" style="padding:8px 14px;font-size:12px;border:1px solid #ebebeb;border-radius:8px;background:none;cursor:pointer">Cancelar</button>` : ""}
-      ${!ped.pagado && !ocultarPagar ? `<button data-pagar-ccped="${ped.id}" style="padding:8px 14px;font-size:12px;border:1px solid var(--verde);border-radius:8px;background:none;color:var(--verde);cursor:pointer;font-weight:700">Marcar pagado</button>` : ""}
+      ${!ped.pagado ? `<button data-pagar-ccped="${ped.id}" style="padding:8px 14px;font-size:12px;border:1px solid var(--verde);border-radius:8px;background:none;color:var(--verde);cursor:pointer;font-weight:700">Marcar pagado</button>` : ""}
     </div>
   </div>`;
 }
@@ -2916,7 +2919,7 @@ async function cargarCartaPedidos() {
         <button data-cobrar-mesa="${sesionId}" class="btn btn--primario" style="padding:8px 14px;font-size:12px">Cobrar mesa completa</button>
       </div>
       <div style="background:#fff;border-radius:10px;padding:0 12px">
-        ${peds.map(p => filaPedidoHtml(p, { ocultarPagar: true })).join("")}
+        ${peds.map(p => filaPedidoHtml(p)).join("")}
       </div>
     </div>`;
   }).join("");
@@ -2955,9 +2958,13 @@ async function cargarCartaPedidos() {
   }));
   list.querySelectorAll("[data-cobrar-mesa]").forEach(btn => btn.addEventListener("click", async () => {
     const sesionId = btn.dataset.cobrarMesa;
-    const peds = porSesion.get(sesionId) || [];
-    if (!peds.length) return;
-    if (!confirm(`¿Cobrar la mesa completa? Se marcan ${peds.length} pedido(s) como pagados y se registra un solo ingreso.`)) return;
+    const todos = porSesion.get(sesionId) || [];
+    // Solo cobra lo que de verdad sigue sin pagar -- si alguien ya se marcó
+    // "Marcar pagado" individual antes (y ya generó su propio ingreso), no
+    // hay que volver a cobrarlo ni duplicar su ingreso acá.
+    const peds = todos.filter(p => !p.pagado);
+    if (!peds.length) { toast("Ya no queda nada pendiente de pago en esta mesa"); return; }
+    if (!confirm(`¿Cobrar lo que falta de la mesa? Se marcan ${peds.length} pedido(s) como pagados y se registra un solo ingreso.`)) return;
     btn.disabled = true;
     const ids = peds.map(p => p.id);
     const { error: errUpd } = await supabase.from("negocio_carta_pedidos").update({ pagado: true, pagado_at: new Date().toISOString() }).in("id", ids);
@@ -2969,7 +2976,11 @@ async function cargarCartaPedidos() {
       descripcion: `Mesa ${peds[0].mesa_nombre || ""} · ${peds.length} pedido(s)`,
       items: itemsCombinados, monto: totalCombinado, fecha: new Date().toISOString().slice(0, 10),
     });
-    await supabase.from("negocio_mesas_sesiones").update({ estado: "cerrada", cerrada_at: new Date().toISOString() }).eq("id", sesionId);
+    // Solo se cierra la sesión si ya no queda ningún pedido de esa mesa sin
+    // pagar -- si alguien todavía no ha pagado lo suyo, la mesa sigue abierta.
+    if (peds.length === todos.length) {
+      await supabase.from("negocio_mesas_sesiones").update({ estado: "cerrada", cerrada_at: new Date().toISOString() }).eq("id", sesionId);
+    }
     toast("Mesa cobrada ✓");
     cargarContabilidadNegocio(_contaNegocioId);
   }));

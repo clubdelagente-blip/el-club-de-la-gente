@@ -562,9 +562,9 @@ async function iniciar() {
   const llaveInput = $("#carta-pago-llave");
   if (llaveInput) llaveInput.value = negocio.tienda_llave_pago || "Este negocio no configuró su llave -- paga en efectivo";
   let metodoPago = null;
-  $$(".carta-metodo-btn").forEach(b => b.addEventListener("click", () => {
+  $$(".carta-metodo-btn[data-metodo]").forEach(b => b.addEventListener("click", () => {
     metodoPago = b.dataset.metodo;
-    $$(".carta-metodo-btn").forEach(x => x.classList.toggle("is-on", x === b));
+    $$(".carta-metodo-btn[data-metodo]").forEach(x => x.classList.toggle("is-on", x === b));
     const efEl = $("#carta-pago-efectivo"); if (efEl) efEl.hidden = metodoPago !== "efectivo";
     const trEl = $("#carta-pago-transferencia"); if (trEl) trEl.hidden = metodoPago !== "transferencia";
   }));
@@ -578,6 +578,36 @@ async function iniciar() {
     });
   });
 
+  // ---------- Mesa compartida: elegir si se paga solo lo propio o el total
+  // de la mesa (lo propio + lo que los demás ya pidieron y no han pagado).
+  // En ambos casos se paga de verdad con la misma pasarela de arriba -- la
+  // única diferencia es el monto que se muestra y que se le avisa al negocio
+  // con "cubre_mesa_completa" para que sepa si debe usar "Marcar pagado" (un
+  // pedido) o "Cobrar mesa completa" (toda la mesa) al revisar el comprobante. ----------
+  let mesaAlcance = null;
+  async function actualizarTotalMesa() {
+    const { total: totalMio } = totalCarrito();
+    const totSpan = $("#carta-sheet-total");
+    const notaEl = $("#carta-mesa-alcance-total");
+    if (mesaAlcance !== "mesa") {
+      if (totSpan) totSpan.textContent = COP(totalMio);
+      if (notaEl) notaEl.textContent = "";
+      return;
+    }
+    let totalMesa = totalMio;
+    try {
+      const { data: pendientes } = await supabase.from("negocio_carta_pedidos").select("monto_total").eq("mesa_sesion_id", mesaSesionId).eq("pagado", false);
+      totalMesa += (pendientes || []).reduce((s, p) => s + Number(p.monto_total || 0), 0);
+    } catch {}
+    if (totSpan) totSpan.textContent = COP(totalMesa);
+    if (notaEl) notaEl.textContent = `Pagas el total de la mesa: ${COP(totalMesa)} (lo tuyo + lo que ya pidieron y no han pagado).`;
+  }
+  $$("#carta-campo-mesa-alcance [data-alcance]").forEach(b => b.addEventListener("click", () => {
+    mesaAlcance = b.dataset.alcance;
+    $$("#carta-campo-mesa-alcance [data-alcance]").forEach(x => x.classList.toggle("is-on", x === b));
+    actualizarTotalMesa();
+  }));
+
   // ---------- Resumen / checkout ----------
   const overlay = $("#carta-overlay");
   const abrirResumen = () => {
@@ -586,18 +616,17 @@ async function iniciar() {
       <div class="carta-sheet__item"><span>${it.cantidad}× ${esc(it.nombre)}${it.modText ? `<br><small style="color:var(--tinta-45);font-weight:400">${esc(it.modText)}</small>` : ""}</span><span>${COP(it.precio * it.cantidad)}</span></div>`).join("");
     const cont = $("#carta-sheet-items"); if (cont) cont.innerHTML = itemsHtml;
     const totSpan = $("#carta-sheet-total"); if (totSpan) totSpan.textContent = COP(total);
-    // Reinicia la elección de método de pago en cada pedido nuevo -- no
-    // debe quedar pegada la del pedido anterior.
+    // Reinicia la elección de método de pago (y de alcance, si hay mesa) en
+    // cada pedido nuevo -- no debe quedar pegada la del pedido anterior.
     metodoPago = null;
-    $$(".carta-metodo-btn").forEach(x => x.classList.remove("is-on"));
+    mesaAlcance = null;
+    $$(".carta-metodo-btn[data-metodo]").forEach(x => x.classList.remove("is-on"));
+    $$("#carta-campo-mesa-alcance [data-alcance]").forEach(x => x.classList.remove("is-on"));
+    const notaAlcance = $("#carta-mesa-alcance-total"); if (notaAlcance) notaAlcance.textContent = "";
     const efEl = $("#carta-pago-efectivo"); if (efEl) efEl.hidden = true;
     const trEl = $("#carta-pago-transferencia"); if (trEl) trEl.hidden = true;
     const compInput = $("#carta-comprobante"); if (compInput) compInput.value = "";
-    // En una mesa compartida nadie paga individual -- se oculta el paso de
-    // "cómo vas a pagar" y el botón pasa de "Ya pagué" a "Enviar a la mesa".
-    const campoPago = $("#carta-campo-pago"); if (campoPago) campoPago.hidden = !!mesaSesionId;
-    const avisoMesa = $("#carta-mesa-aviso"); if (avisoMesa) avisoMesa.hidden = !mesaSesionId;
-    const enviarBtn = $("#carta-enviar-pedido"); if (enviarBtn) enviarBtn.textContent = mesaSesionId ? "Enviar a la mesa" : "Ya pagué";
+    const campoAlcance = $("#carta-campo-mesa-alcance"); if (campoAlcance) campoAlcance.hidden = !mesaSesionId;
     $("#carta-sheet-form").hidden = false;
     $("#carta-sheet-exito").hidden = true;
     overlay.hidden = false;
@@ -615,16 +644,15 @@ async function iniciar() {
     const nota = $("#carta-cliente-nota")?.value.trim();
     if (!nombre) { alert("Escribe tu nombre para enviar el pedido"); return; }
     if (!carrito.size) { alert("Agrega al menos un producto"); return; }
-    if (!mesaSesionId && !metodoPago) { alert("Elige cómo vas a pagar"); return; }
+    if (mesaSesionId && !mesaAlcance) { alert("Elige si pagas solo lo tuyo o toda la mesa"); return; }
+    if (!metodoPago) { alert("Elige cómo vas a pagar"); return; }
     const comprobanteFile = $("#carta-comprobante")?.files?.[0];
-    if (!mesaSesionId && metodoPago === "transferencia" && !comprobanteFile) { alert("Sube el comprobante de pago"); return; }
+    if (metodoPago === "transferencia" && !comprobanteFile) { alert("Sube el comprobante de pago"); return; }
     _cartaEnviando = true;
-    const textoEnviando = mesaSesionId ? "Enviando a la mesa…" : "Enviando…";
-    const textoBoton = mesaSesionId ? "Enviar a la mesa" : "Ya pagué";
-    btn.disabled = true; btn.textContent = textoEnviando;
+    btn.disabled = true; btn.textContent = "Enviando…";
 
     let comprobanteUrl = null;
-    if (!mesaSesionId && metodoPago === "transferencia" && comprobanteFile) {
+    if (metodoPago === "transferencia" && comprobanteFile) {
       try {
         const file = await comprimirImagen(comprobanteFile);
         const ext = file.name.split(".").pop();
@@ -633,7 +661,7 @@ async function iniciar() {
         if (upErr) throw upErr;
         comprobanteUrl = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
       } catch {
-        _cartaEnviando = false; btn.disabled = false; btn.textContent = textoBoton;
+        _cartaEnviando = false; btn.disabled = false; btn.textContent = "Ya pagué";
         alert("No pudimos subir el comprobante. Intenta de nuevo.");
         return;
       }
@@ -651,12 +679,12 @@ async function iniciar() {
       })),
       monto_total: total,
       estado: "pendiente",
-      metodo_pago: mesaSesionId ? null : metodoPago,
+      metodo_pago: metodoPago,
       comprobante_url: comprobanteUrl,
-      ...(mesaSesionId ? { mesa_id: mesaId, mesa_sesion_id: mesaSesionId, mesa_nombre: mesaNombre } : {}),
+      ...(mesaSesionId ? { mesa_id: mesaId, mesa_sesion_id: mesaSesionId, mesa_nombre: mesaNombre, cubre_mesa_completa: mesaAlcance === "mesa" } : {}),
     };
     const { error } = await supabase.from("negocio_carta_pedidos").insert(payload);
-    btn.disabled = false; btn.textContent = textoBoton;
+    btn.disabled = false; btn.textContent = "Ya pagué";
     _cartaEnviando = false;
     if (error) { alert("No pudimos enviar tu pedido. Intenta de nuevo."); return; }
     carrito.clear();
@@ -667,8 +695,10 @@ async function iniciar() {
     const tituloExito = $("#carta-sheet-exito h3");
     const textoExito = $("#carta-sheet-exito p");
     if (mesaSesionId) {
-      if (tituloExito) tituloExito.textContent = "¡Pedido agregado a la mesa!";
-      if (textoExito) textoExito.textContent = `Se sumó a ${mesaNombre || "tu mesa"}. El mesero cobra todo junto al final.`;
+      if (tituloExito) tituloExito.textContent = "¡Pedido enviado!";
+      if (textoExito) textoExito.textContent = mesaAlcance === "mesa"
+        ? `Pagaste por ${mesaNombre || "toda la mesa"} -- el negocio lo confirma al revisar tu comprobante.`
+        : `Se sumó a ${mesaNombre || "tu mesa"}. El negocio ya lo está preparando.`;
     } else {
       if (tituloExito) tituloExito.textContent = "¡Pedido enviado!";
       if (textoExito) textoExito.textContent = "El negocio lo confirmará pronto. Gracias por tu compra.";
