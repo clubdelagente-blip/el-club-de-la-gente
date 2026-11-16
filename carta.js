@@ -561,6 +561,13 @@ async function iniciar() {
   // transferencia (llave del negocio + comprobante) ----------
   const llaveInput = $("#carta-pago-llave");
   if (llaveInput) llaveInput.value = negocio.tienda_llave_pago || "Este negocio no configuró su llave -- paga en efectivo";
+  // Si el negocio subió una foto de su QR real (Nequi/Daviplata...), se
+  // muestra tal cual -- mucho más rápido de escanear que copiar la llave.
+  const pagoQrEl = $("#carta-pago-qr");
+  if (pagoQrEl) {
+    if (negocio.tienda_llave_qr_url) { pagoQrEl.src = negocio.tienda_llave_qr_url; pagoQrEl.hidden = false; }
+    else pagoQrEl.hidden = true;
+  }
   // Muestra el monto exacto a pagar/transferir dentro del propio recuadro de
   // efectivo/transferencia -- antes solo se veía arriba de todo el resumen,
   // lejos de donde de verdad hace falta a la hora de pagar.

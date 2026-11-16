@@ -2088,6 +2088,12 @@ async function cargarContabilidadNegocio(negocioId) {
   const sellosTipoInput = $("#conta-carta-sellos-tipo"); if (sellosTipoInput) sellosTipoInput.value = _contaNegocio.carta_sellos_premio_tipo || "descuento";
   const sellosPremioInput = $("#conta-carta-sellos-premio"); if (sellosPremioInput) sellosPremioInput.value = _contaNegocio.carta_sellos_premio_desc || "";
   const llaveInput = $("#conta-carta-llave"); if (llaveInput) llaveInput.value = _contaNegocio.tienda_llave_pago || "";
+  const llaveQrUrlInput = $("#conta-carta-llave-qr-url"); if (llaveQrUrlInput) llaveQrUrlInput.value = _contaNegocio.tienda_llave_qr_url || "";
+  const llaveQrPreview = $("#conta-carta-llave-qr-preview");
+  if (llaveQrPreview) {
+    if (_contaNegocio.tienda_llave_qr_url) { llaveQrPreview.src = _contaNegocio.tienda_llave_qr_url; llaveQrPreview.style.display = "block"; }
+    else { llaveQrPreview.style.display = "none"; }
+  }
   const colorTarjetaInput = $("#conta-carta-color-tarjeta"); if (colorTarjetaInput) colorTarjetaInput.value = _contaNegocio.carta_color_tarjeta || "#ffffff";
   const colorBordeInput = $("#conta-carta-color-borde"); if (colorBordeInput) colorBordeInput.value = _contaNegocio.carta_color_borde || "#e5e5e5";
   const colorPedidoInput = $("#conta-carta-color-pedido"); if (colorPedidoInput) colorPedidoInput.value = _contaNegocio.carta_color_pedido || "#ffffff";
@@ -2153,6 +2159,25 @@ async function cargarContabilidadNegocio(negocioId) {
       const urlInput = $("#conta-carta-portada-url"); if (urlInput) urlInput.value = url;
       toast("Portada lista -- dale a \"Guardar personalización\"");
     } catch { toast("Error subiendo la portada"); }
+  };
+
+  const inputLlaveQr = $("#conta-carta-llave-qr");
+  if (inputLlaveQr) inputLlaveQr.onchange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const preview = $("#conta-carta-llave-qr-preview");
+    if (preview) { preview.src = URL.createObjectURL(file); preview.style.display = "block"; }
+    try {
+      const comprimido = await comprimirImagen(file);
+      const ext = comprimido.name.split(".").pop();
+      const path = `carta-llave-qr-${_contaNegocioId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("contenido").upload(path, comprimido, { upsert: true });
+      if (upErr) throw upErr;
+      const url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+      const urlInput = $("#conta-carta-llave-qr-url"); if (urlInput) urlInput.value = url;
+      toast("QR listo -- dale a \"Guardar personalización\"");
+    } catch { toast("Error subiendo el QR"); }
   };
 
   renderContabilidadNegocioUI();
@@ -2451,6 +2476,7 @@ async function guardarPersonalizacionCarta() {
   const sellosTipo = $("#conta-carta-sellos-tipo")?.value || "descuento";
   const sellosPremio = $("#conta-carta-sellos-premio")?.value.trim() || null;
   const llave = $("#conta-carta-llave")?.value.trim() || null;
+  const llaveQrUrl = $("#conta-carta-llave-qr-url")?.value || null;
   const colorTarjeta = $("#conta-carta-color-tarjeta")?.value || null;
   const colorBorde = $("#conta-carta-color-borde")?.value || null;
   const colorPedido = $("#conta-carta-color-pedido")?.value || null;
@@ -2462,7 +2488,7 @@ async function guardarPersonalizacionCarta() {
     carta_color: color, carta_portada_url: portadaUrl,
     carta_sellos_activo: sellosActivo, carta_sellos_meta: sellosMeta,
     carta_sellos_premio_tipo: sellosTipo, carta_sellos_premio_desc: sellosPremio,
-    tienda_llave_pago: llave,
+    tienda_llave_pago: llave, tienda_llave_qr_url: llaveQrUrl,
     carta_color_tarjeta: colorTarjeta, carta_color_borde: colorBorde, carta_color_pedido: colorPedido,
     carta_aviso_activo: avisoActivo, carta_aviso_color: avisoColor, carta_avisos: avisosLimpios.length ? avisosLimpios : null,
     carta_categorias_orden: _contaCategoriasOrdenCarta.length ? _contaCategoriasOrdenCarta : null,
