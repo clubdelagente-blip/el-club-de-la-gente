@@ -920,6 +920,18 @@
                       <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:8px">Si agregas más de uno, se ven como un carrusel que la gente puede deslizar.</span>
                     </div>
 
+                    <div style="background:rgba(9,85,68,.08);border:1px solid rgba(9,85,68,.3);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+                      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--tinta-70);margin-bottom:10px">
+                        <input id="conta-carta-domicilio-activo" type="checkbox" style="width:16px;height:16px;accent-color:#095544">
+                        🛵 Ofrecer domicilio en la carta
+                      </label>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                        <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Valor del domicilio</label><input class="cfg-input" id="conta-carta-domicilio-valor" type="text" inputmode="numeric" placeholder="Ej: 5.000"></div>
+                        <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Pedido mínimo <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label><input class="cfg-input" id="conta-carta-domicilio-minimo" type="text" inputmode="numeric" placeholder="Ej: 20.000"></div>
+                      </div>
+                      <div class="cfg-campo" style="margin-bottom:0"><label class="cfg-label">Tiempo estimado <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label><input class="cfg-input" id="conta-carta-domicilio-tiempo" type="text" placeholder="Ej: 30-45 min"></div>
+                    </div>
+
                     <div class="cfg-campo">
                       <label class="cfg-label">Orden de las categorías</label>
                       <div id="conta-carta-cat-orden" style="display:flex;flex-direction:column;gap:6px"></div>
@@ -1394,7 +1406,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=240"></script>
+  <script type="module" src="dashboard.js?v=241"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">

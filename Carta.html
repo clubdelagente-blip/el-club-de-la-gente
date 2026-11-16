@@ -110,7 +110,20 @@
           <input id="carta-cliente-wa" type="tel" placeholder="300 000 0000">
           <p id="carta-sellos-hint" hidden style="font-size:12px;color:var(--verde);margin-top:6px;line-height:1.5"></p>
         </div>
-        <div class="carta-campo"><label>Nota <span style="font-weight:400;color:var(--tinta-45)">(mesa, domicilio, etc.)</span></label><input id="carta-cliente-nota" type="text" placeholder="Ej: Mesa 4"></div>
+        <div class="carta-campo"><label>Nota <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label><input id="carta-cliente-nota" type="text" placeholder="Ej: sin cebolla, tocar el timbre..."></div>
+
+        <div class="carta-campo" id="carta-campo-entrega" hidden>
+          <label>¿Cómo lo quieres? *</label>
+          <div class="carta-metodo-pago">
+            <button type="button" class="carta-metodo-btn" data-entrega="recoger">🏪 Recoger</button>
+            <button type="button" class="carta-metodo-btn" data-entrega="domicilio">🛵 Domicilio</button>
+          </div>
+          <p id="carta-entrega-info" style="font-size:12.5px;color:var(--verde);margin-top:8px"></p>
+        </div>
+        <div class="carta-campo" id="carta-campo-direccion" hidden>
+          <label>Dirección de entrega *</label>
+          <input id="carta-cliente-direccion" type="text" placeholder="Calle, número, barrio...">
+        </div>
 
         <div class="carta-campo" id="carta-campo-mesa-alcance" hidden>
           <label>¿Vas a pagar tú? *</label>
@@ -170,7 +183,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=25"></script>
+  <script type="module" src="carta.js?v=26"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

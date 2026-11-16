@@ -72,12 +72,18 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&
 const descHtml = (s) => esc(s ?? '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
 // Campos de dinero: texto con separador de miles en vivo (un <input type="number"> interpreta
 // el "." que la gente escribe para miles como punto decimal, ej. "62.000" -> 62).
+// "oninput =" en vez de addEventListener a propósito: es idempotente (una
+// reasignación simplemente reemplaza la anterior) -- hace falta porque
+// algunos inputs de dinero viven en HTML estático (ej. "Personalizar mi
+// carta") que se vuelve a tocar en cada cargarContabilidadNegocio(), y con
+// addEventListener se habría ido acumulando un listener nuevo por cada
+// vez que se refresca esa pestaña.
 function formatearInputMoneda(input) {
   if (!input) return;
-  input.addEventListener("input", () => {
+  input.oninput = () => {
     const digits = input.value.replace(/\D/g, "");
     input.value = digits ? Number(digits).toLocaleString("es-CO") : "";
-  });
+  };
 }
 function valorMoneda(input) { return parseInt((input?.value || "").replace(/\D/g, "")) || 0; }
 
@@ -2185,6 +2191,12 @@ async function cargarContabilidadNegocio(negocioId) {
   const colorPedidoInput = $("#conta-carta-color-pedido"); if (colorPedidoInput) colorPedidoInput.value = _contaNegocio.carta_color_pedido || "#ffffff";
   const avisoActivoInput = $("#conta-carta-aviso-activo"); if (avisoActivoInput) avisoActivoInput.checked = !!_contaNegocio.carta_aviso_activo;
   const avisoColorInput = $("#conta-carta-aviso-color"); if (avisoColorInput) avisoColorInput.value = _contaNegocio.carta_aviso_color || "#164a2c";
+  const domicilioActivoInput = $("#conta-carta-domicilio-activo"); if (domicilioActivoInput) domicilioActivoInput.checked = !!_contaNegocio.carta_domicilio_activo;
+  const domicilioValorInput = $("#conta-carta-domicilio-valor"); if (domicilioValorInput) domicilioValorInput.value = _contaNegocio.carta_domicilio_valor ? Number(_contaNegocio.carta_domicilio_valor).toLocaleString("es-CO") : "";
+  const domicilioMinimoInput = $("#conta-carta-domicilio-minimo"); if (domicilioMinimoInput) domicilioMinimoInput.value = _contaNegocio.carta_domicilio_minimo ? Number(_contaNegocio.carta_domicilio_minimo).toLocaleString("es-CO") : "";
+  const domicilioTiempoInput = $("#conta-carta-domicilio-tiempo"); if (domicilioTiempoInput) domicilioTiempoInput.value = _contaNegocio.carta_domicilio_tiempo || "";
+  formatearInputMoneda(domicilioValorInput);
+  formatearInputMoneda(domicilioMinimoInput);
   // Solo se siembra la primera vez (igual que el orden de categorías) --
   // si ya se armó a mano en esta sesión (ej. se agregó un aviso nuevo), no
   // se vuelve a pisar con lo guardado cada vez que se cambia de pestaña.
@@ -2585,6 +2597,10 @@ async function guardarPersonalizacionCarta() {
   const avisoActivo = $("#conta-carta-aviso-activo")?.checked || false;
   const avisoColor = $("#conta-carta-aviso-color")?.value || null;
   const avisosLimpios = _contaAvisosCarta.filter(a => a.titulo?.trim()).map(a => ({ titulo: a.titulo.trim(), subtitulo: a.subtitulo?.trim() || null, link: a.link?.trim() || null }));
+  const domicilioActivo = $("#conta-carta-domicilio-activo")?.checked || false;
+  const domicilioValor = valorMoneda($("#conta-carta-domicilio-valor"));
+  const domicilioMinimo = valorMoneda($("#conta-carta-domicilio-minimo")) || null;
+  const domicilioTiempo = $("#conta-carta-domicilio-tiempo")?.value.trim() || null;
   if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
   const payload = {
     carta_color: color, carta_portada_url: portadaUrl,
@@ -2594,6 +2610,8 @@ async function guardarPersonalizacionCarta() {
     carta_color_tarjeta: colorTarjeta, carta_color_borde: colorBorde, carta_color_pedido: colorPedido,
     carta_aviso_activo: avisoActivo, carta_aviso_color: avisoColor, carta_avisos: avisosLimpios.length ? avisosLimpios : null,
     carta_categorias_orden: _contaCategoriasOrdenCarta.length ? _contaCategoriasOrdenCarta : null,
+    carta_domicilio_activo: domicilioActivo, carta_domicilio_valor: domicilioActivo ? domicilioValor : null,
+    carta_domicilio_minimo: domicilioActivo ? domicilioMinimo : null, carta_domicilio_tiempo: domicilioTiempo,
   };
   const { error } = await supabase.from("aliados").update(payload).eq("id", _contaNegocioId);
   if (btn) { btn.disabled = false; btn.textContent = "Guardar personalización"; }
@@ -3042,6 +3060,7 @@ function filaPedidoHtml(ped) {
         <div style="font-weight:600;font-size:14px">${folio} · ${esc(ped.cliente_nombre)} — ${COP(ped.monto_total)}</div>
         <div style="font-size:12px;color:#777">${esc(resumenItems)}${ped.nota ? " · " + esc(ped.nota) : ""}${ped.cliente_whatsapp ? " · " + esc(ped.cliente_whatsapp) : ""}</div>
         <div style="font-size:12px;color:#777;margin-top:2px">${ped.metodo_pago === "transferencia" ? "🏦 Transferencia" : ped.metodo_pago === "efectivo" ? "💵 Efectivo" : ""}${ped.comprobante_url ? ` · <a href="${esc(ped.comprobante_url)}" target="_blank" style="color:var(--verde)">Ver comprobante ↗</a>` : ""}</div>
+        ${ped.tipo_entrega === "domicilio" ? `<div style="font-size:12px;font-weight:700;color:var(--verde);margin-top:2px">🛵 Domicilio${ped.domicilio_valor ? ` (+${COP(ped.domicilio_valor)})` : ""} · ${esc(ped.domicilio_direccion || "")}</div>` : ped.tipo_entrega === "recoger" ? `<div style="font-size:12px;color:#777;margin-top:2px">🏪 Recoge en el local</div>` : ""}
         ${ped.cubre_mesa_completa ? `<div style="font-size:12px;font-weight:700;color:#b8860b;margin-top:4px">💰 Este comprobante cubre TODA la mesa -- revísalo y usa "Cobrar mesa completa"</div>` : ""}
       </div>
       <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};white-space:nowrap">${est.t}</span>

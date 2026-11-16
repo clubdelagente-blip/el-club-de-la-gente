@@ -715,6 +715,31 @@ async function iniciar() {
     actualizarTotalMesa();
   }));
 
+  // ---------- Recoger o domicilio (solo cuando NO es pedido de mesa -- si
+  // ya estás comiendo en el local, no aplica). Si el negocio no activó
+  // domicilio, no se pregunta nada: se manda como "recoger" sin más. ----------
+  let tipoEntrega = null;
+  function actualizarTotalEntrega() {
+    const { total: totalMio } = totalCarrito();
+    const fee = tipoEntrega === "domicilio" ? Number(negocio.carta_domicilio_valor) || 0 : 0;
+    const totSpan = $("#carta-sheet-total"); if (totSpan) totSpan.textContent = COP(totalMio + fee);
+    sincronizarMontoPago();
+    const campoDireccion = $("#carta-campo-direccion"); if (campoDireccion) campoDireccion.hidden = tipoEntrega !== "domicilio";
+    const infoEl = $("#carta-entrega-info");
+    if (infoEl) {
+      const partes = [];
+      if (tipoEntrega === "domicilio" && fee > 0) partes.push(`Domicilio: ${COP(fee)}`);
+      if (tipoEntrega === "recoger" && /^https?:\/\//i.test(negocio.maps_url || "")) partes.push(`<a href="${esc(negocio.maps_url)}" target="_blank" rel="noopener" style="color:var(--verde)">Ver ubicación ↗</a>`);
+      if (negocio.carta_domicilio_tiempo) partes.push(`Tiempo estimado: ${esc(negocio.carta_domicilio_tiempo)}`);
+      infoEl.innerHTML = partes.join(" · ");
+    }
+  }
+  $$("#carta-campo-entrega [data-entrega]").forEach(b => b.addEventListener("click", () => {
+    tipoEntrega = b.dataset.entrega;
+    $$("#carta-campo-entrega [data-entrega]").forEach(x => x.classList.toggle("is-on", x === b));
+    actualizarTotalEntrega();
+  }));
+
   // ---------- Resumen / checkout ----------
   const overlay = $("#carta-overlay");
   const abrirResumen = () => {
@@ -735,6 +760,14 @@ async function iniciar() {
     const trEl = $("#carta-pago-transferencia"); if (trEl) trEl.hidden = true;
     const compInput = $("#carta-comprobante"); if (compInput) compInput.value = "";
     const campoAlcance = $("#carta-campo-mesa-alcance"); if (campoAlcance) campoAlcance.hidden = !mesaSesionId;
+    // El recoger/domicilio no aplica en mesa (ya se está comiendo en el
+    // local), y tampoco se pregunta si el negocio no activó domicilio.
+    tipoEntrega = null;
+    $$("#carta-campo-entrega [data-entrega]").forEach(x => x.classList.remove("is-on"));
+    const infoEntregaEl = $("#carta-entrega-info"); if (infoEntregaEl) infoEntregaEl.innerHTML = "";
+    const direccionInput = $("#carta-cliente-direccion"); if (direccionInput) direccionInput.value = "";
+    const campoDireccion = $("#carta-campo-direccion"); if (campoDireccion) campoDireccion.hidden = true;
+    const campoEntrega = $("#carta-campo-entrega"); if (campoEntrega) campoEntrega.hidden = !!mesaSesionId || !negocio.carta_domicilio_activo;
     // En mesa, la pasarela de pago se queda oculta hasta que elija "pago lo
     // mío" o "pago toda la mesa" -- si no hay mesa, se ve siempre de una vez.
     const campoPago = $("#carta-campo-pago"); if (campoPago) campoPago.hidden = !!mesaSesionId;
@@ -760,6 +793,15 @@ async function iniciar() {
     if (mesaSesionId && !mesaAlcance) { alert("Elige si vas a pagar tú o alguien más de la mesa"); return; }
     const sinPagoPropio = mesaSesionId && mesaAlcance === "nadie";
     if (!sinPagoPropio && !metodoPago) { alert("Elige cómo vas a pagar"); return; }
+    const entregaAplica = !mesaSesionId && negocio.carta_domicilio_activo;
+    if (entregaAplica && !tipoEntrega) { alert("Elige si recoges o pides domicilio"); return; }
+    const direccion = $("#carta-cliente-direccion")?.value.trim();
+    if (tipoEntrega === "domicilio" && !direccion) { alert("Escribe tu dirección de entrega"); return; }
+    const { total: totalItems } = totalCarrito();
+    if (tipoEntrega === "domicilio" && negocio.carta_domicilio_minimo && totalItems < Number(negocio.carta_domicilio_minimo)) {
+      alert(`El pedido mínimo para domicilio es ${COP(negocio.carta_domicilio_minimo)}`);
+      return;
+    }
     const comprobanteFile = $("#carta-comprobante")?.files?.[0];
     if (!sinPagoPropio && metodoPago === "transferencia" && !comprobanteFile) { alert("Sube el comprobante de pago"); return; }
     _cartaEnviando = true;
@@ -781,7 +823,7 @@ async function iniciar() {
       }
     }
 
-    const { total } = totalCarrito();
+    const feeDomicilio = tipoEntrega === "domicilio" ? Number(negocio.carta_domicilio_valor) || 0 : 0;
     const payload = {
       negocio_id: aliadoId,
       cliente_nombre: nombre,
@@ -791,11 +833,12 @@ async function iniciar() {
         producto_id: it.producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad,
         ...(it.modificadores?.length ? { modificadores: it.modificadores } : {}),
       })),
-      monto_total: total,
+      monto_total: totalItems + feeDomicilio,
       estado: "pendiente",
       metodo_pago: sinPagoPropio ? null : metodoPago,
       comprobante_url: comprobanteUrl,
       ...(mesaSesionId ? { mesa_id: mesaId, mesa_sesion_id: mesaSesionId, mesa_nombre: mesaNombre, cubre_mesa_completa: mesaAlcance === "mesa" } : {}),
+      ...(entregaAplica ? { tipo_entrega: tipoEntrega, domicilio_direccion: tipoEntrega === "domicilio" ? direccion : null, domicilio_valor: feeDomicilio || null } : {}),
     };
     const { error } = await supabase.from("negocio_carta_pedidos").insert(payload);
     btn.disabled = false; btn.textContent = sinPagoPropio ? "Enviar pedido" : "Ya pagué";
