@@ -1906,11 +1906,13 @@ function renderAvisosCarta() {
   cont.innerHTML = _contaAvisosCarta.map((a, i) => `
     <div style="background:#fff;border:1px solid var(--linea);border-radius:10px;padding:10px;margin-bottom:8px">
       <input class="cfg-input" data-aviso-titulo="${i}" type="text" placeholder="Título (ej: Hoy solo domicilios)" value="${esc(a.titulo || "")}" style="margin-bottom:6px">
-      <input class="cfg-input" data-aviso-subtitulo="${i}" type="text" placeholder="Texto más chico (opcional)" value="${esc(a.subtitulo || "")}">
+      <input class="cfg-input" data-aviso-subtitulo="${i}" type="text" placeholder="Texto más chico (opcional)" value="${esc(a.subtitulo || "")}" style="margin-bottom:6px">
+      <input class="cfg-input" data-aviso-link="${i}" type="url" placeholder="Link al tocarlo (opcional, ej: tu Instagram)" value="${esc(a.link || "")}">
       ${_contaAvisosCarta.length > 1 ? `<button type="button" data-aviso-quitar="${i}" style="margin-top:6px;border:none;background:none;color:#c0392b;font-size:12px;cursor:pointer">Quitar este aviso</button>` : ""}
     </div>`).join("");
   cont.querySelectorAll("[data-aviso-titulo]").forEach(inp => inp.oninput = (e) => { _contaAvisosCarta[+e.target.dataset.avisoTitulo].titulo = e.target.value; aplicarPreviewCarta(); });
   cont.querySelectorAll("[data-aviso-subtitulo]").forEach(inp => inp.oninput = (e) => { _contaAvisosCarta[+e.target.dataset.avisoSubtitulo].subtitulo = e.target.value; aplicarPreviewCarta(); });
+  cont.querySelectorAll("[data-aviso-link]").forEach(inp => inp.oninput = (e) => { _contaAvisosCarta[+e.target.dataset.avisoLink].link = e.target.value; aplicarPreviewCarta(); });
   cont.querySelectorAll("[data-aviso-quitar]").forEach(btn => btn.onclick = () => { _contaAvisosCarta.splice(+btn.dataset.avisoQuitar, 1); renderAvisosCarta(); aplicarPreviewCarta(); });
 }
 
@@ -2039,7 +2041,7 @@ async function cargarContabilidadNegocio(negocioId) {
   // si ya se armó a mano en esta sesión (ej. se agregó un aviso nuevo), no
   // se vuelve a pisar con lo guardado cada vez que se cambia de pestaña.
   if (!_contaAvisosCarta.length && Array.isArray(_contaNegocio.carta_avisos) && _contaNegocio.carta_avisos.length) {
-    _contaAvisosCarta = _contaNegocio.carta_avisos.map(a => ({ titulo: a.titulo || "", subtitulo: a.subtitulo || "" }));
+    _contaAvisosCarta = _contaNegocio.carta_avisos.map(a => ({ titulo: a.titulo || "", subtitulo: a.subtitulo || "", link: a.link || "" }));
   }
   renderAvisosCarta();
   const btnAvisoAdd = $("#conta-carta-aviso-add");
@@ -2373,7 +2375,7 @@ async function guardarPersonalizacionCarta() {
   const colorPedido = $("#conta-carta-color-pedido")?.value || null;
   const avisoActivo = $("#conta-carta-aviso-activo")?.checked || false;
   const avisoColor = $("#conta-carta-aviso-color")?.value || null;
-  const avisosLimpios = _contaAvisosCarta.filter(a => a.titulo?.trim()).map(a => ({ titulo: a.titulo.trim(), subtitulo: a.subtitulo?.trim() || null }));
+  const avisosLimpios = _contaAvisosCarta.filter(a => a.titulo?.trim()).map(a => ({ titulo: a.titulo.trim(), subtitulo: a.subtitulo?.trim() || null, link: a.link?.trim() || null }));
   if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
   const payload = {
     carta_color: color, carta_portada_url: portadaUrl,

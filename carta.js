@@ -180,12 +180,15 @@ async function iniciar() {
     if (avisoWrap && avisoTrack) {
       avisoWrap.hidden = false;
       const colorBase = negocio.carta_aviso_color || "#164a2c";
-      avisoTrack.innerHTML = avisosValidos.map(a => `
-        <div class="tienda-hero" style="background:radial-gradient(120% 140% at 15% 0%, ${esc(colorBase)} 0%, #0c2e1b 55%, #05160d 100%)">
-          <span class="tienda-hero__eyebrow">Aviso</span>
-          <h2>${esc(a.titulo)}</h2>
-          ${a.subtitulo ? `<p>${esc(a.subtitulo)}</p>` : ""}
-        </div>`).join("");
+      avisoTrack.innerHTML = avisosValidos.map(a => {
+        const bg = `radial-gradient(120% 140% at 15% 0%, ${esc(colorBase)} 0%, #0c2e1b 55%, #05160d 100%)`;
+        const contenido = `<span class="tienda-hero__eyebrow">Aviso</span><h2>${esc(a.titulo)}</h2>${a.subtitulo ? `<p>${esc(a.subtitulo)}</p>` : ""}`;
+        // Si el negocio le puso un link, toda la tarjeta es tocable y abre
+        // ese link (ej. una promo, su Instagram, un WhatsApp) en pestaña nueva.
+        return a.link
+          ? `<a class="tienda-hero" href="${esc(a.link)}" target="_blank" rel="noopener" style="background:${bg};text-decoration:none">${contenido}</a>`
+          : `<div class="tienda-hero" style="background:${bg}">${contenido}</div>`;
+      }).join("");
       if (avisosValidos.length > 1 && avisoDots) {
         avisoDots.innerHTML = avisosValidos.map((_, i) => `<span class="${i === 0 ? "is-on" : ""}"></span>`).join("");
         avisoDots.style.display = "";
@@ -212,10 +215,31 @@ async function iniciar() {
     // grupo y se vería raro como si fuera el nombre real de una sección).
     const mostrarTitulos = !(grupos.length === 1 && grupos[0][0] === "Otros");
     grid.innerHTML = grupos.map(([cat, prods]) => `
-      <div class="carta-grupo">
+      <div class="carta-grupo" data-categoria="${esc(cat)}">
         ${mostrarTitulos ? `<h2 class="carta-grupo__titulo">${esc(cat)}</h2>` : ""}
         <div class="carta-grid">${prods.map(cardHtml).join("")}</div>
       </div>`).join("");
+
+    // Cápsulas de categoría arriba, para filtrar de una sola vez en vez de
+    // tener que ir bajando a pulso -- solo tiene sentido mostrarlas si de
+    // verdad hay más de una categoría.
+    const pillsEl = $("#carta-cat-pills");
+    if (pillsEl) {
+      if (mostrarTitulos && grupos.length > 1) {
+        pillsEl.innerHTML = [`<button type="button" class="carta-cat-pill is-on" data-filtro-cat="todos">Todos</button>`]
+          .concat(grupos.map(([cat]) => `<button type="button" class="carta-cat-pill" data-filtro-cat="${esc(cat)}">${esc(cat)}</button>`))
+          .join("");
+        pillsEl.querySelectorAll("[data-filtro-cat]").forEach(btn => btn.addEventListener("click", () => {
+          const filtro = btn.dataset.filtroCat;
+          pillsEl.querySelectorAll("[data-filtro-cat]").forEach(b => b.classList.toggle("is-on", b === btn));
+          grid.querySelectorAll(".carta-grupo").forEach(g => {
+            g.style.display = (filtro === "todos" || g.dataset.categoria === filtro) ? "" : "none";
+          });
+        }));
+      } else {
+        pillsEl.innerHTML = "";
+      }
+    }
     items.forEach(p => {
       grid.querySelector(`[data-qty-mas="${p.id}"]`)?.addEventListener("click", () => sumarProducto(p, 1));
       grid.querySelector(`[data-qty-menos="${p.id}"]`)?.addEventListener("click", () => sumarProducto(p, -1));
