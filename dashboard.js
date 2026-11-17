@@ -1188,6 +1188,11 @@ let _modalTiendaAbierta = false;
 function abrirModalTienda(titulo, bodyHtml) {
   const t = $("#modal-tienda-title"); if (t) t.textContent = titulo;
   const b = $("#modal-tienda-body"); if (b) b.innerHTML = bodyHtml;
+  // Por si el modal anterior quedó expandido a pantalla completa (ver
+  // "Nuevo pedido" con mesa elegida) -- cada modal nuevo arranca del
+  // tamaño normal, nunca heredando el tamaño del anterior.
+  const box = $("#modal-tienda-box");
+  if (box) { box.style.maxWidth = ""; box.style.width = ""; box.style.maxHeight = ""; box.style.height = ""; box.style.borderRadius = ""; }
   const m = $("#modal-tienda"); if (m) m.style.display = "flex";
   bloquearScroll();
   if (!_modalTiendaAbierta) history.pushState({ modalTienda: true }, "");
@@ -2628,17 +2633,20 @@ function abrirConstructorPedido() {
     </div>`).join("");
   abrirModalTienda("Nuevo pedido", `
     ${_contaMesas.length ? `
-    <div class="cfg-campo">
+    <div class="cfg-campo" id="cp-mesa-campo">
       <label class="cfg-label">¿Es para una mesa? <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label>
       <select class="cfg-input" id="cp-mesa">
         <option value="">No -- venta de mostrador</option>
         ${_contaMesas.map(m => `<option value="${m.id}">${esc(m.nombre)}</option>`).join("")}
       </select>
-      <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px" id="cp-mesa-hint">Si alguien de esa mesa ya pidió por el QR, este pedido se junta con el de ella y entre los dos arman la cuenta completa de la mesa.</span>
+      <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Si alguien de esa mesa ya pidió por el QR, este pedido se junta con el de ella y entre los dos arman la cuenta completa de la mesa.</span>
     </div>
-    <div id="cp-carta-embebida" hidden style="margin-bottom:14px">
-      <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:8px">Arma el pedido con tu carta real, igual que lo haría el cliente. Al mandarlo, llega a "Pedidos" igual que cualquier pedido por QR -- cierra esta ventana cuando termines.</p>
-      <iframe id="cp-carta-iframe" src="" style="width:100%;height:70vh;border:1px solid var(--linea);border-radius:12px;display:block" title="Carta para tomar el pedido"></iframe>
+    <div id="cp-carta-embebida" hidden>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">
+        <p style="font-size:12.5px;color:var(--tinta-60);margin:0">Arma el pedido con tu carta real, igual que lo haría el cliente. Al mandarlo, llega a "Pedidos" igual que cualquier pedido por QR.</p>
+        <button type="button" id="cp-cambiar-mesa" style="flex:none;font-size:12.5px;font-weight:700;color:var(--verde);background:none;border:none;cursor:pointer;white-space:nowrap">Cambiar mesa</button>
+      </div>
+      <iframe id="cp-carta-iframe" src="" style="width:100%;border:none;display:block" title="Carta para tomar el pedido"></iframe>
     </div>` : ""}
     <div id="cp-lista-simple">
       <div style="max-height:40vh;overflow-y:auto;margin-bottom:14px">${filasHtml}</div>
@@ -2673,6 +2681,24 @@ function abrirConstructorPedido() {
   // categorías y toppings, igual que ve el cliente) apuntada a esa mesa --
   // el pedido se manda desde ADENTRO de esa carta, por el mismo camino de
   // siempre, así que la notificación al dashboard llega exactamente igual.
+  // Con la carta embebida, el modal normal (520px, pensado para formularios
+  // cortos) se queda chiquito -- se expande a pantalla completa mientras
+  // dura este paso, y abrirModalTienda() lo vuelve a su tamaño normal la
+  // próxima vez que se abra cualquier otro modal (no solo este).
+  const expandirModal = (expandir) => {
+    const box = $("#modal-tienda-box");
+    if (box) {
+      box.style.maxWidth = expandir ? "100vw" : "";
+      box.style.width = expandir ? "100vw" : "";
+      box.style.maxHeight = expandir ? "100vh" : "";
+      box.style.height = expandir ? "100vh" : "";
+      box.style.borderRadius = expandir ? "0" : "";
+    }
+    const iframe = $("#cp-carta-iframe");
+    if (iframe) iframe.style.height = expandir ? "calc(100vh - 130px)" : "70vh";
+    const campoMesa = $("#cp-mesa-campo");
+    if (campoMesa) campoMesa.hidden = expandir;
+  };
   $("#cp-mesa")?.addEventListener("change", (e) => {
     const mesaId = e.target.value;
     const listaSimple = $("#cp-lista-simple");
@@ -2684,10 +2710,18 @@ function abrirConstructorPedido() {
         const iframe = $("#cp-carta-iframe");
         if (iframe) iframe.src = `Carta.html?aliado=${_contaNegocioId}&mesa=${mesaId}`;
       }
+      expandirModal(true);
     } else {
       if (listaSimple) listaSimple.hidden = false;
       if (cartaEmbebida) cartaEmbebida.hidden = true;
+      expandirModal(false);
     }
+  });
+  $("#cp-cambiar-mesa")?.addEventListener("click", () => {
+    const mesaSelect = $("#cp-mesa"); if (mesaSelect) mesaSelect.value = "";
+    $("#cp-lista-simple")?.removeAttribute("hidden");
+    $("#cp-carta-embebida")?.setAttribute("hidden", "");
+    expandirModal(false);
   });
   // "Confirmar venta" solo existe para la lista simple (venta de mostrador,
   // sin mesa) -- al elegir mesa, esta lista se oculta y el pedido se manda
