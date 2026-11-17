@@ -135,12 +135,12 @@ function feedSlideHtml(p, tieneGrupos) {
       </button>
     </div>
     <div class="carta-card__body">
-      <div class="carta-card__nombre">${esc(p.nombre)}</div>
-      ${p.descripcion ? `<div class="carta-card__desc">${esc(p.descripcion)}</div>` : ""}
       <div class="carta-card__fila">
         <span class="carta-card__precio">${COP(p.precio)}</span>
         ${accion}
       </div>
+      <div class="carta-card__nombre">${esc(p.nombre)}</div>
+      ${p.descripcion ? `<div class="carta-card__desc">${esc(p.descripcion)}</div>` : ""}
     </div>
   </div>`;
 }
