@@ -690,27 +690,45 @@ async function iniciar() {
     const { total: totalMio } = totalCarrito();
     const totSpan = $("#carta-sheet-total");
     const notaEl = $("#carta-mesa-alcance-total");
+    const facturaEl = $("#carta-mesa-factura");
     const campoPago = $("#carta-campo-pago");
     if (campoPago) campoPago.hidden = mesaAlcance === "nadie";
     if (mesaAlcance === "nadie") {
       if (totSpan) totSpan.textContent = COP(totalMio);
       if (notaEl) notaEl.textContent = "Tu pedido se agrega a la mesa sin que pagues ahora -- alguien más de la mesa paga todo al final.";
+      if (facturaEl) facturaEl.innerHTML = "";
       sincronizarMontoPago();
       return;
     }
     if (mesaAlcance !== "mesa") {
       if (totSpan) totSpan.textContent = COP(totalMio);
       if (notaEl) notaEl.textContent = "";
+      if (facturaEl) facturaEl.innerHTML = "";
       sincronizarMontoPago();
       return;
     }
     let totalMesa = totalMio;
     try {
-      // negocio_carta_pedidos no tiene lectura pública (expondría nombres,
-      // WhatsApp, comprobantes de otros clientes) -- esta función segura
-      // solo devuelve la suma, sin exponer ninguna fila real.
-      const { data: sumaPendiente } = await supabase.rpc("total_pendiente_mesa", { p_mesa_sesion_id: mesaSesionId });
+      // negocio_carta_pedidos no tiene lectura pública en general -- pero
+      // quien elige "pago toda la mesa" sí necesita ver qué está pagando,
+      // así que detalle_pendiente_mesa() expone SOLO items+nombre (nunca
+      // WhatsApp ni comprobante) de los pedidos sin pagar de esa mesa.
+      const [{ data: sumaPendiente }, { data: detalle }] = await Promise.all([
+        supabase.rpc("total_pendiente_mesa", { p_mesa_sesion_id: mesaSesionId }),
+        supabase.rpc("detalle_pendiente_mesa", { p_mesa_sesion_id: mesaSesionId }),
+      ]);
       totalMesa += Number(sumaPendiente || 0);
+      if (facturaEl) {
+        const filas = [
+          ...[...carrito.values()].map(it => ({ ...it, cliente: "Tú" })),
+          ...(detalle || []).flatMap(p => (Array.isArray(p.items) ? p.items : []).map(it => ({ ...it, cliente: p.cliente_nombre }))),
+        ];
+        facturaEl.innerHTML = filas.map(it => `
+          <div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--tinta-45);padding:2px 0">
+            <span>${it.cantidad}× ${esc(it.nombre)} · ${esc(it.cliente)}</span>
+            <span>${COP(Number(it.precio || 0) * Number(it.cantidad || 0))}</span>
+          </div>`).join("");
+      }
     } catch {}
     if (totSpan) totSpan.textContent = COP(totalMesa);
     if (notaEl) notaEl.textContent = `Pagas el total de la mesa: ${COP(totalMesa)} (lo tuyo + lo que ya pidieron y no han pagado).`;
@@ -769,6 +787,7 @@ async function iniciar() {
     $$(".carta-metodo-btn[data-metodo]").forEach(x => x.classList.remove("is-on"));
     $$("#carta-campo-mesa-alcance [data-alcance]").forEach(x => x.classList.remove("is-on"));
     const notaAlcance = $("#carta-mesa-alcance-total"); if (notaAlcance) notaAlcance.textContent = "";
+    const facturaAlcance = $("#carta-mesa-factura"); if (facturaAlcance) facturaAlcance.innerHTML = "";
     const efEl = $("#carta-pago-efectivo"); if (efEl) efEl.hidden = true;
     const trEl = $("#carta-pago-transferencia"); if (trEl) trEl.hidden = true;
     const compInput = $("#carta-comprobante"); if (compInput) compInput.value = "";
