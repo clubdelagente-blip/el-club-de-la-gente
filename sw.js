@@ -9,7 +9,7 @@
 // query string, así que cachear por URL exacta es seguro: al subir "?v=N" el
 // Service Worker simplemente ve una URL nueva y no sirve nada viejo.
 
-const CACHE_NAME = "ecdlg-static-v1";
+const CACHE_NAME = "ecdlg-static-v2";
 
 // Extensiones que vale la pena cachear -- nunca HTML (las páginas cambian
 // seguido y deben pedirse siempre a la red primero) ni llamadas a Supabase.
