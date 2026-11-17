@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=142">
-  <link rel="stylesheet" href="carta.css?v=25">
+  <link rel="stylesheet" href="carta.css?v=26">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -191,6 +191,23 @@
     </div>
   </div>
 
+  <!-- Pide WhatsApp la primera vez que se da like o se comenta -- para
+       sumar puntos a nombre de alguien (participar por premios después). -->
+  <div class="carta-masalgo-overlay" id="carta-puntos-overlay" hidden>
+    <div class="carta-masalgo-caja">
+      <div class="check">🎁</div>
+      <h3>¡Sumas puntos!</h3>
+      <p>Cada like y cada comentario suman puntos para participar por premios de este negocio. Déjanos tu WhatsApp para contarlos a tu nombre.</p>
+      <div class="carta-campo" style="text-align:left"><input id="carta-puntos-whatsapp" type="tel" placeholder="300 000 0000"></div>
+      <div class="carta-masalgo-botones">
+        <button type="button" class="btn btn--primario" id="carta-puntos-guardar">Guardar y sumar puntos</button>
+        <button type="button" class="btn" id="carta-puntos-ahora-no">Ahora no</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="carta-toast" id="carta-toast"></div>
+
   <!-- Comentarios de un producto: solo se ven los que el negocio ya aprobó -->
   <div class="carta-overlay" id="carta-comentarios-overlay" hidden>
     <div class="carta-sheet">
@@ -206,7 +223,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=31"></script>
+  <script type="module" src="carta.js?v=32"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

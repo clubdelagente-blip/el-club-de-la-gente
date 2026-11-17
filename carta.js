@@ -42,6 +42,16 @@ function copiarFallback(texto) {
   document.body.removeChild(ta);
 }
 
+let _toastTimer = null;
+function mostrarToast(msg) {
+  const el = document.getElementById("carta-toast");
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add("mostrar");
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove("mostrar"), 2600);
+}
+
 const aliadoId = new URLSearchParams(location.search).get('aliado');
 // Si el link trae ?mesa=, varias personas en la misma mesa escanean el MISMO
 // QR y todas se unen a la misma "sesión de mesa" (ver abrirSesionMesa más
@@ -422,6 +432,46 @@ async function iniciar() {
       localStorage.setItem(key, JSON.stringify([...dados]));
     } catch {}
     supabase.rpc("dar_like_producto", { p_producto_id: p.id }).catch(() => {});
+    pedirWhatsAppPuntos((wa) => sumarPuntos(wa, "like"));
+  }
+
+  // ---------- Puntos por like/comentario -- independiente de la tarjeta de
+  // sellos (esa premia compras pagadas). Cada negocio tiene su propia meta;
+  // la primera vez que se gana un punto se pide el WhatsApp (se guarda en
+  // este celular para no volver a pedirlo) -- sin eso no hay a nombre de
+  // quién anotarlo. Por ahora solo se acumulan: todavía no hay panel para
+  // que el negocio vea quién ya puede participar. ----------
+  const META_PUNTOS = 30;
+  const puntosOverlay = $("#carta-puntos-overlay");
+  let _accionPuntosPendiente = null;
+  function obtenerWhatsAppGuardado() {
+    try { return localStorage.getItem("carta_mi_whatsapp") || null; } catch { return null; }
+  }
+  function pedirWhatsAppPuntos(onListo) {
+    const guardado = obtenerWhatsAppGuardado();
+    if (guardado) { onListo(guardado); return; }
+    _accionPuntosPendiente = onListo;
+    if (puntosOverlay) puntosOverlay.hidden = false;
+  }
+  $("#carta-puntos-guardar")?.addEventListener("click", () => {
+    const wa = $("#carta-puntos-whatsapp")?.value.trim();
+    if (!wa) { alert("Escribe tu WhatsApp"); return; }
+    try { localStorage.setItem("carta_mi_whatsapp", wa); } catch {}
+    if (puntosOverlay) puntosOverlay.hidden = true;
+    const cb = _accionPuntosPendiente; _accionPuntosPendiente = null;
+    if (cb) cb(wa);
+  });
+  $("#carta-puntos-ahora-no")?.addEventListener("click", () => {
+    if (puntosOverlay) puntosOverlay.hidden = true;
+    _accionPuntosPendiente = null;
+  });
+  async function sumarPuntos(wa, tipo) {
+    try {
+      await supabase.rpc("sumar_punto_carta", { p_negocio_id: aliadoId, p_whatsapp: wa, p_tipo: tipo });
+      const { data: total } = await supabase.rpc("mis_puntos_carta", { p_negocio_id: aliadoId, p_whatsapp: wa });
+      const puntos = Number(total) || 0;
+      mostrarToast(puntos >= META_PUNTOS ? `🎉 ¡Llegaste a ${puntos} puntos! Ya puedes participar por premios.` : `+5 puntos · llevas ${puntos} de ${META_PUNTOS} para participar`);
+    } catch {}
   }
 
   function compartirProducto(p) {
@@ -473,6 +523,7 @@ async function iniciar() {
     if (error) { alert("No pudimos enviar tu comentario. Intenta de nuevo."); return; }
     const textoInput = $("#carta-comentario-texto"); if (textoInput) textoInput.value = "";
     const aviso = $("#carta-comentario-aviso"); if (aviso) aviso.classList.add("mostrar");
+    pedirWhatsAppPuntos((wa) => sumarPuntos(wa, "comentario"));
   });
 
   // ---------- Modal de personalización: toppings/salsas/tamaño antes de
