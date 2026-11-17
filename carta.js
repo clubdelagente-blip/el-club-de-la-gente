@@ -101,9 +101,8 @@ function sumarProducto(p, delta) {
 // Una tarjeta = una pantalla completa del feed (tipo Reels/TikTok): la foto
 // de fondo, un riel de me-gusta/comentar/compartir a la derecha, y el
 // nombre/precio/botón de agregar flotando abajo sobre un degradado.
-function feedSlideHtml(p, tieneGrupos) {
+function feedSlideHtml(p, tieneGrupos, categoria) {
   const agotado = estaAgotado(p);
-  const categoria = (p.categoria || "").trim() || "Otros";
   const img = p.imagen_url
     ? `<img class="carta-card__img" src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" loading="lazy">`
     : `<div class="carta-card__ph"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
@@ -316,36 +315,61 @@ async function iniciar() {
 
   if (grid) {
     const grupos = agruparPorCategoria(items, negocio.carta_categorias_orden);
+
+    // "Los más destacados": los productos con más likes se SACAN de su
+    // categoría de siempre y se reubican juntos, primero en el feed -- no
+    // se duplican (cada producto vive en un solo lugar a la vez), así que
+    // un producto deja de verse en su categoría normal apenas entra acá.
+    const TOPE_DESTACADOS = 5;
+    const destacados = items
+      .filter(p => Number(p.contador_likes) > 0)
+      .sort((a, b) => Number(b.contador_likes) - Number(a.contador_likes))
+      .slice(0, TOPE_DESTACADOS);
+    if (destacados.length) {
+      const destacadosIds = new Set(destacados.map(p => p.id));
+      for (let i = grupos.length - 1; i >= 0; i--) {
+        const prods = grupos[i][1];
+        for (let j = prods.length - 1; j >= 0; j--) if (destacadosIds.has(prods[j].id)) prods.splice(j, 1);
+        if (!prods.length) grupos.splice(i, 1);
+      }
+      grupos.unshift(["Los más destacados", destacados]);
+    }
+
     // Se muestran las cápsulas de categoría siempre que el negocio de
     // verdad las use -- solo se esconden cuando NADIE puso categoría en
-    // ningún producto (ahí "Otros" sería el único grupo).
-    const mostrarPills = !(grupos.length === 1 && grupos[0][0] === "Otros");
+    // ningún producto (ahí "Otros" sería el único grupo, sin contar
+    // "Los más destacados", que no cuenta como categoría real del negocio).
+    const gruposReales = grupos.filter(([cat]) => cat !== "Los más destacados");
+    const mostrarPills = !(gruposReales.length === 1 && gruposReales[0][0] === "Otros");
     // Un producto, una pantalla -- el feed es una lista PLANA (sin
     // encabezados de categoría visibles, no caben en una pantalla completa
     // a la vez), en el mismo orden que ya respeta la categorización del
-    // negocio; las cápsulas de arriba filtran mostrando/ocultando slides.
-    grid.innerHTML = grupos.map(([, prods]) => prods.map(p => feedSlideHtml(p, gruposPorProducto.has(p.id))).join("")).join("");
+    // negocio; las cápsulas de arriba saltan a la categoría elegida, pero
+    // el scroll sigue corriendo natural hacia las siguientes -- nunca se
+    // "acaba" de golpe al terminar una categoría.
+    grid.innerHTML = grupos.map(([cat, prods]) => prods.map(p => feedSlideHtml(p, gruposPorProducto.has(p.id), cat)).join("")).join("");
 
-    // Cápsulas de categoría arriba, para filtrar de una sola vez en vez de
-    // tener que ir deslizando producto por producto -- solo tiene sentido
-    // mostrarlas si de verdad hay más de una categoría.
+    // Cápsulas de categoría arriba -- saltan a la primera tarjeta de esa
+    // categoría (scrollIntoView, no esconden nada) y se resaltan solas
+    // según qué categoría esté en pantalla en cada momento del scroll.
     const pillsEl = $("#carta-cat-pills");
     if (pillsEl) {
       if (mostrarPills && grupos.length > 1) {
-        pillsEl.innerHTML = [`<button type="button" class="carta-cat-pill is-on" data-filtro-cat="todos">Todos</button>`]
-          .concat(grupos.map(([cat]) => {
-            const color = colorDeCategoria(cat);
-            return `<button type="button" class="carta-cat-pill${color ? " con-color" : ""}" data-filtro-cat="${esc(cat)}"${color ? ` style="--cat-color:${esc(color)}"` : ""}>${esc(cat)}</button>`;
-          }))
-          .join("");
+        pillsEl.innerHTML = grupos.map(([cat]) => {
+          const color = colorDeCategoria(cat);
+          return `<button type="button" class="carta-cat-pill${color ? " con-color" : ""}" data-filtro-cat="${esc(cat)}"${color ? ` style="--cat-color:${esc(color)}"` : ""}>${esc(cat)}</button>`;
+        }).join("");
         pillsEl.querySelectorAll("[data-filtro-cat]").forEach(btn => btn.addEventListener("click", () => {
-          const filtro = btn.dataset.filtroCat;
-          pillsEl.querySelectorAll("[data-filtro-cat]").forEach(b => b.classList.toggle("is-on", b === btn));
-          grid.querySelectorAll(".carta-slide").forEach(s => {
-            s.style.display = (filtro === "todos" || s.dataset.categoria === filtro) ? "" : "none";
-          });
-          grid.scrollTo({ top: 0 });
+          grid.querySelector(`.carta-slide[data-categoria="${CSS.escape(btn.dataset.filtroCat)}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
         }));
+        pillsEl.querySelector("[data-filtro-cat]")?.classList.add("is-on");
+        const observerCat = new IntersectionObserver((entries) => {
+          const visible = entries.find(e => e.isIntersecting);
+          if (!visible) return;
+          const cat = visible.target.dataset.categoria;
+          pillsEl.querySelectorAll("[data-filtro-cat]").forEach(b => b.classList.toggle("is-on", b.dataset.filtroCat === cat));
+        }, { root: grid, threshold: 0.6 });
+        grid.querySelectorAll(".carta-slide").forEach(s => observerCat.observe(s));
       } else {
         pillsEl.innerHTML = "";
       }

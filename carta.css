@@ -79,7 +79,6 @@ body { background: #0b0b0c; position: relative; }
 .carta-feed::-webkit-scrollbar { display: none; }
 
 .carta-slide { position: relative; height: 100svh; width: 100%; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; display: flex; align-items: flex-end; }
-.carta-slide[style*="display: none"] { scroll-snap-align: none; }
 .carta-slide.en-carrito::before { content: ""; position: absolute; inset: 0; border: 3px solid var(--verde); z-index: 1; pointer-events: none; }
 .carta-slide.agotada .carta-card__img, .carta-slide.agotada .carta-card__ph { filter: grayscale(.5) brightness(.6); }
 
