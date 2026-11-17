@@ -2627,7 +2627,6 @@ function abrirConstructorPedido() {
       </div>
     </div>`).join("");
   abrirModalTienda("Nuevo pedido", `
-    <div style="max-height:40vh;overflow-y:auto;margin-bottom:14px">${filasHtml}</div>
     ${_contaMesas.length ? `
     <div class="cfg-campo">
       <label class="cfg-label">¿Es para una mesa? <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label>
@@ -2635,14 +2634,20 @@ function abrirConstructorPedido() {
         <option value="">No -- venta de mostrador</option>
         ${_contaMesas.map(m => `<option value="${m.id}">${esc(m.nombre)}</option>`).join("")}
       </select>
-      <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Si alguien de esa mesa ya pidió por el QR, este pedido se junta con el de ella y entre los dos arman la cuenta completa de la mesa.</span>
-    </div>` : ""}
-    <div class="cfg-campo"><label class="cfg-label">Nombre del cliente (opcional)</label><input class="cfg-input" id="cp-cliente" type="text" placeholder="Ej: Juan"></div>
-    <div class="cfg-campo"><label class="cfg-label">Nota (opcional)</label><input class="cfg-input" id="cp-nota" type="text" placeholder="Ej: para llevar, sin cebolla..."></div>
-    <div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;padding:10px 0;margin-bottom:10px">
-      <span>Total</span><span id="cp-total">${COP(0)}</span>
+      <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px" id="cp-mesa-hint">Si alguien de esa mesa ya pidió por el QR, este pedido se junta con el de ella y entre los dos arman la cuenta completa de la mesa.</span>
     </div>
-    <button class="btn btn--primario" id="cp-confirmar" style="width:100%;justify-content:center">Confirmar venta</button>
+    <div id="cp-carta-embebida" hidden style="margin-bottom:14px">
+      <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:8px">Arma el pedido con tu carta real, igual que lo haría el cliente. Al mandarlo, llega a "Pedidos" igual que cualquier pedido por QR -- cierra esta ventana cuando termines.</p>
+      <iframe id="cp-carta-iframe" src="" style="width:100%;height:70vh;border:1px solid var(--linea);border-radius:12px;display:block" title="Carta para tomar el pedido"></iframe>
+    </div>` : ""}
+    <div id="cp-lista-simple">
+      <div style="max-height:40vh;overflow-y:auto;margin-bottom:14px">${filasHtml}</div>
+      <div class="cfg-campo"><label class="cfg-label">Nota (opcional)</label><input class="cfg-input" id="cp-nota" type="text" placeholder="Ej: para llevar, sin cebolla..."></div>
+      <div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;padding:10px 0;margin-bottom:10px">
+        <span>Total</span><span id="cp-total">${COP(0)}</span>
+      </div>
+      <button class="btn btn--primario" id="cp-confirmar" style="width:100%;justify-content:center">Confirmar venta</button>
+    </div>
   `);
   const actualizarTotal = () => {
     let total = 0;
@@ -2663,6 +2668,30 @@ function abrirConstructorPedido() {
     $(`[data-cp-mas="${p.id}"]`)?.addEventListener("click", () => cambiar(1));
     $(`[data-cp-menos="${p.id}"]`)?.addEventListener("click", () => cambiar(-1));
   });
+  // Elegir una mesa cambia por completo la ventana: en vez de la lista
+  // simple de arriba/abajo, se abre la carta real embebida (con fotos,
+  // categorías y toppings, igual que ve el cliente) apuntada a esa mesa --
+  // el pedido se manda desde ADENTRO de esa carta, por el mismo camino de
+  // siempre, así que la notificación al dashboard llega exactamente igual.
+  $("#cp-mesa")?.addEventListener("change", (e) => {
+    const mesaId = e.target.value;
+    const listaSimple = $("#cp-lista-simple");
+    const cartaEmbebida = $("#cp-carta-embebida");
+    if (mesaId) {
+      if (listaSimple) listaSimple.hidden = true;
+      if (cartaEmbebida) {
+        cartaEmbebida.hidden = false;
+        const iframe = $("#cp-carta-iframe");
+        if (iframe) iframe.src = `Carta.html?aliado=${_contaNegocioId}&mesa=${mesaId}`;
+      }
+    } else {
+      if (listaSimple) listaSimple.hidden = false;
+      if (cartaEmbebida) cartaEmbebida.hidden = true;
+    }
+  });
+  // "Confirmar venta" solo existe para la lista simple (venta de mostrador,
+  // sin mesa) -- al elegir mesa, esta lista se oculta y el pedido se manda
+  // desde ADENTRO de la carta embebida, nunca desde este botón.
   $("#cp-confirmar")?.addEventListener("click", async () => {
     const btn = $("#cp-confirmar");
     if (!carrito.size) { toast("Elige al menos un producto"); return; }
@@ -2670,43 +2699,25 @@ function abrirConstructorPedido() {
     const items = [...carrito.entries()].map(([producto_id, it]) => ({ producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad }));
     const total = items.reduce((s, it) => s + it.precio * it.cantidad, 0);
     const nota = $("#cp-nota")?.value.trim() || null;
-    const clienteNombre = $("#cp-cliente")?.value.trim() || null;
-    const mesaId = $("#cp-mesa")?.value || null;
-
-    if (mesaId) {
-      const mesa = _contaMesas.find(m => m.id === mesaId);
-      const { data: sesionId, error: errSesion } = await supabase.rpc("abrir_o_unir_sesion_mesa", { p_mesa_id: mesaId });
-      if (errSesion || !sesionId) { toast("Error al abrir la mesa: " + (errSesion?.message || "intenta de nuevo")); btn.disabled = false; btn.textContent = "Confirmar venta"; return; }
-      const { error } = await supabase.from("negocio_carta_pedidos").insert({
-        negocio_id: _contaNegocioId, cliente_nombre: clienteNombre || "Pedido de mesa", nota,
-        items, monto_total: total, estado: "pendiente", metodo_pago: null,
-        mesa_id: mesaId, mesa_sesion_id: sesionId, mesa_nombre: mesa?.nombre || null,
-      });
-      if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Confirmar venta"; return; }
-      // El stock acá lo descuenta solo el mismo trigger que ya usa la carta
-      // por QR (se dispara al insertar en negocio_carta_pedidos) -- no hay
-      // que repetirlo a mano como en la rama de venta de mostrador de abajo.
-    } else {
-      const descripcion = items.map(it => `${it.cantidad}× ${it.nombre}`).join(", ");
-      const { error } = await supabase.from("negocio_ingresos").insert({
-        negocio_id: _contaNegocioId, origen: "manual", descripcion, items, monto: total,
-        fecha: new Date().toISOString().slice(0, 10), nota,
-      });
-      if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Confirmar venta"; return; }
-      // Una venta manual de mostrador nunca pasa por negocio_carta_pedidos
-      // (ahí vive el trigger que descuenta stock de los pedidos por QR), así
-      // que acá hay que descontarlo a mano -- si no, el stock quedaría
-      // desactualizado para cualquier negocio que también venda de mostrador.
-      for (const it of items) {
-        const prod = _contaCartaProductos.find(p => p.id === it.producto_id);
-        if (prod?.stock_activo) {
-          const nuevoStock = Math.max((prod.stock_cantidad ?? 0) - it.cantidad, 0);
-          await supabase.from("negocio_carta_productos").update({ stock_cantidad: nuevoStock }).eq("id", prod.id);
-        }
+    const descripcion = items.map(it => `${it.cantidad}× ${it.nombre}`).join(", ");
+    const { error } = await supabase.from("negocio_ingresos").insert({
+      negocio_id: _contaNegocioId, origen: "manual", descripcion, items, monto: total,
+      fecha: new Date().toISOString().slice(0, 10), nota,
+    });
+    if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Confirmar venta"; return; }
+    // Una venta manual de mostrador nunca pasa por negocio_carta_pedidos
+    // (ahí vive el trigger que descuenta stock de los pedidos por QR), así
+    // que acá hay que descontarlo a mano -- si no, el stock quedaría
+    // desactualizado para cualquier negocio que también venda de mostrador.
+    for (const it of items) {
+      const prod = _contaCartaProductos.find(p => p.id === it.producto_id);
+      if (prod?.stock_activo) {
+        const nuevoStock = Math.max((prod.stock_cantidad ?? 0) - it.cantidad, 0);
+        await supabase.from("negocio_carta_productos").update({ stock_cantidad: nuevoStock }).eq("id", prod.id);
       }
     }
     cerrarModalTienda();
-    toast(mesaId ? "Pedido agregado a la mesa ✓" : "Venta registrada ✓");
+    toast("Venta registrada ✓");
     cargarContabilidadNegocio(_contaNegocioId);
   });
 }
