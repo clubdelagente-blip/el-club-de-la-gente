@@ -3260,6 +3260,25 @@ function filaPedidoHtml(ped) {
 // el mismo QR de mesa) se agrupan bajo un solo encabezado con un botón único
 // "Cobrar mesa completa" -- cada persona sigue viéndose por separado adentro
 // (quién pidió qué), pero el cobro y el ingreso contable son UNO solo.
+// Desglose tipo factura dentro de la tarjeta de mesa: una línea por producto
+// (no por pedido), con cantidad, valor de esa línea y quién lo pidió -- para
+// que el negocio pueda revisar/repartir la cuenta sin tener que abrir cada
+// pedido individual.
+function facturaMesaHtml(peds) {
+  const filas = peds.flatMap(p =>
+    (Array.isArray(p.items) ? p.items : []).map(it => ({ ...it, cliente: p.cliente_nombre }))
+  );
+  if (!filas.length) return "";
+  return `
+  <div style="background:#fff;border-radius:10px;padding:10px 12px;margin-bottom:10px">
+    ${filas.map(it => `
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:5px 0;border-bottom:1px solid #f1f1f1;font-size:12.5px">
+        <span style="flex:1;min-width:0">${it.cantidad}× ${esc(it.nombre)} <span style="color:#999">· ${esc(it.cliente)}</span></span>
+        <span style="font-weight:600;white-space:nowrap">${COP(Number(it.precio || 0) * Number(it.cantidad || 0))}</span>
+      </div>`).join("")}
+  </div>`;
+}
+
 async function cargarCartaPedidos() {
   const list = $("#conta-carta-pedidos-list");
   if (!list) return;
@@ -3281,6 +3300,7 @@ async function cargarCartaPedidos() {
         <div style="flex:1;min-width:180px;font-weight:700;font-size:14.5px">🍽️ ${esc(peds[0].mesa_nombre || "Mesa")} · ${peds.length} pedido${peds.length === 1 ? "" : "s"} · ${COP(total)}</div>
         <button data-cobrar-mesa="${sesionId}" class="btn btn--primario" style="padding:8px 14px;font-size:12px">Cobrar mesa completa</button>
       </div>
+      ${facturaMesaHtml(peds)}
       <div style="background:#fff;border-radius:10px;padding:0 12px">
         ${peds.map(p => filaPedidoHtml(p)).join("")}
       </div>
