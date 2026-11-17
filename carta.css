@@ -3,8 +3,8 @@
    Hereda variables y tipografía de styles.css
    ============================================================ */
 
-html, body { overflow-x: hidden; }
-body { background: var(--crema); padding-bottom: 90px; position: relative; }
+html, body { overflow: hidden; height: 100%; }
+body { background: #0b0b0c; position: relative; }
 
 /* Personalización por negocio (se setean desde JS vía
    style.setProperty cuando el negocio las configura; si no, quedan estos
@@ -35,7 +35,15 @@ body { background: var(--crema); padding-bottom: 90px; position: relative; }
   background-repeat: no-repeat;
 }
 
-.carta-top { background: rgba(255,255,255,.82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--linea); padding: 18px 0; }
+/* "Chrome" flotante sobre el feed a pantalla completa (header + avisos +
+   cápsulas de categoría) -- mismo patrón que la barra superior de Reels/
+   TikTok: queda fijo encima de la foto del producto, sin empujar el feed
+   hacia abajo. pointer-events:none en el contenedor y "auto" solo en lo
+   que de verdad es tocable, para que un deslizar que arranca en un hueco
+   vacío del header pase de largo hacia el feed de abajo en vez de quedar
+   atrapado en una capa que no se mueve. */
+#carta-chrome { position: fixed; top: 0; left: 0; right: 0; z-index: 10; padding-top: env(safe-area-inset-top, 0px); pointer-events: none; }
+.carta-top { background: rgba(255,255,255,.82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--linea); padding: 18px 0; pointer-events: auto; }
 .carta-top__negocio { display: flex; align-items: center; gap: 14px; }
 .carta-top__logo { width: 48px; height: 48px; border-radius: 12px; background: var(--verde-soft); flex: none; overflow: hidden; }
 .carta-top__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -49,11 +57,12 @@ body { background: var(--crema); padding-bottom: 90px; position: relative; }
    del Club") -- acá solo hace falta el respaldo de ".carta-aviso-wrap[hidden]"
    por el mismo motivo de siempre (display:flex de .tienda-banner-track
    podría ganarle al atributo hidden puesto en el contenedor de afuera). */
+.carta-aviso-wrap { pointer-events: auto; }
 .carta-aviso-wrap[hidden] { display: none; }
 
 .carta-cat-pills { display: flex; gap: 8px; overflow-x: auto; padding: 16px 0 4px; -webkit-overflow-scrolling: touch; }
 .carta-cat-pills::-webkit-scrollbar { display: none; }
-.carta-cat-pill { flex: none; padding: 9px 16px; border-radius: 100px; border: 1.5px solid var(--linea-fuerte); background: #fff; font-family: var(--cuerpo); font-size: 13px; font-weight: 600; color: var(--tinta); cursor: pointer; white-space: nowrap; transition: background .2s, border-color .2s, color .2s; }
+.carta-cat-pill { flex: none; pointer-events: auto; padding: 9px 16px; border-radius: 100px; border: 1.5px solid var(--linea-fuerte); background: #fff; font-family: var(--cuerpo); font-size: 13px; font-weight: 600; color: var(--tinta); cursor: pointer; white-space: nowrap; transition: background .2s, border-color .2s, color .2s; box-shadow: 0 2px 10px rgba(0,0,0,.12); }
 .carta-cat-pill.is-on { background: var(--verde); border-color: var(--verde); color: #fff; }
 /* Color propio por categoría (ej. "Bananos" en amarillo) -- --cat-color lo
    pone JS inline por cápsula; sin tocar, el aro se ve en ese color y al
@@ -61,43 +70,63 @@ body { background: var(--crema); padding-bottom: 90px; position: relative; }
 .carta-cat-pill.con-color { border-color: var(--cat-color); color: var(--cat-color); }
 .carta-cat-pill.con-color.is-on { background: var(--cat-color); border-color: var(--cat-color); color: #fff; }
 
-.carta-vacio { text-align: center; padding: 60px 20px; color: var(--tinta-60); font-size: 14.5px; }
+.carta-vacio { text-align: center; padding: 60px 20px; color: #fff; font-size: 14.5px; }
 
-.carta-grupo { padding-top: 22px; }
-.carta-grupo__titulo { font-family: var(--display); font-size: 18px; font-weight: 600; color: var(--tinta); margin-bottom: 12px; }
-/* Mismo tamaño/estructura de tarjeta que ya usa la Tienda del Club
-   (.tienda-card en styles.css): 2 columnas fijas en celular, pasa a
-   auto-fill con mínimo 170px en pantallas más anchas. */
-.carta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding-bottom: 4px; width: 100%; }
-@media (min-width: 480px) { .carta-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); } }
-.carta-card { background: var(--carta-tarjeta-bg); border: 1px solid var(--carta-tarjeta-borde); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; transition: border-color .2s, box-shadow .2s, transform .2s; box-shadow: 0 2px 10px rgba(0,0,0,.04); }
-.carta-card.en-carrito { border-color: var(--verde); box-shadow: 0 0 0 1.5px var(--verde) inset; }
-.carta-card.agotada .carta-card__img, .carta-card.agotada .carta-card__ph { opacity: .45; filter: grayscale(.4); }
-.carta-card__agotado { font-size: 12px; font-weight: 700; color: #c0392b; background: #fdecea; padding: 7px 12px; border-radius: 100px; white-space: nowrap; }
-.carta-card__img { width: 100%; aspect-ratio: 1/1; background: var(--verde-soft); object-fit: cover; display: block; cursor: pointer; }
-.carta-card__ph { width: 100%; aspect-ratio: 1/1; background: var(--verde-soft); display: grid; place-items: center; color: var(--verde); }
-.carta-card__body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
-.carta-card__nombre { font-size: 13.5px; font-weight: 600; color: var(--tinta); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.carta-card__desc { font-size: 12px; color: var(--tinta-60); line-height: 1.4; flex: 1; }
-.carta-card__fila { display: flex; align-items: center; justify-content: space-between; gap: 8px; row-gap: 6px; margin-top: auto; padding-top: 6px; flex-wrap: wrap; }
-.carta-card__precio { font-size: 16px; font-weight: 800; color: var(--verde); white-space: nowrap; }
+/* ---------- Feed a pantalla completa, tipo Reels/TikTok: un producto por
+   pantalla, deslizando verticalmente con scroll-snap nativo (sin librería,
+   sin manejo manual de touch -- el navegador ya hace el gesto bien). ---------- */
+.carta-feed { position: fixed; inset: 0; overflow-y: auto; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; background: #0b0b0c; z-index: 1; }
+.carta-feed::-webkit-scrollbar { display: none; }
 
-/* Arranca como un solo botón "+" (mismo tamaño/estilo que .tienda-card__cart
-   de la Tienda) -- el "−" y el número solo aparecen una vez que ya hay al
-   menos 1 en el carrito, para que quepa cómodo en una tarjeta angosta de 2
-   columnas en vez de mostrar siempre los 3 controles juntos. */
-.carta-qty { display: flex; align-items: center; gap: 6px; }
+.carta-slide { position: relative; height: 100svh; width: 100%; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; display: flex; align-items: flex-end; }
+.carta-slide[style*="display: none"] { scroll-snap-align: none; }
+.carta-slide.en-carrito::before { content: ""; position: absolute; inset: 0; border: 3px solid var(--verde); z-index: 1; pointer-events: none; }
+.carta-slide.agotada .carta-card__img, .carta-slide.agotada .carta-card__ph { filter: grayscale(.5) brightness(.6); }
+
+.carta-card__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.carta-card__ph { position: absolute; inset: 0; background: var(--verde-soft); display: grid; place-items: center; color: var(--verde); }
+/* Capa intermedia a propósito (no ::after): así el orden en el DOM manda
+   quién tapa a quién -- foto, luego degradado, luego texto -- en vez de
+   depender de que un pseudo-elemento se calce bien encima del contenido. */
+.carta-slide__scrim { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(to top, rgba(0,0,0,.8) 0%, rgba(0,0,0,.25) 38%, transparent 62%); }
+
+.carta-card__agotado { font-size: 12px; font-weight: 700; color: #fff; background: #c0392b; padding: 8px 14px; border-radius: 100px; white-space: nowrap; }
+
+.carta-card__body { position: relative; z-index: 2; width: 100%; padding: 0 18px calc(100px + env(safe-area-inset-bottom, 0px)) 18px; display: flex; flex-direction: column; gap: 6px; color: #fff; }
+.carta-card__nombre { font-family: var(--display); font-size: 21px; font-weight: 700; line-height: 1.2; text-shadow: 0 2px 12px rgba(0,0,0,.5); }
+.carta-card__desc { font-size: 13px; color: rgba(255,255,255,.88); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-shadow: 0 1px 8px rgba(0,0,0,.4); }
+.carta-card__fila { display: flex; align-items: center; justify-content: space-between; gap: 10px; row-gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+.carta-card__precio { font-family: var(--display); font-size: 20px; font-weight: 800; color: #fff; white-space: nowrap; text-shadow: 0 2px 10px rgba(0,0,0,.5); }
+
+/* Arranca como un solo botón "Añadir" (ancho, fácil de tocar con el pulgar
+   sobre la foto) -- el "−" y el número solo aparecen una vez que ya hay al
+   menos 1 en el carrito, y ahí "Añadir" se encoge a un "+" redondo normal. */
+.carta-qty { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.16); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-radius: 100px; padding: 5px; }
 .carta-qty__menos, .carta-qty__n { display: none; }
 .carta-qty.en-uso .carta-qty__menos, .carta-qty.en-uso .carta-qty__n { display: inline-flex; align-items: center; justify-content: center; }
-.carta-qty button { width: 30px; height: 30px; flex: none; border-radius: 50%; border: none; background: var(--verde); color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; line-height: 1; display: inline-flex; align-items: center; justify-content: center; transition: background .15s, transform .15s; }
+.carta-qty .mas-texto { display: inline; }
+.carta-qty.en-uso .mas-texto { display: none; }
+.carta-qty .mas-icono { display: none; }
+.carta-qty.en-uso .mas-icono { display: inline; }
+.carta-qty button { height: 36px; flex: none; border-radius: 100px; border: none; background: var(--verde); color: #fff; font-family: var(--cuerpo); font-size: 14px; font-weight: 700; cursor: pointer; line-height: 1; display: inline-flex; align-items: center; justify-content: center; padding: 0 18px; transition: background .15s, transform .15s; }
+.carta-qty.en-uso button[data-qty-mas], .carta-qty button[data-qty-menos] { width: 36px; padding: 0; font-size: 16px; }
 .carta-qty button:active { transform: scale(.92); }
-.carta-qty__menos { background: #fff !important; border: 1.5px solid var(--linea-fuerte) !important; color: var(--tinta) !important; }
-.carta-qty__n { min-width: 16px; background: none; text-align: center; font-weight: 700; font-size: 14px; color: var(--tinta); cursor: default; }
+.carta-qty__menos { background: rgba(255,255,255,.9) !important; color: var(--tinta) !important; }
+.carta-qty__n { min-width: 20px; background: none; text-align: center; font-weight: 700; font-size: 14px; color: #fff; cursor: default; }
 
 /* Productos con toppings/modificadores no incrementan directo desde la
    tarjeta (no se sabría con qué salsa/tamaño) -- en su lugar abren el modal
    de personalización con este botón. */
-.carta-card__personalizar { padding: 7px 16px; border-radius: 100px; border: none; background: var(--verde); color: #fff; font-family: var(--cuerpo); font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+.carta-card__personalizar { height: 36px; padding: 0 20px; border-radius: 100px; border: none; background: var(--verde); color: #fff; font-family: var(--cuerpo); font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+/* ---------- Riel de acciones a la derecha (me gusta / comentar /
+   compartir), mismo lugar que cualquier feed de video vertical. ---------- */
+.carta-slide__rail { position: absolute; right: 14px; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.carta-rail-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; color: #fff; cursor: pointer; padding: 0; }
+.carta-rail-btn svg { width: 27px; height: 27px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.55)); transition: transform .15s; }
+.carta-rail-btn:active svg { transform: scale(.85); }
+.carta-rail-btn .n { font-size: 11px; font-weight: 700; text-shadow: 0 1px 5px rgba(0,0,0,.6); max-width: 60px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.carta-rail-btn.is-liked svg { fill: #ef4444; stroke: #ef4444; }
 
 /* Modal de personalización: toppings/salsas/tamaño antes de agregar el
    producto -- mismo patrón de hoja inferior que el checkout (.carta-sheet). */
@@ -185,3 +214,24 @@ body { background: var(--crema); padding-bottom: 90px; position: relative; }
 .carta-exito__check { width: 56px; height: 56px; border-radius: 50%; background: var(--verde-soft); color: var(--verde); font-size: 26px; font-weight: 700; display: grid; place-items: center; margin: 0 auto 16px; }
 .carta-exito h3 { font-family: var(--display); font-size: 20px; margin-bottom: 8px; }
 .carta-exito p { font-size: 13.5px; color: var(--tinta-60); line-height: 1.6; }
+
+/* ---------- "¿Deseas agregar algo más?": diálogo chico y centrado, no una
+   hoja inferior -- es una decisión de un toque, no un formulario. ---------- */
+.carta-masalgo-overlay { position: fixed; inset: 0; background: rgba(2,27,26,.6); z-index: 57; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.carta-masalgo-overlay[hidden] { display: none; }
+.carta-masalgo-caja { background: #fff; width: 100%; max-width: 340px; border-radius: 20px; padding: 26px 24px; text-align: center; }
+.carta-masalgo-caja .check { width: 46px; height: 46px; border-radius: 50%; background: var(--verde-soft); color: var(--verde); font-size: 22px; display: grid; place-items: center; margin: 0 auto 14px; }
+.carta-masalgo-caja h3 { font-family: var(--display); font-size: 18px; margin-bottom: 6px; }
+.carta-masalgo-caja p { font-size: 13px; color: var(--tinta-60); margin-bottom: 18px; }
+.carta-masalgo-botones { display: flex; flex-direction: column; gap: 10px; }
+
+/* ---------- Comentarios: mismo patrón de hoja inferior que el checkout
+   (.carta-overlay/.carta-sheet), solo cambia lo de adentro. ---------- */
+.carta-comentario { padding: 12px 0; border-bottom: 1px solid var(--linea); }
+.carta-comentario__nombre { font-size: 13px; font-weight: 700; color: var(--tinta); }
+.carta-comentario__texto { font-size: 13.5px; color: var(--tinta-70, var(--tinta-60)); line-height: 1.5; margin-top: 2px; }
+.carta-comentarios-vacio { text-align: center; padding: 20px 0; font-size: 13px; color: var(--tinta-45); }
+.carta-comentario-form { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--linea); }
+.carta-comentario-form textarea { width: 100%; padding: 13px 14px; border: 1px solid var(--linea-fuerte); border-radius: 10px; font-family: var(--cuerpo); font-size: 14px; box-sizing: border-box; resize: vertical; min-height: 64px; }
+.carta-comentario-aviso { font-size: 12px; color: var(--verde); margin-top: 8px; display: none; }
+.carta-comentario-aviso.mostrar { display: block; }

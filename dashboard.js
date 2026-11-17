@@ -1697,6 +1697,7 @@ let _contaIngresos = [];
 let _contaFiltroOrigen = "todos";
 let _contaCartaProductos = [];
 let _contaCartaPedidos = [];
+let _contaComentarios = [];
 let _contaModGrupos = [];
 let _contaModOpciones = [];
 let _contaModProdGrupos = [];
@@ -2120,7 +2121,7 @@ async function cargarContabilidadNegocio(negocioId) {
     };
   });
 
-  const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }, { data: mesas }] = await Promise.all([
+  const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }, { data: mesas }, { data: comentarios }] = await Promise.all([
     supabase.from("aliados").select("carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
@@ -2132,6 +2133,7 @@ async function cargarContabilidadNegocio(negocioId) {
     supabase.from("negocio_carta_opciones_mod").select("*").eq("negocio_id", negocioId).order("orden"),
     supabase.from("negocio_carta_producto_grupos").select("*").eq("negocio_id", negocioId),
     supabase.from("negocio_mesas").select("*").eq("negocio_id", negocioId).order("orden"),
+    supabase.from("negocio_carta_comentarios").select("*, negocio_carta_productos(nombre)").eq("negocio_id", negocioId).order("created_at", { ascending: false }),
   ]);
 
   _contaNegocio = negocio || {};
@@ -2145,6 +2147,7 @@ async function cargarContabilidadNegocio(negocioId) {
   _contaModOpciones = modOpciones || [];
   _contaModProdGrupos = modProdGrupos || [];
   _contaMesas = mesas || [];
+  _contaComentarios = comentarios || [];
   await renovarGastosRecurrentes();
 
   // Primera vez que este negocio abre la pestaña: siembra categorías
@@ -2291,6 +2294,7 @@ async function cargarContabilidadNegocio(negocioId) {
   cargarMesas();
   cargarCartaProductos();
   cargarCartaPedidos();
+  cargarComentariosCarta();
   mostrarSugerenciaCategorias();
 
   if (!_contaNegocio.carta_tipo_negocio && !_tipoNegocioModalMostrado) {
@@ -3365,6 +3369,40 @@ async function cargarCartaPedidos() {
       await supabase.from("negocio_mesas_sesiones").update({ estado: "cerrada", cerrada_at: new Date().toISOString() }).eq("id", sesionId);
     }
     toast("Mesa cobrada ✓");
+    cargarContabilidadNegocio(_contaNegocioId);
+  }));
+}
+
+// Comentarios que los clientes dejan en productos de la carta -- nadie los
+// ve en público hasta que el negocio los aprueba acá (la carta pública solo
+// lee los que ya tienen aprobado=true). Los pendientes se muestran primero.
+function cargarComentariosCarta() {
+  const list = $("#conta-carta-comentarios-list");
+  if (!list) return;
+  if (!_contaComentarios.length) { list.innerHTML = `<p style="padding:8px 0">Todavía no hay comentarios de clientes.</p>`; return; }
+  const pendientes = _contaComentarios.filter(c => !c.aprobado);
+  const aprobados = _contaComentarios.filter(c => c.aprobado);
+  const filaHtml = (c) => `
+    <div style="padding:12px 0;border-bottom:1px solid #ebebeb">
+      <div style="font-size:12px;color:#777">${esc(c.negocio_carta_productos?.nombre || "Producto")}</div>
+      <div style="font-weight:600;font-size:13.5px;margin-top:2px">${esc(c.cliente_nombre)}${!c.aprobado ? ` <span style="font-size:11px;font-weight:700;color:#b8860b">· Pendiente</span>` : ""}</div>
+      <div style="font-size:13px;color:#444;margin-top:2px">${esc(c.texto)}</div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        ${!c.aprobado ? `<button data-aprobar-com="${c.id}" class="btn btn--primario" style="padding:6px 14px;font-size:12px">Aprobar</button>` : ""}
+        <button data-rm-com="${c.id}" style="padding:6px 14px;font-size:12px;border:1px solid #ebebeb;border-radius:8px;background:none;color:#c0392b;cursor:pointer">Eliminar</button>
+      </div>
+    </div>`;
+  list.innerHTML = pendientes.map(filaHtml).join("") + aprobados.map(filaHtml).join("");
+  list.querySelectorAll("[data-aprobar-com]").forEach(btn => btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    await supabase.from("negocio_carta_comentarios").update({ aprobado: true }).eq("id", btn.dataset.aprobarCom);
+    toast("Comentario aprobado ✓");
+    cargarContabilidadNegocio(_contaNegocioId);
+  }));
+  list.querySelectorAll("[data-rm-com]").forEach(btn => btn.addEventListener("click", async () => {
+    if (!confirm("¿Eliminar este comentario?")) return;
+    await supabase.from("negocio_carta_comentarios").delete().eq("id", btn.dataset.rmCom);
+    toast("Comentario eliminado");
     cargarContabilidadNegocio(_contaNegocioId);
   }));
 }

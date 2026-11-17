@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=142">
-  <link rel="stylesheet" href="carta.css?v=22">
+  <link rel="stylesheet" href="carta.css?v=23">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -24,36 +24,36 @@
 
   <div id="fondo-fijo" aria-hidden="true"></div>
 
-  <header class="carta-top">
-    <div class="wrap">
-      <div class="carta-top__negocio">
-        <div class="carta-top__logo" id="carta-logo"></div>
-        <div style="flex:1;min-width:0">
-          <div class="carta-top__nombre" id="carta-nombre">Cargando…</div>
-          <div class="carta-top__sub">Carta digital · El Club de la Gente</div>
-        </div>
-        <a href="#" target="_blank" rel="noopener" class="carta-top__ig" id="carta-instagram" hidden aria-label="Instagram del negocio">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
-        </a>
-      </div>
-    </div>
-  </header>
-
-  <div class="carta-aviso-wrap" id="carta-aviso-wrap" hidden>
-    <div class="wrap" style="padding-top:16px">
-      <div class="tienda-banner-track" id="carta-aviso-track"></div>
-      <div class="tienda-banner-dots" id="carta-aviso-dots"></div>
-    </div>
+  <div class="carta-feed" id="carta-grid"></div>
+  <div id="carta-estado-vacio" hidden class="carta-vacio">
+    <p>Este negocio todavía no tiene su carta lista.</p>
   </div>
 
-  <div class="wrap"><div class="carta-cat-pills" id="carta-cat-pills"></div></div>
+  <div id="carta-chrome">
+    <header class="carta-top">
+      <div class="wrap">
+        <div class="carta-top__negocio">
+          <div class="carta-top__logo" id="carta-logo"></div>
+          <div style="flex:1;min-width:0">
+            <div class="carta-top__nombre" id="carta-nombre">Cargando…</div>
+            <div class="carta-top__sub">Carta digital · El Club de la Gente</div>
+          </div>
+          <a href="#" target="_blank" rel="noopener" class="carta-top__ig" id="carta-instagram" hidden aria-label="Instagram del negocio">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+          </a>
+        </div>
+      </div>
+    </header>
 
-  <main class="wrap" id="carta-main">
-    <div id="carta-estado-vacio" hidden class="carta-vacio">
-      <p>Este negocio todavía no tiene su carta lista.</p>
+    <div class="carta-aviso-wrap" id="carta-aviso-wrap" hidden>
+      <div class="wrap" style="padding-top:16px">
+        <div class="tienda-banner-track" id="carta-aviso-track"></div>
+        <div class="tienda-banner-dots" id="carta-aviso-dots"></div>
+      </div>
     </div>
-    <div id="carta-grid"></div>
-  </main>
+
+    <div class="wrap"><div class="carta-cat-pills" id="carta-cat-pills"></div></div>
+  </div>
 
   <div class="carta-foto-overlay" id="carta-foto-overlay" hidden>
     <button type="button" class="carta-foto-cerrar" id="carta-foto-cerrar" aria-label="Cerrar">✕</button>
@@ -184,7 +184,36 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=28"></script>
+  <!-- "¿Deseas agregar algo más?": sale cada vez que se agrega un producto
+       nuevo al pedido. Sí vuelve al feed, No abre directo el pago. -->
+  <div class="carta-masalgo-overlay" id="carta-masalgo-overlay" hidden>
+    <div class="carta-masalgo-caja">
+      <div class="check">✓</div>
+      <h3>¡Listo, lo agregamos!</h3>
+      <p>¿Deseas agregar algo más a tu pedido?</p>
+      <div class="carta-masalgo-botones">
+        <button type="button" class="btn btn--primario" id="carta-masalgo-si">Sí, seguir viendo</button>
+        <button type="button" class="btn" id="carta-masalgo-no">No, ya quiero pagar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comentarios de un producto: solo se ven los que el negocio ya aprobó -->
+  <div class="carta-overlay" id="carta-comentarios-overlay" hidden>
+    <div class="carta-sheet">
+      <button type="button" class="carta-sheet__cerrar" id="carta-comentarios-cerrar" aria-label="Cerrar">✕</button>
+      <h2 class="carta-sheet__titulo" id="carta-comentarios-titulo">Comentarios</h2>
+      <div id="carta-comentarios-lista"></div>
+      <div class="carta-comentario-form">
+        <div class="carta-campo"><label>Tu nombre</label><input id="carta-comentario-nombre" type="text" placeholder="¿Cómo te llamas?"></div>
+        <div class="carta-campo"><label>Tu comentario</label><textarea id="carta-comentario-texto" placeholder="¿Qué te pareció?"></textarea></div>
+        <button type="button" class="btn btn--primario" id="carta-comentario-enviar" style="width:100%">Enviar comentario</button>
+        <p class="carta-comentario-aviso" id="carta-comentario-aviso">Tu comentario quedará visible cuando el negocio lo apruebe. ¡Gracias!</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="carta.js?v=29"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

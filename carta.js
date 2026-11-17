@@ -97,11 +97,16 @@ function sumarProducto(p, delta) {
 // hay que elegir, así que la tarjeta muestra un botón "Elegir" que abre el
 // modal de personalización en vez del stepper de siempre. Si está agotado,
 // ninguna de las dos formas aparece -- solo el aviso.
-function cardHtml(p, tieneGrupos) {
+//
+// Una tarjeta = una pantalla completa del feed (tipo Reels/TikTok): la foto
+// de fondo, un riel de me-gusta/comentar/compartir a la derecha, y el
+// nombre/precio/botón de agregar flotando abajo sobre un degradado.
+function feedSlideHtml(p, tieneGrupos) {
   const agotado = estaAgotado(p);
+  const categoria = (p.categoria || "").trim() || "Otros";
   const img = p.imagen_url
-    ? `<img class="carta-card__img" src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" loading="lazy" data-ver-foto="${p.id}">`
-    : `<div class="carta-card__ph"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
+    ? `<img class="carta-card__img" src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" loading="lazy">`
+    : `<div class="carta-card__ph"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
   const accion = agotado
     ? `<span class="carta-card__agotado">Agotado</span>`
     : tieneGrupos
@@ -109,11 +114,26 @@ function cardHtml(p, tieneGrupos) {
     : `<div class="carta-qty" data-qty-wrap="${p.id}">
           <button type="button" class="carta-qty__menos" data-qty-menos="${p.id}" aria-label="Quitar uno">−</button>
           <span class="carta-qty__n" data-qty-n="${p.id}">0</span>
-          <button type="button" data-qty-mas="${p.id}" aria-label="Agregar uno">+</button>
+          <button type="button" data-qty-mas="${p.id}" aria-label="Agregar"><span class="mas-texto">Añadir</span><span class="mas-icono">+</span></button>
         </div>`;
   return `
-  <div class="carta-card${agotado ? " agotada" : ""}" data-carta-card="${p.id}">
+  <div class="carta-slide${agotado ? " agotada" : ""}" data-carta-card="${p.id}" data-categoria="${esc(categoria)}">
     ${img}
+    <div class="carta-slide__scrim"></div>
+    <div class="carta-slide__rail">
+      <button type="button" class="carta-rail-btn" data-like="${p.id}" aria-label="Me gusta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        <span class="n" data-like-n="${p.id}">${Number(p.contador_likes) || 0}</span>
+      </button>
+      <button type="button" class="carta-rail-btn" data-comentar="${p.id}" aria-label="Comentar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <span class="n">Comentar</span>
+      </button>
+      <button type="button" class="carta-rail-btn" data-compartir="${p.id}" aria-label="Compartir">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        <span class="n">Compartir</span>
+      </button>
+    </div>
     <div class="carta-card__body">
       <div class="carta-card__nombre">${esc(p.nombre)}</div>
       ${p.descripcion ? `<div class="carta-card__desc">${esc(p.descripcion)}</div>` : ""}
@@ -296,26 +316,22 @@ async function iniciar() {
 
   if (grid) {
     const grupos = agruparPorCategoria(items, negocio.carta_categorias_orden);
-    // Se muestra el título de cada categoría (Malteadas, Wafles, Obleas...)
-    // siempre que el negocio de verdad las use -- solo se esconde cuando
-    // NADIE puso categoría en ningún producto (ahí "Otros" sería el único
-    // grupo y se vería raro como si fuera el nombre real de una sección).
-    const mostrarTitulos = !(grupos.length === 1 && grupos[0][0] === "Otros");
-    grid.innerHTML = grupos.map(([cat, prods]) => {
-      const color = colorDeCategoria(cat);
-      return `
-      <div class="carta-grupo" data-categoria="${esc(cat)}">
-        ${mostrarTitulos ? `<h2 class="carta-grupo__titulo"${color ? ` style="color:${esc(color)}"` : ""}>${esc(cat)}</h2>` : ""}
-        <div class="carta-grid">${prods.map(p => cardHtml(p, gruposPorProducto.has(p.id))).join("")}</div>
-      </div>`;
-    }).join("");
+    // Se muestran las cápsulas de categoría siempre que el negocio de
+    // verdad las use -- solo se esconden cuando NADIE puso categoría en
+    // ningún producto (ahí "Otros" sería el único grupo).
+    const mostrarPills = !(grupos.length === 1 && grupos[0][0] === "Otros");
+    // Un producto, una pantalla -- el feed es una lista PLANA (sin
+    // encabezados de categoría visibles, no caben en una pantalla completa
+    // a la vez), en el mismo orden que ya respeta la categorización del
+    // negocio; las cápsulas de arriba filtran mostrando/ocultando slides.
+    grid.innerHTML = grupos.map(([, prods]) => prods.map(p => feedSlideHtml(p, gruposPorProducto.has(p.id))).join("")).join("");
 
     // Cápsulas de categoría arriba, para filtrar de una sola vez en vez de
-    // tener que ir bajando a pulso -- solo tiene sentido mostrarlas si de
-    // verdad hay más de una categoría.
+    // tener que ir deslizando producto por producto -- solo tiene sentido
+    // mostrarlas si de verdad hay más de una categoría.
     const pillsEl = $("#carta-cat-pills");
     if (pillsEl) {
-      if (mostrarTitulos && grupos.length > 1) {
+      if (mostrarPills && grupos.length > 1) {
         pillsEl.innerHTML = [`<button type="button" class="carta-cat-pill is-on" data-filtro-cat="todos">Todos</button>`]
           .concat(grupos.map(([cat]) => {
             const color = colorDeCategoria(cat);
@@ -325,25 +341,115 @@ async function iniciar() {
         pillsEl.querySelectorAll("[data-filtro-cat]").forEach(btn => btn.addEventListener("click", () => {
           const filtro = btn.dataset.filtroCat;
           pillsEl.querySelectorAll("[data-filtro-cat]").forEach(b => b.classList.toggle("is-on", b === btn));
-          grid.querySelectorAll(".carta-grupo").forEach(g => {
-            g.style.display = (filtro === "todos" || g.dataset.categoria === filtro) ? "" : "none";
+          grid.querySelectorAll(".carta-slide").forEach(s => {
+            s.style.display = (filtro === "todos" || s.dataset.categoria === filtro) ? "" : "none";
           });
+          grid.scrollTo({ top: 0 });
         }));
       } else {
         pillsEl.innerHTML = "";
       }
     }
+
+    // "Me gusta" ya dados desde este celular (por negocio) -- para no dejar
+    // que el mismo aparato infle el contador a punta de toques repetidos, y
+    // para que el corazón salga lleno de entrada si ya le dio like antes.
+    let likesDados;
+    try { likesDados = new Set(JSON.parse(localStorage.getItem(`carta_likes_${aliadoId}`) || "[]")); } catch { likesDados = new Set(); }
+
     items.forEach(p => {
-      const grupos = gruposPorProducto.get(p.id);
-      if (grupos && grupos.length) {
-        grid.querySelector(`[data-personalizar="${p.id}"]`)?.addEventListener("click", () => abrirModalProducto(p, grupos));
+      const gruposProd = gruposPorProducto.get(p.id);
+      if (gruposProd && gruposProd.length) {
+        grid.querySelector(`[data-personalizar="${p.id}"]`)?.addEventListener("click", () => abrirModalProducto(p, gruposProd));
       } else {
-        grid.querySelector(`[data-qty-mas="${p.id}"]`)?.addEventListener("click", () => sumarProducto(p, 1));
+        grid.querySelector(`[data-qty-mas="${p.id}"]`)?.addEventListener("click", () => {
+          // Solo pregunta "¿algo más?" cuando de verdad se agrega un
+          // producto NUEVO al pedido -- no en cada toque de "+" para pedir
+          // una segunda unidad del mismo, que sería molesto.
+          const eraNuevo = !carrito.get(p.id)?.cantidad;
+          sumarProducto(p, 1);
+          if (eraNuevo) preguntarAlgoMas();
+        });
         grid.querySelector(`[data-qty-menos="${p.id}"]`)?.addEventListener("click", () => sumarProducto(p, -1));
       }
-      grid.querySelector(`[data-ver-foto="${p.id}"]`)?.addEventListener("click", () => abrirFotoGrande(p.imagen_url));
+      const likeBtn = grid.querySelector(`[data-like="${p.id}"]`);
+      if (likeBtn) {
+        if (likesDados.has(p.id)) likeBtn.classList.add("is-liked");
+        likeBtn.addEventListener("click", () => darLike(p));
+      }
+      grid.querySelector(`[data-comentar="${p.id}"]`)?.addEventListener("click", () => abrirComentarios(p));
+      grid.querySelector(`[data-compartir="${p.id}"]`)?.addEventListener("click", () => compartirProducto(p));
     });
   }
+
+  // ---------- "Me gusta" real por producto: un toque suma 1 en la base de
+  // datos vía una función segura (dar_like_producto) y queda marcado en
+  // este celular para no dejar sumar de nuevo por accidente. ----------
+  function darLike(p) {
+    const likeBtn = grid.querySelector(`[data-like="${p.id}"]`);
+    if (!likeBtn || likeBtn.classList.contains("is-liked")) return;
+    likeBtn.classList.add("is-liked");
+    const nEl = likeBtn.querySelector("[data-like-n]");
+    if (nEl) nEl.textContent = String((Number(nEl.textContent) || 0) + 1);
+    try {
+      const key = `carta_likes_${aliadoId}`;
+      const dados = new Set(JSON.parse(localStorage.getItem(key) || "[]"));
+      dados.add(p.id);
+      localStorage.setItem(key, JSON.stringify([...dados]));
+    } catch {}
+    supabase.rpc("dar_like_producto", { p_producto_id: p.id }).catch(() => {});
+  }
+
+  function compartirProducto(p) {
+    const url = `${location.origin}${location.pathname}?aliado=${aliadoId}`;
+    const texto = `${p.nombre} -- ${COP(p.precio)} en ${negocio.nombre}`;
+    if (navigator.share) {
+      navigator.share({ title: p.nombre, text: texto, url }).catch(() => {});
+    } else {
+      copiarTextoConRespaldo(url).then(() => alert("Enlace copiado"));
+    }
+  }
+
+  // ---------- Comentarios: solo se ven los que el negocio ya aprobó desde
+  // su panel -- enviar uno nuevo siempre pasa por una función segura que lo
+  // deja sin aprobar, nunca visible de una vez. ----------
+  const comentariosOverlay = $("#carta-comentarios-overlay");
+  const comentariosLista = $("#carta-comentarios-lista");
+  const comentariosTitulo = $("#carta-comentarios-titulo");
+  let comentarioProductoActual = null;
+  async function abrirComentarios(p) {
+    if (!comentariosOverlay) return;
+    comentarioProductoActual = p;
+    if (comentariosTitulo) comentariosTitulo.textContent = `Comentarios de ${p.nombre}`;
+    if (comentariosLista) comentariosLista.innerHTML = `<p class="carta-comentarios-vacio">Cargando…</p>`;
+    const aviso = $("#carta-comentario-aviso"); if (aviso) aviso.classList.remove("mostrar");
+    const nombreInput = $("#carta-comentario-nombre"); if (nombreInput) nombreInput.value = "";
+    const textoInput = $("#carta-comentario-texto"); if (textoInput) textoInput.value = "";
+    comentariosOverlay.hidden = false;
+    const { data } = await supabase.from("negocio_carta_comentarios").select("cliente_nombre, texto").eq("producto_id", p.id).eq("aprobado", true).order("created_at", { ascending: false });
+    if (comentariosLista) {
+      comentariosLista.innerHTML = (data && data.length)
+        ? data.map(c => `<div class="carta-comentario"><div class="carta-comentario__nombre">${esc(c.cliente_nombre)}</div><div class="carta-comentario__texto">${esc(c.texto)}</div></div>`).join("")
+        : `<p class="carta-comentarios-vacio">Sé el primero en comentar.</p>`;
+    }
+  }
+  $("#carta-comentarios-cerrar")?.addEventListener("click", () => { if (comentariosOverlay) comentariosOverlay.hidden = true; });
+  comentariosOverlay?.addEventListener("click", (e) => { if (e.target === comentariosOverlay) comentariosOverlay.hidden = true; });
+  $("#carta-comentario-enviar")?.addEventListener("click", async () => {
+    const btn = $("#carta-comentario-enviar");
+    const nombre = $("#carta-comentario-nombre")?.value.trim();
+    const texto = $("#carta-comentario-texto")?.value.trim();
+    if (!nombre || !texto) { alert("Escribe tu nombre y tu comentario"); return; }
+    if (!comentarioProductoActual) return;
+    btn.disabled = true;
+    const { error } = await supabase.rpc("enviar_comentario_producto", {
+      p_producto_id: comentarioProductoActual.id, p_negocio_id: aliadoId, p_nombre: nombre, p_texto: texto,
+    });
+    btn.disabled = false;
+    if (error) { alert("No pudimos enviar tu comentario. Intenta de nuevo."); return; }
+    const textoInput = $("#carta-comentario-texto"); if (textoInput) textoInput.value = "";
+    const aviso = $("#carta-comentario-aviso"); if (aviso) aviso.classList.add("mostrar");
+  });
 
   // ---------- Modal de personalización: toppings/salsas/tamaño antes de
   // agregar un producto que los tenga configurados. Cada "Añadir" crea una
@@ -465,6 +571,7 @@ async function iniciar() {
     });
     renderBarra();
     cerrarModalProducto();
+    preguntarAlgoMas();
   });
 
   // ---------- Foto en grande con efecto "se sale de la pantalla" (no es un
@@ -812,6 +919,16 @@ async function iniciar() {
   $("#carta-ver-pedido")?.addEventListener("click", abrirResumen);
   $("#carta-sheet-cerrar")?.addEventListener("click", () => { overlay.hidden = true; });
   overlay?.addEventListener("click", (e) => { if (e.target === overlay) overlay.hidden = true; });
+
+  // ---------- "¿Deseas agregar algo más?": sale cada vez que se agrega un
+  // producto nuevo (ver preguntarAlgoMas() más arriba, llamada desde los
+  // handlers de +/Añadir y del modal de toppings). Sí vuelve al feed tal
+  // cual estaba; No abre directo el resumen de pago -- la barra de abajo
+  // con el total sigue disponible igual, por si prefiere seguir por ahí. ----------
+  const masAlgoOverlay = $("#carta-masalgo-overlay");
+  $("#carta-masalgo-si")?.addEventListener("click", () => { if (masAlgoOverlay) masAlgoOverlay.hidden = true; });
+  $("#carta-masalgo-no")?.addEventListener("click", () => { if (masAlgoOverlay) masAlgoOverlay.hidden = true; abrirResumen(); });
+  function preguntarAlgoMas() { if (masAlgoOverlay) masAlgoOverlay.hidden = false; }
 
   let _cartaEnviando = false;
   $("#carta-enviar-pedido")?.addEventListener("click", async () => {
