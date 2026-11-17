@@ -6,8 +6,21 @@
    comprobante: es independiente de Mi Tienda (esa es solo para miembros del
    Club, con comprobante y verificación IA).
    ============================================================ */
-import { supabase } from './supabase.js';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase.js';
 import { comprimirImagen } from './imagen.js';
+
+// Esta carta es pública, sin login -- a propósito NO usa el cliente
+// compartido de supabase.js (ese guarda sesión en localStorage/cookies para
+// que un miembro no tenga que volver a loguearse en el resto del sitio). Si
+// en el celular ya hay una sesión de miembro guardada, ese cliente la
+// recoge sola y manda ese token en vez del acceso público normal -- rompía
+// la carta justo en los celulares donde alguien ya había iniciado sesión
+// como miembro. Con su propio cliente (sin guardar ni leer sesión de
+// nadie), la carta siempre pide los datos como lo que es: pública.
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
 
 const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
