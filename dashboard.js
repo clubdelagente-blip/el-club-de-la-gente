@@ -1202,9 +1202,13 @@ function abrirModalTienda(titulo, bodyHtml) {
   const b = $("#modal-tienda-body"); if (b) b.innerHTML = bodyHtml;
   // Por si el modal anterior quedó expandido a pantalla completa (ver
   // "Nuevo pedido" con mesa elegida) -- cada modal nuevo arranca del
-  // tamaño normal, nunca heredando el tamaño del anterior.
+  // tamaño normal, nunca heredando el tamaño del anterior. OJO: maxHeight
+  // vuelve a "85vh" (el valor de siempre en el HTML), NUNCA a "" -- sin
+  // tope de altura, un formulario largo (ej. "Agregar producto") crece más
+  // alto que la pantalla y, como el fondo queda bloqueado mientras el
+  // modal está abierto, no hay forma de llegar a lo que quedó por encima.
   const box = $("#modal-tienda-box");
-  if (box) { box.style.maxWidth = ""; box.style.width = ""; box.style.maxHeight = ""; box.style.height = ""; box.style.borderRadius = ""; }
+  if (box) { box.style.maxWidth = ""; box.style.width = ""; box.style.maxHeight = "85vh"; box.style.height = ""; box.style.borderRadius = ""; }
   const m = $("#modal-tienda"); if (m) m.style.display = "flex";
   bloquearScroll();
   if (!_modalTiendaAbierta) history.pushState({ modalTienda: true }, "");
