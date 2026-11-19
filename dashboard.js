@@ -306,17 +306,21 @@ async function subirFotoPerfil(file) {
     body: JSON.stringify({ miembro_id: session.user.id }),
   }).catch(() => {});
 }
-// Overlay propio (no el modal de paneles) para encuadrar la foto en 1:1
-// antes de subirla -- mismo patrón de recorte que ya usa Admin para las
-// fotos de aliados, pero cuadrado (la foto de perfil se ve en un círculo).
-function abrirRecorteFotoPerfil(file) {
+// Overlay genérico (no el modal de paneles) para encuadrar una foto antes
+// de subirla -- mover y hacer zoom con Cropper.js, en vez de subir la foto
+// tal cual venía de la cámara/galería y que el recorte automático del sitio
+// (object-fit:cover) decida solo qué parte mostrar. aspectRatio controla la
+// forma del recorte (1 = cuadrada, como la foto de perfil; 9/16 = vertical,
+// como se ve un producto en el feed de la carta); onListo(archivo) recibe
+// el resultado ya recortado, listo para comprimir/subir donde haga falta.
+function abrirRecorteFoto(file, { aspectRatio = 1, titulo = "Ajustar foto", ayuda = "Mueve y haz zoom para encuadrar.", onListo }) {
   const url = URL.createObjectURL(file);
   const ov = document.createElement("div");
   ov.style.cssText = "position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.75);display:grid;place-items:center;padding:20px";
   ov.innerHTML = `
     <div style="background:#fff;border-radius:14px;padding:20px;max-width:420px;width:100%">
-      <div style="font-weight:700;font-size:15px;margin-bottom:4px">Ajustar foto</div>
-      <p style="font-size:12px;color:#777;margin-bottom:14px">Mueve y haz zoom para encuadrar -- se recorta cuadrada, igual que se ve en tu perfil.</p>
+      <div style="font-weight:700;font-size:15px;margin-bottom:4px">${esc(titulo)}</div>
+      <p style="font-size:12px;color:#777;margin-bottom:14px">${esc(ayuda)}</p>
       <div style="max-height:52vh;overflow:hidden;background:#000;border-radius:8px">
         <img id="cfg-crop-img" src="${url}" alt="Foto para recortar" style="max-width:100%;display:block">
       </div>
@@ -330,16 +334,24 @@ function abrirRecorteFotoPerfil(file) {
 
   const cerrar = () => { cropper.destroy(); URL.revokeObjectURL(url); ov.remove(); };
   const imgEl = ov.querySelector("#cfg-crop-img");
-  const cropper = new Cropper(imgEl, { aspectRatio: 1, viewMode: 1, autoCropArea: 1, background: false });
+  const cropper = new Cropper(imgEl, { aspectRatio, viewMode: 1, autoCropArea: 1, background: false });
   ov.querySelector("#cfg-crop-cancel").addEventListener("click", cerrar);
   ov.querySelector("#cfg-crop-ok").addEventListener("click", () => {
     const btn = ov.querySelector("#cfg-crop-ok");
     btn.disabled = true; btn.innerHTML = `${ic("loader")} Subiendo…`; if (window.lucide) lucide.createIcons();
-    cropper.getCroppedCanvas({ width: 500, height: 500 }).toBlob(async (blob) => {
+    const anchoSalida = aspectRatio >= 1 ? 800 : Math.round(800 * aspectRatio);
+    const altoSalida = aspectRatio >= 1 ? Math.round(800 / aspectRatio) : 800;
+    cropper.getCroppedCanvas({ width: anchoSalida, height: altoSalida }).toBlob(async (blob) => {
       const archivo = new File([blob], "foto.jpg", { type: "image/jpeg" });
       cerrar();
-      await subirFotoPerfil(archivo);
+      await onListo(archivo);
     }, "image/jpeg", 0.9);
+  });
+}
+function abrirRecorteFotoPerfil(file) {
+  abrirRecorteFoto(file, {
+    ayuda: "Mueve y haz zoom para encuadrar -- se recorta cuadrada, igual que se ve en tu perfil.",
+    onListo: subirFotoPerfil,
   });
 }
 async function quitarFoto() {
@@ -3203,11 +3215,21 @@ function abrirFormProductoCarta(p = {}) {
     <div class="cfg-campo"><label class="cfg-label">Nombre *</label><input class="cfg-input" id="ccp-nombre" type="text" value="${esc(p.nombre || "")}" placeholder="Ej: Hamburguesa clásica"></div>
     <div class="cfg-campo"><label class="cfg-label">Descripción</label><textarea class="cfg-input" id="ccp-desc" rows="2">${p.descripcion || ""}</textarea></div>
     <div class="cfg-campo"><label class="cfg-label">Precio (COP) *</label><input class="cfg-input" id="ccp-precio" type="text" inputmode="numeric" value="${p.precio ? Number(p.precio).toLocaleString("es-CO") : ""}" placeholder="Ej: 18.000"></div>
-    <div class="cfg-campo"><label class="cfg-label">Categoría <span style="font-weight:400;color:var(--tinta-45)">(para agrupar en la carta, ej. "Entradas", "Platos fuertes")</span></label><input class="cfg-input" id="ccp-categoria" type="text" value="${esc(p.categoria || "")}" placeholder="Ej: Platos fuertes"></div>
+    <div class="cfg-campo"><label class="cfg-label">Categoría <span style="font-weight:400;color:var(--tinta-45)">(para agrupar en la carta, ej. "Entradas", "Platos fuertes")</span></label>
+      <input class="cfg-input" id="ccp-categoria" type="text" list="ccp-categorias-list" value="${esc(p.categoria || "")}" placeholder="Ej: Platos fuertes">
+      <datalist id="ccp-categorias-list">${[...new Set(_contaCartaProductos.map(x => (x.categoria || "").trim()).filter(Boolean))].map(c => `<option value="${esc(c)}">`).join("")}</datalist>
+    </div>
     <div class="cfg-campo"><label class="cfg-label">Foto</label>
-      ${p.imagen_url ? `<div style="margin-bottom:8px"><img src="${esc(p.imagen_url)}" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px"></div>` : ""}
-      <input type="file" id="ccp-foto" accept="image/*">
-      <input type="hidden" id="ccp-foto-url" value="${p.imagen_url || ""}">
+      <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+        <div style="width:84px;aspect-ratio:9/16;border-radius:10px;overflow:hidden;background:var(--crema-2);flex:none">
+          <img id="ccp-foto-preview" src="${esc(p.imagen_url || "")}" alt="" style="width:100%;height:100%;object-fit:cover;${p.imagen_url ? "" : "display:none"}">
+        </div>
+        <div style="flex:1;min-width:160px">
+          <input type="file" id="ccp-foto" accept="image/*">
+          <input type="hidden" id="ccp-foto-url" value="${p.imagen_url || ""}">
+          <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Así se ve en la carta (a pantalla completa) -- puedes mover y hacer zoom para encuadrarla antes de subirla.</span>
+        </div>
+      </div>
     </div>
     <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--tinta-60);margin:4px 0 8px;cursor:pointer">
       <input type="checkbox" id="ccp-disponible" ${p.disponible === false ? "" : "checked"}> Disponible en la carta
@@ -3230,6 +3252,29 @@ function abrirFormProductoCarta(p = {}) {
     <button class="btn btn--primario" id="ccp-save" data-id="${p.id || ""}">${p.id ? "Guardar cambios" : "Agregar producto"}</button>
   `);
   formatearInputMoneda($("#ccp-precio"));
+  const inputFotoProducto = $("#ccp-foto");
+  if (inputFotoProducto) inputFotoProducto.onchange = (e) => {
+    const archivo = e.target.files?.[0];
+    e.target.value = "";
+    if (!archivo) return;
+    abrirRecorteFoto(archivo, {
+      aspectRatio: 9 / 16,
+      ayuda: "Mueve y haz zoom para encuadrarla -- así es como se ve un producto en tu carta, a pantalla completa.",
+      onListo: async (recortada) => {
+        try {
+          const comprimida = await comprimirImagen(recortada);
+          const ext = comprimida.name.split(".").pop();
+          const path = `carta-producto-${_contaNegocioId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${ext}`;
+          const { error: upErr } = await supabase.storage.from("contenido").upload(path, comprimida, { upsert: true });
+          if (upErr) throw upErr;
+          const url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+          const urlInput = $("#ccp-foto-url"); if (urlInput) urlInput.value = url;
+          const preview = $("#ccp-foto-preview"); if (preview) { preview.src = url; preview.style.display = ""; }
+          toast("Foto lista ✓");
+        } catch { toast("Error subiendo la foto"); }
+      },
+    });
+  };
   $("#ccp-stock-activo")?.addEventListener("change", (e) => {
     const campo = $("#ccp-stock-campo"); if (campo) campo.hidden = !e.target.checked;
   });
@@ -3241,18 +3286,9 @@ function abrirFormProductoCarta(p = {}) {
     if (!nombre) { toast("El nombre es obligatorio"); return; }
     if (!precio) { toast("Ingresa un precio válido"); return; }
     btn.disabled = true; btn.textContent = "Guardando…";
-    let imagenUrl = $("#ccp-foto-url")?.value || null;
-    const fotoFile = $("#ccp-foto")?.files?.[0];
-    if (fotoFile) {
-      try {
-        const file = await comprimirImagen(fotoFile);
-        const ext = file.name.split(".").pop();
-        const path = `carta-producto-${_contaNegocioId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
-        if (upErr) throw upErr;
-        imagenUrl = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
-      } catch { toast("Error subiendo la foto"); resetBtn(); return; }
-    }
+    // La foto ya se subió apenas se recortó (ver el listener de #ccp-foto
+    // abajo) -- acá solo se lee la URL que dejó en el campo oculto.
+    const imagenUrl = $("#ccp-foto-url")?.value || null;
     const stockActivo = $("#ccp-stock-activo")?.checked || false;
     const payload = {
       negocio_id: _contaNegocioId, nombre, descripcion: $("#ccp-desc")?.value.trim() || null, precio,
