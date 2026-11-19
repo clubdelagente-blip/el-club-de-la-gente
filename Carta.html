@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=142">
-  <link rel="stylesheet" href="carta.css?v=27">
+  <link rel="stylesheet" href="carta.css?v=28">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -38,7 +38,12 @@
        horarios en la base de datos todavía. -->
   <div id="carta-chrome">
     <div class="wrap carta-cat-row">
-      <div class="carta-logo-badge" id="carta-logo" hidden></div>
+      <div class="carta-logo-col">
+        <div class="carta-logo-badge" id="carta-logo" hidden></div>
+        <button type="button" class="carta-grid-toggle" id="carta-grid-toggle" aria-label="Ver todos los productos en cuadrícula">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        </button>
+      </div>
       <div class="carta-cat-pills" id="carta-cat-pills"></div>
     </div>
     <div class="wrap carta-util-row">
@@ -49,6 +54,17 @@
         Síguenos
       </a>
     </div>
+  </div>
+
+  <!-- Vista de cuadrícula: alterna a un catálogo tipo grilla (foto + precio)
+       de todos los productos, para elegir rápido sin pasar uno por uno por
+       el feed a pantalla completa. -->
+  <div class="carta-gridview-overlay" id="carta-gridview-overlay" hidden>
+    <div class="carta-gridview-head">
+      <span>Todos los productos</span>
+      <button type="button" id="carta-gridview-cerrar" aria-label="Cerrar">✕</button>
+    </div>
+    <div class="carta-gridview-grid" id="carta-gridview-grid"></div>
   </div>
 
   <div class="carta-foto-overlay" id="carta-foto-overlay" hidden>
@@ -226,7 +242,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=33"></script>
+  <script type="module" src="carta.js?v=34"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

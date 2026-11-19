@@ -83,6 +83,8 @@ function renderQty(productoId) {
   if (card) card.classList.toggle('en-carrito', cantidad > 0);
   const qtyWrap = document.querySelector(`[data-qty-wrap="${productoId}"]`);
   if (qtyWrap) qtyWrap.classList.toggle('en-uso', cantidad > 0);
+  const gridN = document.querySelector(`[data-gridview-qty-n="${productoId}"]`);
+  if (gridN) { gridN.textContent = cantidad; gridN.hidden = cantidad === 0; }
 }
 
 // Cuando el negocio activó control de stock para un producto, no se puede
@@ -150,6 +152,33 @@ function feedSlideHtml(p, tieneGrupos, categoria) {
       <div class="carta-card__nombre">${esc(p.nombre)}</div>
       ${p.descripcion ? `<div class="carta-card__desc">${esc(p.descripcion)}</div>` : ""}
     </div>
+  </div>`;
+}
+
+// Celda de la vista de cuadrícula (toggle debajo del logo): foto + precio
+// para hojear rápido, y un botón de agregar/elegir que reusa exactamente la
+// misma lógica de carrito que el feed (abrirModalProducto/sumarProducto) --
+// no hay un segundo carrito ni una segunda fuente de verdad, solo otra forma
+// de llegar a la misma acción.
+function gridItemHtml(p, tieneGrupos) {
+  const agotado = estaAgotado(p);
+  const img = p.imagen_url ? `<img src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" loading="lazy">` : "";
+  const iconoAdd = tieneGrupos
+    ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`
+    : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>`;
+  return `
+  <div class="carta-gridview-item">
+    <button type="button" class="carta-gridview-item__foto" data-gridview-foto="${p.id}">
+      ${img}
+      <span class="carta-gridview-item__nombre">${esc(p.nombre)}</span>
+      <span class="carta-gridview-item__precio">${COP(p.precio)}</span>
+      ${agotado ? `<span class="carta-gridview-item__agotado">Agotado</span>` : ""}
+    </button>
+    ${agotado ? "" : `
+    <button type="button" class="carta-gridview-item__add" data-gridview-add="${p.id}" aria-label="${tieneGrupos ? "Elegir" : "Añadir"}">
+      ${iconoAdd}
+      <span class="carta-gridview-item__n" data-gridview-qty-n="${p.id}" hidden>0</span>
+    </button>`}
   </div>`;
 }
 
@@ -413,6 +442,40 @@ async function iniciar() {
       grid.querySelector(`[data-comentar="${p.id}"]`)?.addEventListener("click", () => abrirComentarios(p));
       grid.querySelector(`[data-compartir="${p.id}"]`)?.addEventListener("click", () => compartirProducto(p));
     });
+
+    // Vista de cuadrícula (toggle debajo del logo): mismo catálogo que el
+    // feed pero como grilla tipo Instagram para hojear rápido -- cada celda
+    // deja elegir/agregar directo sin salir de la grilla; tocar la foto en
+    // cambio cierra la grilla y lleva a ese producto en el feed a pantalla
+    // completa.
+    const gridToggleBtn = $("#carta-grid-toggle");
+    const gridViewOverlay = $("#carta-gridview-overlay");
+    const gridViewGrid = $("#carta-gridview-grid");
+    if (gridToggleBtn && gridViewOverlay && gridViewGrid) {
+      gridViewGrid.innerHTML = items.map(p => gridItemHtml(p, gruposPorProducto.has(p.id))).join("");
+      const cerrarGridView = () => { gridViewOverlay.hidden = true; gridToggleBtn.classList.remove("is-on"); };
+      gridToggleBtn.addEventListener("click", () => { gridViewOverlay.hidden = false; gridToggleBtn.classList.add("is-on"); });
+      $("#carta-gridview-cerrar")?.addEventListener("click", cerrarGridView);
+      gridViewOverlay.addEventListener("click", (e) => { if (e.target === gridViewOverlay) cerrarGridView(); });
+      items.forEach(p => {
+        gridViewGrid.querySelector(`[data-gridview-foto="${p.id}"]`)?.addEventListener("click", () => {
+          cerrarGridView();
+          grid.querySelector(`[data-carta-card="${p.id}"]`)?.scrollIntoView({ block: "start" });
+        });
+        const addBtn = gridViewGrid.querySelector(`[data-gridview-add="${p.id}"]`);
+        if (!addBtn) return;
+        const gruposProd = gruposPorProducto.get(p.id);
+        if (gruposProd && gruposProd.length) {
+          addBtn.addEventListener("click", () => abrirModalProducto(p, gruposProd));
+        } else {
+          addBtn.addEventListener("click", () => {
+            const eraNuevo = !carrito.get(p.id)?.cantidad;
+            sumarProducto(p, 1);
+            if (eraNuevo) preguntarAlgoMas();
+          });
+        }
+      });
+    }
   }
 
   // ---------- "Me gusta" real por producto: un toque suma 1 en la base de
