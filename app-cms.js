@@ -275,6 +275,7 @@ async function cargarAliadosPub() {
   const { data, error } = await supabase
     .from('aliados_publico')
     .select('*')
+    .eq('contaclub_standalone', false)
     .order('created_at', { ascending: true });
 
   if (error || !data?.length) return;

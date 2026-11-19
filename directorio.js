@@ -195,7 +195,7 @@ async function cargarAliados() {
   // Nota: "codigo_aliado" NUNCA se pide acá a propósito — se valida server-side (RPC verificar_codigo_aliado)
   const { data, error } = await supabase.from("aliados_publico")
     .select("id, nombre, categoria, descuento, descripcion, whatsapp, whatsapp_atencion, direccion, maps_url, ofrece_domicilio, ofrece_agenda, instagram, imagen_url, fotos_carrusel, destacado, planes_visibles")
-    .eq("activo", true).order("nombre");
+    .eq("activo", true).eq("contaclub_standalone", false).order("nombre");
   ERROR_CARGA = !!error;
   const todos = data || [];
   // Gratis ve el directorio completo como vitrina (marcado "bloqueado" el
