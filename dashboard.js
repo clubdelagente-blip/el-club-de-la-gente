@@ -2148,7 +2148,7 @@ async function cargarContabilidadNegocio(negocioId) {
   });
 
   const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }, { data: mesas }, { data: comentarios }] = await Promise.all([
-    supabase.from("aliados").select("carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio").eq("id", negocioId).maybeSingle(),
+    supabase.from("aliados").select("imagen_url, carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
     supabase.from("negocio_categorias_ingreso").select("*").eq("negocio_id", negocioId).order("nombre"),
@@ -2201,6 +2201,9 @@ async function cargarContabilidadNegocio(negocioId) {
   const btnCopiar = $("#conta-carta-copiar");
   if (btnCopiar) btnCopiar.onclick = () => copiarTextoConRespaldo(cartaUrl).then(() => toast("Link copiado ✓"));
   const colorInput = $("#conta-carta-color"); if (colorInput) colorInput.value = _contaNegocio.carta_color || "#095544";
+  const logoUrlInput = $("#conta-carta-logo-url"); if (logoUrlInput) logoUrlInput.value = _contaNegocio.imagen_url || "";
+  const logoPreview = $("#conta-carta-logo-preview");
+  if (logoPreview) { if (_contaNegocio.imagen_url) { logoPreview.src = _contaNegocio.imagen_url; logoPreview.style.display = ""; } else { logoPreview.style.display = "none"; } }
   const portadaUrlInput = $("#conta-carta-portada-url"); if (portadaUrlInput) portadaUrlInput.value = _contaNegocio.carta_portada_url || "";
   const sellosActivoInput = $("#conta-carta-sellos-activo"); if (sellosActivoInput) sellosActivoInput.checked = !!_contaNegocio.carta_sellos_activo;
   const sellosMetaInput = $("#conta-carta-sellos-meta"); if (sellosMetaInput) sellosMetaInput.value = _contaNegocio.carta_sellos_meta || 10;
@@ -2269,6 +2272,26 @@ async function cargarContabilidadNegocio(negocioId) {
   const btnMesaAdd = $("#conta-mesa-add"); if (btnMesaAdd) btnMesaAdd.onclick = () => abrirFormMesa();
   const btnNuevoPedido = $("#conta-nuevo-pedido-btn"); if (btnNuevoPedido) btnNuevoPedido.onclick = () => abrirConstructorPedido();
   const btnPersonalizar = $("#conta-carta-personalizar-guardar"); if (btnPersonalizar) btnPersonalizar.onclick = () => guardarPersonalizacionCarta();
+  const inputLogo = $("#conta-carta-logo");
+  if (inputLogo) inputLogo.onchange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const preview = $("#conta-carta-logo-preview");
+    try {
+      const comprimido = await comprimirImagen(file);
+      if (preview) { preview.src = URL.createObjectURL(comprimido); preview.style.display = ""; }
+      const ext = comprimido.name.split(".").pop();
+      const path = `carta-logo-${_contaNegocioId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("contenido").upload(path, comprimido, { upsert: true });
+      if (upErr) throw upErr;
+      const url = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+      const urlInput = $("#conta-carta-logo-url"); if (urlInput) urlInput.value = url;
+      if (preview) preview.src = url;
+      toast("Logo listo -- dale a \"Guardar personalización\"");
+    } catch { toast("Error subiendo el logo"); }
+  };
+
   const inputPortada = $("#conta-carta-portada");
   if (inputPortada) inputPortada.onchange = async (e) => {
     const file = e.target.files?.[0];
@@ -2792,6 +2815,7 @@ function abrirConstructorPedido() {
 async function guardarPersonalizacionCarta() {
   const btn = $("#conta-carta-personalizar-guardar");
   const color = $("#conta-carta-color")?.value || "#095544";
+  const logoUrl = $("#conta-carta-logo-url")?.value || null;
   const portadaUrl = $("#conta-carta-portada-url")?.value || null;
   const sellosActivo = $("#conta-carta-sellos-activo")?.checked || false;
   const sellosMeta = parseInt($("#conta-carta-sellos-meta")?.value) || 10;
@@ -2811,6 +2835,7 @@ async function guardarPersonalizacionCarta() {
   const domicilioTiempo = $("#conta-carta-domicilio-tiempo")?.value.trim() || null;
   if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
   const payload = {
+    imagen_url: logoUrl,
     carta_color: color, carta_portada_url: portadaUrl,
     carta_sellos_activo: sellosActivo, carta_sellos_meta: sellosMeta,
     carta_sellos_premio_tipo: sellosTipo, carta_sellos_premio_desc: sellosPremio,

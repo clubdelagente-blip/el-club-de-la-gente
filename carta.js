@@ -247,7 +247,7 @@ async function iniciar() {
 
   if (nombreEl) nombreEl.textContent = negocio.nombre;
   document.title = `Carta de ${negocio.nombre} — El Club de la Gente`;
-  if (logoEl && negocio.imagen_url) logoEl.innerHTML = `<img src="${esc(negocio.imagen_url)}" alt="">`;
+  if (logoEl && negocio.imagen_url) { logoEl.innerHTML = `<img src="${esc(negocio.imagen_url)}" alt="">`; logoEl.hidden = false; }
   if (negocio.instagram) {
     const igEl = $("#carta-instagram");
     if (igEl) { igEl.href = negocio.instagram; igEl.hidden = false; }

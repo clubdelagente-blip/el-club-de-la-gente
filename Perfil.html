@@ -858,6 +858,17 @@
                       </div>
                     </div>
                     <div class="cfg-campo">
+                      <label class="cfg-label">Logo de tu negocio <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label>
+                      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+                        <img id="conta-carta-logo-preview" src="" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:50%;border:1px solid var(--linea);background:#fff;display:none">
+                        <div style="flex:1;min-width:180px">
+                          <input type="file" id="conta-carta-logo" accept="image/*">
+                          <input type="hidden" id="conta-carta-logo-url">
+                          <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Se ve en pequeño, flotando sobre la carta.</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="cfg-campo">
                       <label class="cfg-label">Color de acento</label>
                       <div style="display:flex;gap:8px;align-items:center">
                         <input type="color" id="conta-carta-color" value="#095544" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
@@ -1419,7 +1430,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=249"></script>
+  <script type="module" src="dashboard.js?v=250"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">
