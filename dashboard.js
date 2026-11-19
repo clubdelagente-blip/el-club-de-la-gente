@@ -2191,7 +2191,10 @@ async function cargarContabilidadNegocio(negocioId) {
   }
 
   // QR de la carta -- mismo patrón que generarQR (imagen de qrserver, sin librería).
-  const cartaUrl = `https://elclubdelagente.com/Carta.html?aliado=${negocioId}`;
+  // location.origin, no un dominio fijo -- este mismo dashboard.js también
+  // corre desde contaclub.online (ver iniciarContaClubDashboard arriba), y
+  // ahí el QR tiene que apuntar a SU carta, no a la de El Club de la Gente.
+  const cartaUrl = `${location.origin}/Carta.html?aliado=${negocioId}`;
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(cartaUrl)}`;
   const qrImg = $("#conta-carta-qr"); if (qrImg) qrImg.src = qrSrc;
   const qrDescargar = $("#conta-carta-descargar"); if (qrDescargar) qrDescargar.href = qrSrc;
@@ -3080,7 +3083,7 @@ function cargarMesas() {
 }
 
 function abrirQrMesa(m) {
-  const url = `https://elclubdelagente.com/Carta.html?aliado=${_contaNegocioId}&mesa=${m.id}`;
+  const url = `${location.origin}/Carta.html?aliado=${_contaNegocioId}&mesa=${m.id}`;
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(url)}`;
   abrirModalTienda(m.nombre, `
     <div style="text-align:center">
