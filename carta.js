@@ -116,14 +116,15 @@ function feedSlideHtml(p, tieneGrupos, categoria) {
   const img = p.imagen_url
     ? `<img class="carta-card__img" src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" loading="lazy">`
     : `<div class="carta-card__ph"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
+  const iconoCarrito = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`;
   const accion = agotado
     ? `<span class="carta-card__agotado">Agotado</span>`
     : tieneGrupos
-    ? `<button type="button" class="carta-card__personalizar" data-personalizar="${p.id}">Elegir</button>`
+    ? `<button type="button" class="carta-card__personalizar" data-personalizar="${p.id}">Elegir ${iconoCarrito}</button>`
     : `<div class="carta-qty" data-qty-wrap="${p.id}">
           <button type="button" class="carta-qty__menos" data-qty-menos="${p.id}" aria-label="Quitar uno">−</button>
           <span class="carta-qty__n" data-qty-n="${p.id}">0</span>
-          <button type="button" data-qty-mas="${p.id}" aria-label="Agregar"><span class="mas-texto">Añadir</span><span class="mas-icono">+</span></button>
+          <button type="button" data-qty-mas="${p.id}" aria-label="Agregar"><span class="mas-texto">Añadir ${iconoCarrito}</span><span class="mas-icono">+</span></button>
         </div>`;
   return `
   <div class="carta-slide${agotado ? " agotada" : ""}" data-carta-card="${p.id}" data-categoria="${esc(categoria)}">
@@ -136,11 +137,9 @@ function feedSlideHtml(p, tieneGrupos, categoria) {
       </button>
       <button type="button" class="carta-rail-btn" data-comentar="${p.id}" aria-label="Comentar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-        <span class="n">Comentar</span>
       </button>
       <button type="button" class="carta-rail-btn" data-compartir="${p.id}" aria-label="Compartir">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-        <span class="n">Compartir</span>
       </button>
     </div>
     <div class="carta-card__body">
@@ -242,8 +241,8 @@ async function iniciar() {
     } catch {}
   }
   if (mesaNombre) {
-    const subEl = document.querySelector(".carta-top__sub");
-    if (subEl) subEl.textContent = `Pedido para ${mesaNombre}`;
+    const mesaEl = $("#carta-mesa-indicador");
+    if (mesaEl) { mesaEl.textContent = `🍽️ ${mesaNombre}`; mesaEl.hidden = false; }
   }
 
   if (nombreEl) nombreEl.textContent = negocio.nombre;

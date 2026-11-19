@@ -42,15 +42,27 @@ body { background: #0b0b0c; position: relative; }
    que de verdad es tocable, para que un deslizar que arranca en un hueco
    vacío del header pase de largo hacia el feed de abajo en vez de quedar
    atrapado en una capa que no se mueve. */
-#carta-chrome { position: fixed; top: 0; left: 0; right: 0; z-index: 10; padding-top: env(safe-area-inset-top, 0px); pointer-events: none; }
-.carta-top { background: rgba(255,255,255,.82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--linea); padding: 18px 0; pointer-events: auto; }
-.carta-top__negocio { display: flex; align-items: center; gap: 14px; }
-.carta-top__logo { width: 48px; height: 48px; border-radius: 12px; background: var(--verde-soft); flex: none; overflow: hidden; }
-.carta-top__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.carta-top__nombre { font-family: var(--display); font-size: 19px; font-weight: 600; color: var(--tinta); }
-.carta-top__sub { font-size: 12px; color: var(--tinta-45); }
-.carta-top__ig { flex: none; width: 36px; height: 36px; border-radius: 10px; background: var(--crema-2); color: var(--tinta); display: grid; place-items: center; transition: background .2s, color .2s; }
-.carta-top__ig:hover { background: var(--verde); color: #fff; }
+#carta-chrome { position: fixed; top: 0; left: 0; right: 0; z-index: 10; padding-top: max(12px, env(safe-area-inset-top, 0px)); pointer-events: none; }
+
+/* Fila de utilidades debajo de las categorías -- hoy solo el link de
+   Instagram del negocio, como píldora de vidrio flotante. */
+.carta-util-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0 0; }
+.carta-mesa-pill {
+  pointer-events: none; display: inline-flex; align-items: center; height: 30px; padding: 0 13px; border-radius: 100px;
+  background: rgba(20,20,24,.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  color: #fff; font-family: var(--cuerpo); font-size: 12px; font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.carta-sigue-pill {
+  pointer-events: auto; display: inline-flex; align-items: center; gap: 7px;
+  height: 30px; padding: 0 13px; border-radius: 100px;
+  background: rgba(20,20,24,.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  color: #fff; font-family: var(--cuerpo); font-size: 12px; font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15); transition: transform .12s;
+}
+.carta-sigue-pill:active { transform: scale(.95); }
+.carta-sigue-pill { margin-left: auto; }
+.carta-sigue-pill__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--verde-claro, var(--verde)); flex: none; }
 
 /* El carrusel de avisos reutiliza tal cual .tienda-hero/.tienda-banner-track/
    .tienda-banner-dots de styles.css (mismo diseño que el banner de "Tienda
@@ -60,15 +72,23 @@ body { background: #0b0b0c; position: relative; }
 .carta-aviso-wrap { pointer-events: auto; }
 .carta-aviso-wrap[hidden] { display: none; }
 
-.carta-cat-pills { display: flex; gap: 8px; overflow-x: auto; padding: 16px 0 4px; -webkit-overflow-scrolling: touch; }
+.carta-cat-pills { display: flex; gap: 8px; overflow-x: auto; padding: 0 0 4px; -webkit-overflow-scrolling: touch; }
 .carta-cat-pills::-webkit-scrollbar { display: none; }
-.carta-cat-pill { flex: none; pointer-events: auto; padding: 9px 16px; border-radius: 100px; border: 1.5px solid var(--linea-fuerte); background: #fff; font-family: var(--cuerpo); font-size: 13px; font-weight: 600; color: var(--tinta); cursor: pointer; white-space: nowrap; transition: background .2s, border-color .2s, color .2s; box-shadow: 0 2px 10px rgba(0,0,0,.12); }
-.carta-cat-pill.is-on { background: var(--verde); border-color: var(--verde); color: #fff; }
+/* Píldoras compactas tipo "vidrio" -- fondo oscuro translúcido con blur
+   cuando no están activas (se leen sobre cualquier foto), color de acento
+   del negocio cuando sí. */
+.carta-cat-pill {
+  flex: none; pointer-events: auto; height: 32px; padding: 0 14px; border-radius: 100px; border: none;
+  background: rgba(20,20,24,.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  font-family: var(--cuerpo); font-size: 13px; font-weight: 600; color: #fff; cursor: pointer; white-space: nowrap;
+  transition: background .2s, transform .12s; box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.carta-cat-pill:active { transform: scale(.95); }
+.carta-cat-pill.is-on { background: var(--verde); color: #fff; }
 /* Color propio por categoría (ej. "Bananos" en amarillo) -- --cat-color lo
-   pone JS inline por cápsula; sin tocar, el aro se ve en ese color y al
-   seleccionarla se rellena con ese mismo color en vez del verde genérico. */
-.carta-cat-pill.con-color { border-color: var(--cat-color); color: var(--cat-color); }
-.carta-cat-pill.con-color.is-on { background: var(--cat-color); border-color: var(--cat-color); color: #fff; }
+   pone JS inline por cápsula; activa se rellena con ese color en vez del
+   verde genérico del negocio. */
+.carta-cat-pill.con-color.is-on { background: var(--cat-color); color: #fff; }
 
 .carta-vacio { text-align: center; padding: 60px 20px; color: #fff; font-size: 14.5px; }
 
@@ -83,7 +103,7 @@ body { background: #0b0b0c; position: relative; }
 .carta-slide.agotada .carta-card__img, .carta-slide.agotada .carta-card__ph { filter: grayscale(.5) brightness(.6); }
 
 .carta-card__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
-.carta-card__ph { position: absolute; inset: 0; background: var(--verde-soft); display: grid; place-items: center; color: var(--verde); }
+.carta-card__ph { position: absolute; inset: 0; background: #1C1C1F; display: grid; place-items: center; color: rgba(255,255,255,.3); }
 /* Capa intermedia a propósito (no ::after): así el orden en el DOM manda
    quién tapa a quién -- foto, luego degradado, luego texto -- en vez de
    depender de que un pseudo-elemento se calce bien encima del contenido. */
@@ -91,41 +111,59 @@ body { background: #0b0b0c; position: relative; }
 
 .carta-card__agotado { font-size: 12px; font-weight: 700; color: #fff; background: #c0392b; padding: 8px 14px; border-radius: 100px; white-space: nowrap; }
 
-.carta-card__body { position: relative; z-index: 2; width: 100%; padding: 0 18px calc(100px + env(safe-area-inset-bottom, 0px)) 18px; display: flex; flex-direction: column; gap: 6px; color: #fff; }
-.carta-card__nombre { font-family: var(--display); font-size: 21px; font-weight: 700; line-height: 1.2; text-shadow: 0 2px 12px rgba(0,0,0,.5); }
-.carta-card__desc { font-size: 13px; color: rgba(255,255,255,.88); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-shadow: 0 1px 8px rgba(0,0,0,.4); }
-.carta-card__fila { display: flex; align-items: center; justify-content: space-between; gap: 10px; row-gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-.carta-card__precio { font-family: var(--display); font-size: 20px; font-weight: 800; color: #fff; white-space: nowrap; text-shadow: 0 2px 10px rgba(0,0,0,.5); }
+.carta-card__body { position: relative; z-index: 2; width: 100%; max-width: 78%; padding: 0 18px calc(100px + env(safe-area-inset-bottom, 0px)) 18px; display: flex; flex-direction: column; gap: 6px; color: #fff; }
+.carta-card__nombre { font-family: 'Plus Jakarta Sans', var(--cuerpo); font-size: 22px; font-weight: 800; letter-spacing: -.2px; line-height: 1.15; text-shadow: 0 2px 12px rgba(0,0,0,.5); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.carta-card__desc { font-size: 13px; color: rgba(255,255,255,.85); line-height: 1.4; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-shadow: 0 1px 8px rgba(0,0,0,.4); }
+.carta-card__fila { display: flex; align-items: center; gap: 8px; row-gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
 
-/* Arranca como un solo botón "Añadir" (ancho, fácil de tocar con el pulgar
-   sobre la foto) -- el "−" y el número solo aparecen una vez que ya hay al
-   menos 1 en el carrito, y ahí "Añadir" se encoge a un "+" redondo normal. */
-.carta-qty { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.16); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-radius: 100px; padding: 5px; }
+/* Precio como píldora sólida (color de acento del negocio), no solo texto
+   suelto -- así se lee igual de bien sobre cualquier foto. */
+.carta-card__precio {
+  display: inline-flex; align-items: center; height: 32px; padding: 0 14px; border-radius: 100px;
+  font-family: 'Plus Jakarta Sans', var(--cuerpo); font-size: 15px; font-weight: 800; color: #fff; white-space: nowrap;
+  background: var(--verde); box-shadow: 0 4px 12px rgba(0,0,0,.25);
+}
+
+/* Arranca como una píldora de vidrio oscuro "Añadir" (con ícono de
+   carrito) -- el "−" y el número solo aparecen una vez que ya hay al
+   menos 1 en el carrito, y ahí cada botón pasa a ser un círculo sólido
+   del color de acento, más claro para tocar rápido. */
+.carta-qty {
+  display: flex; align-items: center; gap: 8px; border-radius: 100px; padding: 4px;
+  background: rgba(30,30,35,.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.15);
+}
 .carta-qty__menos, .carta-qty__n { display: none; }
 .carta-qty.en-uso .carta-qty__menos, .carta-qty.en-uso .carta-qty__n { display: inline-flex; align-items: center; justify-content: center; }
-.carta-qty .mas-texto { display: inline; }
+.carta-qty .mas-texto { display: inline-flex; align-items: center; gap: 6px; }
 .carta-qty.en-uso .mas-texto { display: none; }
 .carta-qty .mas-icono { display: none; }
 .carta-qty.en-uso .mas-icono { display: inline; }
-.carta-qty button { height: 36px; flex: none; border-radius: 100px; border: none; background: var(--verde); color: #fff; font-family: var(--cuerpo); font-size: 14px; font-weight: 700; cursor: pointer; line-height: 1; display: inline-flex; align-items: center; justify-content: center; padding: 0 18px; transition: background .15s, transform .15s; }
-.carta-qty.en-uso button[data-qty-mas], .carta-qty button[data-qty-menos] { width: 36px; padding: 0; font-size: 16px; }
+.carta-qty button { height: 32px; flex: none; border-radius: 100px; border: none; background: transparent; color: #fff; font-family: var(--cuerpo); font-size: 13px; font-weight: 600; cursor: pointer; line-height: 1; display: inline-flex; align-items: center; justify-content: center; padding: 0 14px; transition: background .15s, transform .15s; }
+.carta-qty.en-uso button[data-qty-mas], .carta-qty button[data-qty-menos] { width: 32px; padding: 0; font-size: 16px; background: var(--verde); }
 .carta-qty button:active { transform: scale(.92); }
 .carta-qty__menos { background: rgba(255,255,255,.9) !important; color: var(--tinta) !important; }
 .carta-qty__n { min-width: 20px; background: none; text-align: center; font-weight: 700; font-size: 14px; color: #fff; cursor: default; }
 
 /* Productos con toppings/modificadores no incrementan directo desde la
    tarjeta (no se sabría con qué salsa/tamaño) -- en su lugar abren el modal
-   de personalización con este botón. */
-.carta-card__personalizar { height: 36px; padding: 0 20px; border-radius: 100px; border: none; background: var(--verde); color: #fff; font-family: var(--cuerpo); font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+   de personalización con este botón, mismo estilo de píldora de vidrio. */
+.carta-card__personalizar {
+  display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 100px;
+  background: rgba(30,30,35,.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,.15); color: #fff; font-family: var(--cuerpo); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: transform .12s;
+}
+.carta-card__personalizar:active { transform: scale(.95); }
 
 /* ---------- Riel de acciones a la derecha (me gusta / comentar /
-   compartir), mismo lugar que cualquier feed de video vertical. ---------- */
-.carta-slide__rail { position: absolute; right: 14px; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 20px; }
-.carta-rail-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; color: #fff; cursor: pointer; padding: 0; }
-.carta-rail-btn svg { width: 27px; height: 27px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.55)); transition: transform .15s; }
-.carta-rail-btn:active svg { transform: scale(.85); }
-.carta-rail-btn .n { font-size: 11px; font-weight: 700; text-shadow: 0 1px 5px rgba(0,0,0,.6); max-width: 60px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.carta-rail-btn.is-liked svg { fill: #ef4444; stroke: #ef4444; }
+   compartir), mismo lugar que cualquier feed de video vertical -- solo
+   íconos, sin etiquetas de texto (salvo el contador del corazón). ---------- */
+.carta-slide__rail { position: absolute; right: 14px; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.carta-rail-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; color: #fff; cursor: pointer; padding: 0; transition: transform .12s; }
+.carta-rail-btn:active { transform: scale(.95); }
+.carta-rail-btn svg { width: 26px; height: 26px; filter: drop-shadow(0 1px 3px rgba(0,0,0,.4)); transition: transform .15s; }
+.carta-rail-btn .n { font-size: 11px; font-weight: 700; text-shadow: 0 1px 5px rgba(0,0,0,.6); }
+.carta-rail-btn.is-liked svg { fill: var(--verde-claro, var(--verde)); stroke: var(--verde-claro, var(--verde)); }
 
 /* Modal de personalización: toppings/salsas/tamaño antes de agregar el
    producto -- mismo patrón de hoja inferior que el checkout (.carta-sheet). */
