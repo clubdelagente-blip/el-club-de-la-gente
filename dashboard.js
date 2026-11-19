@@ -2101,7 +2101,7 @@ async function iniciarContaClubDashboard() {
     location.href = "login.html";
     return;
   }
-  const { data: negocio } = await supabase.from("aliados").select("id, nombre").eq("user_id", session.user.id).maybeSingle();
+  const { data: negocio } = await supabase.from("aliados").select("id, nombre, imagen_url").eq("user_id", session.user.id).maybeSingle();
   if (!negocio) {
     const root = document.getElementById("contaclub-root");
     if (root) root.innerHTML = `<p style="padding:40px 20px;text-align:center;color:#c0392b">No encontramos un negocio vinculado a esta cuenta. Escríbenos si crees que es un error.</p>`;
@@ -2109,6 +2109,8 @@ async function iniciarContaClubDashboard() {
   }
   const nombreEl = document.getElementById("contaclub-negocio-nombre");
   if (nombreEl) nombreEl.textContent = negocio.nombre;
+  const logoEl = document.getElementById("contaclub-logo");
+  if (logoEl && negocio.imagen_url) logoEl.innerHTML = `<img src="${esc(negocio.imagen_url)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">`;
   const salirBtn = document.getElementById("contaclub-salir");
   if (salirBtn) salirBtn.addEventListener("click", async () => { await supabase.auth.signOut(); location.href = "login.html"; });
   cargarContabilidadNegocio(negocio.id);
@@ -2850,6 +2852,8 @@ async function guardarPersonalizacionCarta() {
   if (btn) { btn.disabled = false; btn.textContent = "Guardar personalización"; }
   if (error) { toast("Error: " + error.message); return; }
   if (_contaNegocio) Object.assign(_contaNegocio, payload);
+  const logoEl = document.getElementById("contaclub-logo");
+  if (logoEl) logoEl.innerHTML = logoUrl ? `<img src="${esc(logoUrl)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">` : "";
   toast("Carta personalizada ✓");
 }
 
