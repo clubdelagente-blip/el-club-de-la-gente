@@ -1261,7 +1261,7 @@ function renderTablaAliados(list){
   const tbody=$("#a-body");if(!tbody)return;
   if(!list.length){tbody.innerHTML=`<tr><td colspan="5" style="text-align:center;padding:40px;color:rgba(242,240,234,.3)">${_aliados.length?'Sin resultados':'Aún no hay aliados →'}</td></tr>`;return;}
   tbody.innerHTML=list.map(a=>`<tr>
-    <td><div class="ad-cell-user">${a.imagen_url?`<img src="${a.imagen_url}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0">`:`<span class="ad-av">${(a.nombre||'?')[0]}</span>`}<div class="ad-cell-user__name">${a.nombre}</div></div></td>
+    <td><div class="ad-cell-user">${a.imagen_url?`<img src="${a.imagen_url}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0">`:`<span class="ad-av">${(a.nombre||'?')[0]}</span>`}<div class="ad-cell-user__name">${a.nombre}${a.contaclub_standalone?` <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(96,165,250,.15);color:#60a5fa;border:1px solid rgba(96,165,250,.3)" title="Cuenta propia de ContaClub -- no es partner del Club, nunca debe aparecer en Directorio/landing">ContaClub</span>`:''}</div></div></td>
     <td><span class="ad-table__num">${a.categoria||'—'}</span><br><span style="font-size:10px;color:rgba(242,240,234,.35)">${PLANES_VIS.filter(p=>(a.planes_visibles||['basica','premium']).includes(p.val)).map(p=>p.lbl).join(' · ')||'Sin plan asignado'}</span>${diasRestantesHtml(a.fecha_fin)}</td>
     <td><span class="ad-num-strong verde">${a.descuento||'—'}</span></td>
     <td>${a.whatsapp||'—'}</td>

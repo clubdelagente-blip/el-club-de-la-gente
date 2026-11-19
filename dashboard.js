@@ -2088,6 +2088,32 @@ function aplicarPreviewCarta() {
   }
 }
 
+// Bootstrap del dashboard de ContaClub (contaclub.online) -- cuentas de
+// negocio propias, sin pasar por la membresía del Club. Todo lo demás de
+// este archivo (cargarContabilidadNegocio y el resto de Mi Contabilidad) se
+// reusa tal cual; esto solo reemplaza el arranque del dashboard de miembro.
+async function iniciarContaClubDashboard() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) { location.href = "login.html"; return; }
+  const { data: perfil } = await supabase.from("perfiles").select("rol, nombre").eq("id", session.user.id).maybeSingle();
+  if (perfil?.rol !== "aliado") {
+    await supabase.auth.signOut();
+    location.href = "login.html";
+    return;
+  }
+  const { data: negocio } = await supabase.from("aliados").select("id, nombre").eq("user_id", session.user.id).maybeSingle();
+  if (!negocio) {
+    const root = document.getElementById("contaclub-root");
+    if (root) root.innerHTML = `<p style="padding:40px 20px;text-align:center;color:#c0392b">No encontramos un negocio vinculado a esta cuenta. Escríbenos si crees que es un error.</p>`;
+    return;
+  }
+  const nombreEl = document.getElementById("contaclub-negocio-nombre");
+  if (nombreEl) nombreEl.textContent = negocio.nombre;
+  const salirBtn = document.getElementById("contaclub-salir");
+  if (salirBtn) salirBtn.addEventListener("click", async () => { await supabase.auth.signOut(); location.href = "login.html"; });
+  cargarContabilidadNegocio(negocio.id);
+}
+
 async function cargarContabilidadNegocio(negocioId) {
   _contaNegocioId = negocioId;
   obtenerAudioCtxPedido();
@@ -5025,6 +5051,12 @@ function mostrarErrorCargaDash() {
 
 /* ---------- INIT ---------- */
 document.addEventListener("DOMContentLoaded", () => {
+  // Páginas de ContaClub (dominio propio, sin membresía del Club) cargan
+  // este mismo dashboard.js para reusar Mi Contabilidad, pero NUNCA deben
+  // disparar el bootstrap del dashboard de miembro de abajo (ClubCard,
+  // segmentación, etc. -- nada de eso existe en su HTML). Se reconocen por
+  // tener #contaclub-root, que Perfil.html jamás tiene.
+  if (document.getElementById("contaclub-root")) { iniciarContaClubDashboard(); return; }
   render();
   const u = leerPerfil();
   // La primera pantalla reemplaza el historial (no lo agrega) para que el
