@@ -2978,24 +2978,35 @@ function cargarModGrupos() {
   const list = $("#conta-mod-grupos-list");
   if (!list) return;
   if (!_contaModGrupos.length) { list.innerHTML = `<p style="padding:8px 0">Aún no tienes grupos de toppings. Crea uno como "Salsas" o "Tamaño".</p>`; return; }
+  const filaOpcion = (o) => `
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 0 8px 54px;border-bottom:1px solid #f3f3f3">
+      ${o.imagen_url ? `<img src="${esc(o.imagen_url)}" alt="${esc(o.nombre)}" style="width:36px;height:36px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<div style="width:36px;height:36px;border-radius:8px;background:#f0faf4;flex-shrink:0"></div>`}
+      <div style="flex:1;min-width:0;font-size:13.5px;font-weight:500">${esc(o.nombre)}</div>
+      <div style="font-size:12px;color:#777;white-space:nowrap">${o.precio_adicional ? "+" + COP(o.precio_adicional) : "Incluido"}</div>
+    </div>`;
   list.innerHTML = _contaModGrupos.map(g => {
     const opciones = _contaModOpciones.filter(o => o.grupo_id === g.id);
     return `
-    <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #ebebeb">
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:600;font-size:14px">${esc(g.nombre)}</div>
-        <div style="font-size:12px;color:#777">${g.tipo === "unica" ? "Selección única · obligatorio" : "Selección múltiple · opcional"} · ${opciones.length} opción${opciones.length === 1 ? "" : "es"}</div>
-      </div>
-      <button data-ed-modgrupo="${g.id}" style="border:none;background:none;cursor:pointer;color:#777">${ic("pencil")}</button>
-      <button data-rm-modgrupo="${g.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button>
-    </div>`;
+    <details style="border-bottom:1px solid #ebebeb">
+      <summary style="cursor:pointer;padding:12px 0;list-style:none;display:flex;align-items:center;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px">${esc(g.nombre)}</div>
+          <div style="font-size:12px;color:#777">${g.tipo === "unica" ? "Selección única · obligatorio" : "Selección múltiple · opcional"} · ${opciones.length} opción${opciones.length === 1 ? "" : "es"}</div>
+        </div>
+        <button data-ed-modgrupo="${g.id}" style="border:none;background:none;cursor:pointer;color:#777">${ic("pencil")}</button>
+        <button data-rm-modgrupo="${g.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button>
+      </summary>
+      <div style="padding-bottom:4px">${opciones.map(filaOpcion).join("")}</div>
+    </details>`;
   }).join("");
   if (window.lucide) lucide.createIcons();
-  list.querySelectorAll("[data-ed-modgrupo]").forEach(btn => btn.addEventListener("click", () => {
+  list.querySelectorAll("[data-ed-modgrupo]").forEach(btn => btn.addEventListener("click", (e) => {
+    e.preventDefault(); e.stopPropagation();
     const g = _contaModGrupos.find(x => x.id === btn.dataset.edModgrupo);
     if (g) abrirFormModGrupo(g);
   }));
-  list.querySelectorAll("[data-rm-modgrupo]").forEach(btn => btn.addEventListener("click", async () => {
+  list.querySelectorAll("[data-rm-modgrupo]").forEach(btn => btn.addEventListener("click", async (e) => {
+    e.preventDefault(); e.stopPropagation();
     if (!confirm("¿Eliminar este grupo? Se quita de todos los productos que lo usen.")) return;
     await supabase.from("negocio_carta_grupos_mod").delete().eq("id", btn.dataset.rmModgrupo);
     toast("Grupo eliminado");
