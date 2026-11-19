@@ -47,6 +47,17 @@ body { background: #0b0b0c; position: relative; }
 /* Fila de utilidades debajo de las categorías -- hoy solo el link de
    Instagram del negocio, como píldora de vidrio flotante. */
 .carta-util-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0 0; }
+/* Botón que alterna a la vista de cuadrícula -- al mismo nivel que
+   "Síguenos", en vez de debajo del logo (ver carta.js para el catálogo que
+   abre). */
+.carta-grid-toggle {
+  pointer-events: auto; flex: none; width: 30px; height: 30px; border-radius: 50%; border: none;
+  background: rgba(20,20,24,.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15); transition: transform .12s, background .2s;
+}
+.carta-grid-toggle:active { transform: scale(.9); }
+.carta-grid-toggle.is-on { background: var(--verde); }
 .carta-mesa-pill {
   pointer-events: none; display: inline-flex; align-items: center; height: 30px; padding: 0 13px; border-radius: 100px;
   background: rgba(20,20,24,.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
@@ -77,23 +88,13 @@ body { background: #0b0b0c; position: relative; }
 .carta-aviso-wrap { pointer-events: auto; }
 .carta-aviso-wrap[hidden] { display: none; }
 
-.carta-cat-row { display: flex; align-items: flex-start; gap: 10px; }
+.carta-cat-row { display: flex; align-items: center; gap: 10px; }
 /* Logo del negocio, chico y flotando a la izquierda de las categorías --
    lo único que queda del header de antes (el nombre ya no hace falta
    repetirlo: el cliente ya está en SU carta). Sin logo configurado, el
-   negocio simplemente no muestra nada acá (ver carta.js). Debajo del logo,
-   el botón que alterna a la vista de cuadrícula (ver más abajo). */
-.carta-logo-col { flex: none; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+   negocio simplemente no muestra nada acá (ver carta.js). */
 .carta-logo-badge { pointer-events: none; flex: none; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.25); border: 1.5px solid rgba(255,255,255,.5); }
 .carta-logo-badge img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.carta-grid-toggle {
-  pointer-events: auto; flex: none; width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.5);
-  background: rgba(20,20,24,.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-  color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,.25); transition: transform .12s, background .2s;
-}
-.carta-grid-toggle:active { transform: scale(.9); }
-.carta-grid-toggle.is-on { background: var(--verde); }
 .carta-cat-pills { display: flex; gap: 8px; overflow-x: auto; padding: 0 0 4px; -webkit-overflow-scrolling: touch; flex: 1; min-width: 0; }
 .carta-cat-pills::-webkit-scrollbar { display: none; }
 /* Píldoras compactas tipo "vidrio" -- fondo oscuro translúcido con blur
