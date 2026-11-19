@@ -113,21 +113,25 @@ function sumarProducto(p, delta) {
 // Una tarjeta = una pantalla completa del feed (tipo Reels/TikTok): la foto
 // de fondo, un riel de me-gusta/comentar/compartir a la derecha, y el
 // nombre/precio/botón de agregar flotando abajo sobre un degradado.
-function feedSlideHtml(p, tieneGrupos, categoria) {
+function feedSlideHtml(p, tieneGrupos, categoria, modoDesde) {
   const agotado = estaAgotado(p);
   const img = p.imagen_url
     ? `<img class="carta-card__img" src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" loading="lazy">`
     : `<div class="carta-card__ph"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg></div>`;
   const iconoCarrito = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`;
+  // Modo "Desde $precio" (opcional, por negocio): siempre el botón "Elegir"
+  // -- tenga o no toppings -- en vez del stepper +/- de siempre; si no tiene
+  // toppings, "Elegir" agrega 1 directo (ver el binding en iniciar()).
   const accion = agotado
     ? `<span class="carta-card__agotado">Agotado</span>`
-    : tieneGrupos
+    : (modoDesde || tieneGrupos)
     ? `<button type="button" class="carta-card__personalizar" data-personalizar="${p.id}">Elegir ${iconoCarrito}</button>`
     : `<div class="carta-qty" data-qty-wrap="${p.id}">
           <button type="button" class="carta-qty__menos" data-qty-menos="${p.id}" aria-label="Quitar uno">−</button>
           <span class="carta-qty__n" data-qty-n="${p.id}">0</span>
           <button type="button" data-qty-mas="${p.id}" aria-label="Agregar"><span class="mas-texto">Añadir ${iconoCarrito}</span><span class="mas-icono">+</span></button>
         </div>`;
+  const precioTxt = modoDesde ? `Desde ${COP(p.precio)}` : COP(p.precio);
   return `
   <div class="carta-slide${agotado ? " agotada" : ""}" data-carta-card="${p.id}" data-categoria="${esc(categoria)}">
     ${img}
@@ -145,9 +149,8 @@ function feedSlideHtml(p, tieneGrupos, categoria) {
       </button>
     </div>
     <div class="carta-card__body">
-      <div class="carta-card__fila">
-        <span class="carta-card__precio">${COP(p.precio)}</span>
-        ${accion}
+      <div class="carta-card__fila${modoDesde ? " carta-card__fila--desde" : ""}">
+        ${modoDesde ? `${accion}<span class="carta-card__precio">${precioTxt}</span>` : `<span class="carta-card__precio">${precioTxt}</span>${accion}`}
       </div>
       <div class="carta-card__nombre">${esc(p.nombre)}</div>
       ${p.descripcion ? `<div class="carta-card__desc">${esc(p.descripcion)}</div>` : ""}
@@ -250,6 +253,11 @@ async function iniciar() {
     if (vacio) { vacio.hidden = false; vacio.querySelector("p").textContent = "No encontramos este negocio."; }
     return;
   }
+
+  // Estilo "Desde $precio" + botón "Elegir" siempre visible (en vez del
+  // stepper +/- para productos sin toppings) -- opcional, el negocio lo
+  // prende desde "Personalizar mi carta".
+  const modoDesde = !!negocio.carta_precio_desde;
 
   // Si el link trae ?mesa=, se abre (o se une a) la sesión de esa mesa --
   // abrir_o_unir_sesion_mesa es una función segura en la base de datos que
@@ -385,7 +393,7 @@ async function iniciar() {
     // negocio; las cápsulas de arriba saltan a la categoría elegida, pero
     // el scroll sigue corriendo natural hacia las siguientes -- nunca se
     // "acaba" de golpe al terminar una categoría.
-    grid.innerHTML = grupos.map(([cat, prods]) => prods.map(p => feedSlideHtml(p, gruposPorProducto.has(p.id), cat)).join("")).join("");
+    grid.innerHTML = grupos.map(([cat, prods]) => prods.map(p => feedSlideHtml(p, gruposPorProducto.has(p.id), cat, modoDesde)).join("")).join("");
 
     // Cápsulas de categoría arriba -- saltan a la primera tarjeta de esa
     // categoría (scrollIntoView, no esconden nada) y se resaltan solas
@@ -423,6 +431,14 @@ async function iniciar() {
       const gruposProd = gruposPorProducto.get(p.id);
       if (gruposProd && gruposProd.length) {
         grid.querySelector(`[data-personalizar="${p.id}"]`)?.addEventListener("click", () => abrirModalProducto(p, gruposProd));
+      } else if (modoDesde) {
+        // Sin toppings que elegir -- el botón "Elegir" agrega 1 directo,
+        // igual que hacía el "+" del stepper de siempre.
+        grid.querySelector(`[data-personalizar="${p.id}"]`)?.addEventListener("click", () => {
+          const eraNuevo = !carrito.get(p.id)?.cantidad;
+          sumarProducto(p, 1);
+          if (eraNuevo) preguntarAlgoMas();
+        });
       } else {
         grid.querySelector(`[data-qty-mas="${p.id}"]`)?.addEventListener("click", () => {
           // Solo pregunta "¿algo más?" cuando de verdad se agrega un

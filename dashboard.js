@@ -2169,7 +2169,7 @@ async function cargarContabilidadNegocio(negocioId) {
   });
 
   const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }, { data: mesas }, { data: comentarios }] = await Promise.all([
-    supabase.from("aliados").select("imagen_url, instagram, carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio").eq("id", negocioId).maybeSingle(),
+    supabase.from("aliados").select("imagen_url, instagram, carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio, carta_precio_desde").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
     supabase.from("negocio_categorias_ingreso").select("*").eq("negocio_id", negocioId).order("nombre"),
@@ -2253,6 +2253,7 @@ async function cargarContabilidadNegocio(negocioId) {
   const colorBordeInput = $("#conta-carta-color-borde"); if (colorBordeInput) colorBordeInput.value = _contaNegocio.carta_color_borde || "#e5e5e5";
   const colorPedidoInput = $("#conta-carta-color-pedido"); if (colorPedidoInput) colorPedidoInput.value = _contaNegocio.carta_color_pedido || "#ffffff";
   const avisoActivoInput = $("#conta-carta-aviso-activo"); if (avisoActivoInput) avisoActivoInput.checked = !!_contaNegocio.carta_aviso_activo;
+  const precioDesdeInput = $("#conta-carta-precio-desde"); if (precioDesdeInput) precioDesdeInput.checked = !!_contaNegocio.carta_precio_desde;
   const avisoColorInput = $("#conta-carta-aviso-color"); if (avisoColorInput) avisoColorInput.value = _contaNegocio.carta_aviso_color || "#164a2c";
   const domicilioActivoInput = $("#conta-carta-domicilio-activo"); if (domicilioActivoInput) domicilioActivoInput.checked = !!_contaNegocio.carta_domicilio_activo;
   const domicilioValorInput = $("#conta-carta-domicilio-valor"); if (domicilioValorInput) domicilioValorInput.value = _contaNegocio.carta_domicilio_valor ? Number(_contaNegocio.carta_domicilio_valor).toLocaleString("es-CO") : "";
@@ -2853,6 +2854,7 @@ async function guardarPersonalizacionCarta() {
   const colorBorde = $("#conta-carta-color-borde")?.value || null;
   const colorPedido = $("#conta-carta-color-pedido")?.value || null;
   const avisoActivo = $("#conta-carta-aviso-activo")?.checked || false;
+  const precioDesde = $("#conta-carta-precio-desde")?.checked || false;
   const avisoColor = $("#conta-carta-aviso-color")?.value || null;
   const avisosLimpios = _contaAvisosCarta.filter(a => a.titulo?.trim()).map(a => ({ titulo: a.titulo.trim(), subtitulo: a.subtitulo?.trim() || null, link: a.link?.trim() || null }));
   const domicilioActivo = $("#conta-carta-domicilio-activo")?.checked || false;
@@ -2868,6 +2870,7 @@ async function guardarPersonalizacionCarta() {
     tienda_llave_pago: llave, tienda_llave_qr_url: llaveQrUrl,
     carta_color_tarjeta: colorTarjeta, carta_color_borde: colorBorde, carta_color_pedido: colorPedido,
     carta_aviso_activo: avisoActivo, carta_aviso_color: avisoColor, carta_avisos: avisosLimpios.length ? avisosLimpios : null,
+    carta_precio_desde: precioDesde,
     carta_categorias_orden: _contaCategoriasOrdenCarta.length ? _contaCategoriasOrdenCarta : null,
     carta_domicilio_activo: domicilioActivo, carta_domicilio_valor: domicilioActivo ? domicilioValor : null,
     carta_domicilio_minimo: domicilioActivo ? domicilioMinimo : null, carta_domicilio_tiempo: domicilioTiempo,

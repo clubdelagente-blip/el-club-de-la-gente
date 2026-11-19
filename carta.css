@@ -178,6 +178,11 @@ body { background: #0b0b0c; position: relative; }
 .carta-card__nombre { font-family: 'Plus Jakarta Sans', var(--cuerpo); font-size: 22px; font-weight: 800; letter-spacing: -.2px; line-height: 1.15; text-shadow: 0 2px 12px rgba(0,0,0,.5); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .carta-card__desc { font-size: 13px; color: rgba(255,255,255,.85); line-height: 1.4; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-shadow: 0 1px 8px rgba(0,0,0,.4); }
 .carta-card__fila { display: flex; align-items: center; gap: 8px; row-gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+/* Modo "Desde $precio" (opcional, por negocio): el botón "Elegir" queda
+   arriba, el precio como texto suelto debajo -- en vez de precio+botón uno
+   al lado del otro. */
+.carta-card__fila--desde { flex-direction: column; align-items: flex-start; gap: 6px; }
+.carta-card__fila--desde .carta-card__precio { background: none; box-shadow: none; padding: 0; height: auto; font-size: 13.5px; font-weight: 700; color: rgba(255,255,255,.9); text-shadow: 0 1px 6px rgba(0,0,0,.4); }
 
 /* Precio como píldora sólida (color de acento del negocio), no solo texto
    suelto -- así se lee igual de bien sobre cualquier foto. */
