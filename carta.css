@@ -174,7 +174,7 @@ body { background: #0b0b0c; position: relative; }
 
 .carta-card__agotado { font-size: 12px; font-weight: 700; color: #fff; background: #c0392b; padding: 8px 14px; border-radius: 100px; white-space: nowrap; }
 
-.carta-card__body { position: relative; z-index: 2; width: 100%; max-width: 78%; padding: 0 18px calc(100px + env(safe-area-inset-bottom, 0px)) 18px; display: flex; flex-direction: column; gap: 6px; color: #fff; }
+.carta-card__body { position: relative; z-index: 2; width: 100%; max-width: 78%; padding: 0 18px calc(56px + env(safe-area-inset-bottom, 0px)) 18px; display: flex; flex-direction: column; gap: 6px; color: #fff; }
 .carta-card__nombre { font-family: 'Plus Jakarta Sans', var(--cuerpo); font-size: 22px; font-weight: 800; letter-spacing: -.2px; line-height: 1.15; text-shadow: 0 2px 12px rgba(0,0,0,.5); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .carta-card__desc { font-size: 13px; color: rgba(255,255,255,.85); line-height: 1.4; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-shadow: 0 1px 8px rgba(0,0,0,.4); }
 .carta-card__fila { display: flex; align-items: center; gap: 8px; row-gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
@@ -226,7 +226,7 @@ body { background: #0b0b0c; position: relative; }
 /* ---------- Riel de acciones a la derecha (me gusta / comentar /
    compartir), mismo lugar que cualquier feed de video vertical -- solo
    íconos, sin etiquetas de texto (salvo el contador del corazón). ---------- */
-.carta-slide__rail { position: absolute; right: 14px; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.carta-slide__rail { position: absolute; right: 14px; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 18px; }
 .carta-rail-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; color: #fff; cursor: pointer; padding: 0; transition: transform .12s; }
 .carta-rail-btn:active { transform: scale(.95); }
 .carta-rail-btn svg { width: 26px; height: 26px; filter: drop-shadow(0 1px 3px rgba(0,0,0,.4)); transition: transform .15s; }
