@@ -316,7 +316,10 @@ async function subirFotoPerfil(file) {
 function abrirRecorteFoto(file, { aspectRatio = 1, titulo = "Ajustar foto", ayuda = "Mueve y haz zoom para encuadrar.", onListo }) {
   const url = URL.createObjectURL(file);
   const ov = document.createElement("div");
-  ov.style.cssText = "position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.75);display:grid;place-items:center;padding:20px";
+  // z-index por encima de .activar-overlay (900) -- este recortador ahora
+  // también se abre DESDE adentro de ese modal (ej. foto de producto), no
+  // solo desde "Mi perfil" como antes, así que tiene que quedar encima.
+  ov.style.cssText = "position:fixed;inset:0;z-index:950;background:rgba(0,0,0,.75);display:grid;place-items:center;padding:20px";
   ov.innerHTML = `
     <div style="background:#fff;border-radius:14px;padding:20px;max-width:420px;width:100%">
       <div style="font-weight:700;font-size:15px;margin-bottom:4px">${esc(titulo)}</div>
