@@ -3175,7 +3175,7 @@ async function cargarCartaProductos() {
   renderOrdenCategoriasCarta(); // por si cambiaron las categorías disponibles
   if (!productos.length) { list.innerHTML = `<p style="padding:8px 0">Aún no has agregado productos a tu carta.</p>`; return; }
   const STOCK_BAJO = 3; // a partir de cuántas unidades se considera "se está acabando"
-  list.innerHTML = productos.map(p => {
+  const filaProducto = (p) => {
     const stockBajo = p.stock_activo && (p.stock_cantidad ?? 0) > 0 && (p.stock_cantidad ?? 0) <= STOCK_BAJO;
     const agotado = p.stock_activo && (p.stock_cantidad ?? 0) <= 0;
     return `
@@ -3183,7 +3183,7 @@ async function cargarCartaProductos() {
       ${p.imagen_url ? `<img src="${esc(p.imagen_url)}" alt="${esc(p.nombre)}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0">` : `<div style="width:44px;height:44px;border-radius:8px;background:#f0faf4;flex-shrink:0"></div>`}
       <div style="flex:1;min-width:140px">
         <div style="font-weight:600;font-size:14px">${esc(p.nombre)}</div>
-        <div style="font-size:12px;color:#777">${COP(p.precio)}${p.categoria ? " · " + esc(p.categoria) : ""}${p.disponible ? "" : " · No disponible"}</div>
+        <div style="font-size:12px;color:#777">${COP(p.precio)}${p.disponible ? "" : " · No disponible"}</div>
         ${p.stock_activo ? `
         <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
           <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:${agotado ? "#fdecea" : stockBajo ? "#fef3c7" : "var(--crema-2)"};color:${agotado ? "#c0392b" : stockBajo ? "#b45309" : "#777"}">${agotado ? "Agotado" : stockBajo ? `⚠️ Quedan ${p.stock_cantidad}` : `Stock: ${p.stock_cantidad ?? 0}`}</span>
@@ -3193,7 +3193,35 @@ async function cargarCartaProductos() {
       <button data-ed-ccp="${p.id}" style="border:none;background:none;cursor:pointer;color:#777">${ic("pencil")}</button>
       <button data-rm-ccp="${p.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button>
     </div>`;
-  }).join("");
+  };
+  // Agrupados por categoría, cada una desplegable -- mismo criterio de
+  // orden que ya usa la carta pública (carta_categorias_orden si el
+  // negocio lo configuró, si no por primera aparición; "Sin categoría"
+  // siempre al final).
+  const grupos = new Map();
+  productos.forEach(p => {
+    const cat = (p.categoria || "").trim() || "Sin categoría";
+    if (!grupos.has(cat)) grupos.set(cat, []);
+    grupos.get(cat).push(p);
+  });
+  const entradas = [...grupos.entries()];
+  const ordenCfg = Array.isArray(_contaNegocio?.carta_categorias_orden) ? _contaNegocio.carta_categorias_orden : [];
+  if (ordenCfg.length) {
+    const nombresOrden = ordenCfg.map(catOrdenNombre);
+    const indice = (cat) => { const i = nombresOrden.indexOf(cat); return i === -1 ? 999 : i; };
+    entradas.sort((a, b) => indice(a[0]) - indice(b[0]));
+  }
+  entradas.sort((a, b) => (a[0] === "Sin categoría") - (b[0] === "Sin categoría"));
+  list.innerHTML = entradas.length === 1
+    ? entradas[0][1].map(filaProducto).join("")
+    : entradas.map(([cat, prods]) => `
+      <details style="border-bottom:1px solid #ebebeb">
+        <summary style="cursor:pointer;padding:12px 0;font-weight:700;font-size:13.5px;color:var(--tinta);list-style:none;display:flex;align-items:center;justify-content:space-between">
+          <span>${esc(cat)}</span>
+          <span style="font-size:11.5px;font-weight:600;color:#999">${prods.length} producto${prods.length === 1 ? "" : "s"}</span>
+        </summary>
+        <div style="padding-bottom:4px">${prods.map(filaProducto).join("")}</div>
+      </details>`).join("");
   if (window.lucide) lucide.createIcons();
   list.querySelectorAll("[data-ed-ccp]").forEach(btn => btn.addEventListener("click", () => {
     const p = productos.find(x => x.id === btn.dataset.edCcp);
