@@ -2150,7 +2150,7 @@ async function cargarContabilidadNegocio(negocioId) {
   });
 
   const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }, { data: mesas }, { data: comentarios }] = await Promise.all([
-    supabase.from("aliados").select("imagen_url, carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio").eq("id", negocioId).maybeSingle(),
+    supabase.from("aliados").select("imagen_url, instagram, carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
     supabase.from("negocio_categorias_ingreso").select("*").eq("negocio_id", negocioId).order("nombre"),
@@ -2204,6 +2204,7 @@ async function cargarContabilidadNegocio(negocioId) {
   if (btnCopiar) btnCopiar.onclick = () => copiarTextoConRespaldo(cartaUrl).then(() => toast("Link copiado ✓"));
   const colorInput = $("#conta-carta-color"); if (colorInput) colorInput.value = _contaNegocio.carta_color || "#095544";
   const logoUrlInput = $("#conta-carta-logo-url"); if (logoUrlInput) logoUrlInput.value = _contaNegocio.imagen_url || "";
+  const instagramInput = $("#conta-carta-instagram"); if (instagramInput) instagramInput.value = _contaNegocio.instagram || "";
   const logoPreview = $("#conta-carta-logo-preview");
   if (logoPreview) { if (_contaNegocio.imagen_url) { logoPreview.src = _contaNegocio.imagen_url; logoPreview.style.display = ""; } else { logoPreview.style.display = "none"; } }
   const portadaUrlInput = $("#conta-carta-portada-url"); if (portadaUrlInput) portadaUrlInput.value = _contaNegocio.carta_portada_url || "";
@@ -2818,6 +2819,10 @@ async function guardarPersonalizacionCarta() {
   const btn = $("#conta-carta-personalizar-guardar");
   const color = $("#conta-carta-color")?.value || "#095544";
   const logoUrl = $("#conta-carta-logo-url")?.value || null;
+  let instagram = $("#conta-carta-instagram")?.value.trim() || null;
+  // Acepta "@usuario" o solo "usuario" además de la URL completa -- lo que
+  // sea más natural de escribir, pero carta.js necesita un link real.
+  if (instagram && !/^https?:\/\//i.test(instagram)) instagram = `https://instagram.com/${instagram.replace(/^@/, "")}`;
   const portadaUrl = $("#conta-carta-portada-url")?.value || null;
   const sellosActivo = $("#conta-carta-sellos-activo")?.checked || false;
   const sellosMeta = parseInt($("#conta-carta-sellos-meta")?.value) || 10;
@@ -2837,7 +2842,7 @@ async function guardarPersonalizacionCarta() {
   const domicilioTiempo = $("#conta-carta-domicilio-tiempo")?.value.trim() || null;
   if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
   const payload = {
-    imagen_url: logoUrl,
+    imagen_url: logoUrl, instagram,
     carta_color: color, carta_portada_url: portadaUrl,
     carta_sellos_activo: sellosActivo, carta_sellos_meta: sellosMeta,
     carta_sellos_premio_tipo: sellosTipo, carta_sellos_premio_desc: sellosPremio,
