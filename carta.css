@@ -53,6 +53,11 @@ body { background: #0b0b0c; position: relative; }
   color: #fff; font-family: var(--cuerpo); font-size: 12px; font-weight: 700;
   box-shadow: 0 2px 8px rgba(0,0,0,.15);
 }
+/* Sin esto, el display:inline-flex de arriba le gana al [hidden] del
+   navegador (misma especificidad, autor > user-agent) -- queda un círculo
+   oscuro vacío flotando cuando no hay mesa (sin texto adentro, solo el
+   padding/box). */
+.carta-mesa-pill[hidden] { display: none; }
 .carta-sigue-pill {
   pointer-events: auto; display: inline-flex; align-items: center; gap: 7px;
   height: 30px; padding: 0 13px; border-radius: 100px;
