@@ -242,6 +242,28 @@ body { background: #0b0b0c; position: relative; }
 .carta-mod-opcion__foto { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; flex: none; }
 .carta-mod-opcion__nombre { flex: 1; font-size: 13.5px; color: var(--tinta); }
 .carta-mod-opcion__precio { font-size: 12.5px; font-weight: 600; color: var(--tinta-45); }
+/* Pregunta siguiente, uno por sesión -- debajo del grupo que ya está
+   abierto, un botón con la pregunta del próximo grupo ("¿Quieres agregar
+   toppings?"); al tocarlo se revela ese grupo con una animación de entrada
+   y aparece debajo el botón del que sigue (si hay otro). */
+.carta-mod-reveal {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 14px 16px; border-radius: 12px; border: 1.5px dashed var(--linea-fuerte); background: var(--crema-2);
+  color: var(--tinta); font-family: var(--cuerpo); font-size: 13.5px; font-weight: 700; cursor: pointer;
+  margin-bottom: 18px; transition: background .2s, transform .15s;
+}
+.carta-mod-reveal:active { transform: scale(.98); background: var(--verde-soft); }
+.carta-mod-grupo--entra { animation: cartaModEntra .32s ease; }
+@keyframes cartaModEntra { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* Resumen de lo elegido hasta el momento, justo antes del botón de añadir. */
+.carta-mod-resumen { margin: 0 0 16px; padding: 12px 14px; border-radius: 12px; background: var(--verde-soft); }
+.carta-mod-resumen[hidden] { display: none; }
+.carta-mod-resumen__titulo { font-family: var(--cuerpo); font-size: 11px; font-weight: 700; color: var(--verde); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .03em; }
+.carta-mod-resumen__fila { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--tinta); padding: 3px 0; }
+.carta-mod-resumen__fila span:first-child { color: var(--tinta-45); font-weight: 600; flex: none; }
+.carta-mod-resumen__fila span:last-child { text-align: right; }
+
 .carta-mod-footer { position: sticky; bottom: -22px; background: #fff; margin: 16px -22px -22px; padding: 14px 22px; border-top: 1px solid var(--linea); display: flex; gap: 12px; align-items: center; }
 .carta-mod-footer .carta-qty { flex: none; }
 /* El texto "Elige "X" para continuar" varía de largo según el nombre del

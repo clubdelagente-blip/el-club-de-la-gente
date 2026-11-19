@@ -599,10 +599,23 @@ async function iniciar() {
   const modGruposEl = $("#carta-mod-grupos");
   const modQtyNEl = $("#carta-mod-qty-n");
   const modAgregarBtn = $("#carta-mod-agregar");
+  const modResumenEl = $("#carta-mod-resumen");
   let modProductoActual = null;
   let modGruposActual = [];
   let modSeleccion = new Map(); // grupo_id -> Set(opcion_id)
   let modQty = 1;
+  // Los grupos (salsas, toppings...) no se muestran todos de una -- se
+  // preguntan uno por sesión, como una conversación: el primero abierto de
+  // una vez, y debajo un botón con la pregunta del siguiente ("¿Quieres
+  // agregar toppings?") que al tocarlo revela ESE grupo y deja ver el botón
+  // del que sigue, así sucesivamente. modAbiertos cuenta cuántos grupos
+  // (en orden) ya están revelados.
+  let modAbiertos = 1;
+
+  // Si el negocio escribió una pregunta propia para el grupo (ej. "¿Qué
+  // salsa quieres?"), se usa esa -- si no, cae a una por defecto con el
+  // nombre del grupo.
+  function preguntaGrupo(g) { return (g.pregunta && g.pregunta.trim()) || `¿Quieres agregar ${g.nombre}?`; }
 
   function modCalcularTotal() {
     let extra = 0;
@@ -632,10 +645,12 @@ async function iniciar() {
   }
   function renderModGrupos() {
     if (!modGruposEl) return;
-    modGruposEl.innerHTML = modGruposActual.map(g => `
-      <div class="carta-mod-grupo">
+    const abiertos = modGruposActual.slice(0, modAbiertos);
+    const siguiente = modGruposActual[modAbiertos];
+    modGruposEl.innerHTML = abiertos.map((g, i) => `
+      <div class="carta-mod-grupo${i === abiertos.length - 1 && modAbiertos > 1 ? " carta-mod-grupo--entra" : ""}" data-mod-grupo-box="${g.id}">
         <div class="carta-mod-grupo__head">
-          <span class="carta-mod-grupo__titulo">${esc(g.nombre)}</span>
+          <span class="carta-mod-grupo__titulo">${esc(preguntaGrupo(g))}</span>
           <span class="carta-mod-grupo__tag">${g.tipo === "unica" ? "1 de 1 · obligatorio" : "Opcional"}</span>
         </div>
         ${g.opciones.map(o => `
@@ -645,7 +660,12 @@ async function iniciar() {
             <span class="carta-mod-opcion__nombre">${esc(o.nombre)}</span>
             ${Number(o.precio_adicional) > 0 ? `<span class="carta-mod-opcion__precio">+${COP(o.precio_adicional)}</span>` : ""}
           </div>`).join("")}
-      </div>`).join("");
+      </div>`).join("")
+      + (siguiente ? `
+      <button type="button" class="carta-mod-reveal carta-mod-grupo--entra" data-mod-reveal="1">
+        <span>${esc(preguntaGrupo(siguiente))}</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>` : "");
     modGruposEl.querySelectorAll("[data-mod-opcion]").forEach(row => row.addEventListener("click", () => {
       const grupoId = row.dataset.modGrupo;
       const opcionId = row.dataset.modOpcion;
@@ -663,7 +683,33 @@ async function iniciar() {
         r.classList.toggle("is-on", activos.has(r.dataset.modOpcion));
       });
       pintarModal();
+      renderModResumen();
     }));
+    modGruposEl.querySelector("[data-mod-reveal]")?.addEventListener("click", () => {
+      modAbiertos++;
+      renderModGrupos();
+      pintarModal();
+      requestAnimationFrame(() => {
+        modGruposEl.querySelector(".carta-mod-grupo--entra")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    });
+  }
+
+  // Resumen de lo elegido hasta el momento -- vive justo antes del botón de
+  // "Añadir", para que el cliente vea de un vistazo qué quedó seleccionado
+  // antes de confirmar (se actualiza solo con cada toque, no hace falta un
+  // paso aparte).
+  function renderModResumen() {
+    if (!modResumenEl) return;
+    const filas = modGruposActual.map(g => {
+      const sel = modSeleccion.get(g.id);
+      if (!sel || !sel.size) return null;
+      const nombres = g.opciones.filter(o => sel.has(o.id)).map(o => o.nombre);
+      return nombres.length ? `<div class="carta-mod-resumen__fila"><span>${esc(g.nombre)}</span><span>${esc(nombres.join(", "))}</span></div>` : null;
+    }).filter(Boolean);
+    if (!filas.length) { modResumenEl.hidden = true; modResumenEl.innerHTML = ""; return; }
+    modResumenEl.hidden = false;
+    modResumenEl.innerHTML = `<div class="carta-mod-resumen__titulo">Tu pedido hasta ahora</div>${filas.join("")}`;
   }
   function abrirModalProducto(p, grupos) {
     if (!modOverlay) return;
@@ -671,9 +717,11 @@ async function iniciar() {
     modGruposActual = grupos;
     modSeleccion = new Map();
     modQty = 1;
+    modAbiertos = 1;
     if (modNombreEl) modNombreEl.textContent = p.nombre;
     if (modDescEl) { modDescEl.textContent = p.descripcion || ""; modDescEl.hidden = !p.descripcion; }
     renderModGrupos();
+    renderModResumen();
     pintarModal();
     modOverlay.hidden = false;
   }

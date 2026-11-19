@@ -3029,6 +3029,7 @@ function abrirFormModGrupo(g = {}) {
     </div>`;
   abrirModalTienda(g.id ? "Editar grupo" : "Nuevo grupo de toppings", `
     <div class="cfg-campo"><label class="cfg-label">Nombre del grupo *</label><input class="cfg-input" id="modg-nombre" type="text" value="${esc(g.nombre || "")}" placeholder="Ej: Salsas, Tamaño, Sabor de helado"></div>
+    <div class="cfg-campo"><label class="cfg-label">Pregunta para el cliente <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label><input class="cfg-input" id="modg-pregunta" type="text" value="${esc(g.pregunta || "")}" placeholder='Ej: ¿Qué salsa quieres? -- si lo dejas vacío usamos "¿Quieres agregar ${esc(g.nombre || "esto")}?"'></div>
     <div class="cfg-campo">
       <label class="cfg-label">Tipo *</label>
       <select class="cfg-input" id="modg-tipo">
@@ -3069,6 +3070,7 @@ function abrirFormModGrupo(g = {}) {
     const btn = $("#modg-save");
     const resetBtn = () => { btn.disabled = false; btn.textContent = g.id ? "Guardar cambios" : "Crear grupo"; };
     const nombre = $("#modg-nombre")?.value.trim();
+    const pregunta = $("#modg-pregunta")?.value.trim() || null;
     const tipo = $("#modg-tipo")?.value;
     if (!nombre) { toast("El nombre del grupo es obligatorio"); return; }
     const filas = $$(".mod-opcion-fila").filter(fila => fila.querySelector(".mod-opcion-nombre")?.value.trim());
@@ -3096,11 +3098,11 @@ function abrirFormModGrupo(g = {}) {
     } catch { toast("Error subiendo una foto"); resetBtn(); return; }
     let grupoId = g.id;
     if (grupoId) {
-      const { error } = await supabase.from("negocio_carta_grupos_mod").update({ nombre, tipo }).eq("id", grupoId);
+      const { error } = await supabase.from("negocio_carta_grupos_mod").update({ nombre, tipo, pregunta }).eq("id", grupoId);
       if (error) { toast("Error: " + error.message); resetBtn(); return; }
       await supabase.from("negocio_carta_opciones_mod").delete().eq("grupo_id", grupoId);
     } else {
-      const { data: nuevo, error } = await supabase.from("negocio_carta_grupos_mod").insert({ negocio_id: _contaNegocioId, nombre, tipo, orden: _contaModGrupos.length }).select().single();
+      const { data: nuevo, error } = await supabase.from("negocio_carta_grupos_mod").insert({ negocio_id: _contaNegocioId, nombre, tipo, pregunta, orden: _contaModGrupos.length }).select().single();
       if (error) { toast("Error: " + error.message); resetBtn(); return; }
       grupoId = nuevo.id;
     }
