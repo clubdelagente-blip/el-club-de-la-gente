@@ -1723,6 +1723,7 @@ let _contaModProdGrupos = [];
 let _contaMesas = [];
 let _contaInsumos = [];
 let _contaRecetaItems = [];
+let _contaVisitas = [];
 let _contaCategoriasOrdenCarta = [];
 let _contaAvisosCarta = [];
 let _cartaPedidosRealtimeCh = null;
@@ -2166,11 +2167,12 @@ async function cargarContabilidadNegocio(negocioId) {
   $$("#contasub-nav [data-contasub]").forEach(b => {
     b.onclick = () => {
       $$("#contasub-nav [data-contasub]").forEach(x => x.classList.toggle("is-on", x === b));
-      ["balance", "pedido", "gasto", "costos"].forEach(s => { const el = $(`#contasub-${s}`); if (el) el.style.display = s === b.dataset.contasub ? "" : "none"; });
+      ["balance", "pedido", "gasto", "costos", "metricas"].forEach(s => { const el = $(`#contasub-${s}`); if (el) el.style.display = s === b.dataset.contasub ? "" : "none"; });
     };
   });
 
-  const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }, { data: mesas }, { data: comentarios }, { data: insumos }, { data: recetaItems }] = await Promise.all([
+  const hace90Dias = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+  const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }, { data: mesas }, { data: comentarios }, { data: insumos }, { data: recetaItems }, { data: visitas }] = await Promise.all([
     supabase.from("aliados").select("imagen_url, instagram, carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio, carta_precio_desde, carta_costo_operativo_pct").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
@@ -2185,6 +2187,7 @@ async function cargarContabilidadNegocio(negocioId) {
     supabase.from("negocio_carta_comentarios").select("*, negocio_carta_productos(nombre)").eq("negocio_id", negocioId).order("created_at", { ascending: false }),
     supabase.from("negocio_insumos").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_carta_producto_insumos").select("*").eq("negocio_id", negocioId),
+    supabase.from("negocio_carta_visitas").select("created_at").eq("negocio_id", negocioId).gte("created_at", hace90Dias),
   ]);
 
   _contaNegocio = negocio || {};
@@ -2201,6 +2204,7 @@ async function cargarContabilidadNegocio(negocioId) {
   _contaComentarios = comentarios || [];
   _contaInsumos = insumos || [];
   _contaRecetaItems = recetaItems || [];
+  _contaVisitas = visitas || [];
   await renovarGastosRecurrentes();
 
   // Primera vez que este negocio abre la pestaña: siembra categorías
@@ -2382,6 +2386,7 @@ async function cargarContabilidadNegocio(negocioId) {
   const btnInsumoAdd = $("#costos-insumo-add"); if (btnInsumoAdd) btnInsumoAdd.onclick = () => abrirFormInsumo();
   cargarInsumos();
   cargarCostosProductos();
+  cargarMetricas();
 
   if (!_contaNegocio.carta_tipo_negocio && !_tipoNegocioModalMostrado) {
     _tipoNegocioModalMostrado = true;
@@ -3347,6 +3352,82 @@ function abrirFormReceta(p) {
     toast("Receta guardada ✓");
     cargarContabilidadNegocio(_contaNegocioId);
   });
+}
+
+// ============================================================
+// MÉTRICAS: visitas a la carta pública (día/semana/mes), horas pico y top
+// 10 productos más vendidos. Las visitas se registran desde carta.js cada
+// vez que alguien abre la carta (sin login, sin dato personal -- solo
+// negocio_id + hora); acá solo se leen y se resumen. "Top productos" sale
+// de los pedidos ya cargados (hasta los últimos 100), agrupando por nombre
+// -- no depende de que el producto siga existiendo en la carta.
+function cargarMetricas() {
+  const hoy = new Date();
+  const inicioHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  const diffLunes = (inicioHoy.getDay() + 6) % 7; // lunes como primer día de la semana
+  const inicioSemana = new Date(inicioHoy); inicioSemana.setDate(inicioHoy.getDate() - diffLunes);
+  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+
+  const fechas = _contaVisitas.map(v => new Date(v.created_at));
+  const contarDesde = (desde) => fechas.filter(f => f >= desde).length;
+  const elHoy = $("#metricas-visitas-hoy"); if (elHoy) elHoy.textContent = contarDesde(inicioHoy);
+  const elSemana = $("#metricas-visitas-semana"); if (elSemana) elSemana.textContent = contarDesde(inicioSemana);
+  const elMes = $("#metricas-visitas-mes"); if (elMes) elMes.textContent = contarDesde(inicioMes);
+
+  const fmtHora = (h) => `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? "am" : "pm"}`;
+  const porHora = new Array(24).fill(0);
+  fechas.forEach(f => { porHora[f.getHours()]++; });
+  const horasConVisitas = porHora.map((n, h) => ({ h, n })).filter(x => x.n > 0).sort((a, b) => b.n - a.n);
+  const horasPicoEl = $("#metricas-horas-pico");
+  if (horasPicoEl) {
+    if (!horasConVisitas.length) {
+      horasPicoEl.innerHTML = `<p style="padding:8px 0">Todavía no hay suficientes visitas para ver un patrón.</p>`;
+    } else {
+      const max = horasConVisitas[0].n;
+      horasPicoEl.innerHTML = `
+        <p style="font-size:13px;color:var(--tinta-60);margin-bottom:14px">Tu hora pico es <strong style="color:var(--tinta)">${fmtHora(horasConVisitas[0].h)}–${fmtHora((horasConVisitas[0].h + 1) % 24)}</strong> con ${horasConVisitas[0].n} visita${horasConVisitas[0].n === 1 ? "" : "s"}.</p>
+        ${horasConVisitas.slice(0, 8).map(({ h, n }) => `
+        <div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;gap:10px;font-size:12.5px;margin-bottom:4px">
+            <span style="font-weight:600">${fmtHora(h)} – ${fmtHora((h + 1) % 24)}</span>
+            <span style="color:var(--tinta-60)">${n} visita${n === 1 ? "" : "s"}</span>
+          </div>
+          <div style="background:var(--crema-2);border-radius:100px;height:10px;overflow:hidden">
+            <div style="width:${(n / max) * 100}%;height:100%;background:var(--verde);border-radius:100px"></div>
+          </div>
+        </div>`).join("")}`;
+    }
+  }
+
+  const topEl = $("#metricas-top-productos");
+  if (topEl) {
+    const porProducto = new Map();
+    _contaCartaPedidos.filter(p => p.estado !== "cancelado").forEach(p => {
+      (Array.isArray(p.items) ? p.items : []).forEach(it => {
+        const nombre = it.nombre || "Producto";
+        const actual = porProducto.get(nombre) || { cantidad: 0, total: 0 };
+        actual.cantidad += Number(it.cantidad) || 0;
+        actual.total += (Number(it.precio) || 0) * (Number(it.cantidad) || 0);
+        porProducto.set(nombre, actual);
+      });
+    });
+    const top10 = [...porProducto.entries()].sort((a, b) => b[1].cantidad - a[1].cantidad).slice(0, 10);
+    if (!top10.length) {
+      topEl.innerHTML = `<p style="padding:8px 0">Todavía no tienes pedidos para ver tus productos más vendidos.</p>`;
+    } else {
+      const max = top10[0][1].cantidad;
+      topEl.innerHTML = top10.map(([nombre, d], i) => `
+        <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;gap:10px;font-size:12.5px;margin-bottom:4px">
+            <span style="font-weight:600">#${i + 1} ${esc(nombre)}</span>
+            <span style="color:var(--tinta-60);white-space:nowrap">${d.cantidad} vendido${d.cantidad === 1 ? "" : "s"} · ${COP(d.total)}</span>
+          </div>
+          <div style="background:var(--crema-2);border-radius:100px;height:10px;overflow:hidden">
+            <div style="width:${(d.cantidad / max) * 100}%;height:100%;background:var(--verde);border-radius:100px"></div>
+          </div>
+        </div>`).join("");
+    }
+  }
 }
 
 // Mesas (pedidos compartidos): cada mesa tiene su propio QR -- todo el que

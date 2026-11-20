@@ -254,6 +254,12 @@ async function iniciar() {
     return;
   }
 
+  // Métricas del negocio (pestaña "Métricas" en Mi Contabilidad): una visita
+  // = una carga de esta página, sin dato personal -- solo negocio_id + hora.
+  // "Fire and forget": si falla (ej. sin internet), la carta sigue
+  // funcionando igual, nunca bloquea nada.
+  supabase.from("negocio_carta_visitas").insert({ negocio_id: aliadoId }).then(() => {}, () => {});
+
   // Estilo "Desde $precio" + botón "Elegir" siempre visible (en vez del
   // stepper +/- para productos sin toppings) -- opcional, el negocio lo
   // prende desde "Personalizar mi carta".

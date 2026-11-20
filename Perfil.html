@@ -720,6 +720,7 @@
               <button class="seg-opt" data-contasub="pedido" type="button">🧾 Nuevo pedido</button>
               <button class="seg-opt" data-contasub="gasto" type="button">➖ Nuevo gasto</button>
               <button class="seg-opt" data-contasub="costos" type="button">🧮 Costos</button>
+              <button class="seg-opt" data-contasub="metricas" type="button">📈 Métricas</button>
             </div>
 
             <!-- ---------- BALANCE ---------- -->
@@ -1045,6 +1046,39 @@
                   <div id="costos-productos-list"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
                 </div>
               </details>
+            </div>
+
+            <!-- ---------- MÉTRICAS: visitas, horas pico, top productos ---------- -->
+            <div id="contasub-metricas" style="display:none">
+              <div class="stats" style="margin-bottom:20px">
+                <div class="stat">
+                  <div class="stat__top"><span class="stat__ic"><i data-lucide="eye"></i></span></div>
+                  <div class="stat__num" id="metricas-visitas-hoy">—</div>
+                  <div class="stat__lbl">Visitas hoy</div>
+                </div>
+                <div class="stat">
+                  <div class="stat__top"><span class="stat__ic"><i data-lucide="calendar-days"></i></span></div>
+                  <div class="stat__num" id="metricas-visitas-semana">—</div>
+                  <div class="stat__lbl">Visitas esta semana</div>
+                </div>
+                <div class="stat">
+                  <div class="stat__top"><span class="stat__ic"><i data-lucide="calendar"></i></span></div>
+                  <div class="stat__num" id="metricas-visitas-mes">—</div>
+                  <div class="stat__lbl">Visitas este mes</div>
+                </div>
+              </div>
+
+              <div class="card" style="margin-bottom:16px">
+                <div class="card__head"><span class="card__title">Horas pico</span></div>
+                <p style="font-size:12px;color:var(--tinta-45);margin-bottom:10px">Cuándo entra más gente a tu carta, de los últimos 90 días.</p>
+                <div id="metricas-horas-pico"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
+              </div>
+
+              <div class="card">
+                <div class="card__head"><span class="card__title">Top 10 productos más vendidos</span></div>
+                <p style="font-size:12px;color:var(--tinta-45);margin-bottom:10px">Basado en tus últimos pedidos de la carta.</p>
+                <div id="metricas-top-productos"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
+              </div>
             </div>
           </div>
         </section>
@@ -1473,7 +1507,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=261"></script>
+  <script type="module" src="dashboard.js?v=262"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">
