@@ -3147,6 +3147,80 @@ function abrirFormModGrupo(g = {}) {
 // una sola vez para todos sus productos.
 function unidadLabel(u) { return { g: "g", kg: "kg", ml: "ml", l: "L", unidad: "unidad", paquete: "paquete" }[u] || u || "unidad"; }
 
+// Fila reutilizable del editor de receta (insumo + cantidad + unidad) --
+// la usan tanto el modal dedicado "Receta de..." (desde Costos) como la
+// sección "Receta de este producto" embebida en "Agregar/editar producto"
+// (desde Productos de mi carta), para no tener que ir y venir de pestaña
+// por cada producto nuevo.
+function filaRecetaInsumoHtml(r = {}) {
+  return `
+    <div class="receta-fila" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+      <select class="cfg-input receta-insumo" style="flex:1;min-width:140px">
+        ${_contaInsumos.map(i => `<option value="${i.id}" ${r.insumo_id === i.id ? "selected" : ""}>${esc(i.nombre)} (${esc(unidadLabel(i.unidad))})</option>`).join("")}
+      </select>
+      <input class="cfg-input receta-cantidad" type="number" min="0" step="any" value="${r.cantidad_usada || ""}" placeholder="Cantidad" style="width:90px">
+      <span class="receta-unidad" style="font-size:12px;color:var(--tinta-45);min-width:34px">${esc(unidadLabel((_contaInsumos.find(i => i.id === (r.insumo_id || _contaInsumos[0]?.id)) || {}).unidad))}</span>
+      <button type="button" class="receta-quitar" style="border:none;background:none;cursor:pointer;color:#c0392b;font-size:16px">✕</button>
+    </div>`;
+}
+
+// Arma toda la interactividad del editor de receta (agregar/quitar filas,
+// mostrar la unidad del insumo elegido, calcular costo/margen en vivo) --
+// devuelve leerFilas() para el guardado y actualizar() para recalcular
+// desde afuera (ej. cuando cambia el precio en el mismo formulario).
+function configurarEditorReceta({ contenedorId, addId, previewId, obtenerPrecio }) {
+  const contenedor = $(`#${contenedorId}`);
+  if (!contenedor) return null;
+  const reenlazarQuitar = () => {
+    $$(".receta-quitar").forEach(btn => btn.onclick = () => {
+      if ($$(".receta-fila").length <= 1) return;
+      btn.closest(".receta-fila").remove();
+      actualizar();
+    });
+  };
+  const actualizarUnidades = () => {
+    $$(".receta-fila").forEach(fila => {
+      const insumoId = fila.querySelector(".receta-insumo")?.value;
+      const insumo = _contaInsumos.find(i => i.id === insumoId);
+      const span = fila.querySelector(".receta-unidad");
+      if (span) span.textContent = unidadLabel(insumo?.unidad);
+    });
+  };
+  const actualizar = () => {
+    actualizarUnidades();
+    const pct = Number(_contaNegocio.carta_costo_operativo_pct) || 0;
+    let costoInsumos = 0;
+    $$(".receta-fila").forEach(fila => {
+      const insumoId = fila.querySelector(".receta-insumo")?.value;
+      const cantidad = parseFloat(fila.querySelector(".receta-cantidad")?.value) || 0;
+      const insumo = _contaInsumos.find(i => i.id === insumoId);
+      if (insumo) costoInsumos += cantidad * (Number(insumo.costo_unitario) || 0);
+    });
+    const costoTotal = costoInsumos * (1 + pct / 100);
+    const precio = obtenerPrecio();
+    const margen = precio > 0 ? (((precio - costoTotal) / precio) * 100) : null;
+    const preview = $(`#${previewId}`);
+    if (preview) preview.textContent = `Costo: ${COP(costoTotal)}${margen != null ? ` · Margen: ${margen.toFixed(0)}%` : ""}`;
+  };
+  const reenlazarCambios = () => $$(".receta-insumo, .receta-cantidad").forEach(el => el.addEventListener("input", actualizar));
+  reenlazarQuitar();
+  reenlazarCambios();
+  actualizar();
+  $(`#${addId}`)?.addEventListener("click", () => {
+    contenedor.insertAdjacentHTML("beforeend", filaRecetaInsumoHtml());
+    reenlazarQuitar();
+    reenlazarCambios();
+    actualizar();
+  });
+  return {
+    actualizar,
+    leerFilas: () => $$(".receta-fila").map(fila => ({
+      insumo_id: fila.querySelector(".receta-insumo")?.value,
+      cantidad_usada: parseFloat(fila.querySelector(".receta-cantidad")?.value) || 0,
+    })).filter(f => f.insumo_id && f.cantidad_usada > 0),
+  };
+}
+
 async function guardarCostoOperativoPct() {
   const btn = $("#costos-operativo-guardar");
   const pct = Math.max(0, parseFloat($("#costos-operativo-pct")?.value) || 0);
@@ -3276,71 +3350,18 @@ function cargarCostosProductos() {
 function abrirFormReceta(p) {
   if (!_contaInsumos.length) { toast("Primero agrega al menos un insumo"); return; }
   const itemsActuales = _contaRecetaItems.filter(r => r.producto_id === p.id);
-  const filaInsumoHtml = (r = {}) => `
-    <div class="receta-fila" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
-      <select class="cfg-input receta-insumo" style="flex:1;min-width:140px">
-        ${_contaInsumos.map(i => `<option value="${i.id}" ${r.insumo_id === i.id ? "selected" : ""}>${esc(i.nombre)} (${esc(unidadLabel(i.unidad))})</option>`).join("")}
-      </select>
-      <input class="cfg-input receta-cantidad" type="number" min="0" step="any" value="${r.cantidad_usada || ""}" placeholder="Cantidad" style="width:90px">
-      <span class="receta-unidad" style="font-size:12px;color:var(--tinta-45);min-width:34px">${esc(unidadLabel((_contaInsumos.find(i => i.id === (r.insumo_id || _contaInsumos[0]?.id)) || {}).unidad))}</span>
-      <button type="button" class="receta-quitar" style="border:none;background:none;cursor:pointer;color:#c0392b;font-size:16px">✕</button>
-    </div>`;
   abrirModalTienda(`Receta de "${p.nombre}"`, `
     <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:14px">¿Qué insumos usa este producto y cuánto de cada uno?</p>
-    <div id="receta-filas">${itemsActuales.length ? itemsActuales.map(filaInsumoHtml).join("") : filaInsumoHtml()}</div>
+    <div id="receta-filas">${itemsActuales.length ? itemsActuales.map(filaRecetaInsumoHtml).join("") : filaRecetaInsumoHtml()}</div>
     <button type="button" class="btn" id="receta-add" style="margin-bottom:14px">+ Agregar insumo</button>
     <div id="receta-costo-preview" style="font-size:13px;font-weight:600;color:var(--tinta);margin-bottom:14px"></div>
     <button class="btn btn--primario" id="receta-save" data-id="${p.id}">Guardar receta</button>
   `);
-  const reenlazarQuitar = () => {
-    $$(".receta-quitar").forEach(btn => btn.onclick = () => {
-      if ($$(".receta-fila").length <= 1) return;
-      btn.closest(".receta-fila").remove();
-      actualizarPreviewReceta();
-    });
-  };
-  const actualizarPreviewReceta = () => {
-    const pct = Number(_contaNegocio.carta_costo_operativo_pct) || 0;
-    let costoInsumos = 0;
-    $$(".receta-fila").forEach(fila => {
-      const insumoId = fila.querySelector(".receta-insumo")?.value;
-      const cantidad = parseFloat(fila.querySelector(".receta-cantidad")?.value) || 0;
-      const insumo = _contaInsumos.find(i => i.id === insumoId);
-      if (insumo) costoInsumos += cantidad * (Number(insumo.costo_unitario) || 0);
-    });
-    const costoTotal = costoInsumos * (1 + pct / 100);
-    const precio = Number(p.precio) || 0;
-    const margen = precio > 0 ? (((precio - costoTotal) / precio) * 100) : null;
-    const preview = $("#receta-costo-preview");
-    if (preview) preview.textContent = `Costo: ${COP(costoTotal)}${margen != null ? ` · Margen: ${margen.toFixed(0)}% (precio de venta ${COP(precio)})` : ""}`;
-  };
-  const actualizarUnidadesReceta = () => {
-    $$(".receta-fila").forEach(fila => {
-      const insumoId = fila.querySelector(".receta-insumo")?.value;
-      const insumo = _contaInsumos.find(i => i.id === insumoId);
-      const span = fila.querySelector(".receta-unidad");
-      if (span) span.textContent = unidadLabel(insumo?.unidad);
-    });
-  };
-  const reenlazarCambios = () => $$(".receta-insumo, .receta-cantidad").forEach(el => el.addEventListener("input", () => { actualizarUnidadesReceta(); actualizarPreviewReceta(); }));
-  reenlazarQuitar();
-  reenlazarCambios();
-  actualizarUnidadesReceta();
-  actualizarPreviewReceta();
-  $("#receta-add")?.addEventListener("click", () => {
-    $("#receta-filas").insertAdjacentHTML("beforeend", filaInsumoHtml());
-    reenlazarQuitar();
-    reenlazarCambios();
-    actualizarUnidadesReceta();
-    actualizarPreviewReceta();
-  });
+  const editor = configurarEditorReceta({ contenedorId: "receta-filas", addId: "receta-add", previewId: "receta-costo-preview", obtenerPrecio: () => Number(p.precio) || 0 });
   $("#receta-save")?.addEventListener("click", async () => {
     const btn = $("#receta-save");
     btn.disabled = true; btn.textContent = "Guardando…";
-    const filas = $$(".receta-fila").map(fila => ({
-      insumo_id: fila.querySelector(".receta-insumo")?.value,
-      cantidad_usada: parseFloat(fila.querySelector(".receta-cantidad")?.value) || 0,
-    })).filter(f => f.insumo_id && f.cantidad_usada > 0);
+    const filas = editor.leerFilas();
     await supabase.from("negocio_carta_producto_insumos").delete().eq("producto_id", p.id);
     if (filas.length) {
       const { error } = await supabase.from("negocio_carta_producto_insumos").insert(
@@ -3611,9 +3632,23 @@ function abrirFormProductoCarta(p = {}) {
           <input type="checkbox" data-ccp-grupo value="${g.id}" ${p.id && _contaModProdGrupos.some(pg => pg.producto_id === p.id && pg.grupo_id === g.id) ? "checked" : ""}> ${esc(g.nombre)}
         </label>`).join("")}
     </div>` : ""}
+    ${_contaInsumos.length ? `
+    <details class="cfg-campo" style="margin-bottom:14px">
+      <summary class="cfg-label" style="cursor:pointer">Receta de este producto <span style="font-weight:400;color:var(--tinta-45)">(opcional -- calcula el costo y el margen de una vez)</span></summary>
+      <div style="margin-top:10px">
+        <div id="ccp-receta-filas">${(p.id ? _contaRecetaItems.filter(r => r.producto_id === p.id) : []).length ? _contaRecetaItems.filter(r => r.producto_id === p.id).map(filaRecetaInsumoHtml).join("") : filaRecetaInsumoHtml()}</div>
+        <button type="button" class="btn" id="ccp-receta-add" style="margin-bottom:10px">+ Agregar insumo</button>
+        <div id="ccp-receta-costo-preview" style="font-size:12.5px;font-weight:600;color:var(--tinta)"></div>
+      </div>
+    </details>` : `<p style="font-size:12px;color:var(--tinta-45);margin:-4px 0 14px">Agrega insumos en la pestaña Costos si quieres calcular el costo de este producto.</p>`}
     <button class="btn btn--primario" id="ccp-save" data-id="${p.id || ""}">${p.id ? "Guardar cambios" : "Agregar producto"}</button>
   `);
   formatearInputMoneda($("#ccp-precio"));
+  const editorRecetaProducto = _contaInsumos.length ? configurarEditorReceta({
+    contenedorId: "ccp-receta-filas", addId: "ccp-receta-add", previewId: "ccp-receta-costo-preview",
+    obtenerPrecio: () => valorMoneda($("#ccp-precio")),
+  }) : null;
+  $("#ccp-precio")?.addEventListener("input", () => editorRecetaProducto?.actualizar());
   const inputFotoProducto = $("#ccp-foto");
   if (inputFotoProducto) inputFotoProducto.onchange = (e) => {
     const archivo = e.target.files?.[0];
@@ -3666,6 +3701,15 @@ function abrirFormProductoCarta(p = {}) {
     await supabase.from("negocio_carta_producto_grupos").delete().eq("producto_id", productoId);
     if (gruposSeleccionados.length) {
       await supabase.from("negocio_carta_producto_grupos").insert(gruposSeleccionados.map(grupo_id => ({ negocio_id: _contaNegocioId, producto_id: productoId, grupo_id })));
+    }
+    if (editorRecetaProducto) {
+      const filasReceta = editorRecetaProducto.leerFilas();
+      await supabase.from("negocio_carta_producto_insumos").delete().eq("producto_id", productoId);
+      if (filasReceta.length) {
+        await supabase.from("negocio_carta_producto_insumos").insert(
+          filasReceta.map(f => ({ negocio_id: _contaNegocioId, producto_id: productoId, insumo_id: f.insumo_id, cantidad_usada: f.cantidad_usada }))
+        );
+      }
     }
     cerrarModalTienda();
     toast(p.id ? "Producto actualizado ✓" : "Producto agregado ✓");
