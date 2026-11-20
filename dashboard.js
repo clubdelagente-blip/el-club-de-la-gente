@@ -1721,6 +1721,8 @@ let _contaModGrupos = [];
 let _contaModOpciones = [];
 let _contaModProdGrupos = [];
 let _contaMesas = [];
+let _contaInsumos = [];
+let _contaRecetaItems = [];
 let _contaCategoriasOrdenCarta = [];
 let _contaAvisosCarta = [];
 let _cartaPedidosRealtimeCh = null;
@@ -2164,12 +2166,12 @@ async function cargarContabilidadNegocio(negocioId) {
   $$("#contasub-nav [data-contasub]").forEach(b => {
     b.onclick = () => {
       $$("#contasub-nav [data-contasub]").forEach(x => x.classList.toggle("is-on", x === b));
-      ["balance", "pedido", "gasto"].forEach(s => { const el = $(`#contasub-${s}`); if (el) el.style.display = s === b.dataset.contasub ? "" : "none"; });
+      ["balance", "pedido", "gasto", "costos"].forEach(s => { const el = $(`#contasub-${s}`); if (el) el.style.display = s === b.dataset.contasub ? "" : "none"; });
     };
   });
 
-  const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }, { data: mesas }, { data: comentarios }] = await Promise.all([
-    supabase.from("aliados").select("imagen_url, instagram, carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio, carta_precio_desde").eq("id", negocioId).maybeSingle(),
+  const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }, { data: mesas }, { data: comentarios }, { data: insumos }, { data: recetaItems }] = await Promise.all([
+    supabase.from("aliados").select("imagen_url, instagram, carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio, carta_precio_desde, carta_costo_operativo_pct").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
     supabase.from("negocio_categorias_ingreso").select("*").eq("negocio_id", negocioId).order("nombre"),
@@ -2181,6 +2183,8 @@ async function cargarContabilidadNegocio(negocioId) {
     supabase.from("negocio_carta_producto_grupos").select("*").eq("negocio_id", negocioId),
     supabase.from("negocio_mesas").select("*").eq("negocio_id", negocioId).order("orden"),
     supabase.from("negocio_carta_comentarios").select("*, negocio_carta_productos(nombre)").eq("negocio_id", negocioId).order("created_at", { ascending: false }),
+    supabase.from("negocio_insumos").select("*").eq("negocio_id", negocioId).order("nombre"),
+    supabase.from("negocio_carta_producto_insumos").select("*").eq("negocio_id", negocioId),
   ]);
 
   _contaNegocio = negocio || {};
@@ -2195,6 +2199,8 @@ async function cargarContabilidadNegocio(negocioId) {
   _contaModProdGrupos = modProdGrupos || [];
   _contaMesas = mesas || [];
   _contaComentarios = comentarios || [];
+  _contaInsumos = insumos || [];
+  _contaRecetaItems = recetaItems || [];
   await renovarGastosRecurrentes();
 
   // Primera vez que este negocio abre la pestaña: siembra categorías
@@ -2371,6 +2377,11 @@ async function cargarContabilidadNegocio(negocioId) {
   cargarCartaPedidos();
   cargarComentariosCarta();
   mostrarSugerenciaCategorias();
+  const operativoPctInput = $("#costos-operativo-pct"); if (operativoPctInput) operativoPctInput.value = _contaNegocio.carta_costo_operativo_pct ?? 0;
+  const btnOperativoGuardar = $("#costos-operativo-guardar"); if (btnOperativoGuardar) btnOperativoGuardar.onclick = () => guardarCostoOperativoPct();
+  const btnInsumoAdd = $("#costos-insumo-add"); if (btnInsumoAdd) btnInsumoAdd.onclick = () => abrirFormInsumo();
+  cargarInsumos();
+  cargarCostosProductos();
 
   if (!_contaNegocio.carta_tipo_negocio && !_tipoNegocioModalMostrado) {
     _tipoNegocioModalMostrado = true;
@@ -3115,6 +3126,213 @@ function abrirFormModGrupo(g = {}) {
     if (errOpc) { toast("Error: " + errOpc.message); resetBtn(); return; }
     cerrarModalTienda();
     toast(g.id ? "Grupo actualizado ✓" : "Grupo creado ✓");
+    cargarContabilidadNegocio(_contaNegocioId);
+  });
+}
+
+// ============================================================
+// COSTOS: insumos (materia prima) + receta por producto -> costo y margen
+// automáticos. El costo de un insumo se calcula una sola vez al cargarlo
+// (costo_compra / cantidad_comprada, guardado ya resuelto como
+// costo_unitario -- no un valor generado en la base de datos, para no
+// depender de que la vista pública tenga que exponerlo: esto vive solo en
+// el dashboard del negocio). El costo de un producto es la suma de
+// (cantidad_usada × costo_unitario) de cada insumo de su receta, más el %
+// operativo configurable (mano de obra, arriendo...) que el negocio define
+// una sola vez para todos sus productos.
+function unidadLabel(u) { return { g: "g", kg: "kg", ml: "ml", l: "L", unidad: "unidad", paquete: "paquete" }[u] || u || "unidad"; }
+
+async function guardarCostoOperativoPct() {
+  const btn = $("#costos-operativo-guardar");
+  const pct = Math.max(0, parseFloat($("#costos-operativo-pct")?.value) || 0);
+  if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
+  const { error } = await supabase.from("aliados").update({ carta_costo_operativo_pct: pct }).eq("id", _contaNegocioId);
+  if (btn) { btn.disabled = false; btn.textContent = "Guardar"; }
+  if (error) { toast("Error: " + error.message); return; }
+  _contaNegocio.carta_costo_operativo_pct = pct;
+  toast("Guardado ✓");
+  cargarCostosProductos();
+}
+
+function cargarInsumos() {
+  const list = $("#costos-insumos-list");
+  if (!list) return;
+  if (!_contaInsumos.length) { list.innerHTML = `<p style="padding:8px 0">Aún no tienes insumos. Agrega harina, queso, vasos... lo que uses para preparar tus productos.</p>`; return; }
+  list.innerHTML = _contaInsumos.map(i => `
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #ebebeb">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:14px">${esc(i.nombre)}</div>
+        <div style="font-size:12px;color:#777">${COP(i.costo_unitario)} / ${esc(unidadLabel(i.unidad))} · compraste ${i.cantidad_comprada} ${esc(unidadLabel(i.unidad))} por ${COP(i.costo_compra)}</div>
+      </div>
+      <button data-ed-insumo="${i.id}" style="border:none;background:none;cursor:pointer;color:#777">${ic("pencil")}</button>
+      <button data-rm-insumo="${i.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button>
+    </div>`).join("");
+  if (window.lucide) lucide.createIcons();
+  list.querySelectorAll("[data-ed-insumo]").forEach(btn => btn.addEventListener("click", () => {
+    const i = _contaInsumos.find(x => x.id === btn.dataset.edInsumo);
+    if (i) abrirFormInsumo(i);
+  }));
+  list.querySelectorAll("[data-rm-insumo]").forEach(btn => btn.addEventListener("click", async () => {
+    if (!confirm("¿Eliminar este insumo? Se quita de las recetas que lo usen.")) return;
+    await supabase.from("negocio_insumos").delete().eq("id", btn.dataset.rmInsumo);
+    toast("Insumo eliminado");
+    cargarContabilidadNegocio(_contaNegocioId);
+  }));
+}
+
+function abrirFormInsumo(i = {}) {
+  abrirModalTienda(i.id ? "Editar insumo" : "Nuevo insumo", `
+    <div class="cfg-campo"><label class="cfg-label">Nombre *</label><input class="cfg-input" id="ins-nombre" type="text" value="${esc(i.nombre || "")}" placeholder="Ej: Harina de trigo"></div>
+    <div class="cfg-campo"><label class="cfg-label">Unidad de medida *</label>
+      <select class="cfg-input" id="ins-unidad">
+        <option value="g" ${i.unidad === "g" ? "selected" : ""}>Gramos (g)</option>
+        <option value="kg" ${i.unidad === "kg" ? "selected" : ""}>Kilogramos (kg)</option>
+        <option value="ml" ${i.unidad === "ml" ? "selected" : ""}>Mililitros (ml)</option>
+        <option value="l" ${i.unidad === "l" ? "selected" : ""}>Litros (L)</option>
+        <option value="unidad" ${!i.unidad || i.unidad === "unidad" ? "selected" : ""}>Unidad</option>
+        <option value="paquete" ${i.unidad === "paquete" ? "selected" : ""}>Paquete</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="cfg-campo"><label class="cfg-label">Cantidad comprada *</label><input class="cfg-input" id="ins-cantidad" type="number" min="0" step="any" value="${i.cantidad_comprada || ""}" placeholder="Ej: 50"></div>
+      <div class="cfg-campo"><label class="cfg-label">Costo de la compra *</label><input class="cfg-input" id="ins-costo" type="text" inputmode="numeric" value="${i.costo_compra ? Number(i.costo_compra).toLocaleString("es-CO") : ""}" placeholder="Ej: 150.000"></div>
+    </div>
+    <p id="ins-costo-unitario-preview" style="font-size:12.5px;color:var(--tinta-60);margin:-4px 0 14px">Costo por unidad: --</p>
+    <button class="btn btn--primario" id="ins-save" data-id="${i.id || ""}">${i.id ? "Guardar cambios" : "Agregar insumo"}</button>
+  `);
+  formatearInputMoneda($("#ins-costo"));
+  const actualizarPreviewInsumo = () => {
+    const cantidad = parseFloat($("#ins-cantidad")?.value) || 0;
+    const costo = valorMoneda($("#ins-costo")) || 0;
+    const unidad = $("#ins-unidad")?.value;
+    const preview = $("#ins-costo-unitario-preview");
+    if (preview) preview.textContent = cantidad > 0 ? `Costo por unidad: ${COP(costo / cantidad)} / ${unidadLabel(unidad)}` : "Costo por unidad: --";
+  };
+  $("#ins-cantidad")?.addEventListener("input", actualizarPreviewInsumo);
+  $("#ins-costo")?.addEventListener("input", actualizarPreviewInsumo);
+  $("#ins-unidad")?.addEventListener("change", actualizarPreviewInsumo);
+  actualizarPreviewInsumo();
+  $("#ins-save")?.addEventListener("click", async () => {
+    const btn = $("#ins-save");
+    const resetBtn = () => { btn.disabled = false; btn.textContent = i.id ? "Guardar cambios" : "Agregar insumo"; };
+    const nombre = $("#ins-nombre")?.value.trim();
+    const unidad = $("#ins-unidad")?.value;
+    const cantidad = parseFloat($("#ins-cantidad")?.value) || 0;
+    const costo = valorMoneda($("#ins-costo")) || 0;
+    if (!nombre) { toast("El nombre es obligatorio"); return; }
+    if (!cantidad) { toast("La cantidad comprada debe ser mayor a 0"); return; }
+    btn.disabled = true; btn.textContent = "Guardando…";
+    const payload = { negocio_id: _contaNegocioId, nombre, unidad, cantidad_comprada: cantidad, costo_compra: costo, costo_unitario: costo / cantidad };
+    const { error } = i.id
+      ? await supabase.from("negocio_insumos").update(payload).eq("id", i.id)
+      : await supabase.from("negocio_insumos").insert(payload);
+    if (error) { toast("Error: " + error.message); resetBtn(); return; }
+    cerrarModalTienda();
+    toast(i.id ? "Insumo actualizado ✓" : "Insumo agregado ✓");
+    cargarContabilidadNegocio(_contaNegocioId);
+  });
+}
+
+function costoInsumosProducto(productoId) {
+  return _contaRecetaItems.filter(r => r.producto_id === productoId).reduce((sum, r) => {
+    const insumo = _contaInsumos.find(i => i.id === r.insumo_id);
+    return insumo ? sum + (Number(r.cantidad_usada) || 0) * (Number(insumo.costo_unitario) || 0) : sum;
+  }, 0);
+}
+
+function cargarCostosProductos() {
+  const list = $("#costos-productos-list");
+  if (!list) return;
+  if (!_contaCartaProductos.length) { list.innerHTML = `<p style="padding:8px 0">Primero agrega productos en "Productos de mi carta".</p>`; return; }
+  const pct = Number(_contaNegocio.carta_costo_operativo_pct) || 0;
+  list.innerHTML = _contaCartaProductos.map(p => {
+    const tieneReceta = _contaRecetaItems.some(r => r.producto_id === p.id);
+    const costoTotal = costoInsumosProducto(p.id) * (1 + pct / 100);
+    const precio = Number(p.precio) || 0;
+    const margenPct = tieneReceta && precio > 0 ? ((precio - costoTotal) / precio) * 100 : null;
+    const colorMargen = margenPct == null ? "#999" : margenPct < 0 ? "#c0392b" : margenPct < 20 ? "#b45309" : "#0e7a3e";
+    return `
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #ebebeb;flex-wrap:wrap">
+      <div style="flex:1;min-width:160px">
+        <div style="font-weight:600;font-size:14px">${esc(p.nombre)}</div>
+        <div style="font-size:12px;color:#777">Precio ${COP(precio)}${tieneReceta ? ` · Costo ${COP(costoTotal)}` : ""}</div>
+      </div>
+      <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${colorMargen}22;color:${colorMargen};white-space:nowrap">${margenPct != null ? `${margenPct.toFixed(0)}% margen` : "Sin receta"}</span>
+      <button data-ed-receta="${p.id}" class="btn" style="padding:7px 12px;font-size:12px">${tieneReceta ? "Editar receta" : "Armar receta"}</button>
+    </div>`;
+  }).join("");
+  list.querySelectorAll("[data-ed-receta]").forEach(btn => btn.addEventListener("click", () => {
+    const p = _contaCartaProductos.find(x => x.id === btn.dataset.edReceta);
+    if (p) abrirFormReceta(p);
+  }));
+}
+
+function abrirFormReceta(p) {
+  if (!_contaInsumos.length) { toast("Primero agrega al menos un insumo"); return; }
+  const itemsActuales = _contaRecetaItems.filter(r => r.producto_id === p.id);
+  const filaInsumoHtml = (r = {}) => `
+    <div class="receta-fila" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+      <select class="cfg-input receta-insumo" style="flex:1;min-width:140px">
+        ${_contaInsumos.map(i => `<option value="${i.id}" ${r.insumo_id === i.id ? "selected" : ""}>${esc(i.nombre)} (${esc(unidadLabel(i.unidad))})</option>`).join("")}
+      </select>
+      <input class="cfg-input receta-cantidad" type="number" min="0" step="any" value="${r.cantidad_usada || ""}" placeholder="Cantidad" style="width:110px">
+      <button type="button" class="receta-quitar" style="border:none;background:none;cursor:pointer;color:#c0392b;font-size:16px">✕</button>
+    </div>`;
+  abrirModalTienda(`Receta de "${p.nombre}"`, `
+    <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:14px">¿Qué insumos usa este producto y cuánto de cada uno?</p>
+    <div id="receta-filas">${itemsActuales.length ? itemsActuales.map(filaInsumoHtml).join("") : filaInsumoHtml()}</div>
+    <button type="button" class="btn" id="receta-add" style="margin-bottom:14px">+ Agregar insumo</button>
+    <div id="receta-costo-preview" style="font-size:13px;font-weight:600;color:var(--tinta);margin-bottom:14px"></div>
+    <button class="btn btn--primario" id="receta-save" data-id="${p.id}">Guardar receta</button>
+  `);
+  const reenlazarQuitar = () => {
+    $$(".receta-quitar").forEach(btn => btn.onclick = () => {
+      if ($$(".receta-fila").length <= 1) return;
+      btn.closest(".receta-fila").remove();
+      actualizarPreviewReceta();
+    });
+  };
+  const actualizarPreviewReceta = () => {
+    const pct = Number(_contaNegocio.carta_costo_operativo_pct) || 0;
+    let costoInsumos = 0;
+    $$(".receta-fila").forEach(fila => {
+      const insumoId = fila.querySelector(".receta-insumo")?.value;
+      const cantidad = parseFloat(fila.querySelector(".receta-cantidad")?.value) || 0;
+      const insumo = _contaInsumos.find(i => i.id === insumoId);
+      if (insumo) costoInsumos += cantidad * (Number(insumo.costo_unitario) || 0);
+    });
+    const costoTotal = costoInsumos * (1 + pct / 100);
+    const precio = Number(p.precio) || 0;
+    const margen = precio > 0 ? (((precio - costoTotal) / precio) * 100) : null;
+    const preview = $("#receta-costo-preview");
+    if (preview) preview.textContent = `Costo: ${COP(costoTotal)}${margen != null ? ` · Margen: ${margen.toFixed(0)}% (precio de venta ${COP(precio)})` : ""}`;
+  };
+  const reenlazarCambios = () => $$(".receta-insumo, .receta-cantidad").forEach(el => el.addEventListener("input", actualizarPreviewReceta));
+  reenlazarQuitar();
+  reenlazarCambios();
+  actualizarPreviewReceta();
+  $("#receta-add")?.addEventListener("click", () => {
+    $("#receta-filas").insertAdjacentHTML("beforeend", filaInsumoHtml());
+    reenlazarQuitar();
+    reenlazarCambios();
+    actualizarPreviewReceta();
+  });
+  $("#receta-save")?.addEventListener("click", async () => {
+    const btn = $("#receta-save");
+    btn.disabled = true; btn.textContent = "Guardando…";
+    const filas = $$(".receta-fila").map(fila => ({
+      insumo_id: fila.querySelector(".receta-insumo")?.value,
+      cantidad_usada: parseFloat(fila.querySelector(".receta-cantidad")?.value) || 0,
+    })).filter(f => f.insumo_id && f.cantidad_usada > 0);
+    await supabase.from("negocio_carta_producto_insumos").delete().eq("producto_id", p.id);
+    if (filas.length) {
+      const { error } = await supabase.from("negocio_carta_producto_insumos").insert(
+        filas.map(f => ({ negocio_id: _contaNegocioId, producto_id: p.id, insumo_id: f.insumo_id, cantidad_usada: f.cantidad_usada }))
+      );
+      if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Guardar receta"; return; }
+    }
+    cerrarModalTienda();
+    toast("Receta guardada ✓");
     cargarContabilidadNegocio(_contaNegocioId);
   });
 }

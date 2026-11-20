@@ -719,6 +719,7 @@
               <button class="seg-opt is-on" data-contasub="balance" type="button">📊 Balance</button>
               <button class="seg-opt" data-contasub="pedido" type="button">🧾 Nuevo pedido</button>
               <button class="seg-opt" data-contasub="gasto" type="button">➖ Nuevo gasto</button>
+              <button class="seg-opt" data-contasub="costos" type="button">🧮 Costos</button>
             </div>
 
             <!-- ---------- BALANCE ---------- -->
@@ -1014,6 +1015,36 @@
             <div id="contasub-gasto" style="display:none">
               <button class="btn btn--primario" id="conta-gasto-add" type="button" style="margin-bottom:14px;width:100%;justify-content:center">➖ Nuevo gasto</button>
               <p style="font-size:12.5px;color:var(--tinta-45);text-align:center">El historial completo de gastos está en la pestaña Balance.</p>
+            </div>
+
+            <!-- ---------- COSTOS: insumos, receta por producto y margen ---------- -->
+            <div id="contasub-costos" style="display:none">
+              <div class="card" style="margin-bottom:16px">
+                <div class="card__head"><span class="card__title">% operativo adicional</span></div>
+                <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:12px">Se suma encima del costo de insumos para calcular un margen más real (mano de obra, arriendo, gas, empaques...). Déjalo en 0 si por ahora solo quieres ver el costo de materia prima.</p>
+                <div style="display:flex;gap:10px;align-items:center">
+                  <input class="cfg-input" id="costos-operativo-pct" type="number" min="0" step="1" style="max-width:120px" placeholder="0">
+                  <span style="font-size:14px;color:var(--tinta-60)">%</span>
+                  <button class="btn btn--primario" id="costos-operativo-guardar" style="margin-left:auto">Guardar</button>
+                </div>
+              </div>
+
+              <details class="card" open>
+                <summary style="cursor:pointer;font-family:'Anton',sans-serif;font-size:17px;font-weight:700">Insumos</summary>
+                <div style="padding:16px 0 4px">
+                  <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:14px">Materia prima que compras (harina, queso, vasos...). El costo por unidad se calcula solo a partir de lo que pagaste.</p>
+                  <button class="btn btn--primario" id="costos-insumo-add" type="button" style="margin-bottom:14px;width:100%;justify-content:center">+ Agregar insumo</button>
+                  <div id="costos-insumos-list"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
+                </div>
+              </details>
+
+              <details class="card" style="margin-top:16px" open>
+                <summary style="cursor:pointer;font-family:'Anton',sans-serif;font-size:17px;font-weight:700">Costo y margen por producto</summary>
+                <div style="padding:16px 0 4px">
+                  <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:14px">Arma la receta de cada producto (qué insumos usa y cuánto) para que el costo y el margen salgan solos.</p>
+                  <div id="costos-productos-list"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
+                </div>
+              </details>
             </div>
           </div>
         </section>
@@ -1442,7 +1473,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=259"></script>
+  <script type="module" src="dashboard.js?v=260"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">
