@@ -2764,7 +2764,7 @@ function abrirConstructorPedido() {
             </div>
             <button class="btn btn--primario" id="cp-pos-cobrar" style="width:100%;justify-content:center;flex:none" disabled>Elige un producto</button>
           </div>
-          <div id="cp-pos-detalle-view" hidden style="display:flex;flex-direction:column;flex:1;min-height:0"></div>
+          <div id="cp-pos-detalle-view" style="display:none;flex-direction:column;flex:1;min-height:0"></div>
         </div>
       </div>
     </div>
@@ -2789,7 +2789,7 @@ function abrirConstructorPedido() {
           <div style="font-size:12px;color:#777;margin-top:2px">${COP(it.precioUnit * it.cantidad)}</div>
         </div>
         <button type="button" data-pos-quitar="${it.id}" style="border:none;background:none;color:#c0392b;cursor:pointer;font-size:14px;flex:none">✕</button>
-      </div>`).join("") : `<p style="color:#777;font-size:13px">Toca un producto para agregarlo.</p>`;
+      </div>`).join("") : `<p style="color:#777;font-size:13px">Toca un producto de la grilla para agregarlo aquí.</p>`;
     const total = carritoPos.reduce((s, it) => s + it.precioUnit * it.cantidad, 0);
     if (totalEl) totalEl.textContent = COP(total);
     if (cobrarBtn) { cobrarBtn.disabled = !carritoPos.length; cobrarBtn.textContent = carritoPos.length ? `Cobrar ${COP(total)}` : "Elige un producto"; }
@@ -2797,6 +2797,7 @@ function abrirConstructorPedido() {
       const idx = carritoPos.findIndex(it => it.id === btn.dataset.posQuitar);
       if (idx > -1) carritoPos.splice(idx, 1);
       renderCart();
+      renderGrid(busquedaActual);
     }));
   };
 
@@ -2812,8 +2813,8 @@ function abrirConstructorPedido() {
     const cartView = $("#cp-pos-cart-view");
     const detView = $("#cp-pos-detalle-view");
     if (!detView) return;
-    if (cartView) cartView.hidden = true;
-    detView.hidden = false;
+    if (cartView) cartView.style.display = "none";
+    detView.style.display = "flex";
 
     const calcularExtra = () => {
       let extra = 0;
@@ -2875,7 +2876,7 @@ function abrirConstructorPedido() {
     const tope = () => p.stock_activo ? Math.max(0, p.stock_cantidad ?? 0) : Infinity;
     $("#cp-det-qty-mas")?.addEventListener("click", () => { if (cantidad < tope()) { cantidad++; pintar(); } });
     $("#cp-det-qty-menos")?.addEventListener("click", () => { if (cantidad > 1) { cantidad--; pintar(); } });
-    const volverAlCarrito = () => { detView.hidden = true; if (cartView) cartView.hidden = false; };
+    const volverAlCarrito = () => { detView.style.display = "none"; if (cartView) cartView.style.display = "flex"; };
     $("#cp-det-volver")?.addEventListener("click", volverAlCarrito);
     $("#cp-det-agregar")?.addEventListener("click", () => {
       const modificadores = [];
@@ -2886,24 +2887,52 @@ function abrirConstructorPedido() {
       carritoPos.push({ id: crypto.randomUUID(), producto_id: p.id, nombre: p.nombre, precioUnit: Number(p.precio) + calcularExtra(), cantidad, modificadores });
       volverAlCarrito();
       renderCart();
+      renderGrid(busquedaActual);
     });
     pintar();
   };
 
+  // Un producto SIN toppings configurados no necesita el panel de
+  // personalización -- tocarlo lo suma de una vez al carrito (si ya estaba,
+  // solo sube la cantidad), para poder marcar varios productos seguidos sin
+  // ida y vuelta. Uno CON toppings sí abre el panel, porque hay algo real
+  // que elegir.
+  const agregarRapido = (p) => {
+    const tope = p.stock_activo ? Math.max(0, p.stock_cantidad ?? 0) : Infinity;
+    const existente = carritoPos.find(it => it.producto_id === p.id && !it.modificadores.length);
+    if ((existente?.cantidad || 0) >= tope) { toast("No queda más stock de este producto"); return; }
+    if (existente) existente.cantidad++;
+    else carritoPos.push({ id: crypto.randomUUID(), producto_id: p.id, nombre: p.nombre, precioUnit: Number(p.precio), cantidad: 1, modificadores: [] });
+    renderCart();
+    renderGrid(busquedaActual);
+  };
+
+  let busquedaActual = "";
   const renderGrid = (filtro = "") => {
+    busquedaActual = filtro;
     const gridEl = $("#cp-pos-grid");
     if (!gridEl) return;
     const q = filtro.trim().toLowerCase();
     const productos = _contaCartaProductos.filter(p => p.disponible !== false && (!q || p.nombre.toLowerCase().includes(q)));
-    gridEl.innerHTML = productos.length ? productos.map(p => `
-      <button type="button" data-pos-prod="${p.id}" style="text-align:left;border:1px solid #ebebeb;border-radius:12px;overflow:hidden;background:#fff;cursor:pointer;padding:0;display:flex;flex-direction:column">
+    gridEl.innerHTML = productos.length ? productos.map(p => {
+      const enCarrito = carritoPos.filter(it => it.producto_id === p.id && !it.modificadores.length).reduce((s, it) => s + it.cantidad, 0);
+      return `
+      <button type="button" data-pos-prod="${p.id}" style="position:relative;text-align:left;border:1px solid #ebebeb;border-radius:12px;overflow:hidden;background:#fff;cursor:pointer;padding:0;display:flex;flex-direction:column">
+        ${enCarrito ? `<span style="position:absolute;top:6px;right:6px;background:var(--verde);color:#fff;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px">${enCarrito}</span>` : ""}
         <div style="aspect-ratio:1;background:#f0faf4 center/cover no-repeat;${p.imagen_url ? `background-image:url('${esc(p.imagen_url)}')` : ""};display:flex;align-items:center;justify-content:center;font-size:26px;color:#bbb">${p.imagen_url ? "" : "🍽️"}</div>
         <div style="padding:8px 10px">
           <div style="font-weight:600;font-size:12.5px;line-height:1.25">${esc(p.nombre)}</div>
           <div style="font-size:12px;color:#777;margin-top:2px">${COP(p.precio)}</div>
         </div>
-      </button>`).join("") : `<p style="grid-column:1/-1;color:#777">Sin resultados</p>`;
-    gridEl.querySelectorAll("[data-pos-prod]").forEach(btn => btn.addEventListener("click", () => abrirDetalleProducto(btn.dataset.posProd)));
+      </button>`;
+    }).join("") : `<p style="grid-column:1/-1;color:#777">Sin resultados</p>`;
+    gridEl.querySelectorAll("[data-pos-prod]").forEach(btn => btn.addEventListener("click", () => {
+      const productoId = btn.dataset.posProd;
+      const p = _contaCartaProductos.find(x => x.id === productoId);
+      if (!p) return;
+      if (gruposDeProducto(productoId).length) abrirDetalleProducto(productoId);
+      else agregarRapido(p);
+    }));
   };
 
   renderGrid();
