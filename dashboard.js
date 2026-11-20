@@ -1781,12 +1781,9 @@ function abrirSelectorTipoNegocio() {
 }
 
 const ESTADO_PEDIDO_CARTA = {
-  pendiente:      { c: "#b45309", bg: "#fef3c7", t: "Pendiente",      siguiente: "aceptado",       siguienteLbl: "Aceptar pedido" },
-  aceptado:       { c: "#1d4ed8", bg: "#dbeafe", t: "Aceptado",       siguiente: "en_preparacion",  siguienteLbl: "Pasar a preparación" },
-  en_preparacion: { c: "#7c3aed", bg: "#ede9fe", t: "En preparación", siguiente: "listo",           siguienteLbl: "Marcar listo" },
-  listo:          { c: "#0e7a3e", bg: "#dcfce7", t: "Listo",          siguiente: "entregado",       siguienteLbl: "Marcar entregado" },
-  entregado:      { c: "#095544", bg: "#e8f5ee", t: "Entregado",      siguiente: null,              siguienteLbl: null },
-  cancelado:      { c: "#c0392b", bg: "#fdecea", t: "Cancelado",      siguiente: null,              siguienteLbl: null },
+  pendiente: { c: "#b45309", bg: "#fef3c7", t: "Pendiente", siguiente: "entregado", siguienteLbl: "Marcar entregado" },
+  entregado: { c: "#095544", bg: "#e8f5ee", t: "Entregado", siguiente: null,        siguienteLbl: null },
+  cancelado: { c: "#c0392b", bg: "#fdecea", t: "Cancelado", siguiente: null,        siguienteLbl: null },
 };
 
 // Respaldo para cuando navigator.clipboard falla o no existe (mismo
@@ -1963,10 +1960,15 @@ function mostrarBannerPedidoNuevo() {
 function suscribirPedidosCartaRealtime(negocioId) {
   if (_cartaPedidosRealtimeCh) return;
   _cartaPedidosRealtimeCh = supabase.channel("carta-pedidos-" + negocioId)
-    .on("postgres_changes", { event: "INSERT", schema: "public", table: "negocio_carta_pedidos", filter: `negocio_id=eq.${negocioId}` }, async () => {
-      reproducirSonidoPedido();
-      anunciarPedidoNuevo();
-      mostrarBannerPedidoNuevo();
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "negocio_carta_pedidos", filter: `negocio_id=eq.${negocioId}` }, async (payload) => {
+      // Un pedido "manual" lo acaba de digitar el propio negocio desde
+      // "Nuevo pedido" -- no tiene sentido avisarle a sí mismo con sonido,
+      // voz y el banner "¡Nuevo pedido de la carta!" (ni es de la carta).
+      if (payload.new?.origen !== "manual") {
+        reproducirSonidoPedido();
+        anunciarPedidoNuevo();
+        mostrarBannerPedidoNuevo();
+      }
       const { data } = await supabase.from("negocio_carta_pedidos").select("*").eq("negocio_id", negocioId).order("created_at", { ascending: false }).limit(100);
       _contaCartaPedidos = data || [];
       cargarCartaPedidos();
@@ -2699,33 +2701,36 @@ function abrirFormGastoNegocio(g = {}) {
   });
 }
 
+// Grupos de modificadores (toppings/salsas/tamaño) configurados para un
+// producto puntual, con sus opciones ya resueltas -- mismo join que hace
+// carta.js para el cliente final, pero del lado del cajero.
+function gruposDeProducto(productoId) {
+  const grupoIds = _contaModProdGrupos.filter(pg => pg.producto_id === productoId).map(pg => pg.grupo_id);
+  return _contaModGrupos.filter(g => grupoIds.includes(g.id)).map(g => ({
+    ...g, opciones: _contaModOpciones.filter(o => o.grupo_id === g.id),
+  }));
+}
+
 // Constructor de venta manual ("Nuevo pedido") -- usa el catálogo de la
 // Carta (_contaCartaProductos) para que nunca haya precios distintos entre
 // lo que se vende por QR y lo que se vende desde el mostrador.
 //
-// Si NO se elige mesa, sigue igual que siempre: el negocio ya tiene la plata
-// en mano al momento de registrarlo, así que cuenta como ingreso de
-// inmediato. Si SÍ se elige una mesa, es porque alguien pidió con la carta
-// física (el mesero lo digita acá) -- en ese caso se une a la MISMA sesión
-// de mesa que usa la carta por QR (abrir_o_unir_sesion_mesa), para que si
+// Si SÍ se elige una mesa, es porque alguien pidió con la carta física (el
+// mesero lo digita acá) -- en ese caso se une a la MISMA sesión de mesa que
+// usa la carta por QR (la carta real, embebida en un iframe), para que si
 // otra persona de esa mesa pidió digital, los dos pedidos queden juntos en
-// "Pedidos" y se cobren como una sola cuenta al final, igual que cualquier
-// pedido de mesa (sin contar como ingreso hasta que se cobre).
+// "Pedidos" y se cobren como una sola cuenta al final.
+//
+// Si NO se elige mesa, es venta de mostrador: una grilla visual (foto,
+// buscador, personalización de toppings a la derecha) tipo caja registradora.
+// Al cobrar, el pedido entra a "Pedidos" igual que cualquier pedido de la
+// carta (origen "manual", para distinguirlo), ya marcado como pagado -- el
+// cajero solo tiene que darle "Marcar entregado" cuando se lo entregue al
+// cliente.
 function abrirConstructorPedido() {
   if (!_contaCartaProductos.length) { toast("Agrega productos a tu carta antes de crear un pedido"); return; }
-  const carrito = new Map(); // producto_id -> {nombre, precio, cantidad}
-  const filasHtml = _contaCartaProductos.map(p => `
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #ebebeb">
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:600;font-size:13.5px">${esc(p.nombre)}</div>
-        <div style="font-size:12px;color:#777">${COP(p.precio)}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <button type="button" data-cp-menos="${p.id}" style="width:28px;height:28px;border-radius:50%;border:1px solid #ddd;background:#fff;font-weight:700;cursor:pointer">−</button>
-        <span style="min-width:16px;text-align:center;font-weight:700" data-cp-n="${p.id}">0</span>
-        <button type="button" data-cp-mas="${p.id}" style="width:28px;height:28px;border-radius:50%;border:1px solid #ddd;background:#fff;font-weight:700;cursor:pointer">+</button>
-      </div>
-    </div>`).join("");
+  const carritoPos = []; // { id, producto_id, nombre, precioUnit, cantidad, modificadores }
+
   abrirModalTienda("Nuevo pedido", `
     ${_contaMesas.length ? `
     <div class="cfg-campo" id="cp-mesa-campo">
@@ -2741,59 +2746,175 @@ function abrirConstructorPedido() {
         <p style="font-size:12.5px;color:var(--tinta-60);margin:0">Arma el pedido con tu carta real, igual que lo haría el cliente. Al mandarlo, llega a "Pedidos" igual que cualquier pedido por QR.</p>
         <button type="button" id="cp-cambiar-mesa" style="flex:none;font-size:12.5px;font-weight:700;color:var(--verde);background:none;border:none;cursor:pointer;white-space:nowrap">Cambiar mesa</button>
       </div>
-      <iframe id="cp-carta-iframe" src="" style="width:100%;border:none;display:block" title="Carta para tomar el pedido"></iframe>
+      <iframe id="cp-carta-iframe" src="" style="width:100%;height:calc(100vh - 130px);border:none;display:block" title="Carta para tomar el pedido"></iframe>
     </div>` : ""}
     <div id="cp-lista-simple">
-      <div style="max-height:40vh;overflow-y:auto;margin-bottom:14px">${filasHtml}</div>
-      <div class="cfg-campo"><label class="cfg-label">Nota (opcional)</label><input class="cfg-input" id="cp-nota" type="text" placeholder="Ej: para llevar, sin cebolla..."></div>
-      <div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;padding:10px 0;margin-bottom:10px">
-        <span>Total</span><span id="cp-total">${COP(0)}</span>
+      <div id="cp-pos" style="display:flex;gap:14px;height:calc(100vh - 150px)">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+          <input class="cfg-input" id="cp-pos-buscar" type="text" placeholder="🔍 Buscar producto..." style="margin-bottom:10px;flex:none">
+          <div id="cp-pos-grid" style="flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;align-content:start"></div>
+        </div>
+        <div style="width:280px;flex:none;display:flex;flex-direction:column;background:#f7faf8;border-radius:12px;padding:12px;min-height:0">
+          <div id="cp-pos-cart-view" style="display:flex;flex-direction:column;flex:1;min-height:0">
+            <div style="font-weight:700;font-size:14px;margin-bottom:8px">Pedido</div>
+            <div id="cp-pos-cart-items" style="flex:1;overflow-y:auto;margin-bottom:10px"></div>
+            <input class="cfg-input" id="cp-pos-nota" type="text" placeholder="Nota (opcional)" style="margin-bottom:8px;flex:none">
+            <div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;padding:6px 0 10px;flex:none">
+              <span>Total</span><span id="cp-pos-total">${COP(0)}</span>
+            </div>
+            <button class="btn btn--primario" id="cp-pos-cobrar" style="width:100%;justify-content:center;flex:none" disabled>Elige un producto</button>
+          </div>
+          <div id="cp-pos-detalle-view" hidden style="display:flex;flex-direction:column;flex:1;min-height:0"></div>
+        </div>
       </div>
-      <button class="btn btn--primario" id="cp-confirmar" style="width:100%;justify-content:center">Confirmar venta</button>
     </div>
   `);
-  const actualizarTotal = () => {
-    let total = 0;
-    carrito.forEach(it => { total += it.precio * it.cantidad; });
-    const t = $("#cp-total"); if (t) t.textContent = COP(total);
+  // Esta pantalla necesita todo el espacio posible (grilla + panel de
+  // personalización), así que arranca expandida a pantalla completa --
+  // abrirModalTienda() la vuelve a su tamaño normal la próxima vez que se
+  // abra cualquier otro modal (no solo este).
+  const box = $("#modal-tienda-box");
+  if (box) { box.style.maxWidth = "100vw"; box.style.width = "100vw"; box.style.maxHeight = "100vh"; box.style.height = "100vh"; box.style.borderRadius = "0"; }
+
+  const renderCart = () => {
+    const itemsEl = $("#cp-pos-cart-items");
+    const totalEl = $("#cp-pos-total");
+    const cobrarBtn = $("#cp-pos-cobrar");
+    if (!itemsEl) return;
+    itemsEl.innerHTML = carritoPos.length ? carritoPos.map(it => `
+      <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid #e5efe9">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px">${it.cantidad}× ${esc(it.nombre)}</div>
+          ${it.modificadores.length ? `<div style="font-size:11.5px;color:#777">${esc(it.modificadores.map(m => m.opcion).join(", "))}</div>` : ""}
+          <div style="font-size:12px;color:#777;margin-top:2px">${COP(it.precioUnit * it.cantidad)}</div>
+        </div>
+        <button type="button" data-pos-quitar="${it.id}" style="border:none;background:none;color:#c0392b;cursor:pointer;font-size:14px;flex:none">✕</button>
+      </div>`).join("") : `<p style="color:#777;font-size:13px">Toca un producto para agregarlo.</p>`;
+    const total = carritoPos.reduce((s, it) => s + it.precioUnit * it.cantidad, 0);
+    if (totalEl) totalEl.textContent = COP(total);
+    if (cobrarBtn) { cobrarBtn.disabled = !carritoPos.length; cobrarBtn.textContent = carritoPos.length ? `Cobrar ${COP(total)}` : "Elige un producto"; }
+    itemsEl.querySelectorAll("[data-pos-quitar]").forEach(btn => btn.addEventListener("click", () => {
+      const idx = carritoPos.findIndex(it => it.id === btn.dataset.posQuitar);
+      if (idx > -1) carritoPos.splice(idx, 1);
+      renderCart();
+    }));
   };
-  // Tope de stock también acá -- antes solo se respetaba en la carta por QR;
-  // una venta de mostrador tampoco puede vender más de lo que de verdad hay.
-  const tope = (p) => p.stock_activo ? Math.max(0, p.stock_cantidad ?? 0) : Infinity;
-  _contaCartaProductos.forEach(p => {
-    const cambiar = (delta) => {
-      const actual = carrito.get(p.id)?.cantidad || 0;
-      const nueva = Math.min(Math.max(0, actual + delta), tope(p));
-      if (nueva === 0) carrito.delete(p.id); else carrito.set(p.id, { nombre: p.nombre, precio: p.precio, cantidad: nueva });
-      const n = $(`[data-cp-n="${p.id}"]`); if (n) n.textContent = String(nueva);
-      actualizarTotal();
+
+  // Al tocar un producto de la grilla, el panel de la derecha deja de
+  // mostrar el carrito y muestra sus toppings/opciones para personalizarlo
+  // -- "Agregar" lo suma al carrito y vuelve a mostrar el carrito.
+  const abrirDetalleProducto = (productoId) => {
+    const p = _contaCartaProductos.find(x => x.id === productoId);
+    if (!p) return;
+    const grupos = gruposDeProducto(productoId);
+    const seleccion = new Map(); // grupo_id -> Set(opcion_id)
+    let cantidad = 1;
+    const cartView = $("#cp-pos-cart-view");
+    const detView = $("#cp-pos-detalle-view");
+    if (!detView) return;
+    if (cartView) cartView.hidden = true;
+    detView.hidden = false;
+
+    const calcularExtra = () => {
+      let extra = 0;
+      grupos.forEach(g => {
+        const sel = seleccion.get(g.id);
+        if (!sel) return;
+        g.opciones.forEach(o => { if (sel.has(o.id)) extra += Number(o.precio_adicional) || 0; });
+      });
+      return extra;
     };
-    $(`[data-cp-mas="${p.id}"]`)?.addEventListener("click", () => cambiar(1));
-    $(`[data-cp-menos="${p.id}"]`)?.addEventListener("click", () => cambiar(-1));
-  });
-  // Elegir una mesa cambia por completo la ventana: en vez de la lista
-  // simple de arriba/abajo, se abre la carta real embebida (con fotos,
-  // categorías y toppings, igual que ve el cliente) apuntada a esa mesa --
-  // el pedido se manda desde ADENTRO de esa carta, por el mismo camino de
-  // siempre, así que la notificación al dashboard llega exactamente igual.
-  // Con la carta embebida, el modal normal (520px, pensado para formularios
-  // cortos) se queda chiquito -- se expande a pantalla completa mientras
-  // dura este paso, y abrirModalTienda() lo vuelve a su tamaño normal la
-  // próxima vez que se abra cualquier otro modal (no solo este).
-  const expandirModal = (expandir) => {
-    const box = $("#modal-tienda-box");
-    if (box) {
-      box.style.maxWidth = expandir ? "100vw" : "";
-      box.style.width = expandir ? "100vw" : "";
-      box.style.maxHeight = expandir ? "100vh" : "";
-      box.style.height = expandir ? "100vh" : "";
-      box.style.borderRadius = expandir ? "0" : "";
-    }
-    const iframe = $("#cp-carta-iframe");
-    if (iframe) iframe.style.height = expandir ? "calc(100vh - 130px)" : "70vh";
-    const campoMesa = $("#cp-mesa-campo");
-    if (campoMesa) campoMesa.hidden = expandir;
+    const grupoCompleto = (g) => g.tipo !== "unica" || seleccion.get(g.id)?.size === 1;
+    const pintar = () => {
+      const n = $("#cp-det-qty-n"); if (n) n.textContent = String(cantidad);
+      const btn = $("#cp-det-agregar");
+      if (!btn) return;
+      const faltante = grupos.find(g => !grupoCompleto(g));
+      if (faltante) { btn.disabled = true; btn.textContent = `Elige "${faltante.nombre}" para continuar`; }
+      else { btn.disabled = false; btn.textContent = `Agregar ${COP((Number(p.precio) + calcularExtra()) * cantidad)}`; }
+    };
+
+    detView.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex:none">
+        <button type="button" id="cp-det-volver" style="border:none;background:none;cursor:pointer;font-size:18px;line-height:1">←</button>
+        <div style="font-weight:700;font-size:14.5px">${esc(p.nombre)}</div>
+      </div>
+      <div style="flex:1;overflow-y:auto;min-height:0">
+        ${grupos.length ? grupos.map(g => `
+          <div style="margin-bottom:14px">
+            <div style="font-weight:600;font-size:12.5px;margin-bottom:6px">${esc((g.pregunta || "").trim() || g.nombre)} <span style="font-weight:400;color:#999">· ${g.tipo === "unica" ? "obligatorio" : "opcional"}</span></div>
+            ${g.opciones.map(o => `
+              <label style="display:flex;align-items:center;gap:8px;padding:7px 0;cursor:pointer;font-size:13px">
+                <input type="${g.tipo === "unica" ? "radio" : "checkbox"}" name="cp-det-grupo-${g.id}" data-cp-det-opcion="${o.id}" data-cp-det-grupo="${g.id}" style="flex:none">
+                <span style="flex:1;min-width:0">${esc(o.nombre)}</span>
+                ${Number(o.precio_adicional) > 0 ? `<span style="color:#777">+${COP(o.precio_adicional)}</span>` : ""}
+              </label>`).join("")}
+          </div>`).join("") : `<p style="color:#777;font-size:12.5px">Este producto no tiene toppings configurados.</p>`}
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px;padding:8px 0;flex:none">
+        <button type="button" id="cp-det-qty-menos" style="width:32px;height:32px;border-radius:50%;border:1px solid #ddd;background:#fff;font-weight:700;cursor:pointer">−</button>
+        <span id="cp-det-qty-n" style="min-width:20px;text-align:center;font-weight:700">1</span>
+        <button type="button" id="cp-det-qty-mas" style="width:32px;height:32px;border-radius:50%;border:1px solid #ddd;background:#fff;font-weight:700;cursor:pointer">+</button>
+      </div>
+      <button class="btn btn--primario" id="cp-det-agregar" style="width:100%;justify-content:center;flex:none">Agregar</button>
+    `;
+    detView.querySelectorAll("[data-cp-det-opcion]").forEach(input => input.addEventListener("change", () => {
+      const grupoId = input.dataset.cpDetGrupo, opcionId = input.dataset.cpDetOpcion;
+      const g = grupos.find(x => x.id === grupoId);
+      if (!g) return;
+      if (g.tipo === "unica") seleccion.set(grupoId, new Set([opcionId]));
+      else {
+        const sel = seleccion.get(grupoId) || new Set();
+        if (input.checked) sel.add(opcionId); else sel.delete(opcionId);
+        seleccion.set(grupoId, sel);
+      }
+      pintar();
+    }));
+    // Tope de stock también acá -- una venta de mostrador tampoco puede
+    // vender más de lo que de verdad hay.
+    const tope = () => p.stock_activo ? Math.max(0, p.stock_cantidad ?? 0) : Infinity;
+    $("#cp-det-qty-mas")?.addEventListener("click", () => { if (cantidad < tope()) { cantidad++; pintar(); } });
+    $("#cp-det-qty-menos")?.addEventListener("click", () => { if (cantidad > 1) { cantidad--; pintar(); } });
+    const volverAlCarrito = () => { detView.hidden = true; if (cartView) cartView.hidden = false; };
+    $("#cp-det-volver")?.addEventListener("click", volverAlCarrito);
+    $("#cp-det-agregar")?.addEventListener("click", () => {
+      const modificadores = [];
+      grupos.forEach(g => {
+        const sel = seleccion.get(g.id) || new Set();
+        g.opciones.forEach(o => { if (sel.has(o.id)) modificadores.push({ grupo: g.nombre, opcion: o.nombre, precio_adicional: Number(o.precio_adicional) || 0 }); });
+      });
+      carritoPos.push({ id: crypto.randomUUID(), producto_id: p.id, nombre: p.nombre, precioUnit: Number(p.precio) + calcularExtra(), cantidad, modificadores });
+      volverAlCarrito();
+      renderCart();
+    });
+    pintar();
   };
+
+  const renderGrid = (filtro = "") => {
+    const gridEl = $("#cp-pos-grid");
+    if (!gridEl) return;
+    const q = filtro.trim().toLowerCase();
+    const productos = _contaCartaProductos.filter(p => p.disponible !== false && (!q || p.nombre.toLowerCase().includes(q)));
+    gridEl.innerHTML = productos.length ? productos.map(p => `
+      <button type="button" data-pos-prod="${p.id}" style="text-align:left;border:1px solid #ebebeb;border-radius:12px;overflow:hidden;background:#fff;cursor:pointer;padding:0;display:flex;flex-direction:column">
+        <div style="aspect-ratio:1;background:#f0faf4 center/cover no-repeat;${p.imagen_url ? `background-image:url('${esc(p.imagen_url)}')` : ""};display:flex;align-items:center;justify-content:center;font-size:26px;color:#bbb">${p.imagen_url ? "" : "🍽️"}</div>
+        <div style="padding:8px 10px">
+          <div style="font-weight:600;font-size:12.5px;line-height:1.25">${esc(p.nombre)}</div>
+          <div style="font-size:12px;color:#777;margin-top:2px">${COP(p.precio)}</div>
+        </div>
+      </button>`).join("") : `<p style="grid-column:1/-1;color:#777">Sin resultados</p>`;
+    gridEl.querySelectorAll("[data-pos-prod]").forEach(btn => btn.addEventListener("click", () => abrirDetalleProducto(btn.dataset.posProd)));
+  };
+
+  renderGrid();
+  renderCart();
+  $("#cp-pos-buscar")?.addEventListener("input", (e) => renderGrid(e.target.value));
+
+  // Elegir una mesa cambia por completo la ventana: en vez de la grilla de
+  // mostrador, se abre la carta real embebida (con fotos, categorías y
+  // toppings, igual que ve el cliente) apuntada a esa mesa -- el pedido se
+  // manda desde ADENTRO de esa carta, por el mismo camino de siempre, así
+  // que la notificación al dashboard llega exactamente igual.
   $("#cp-mesa")?.addEventListener("change", (e) => {
     const mesaId = e.target.value;
     const listaSimple = $("#cp-lista-simple");
@@ -2805,39 +2926,49 @@ function abrirConstructorPedido() {
         const iframe = $("#cp-carta-iframe");
         if (iframe) iframe.src = `Carta.html?aliado=${_contaNegocioId}&mesa=${mesaId}`;
       }
-      expandirModal(true);
     } else {
       if (listaSimple) listaSimple.hidden = false;
       if (cartaEmbebida) cartaEmbebida.hidden = true;
-      expandirModal(false);
     }
   });
   $("#cp-cambiar-mesa")?.addEventListener("click", () => {
     const mesaSelect = $("#cp-mesa"); if (mesaSelect) mesaSelect.value = "";
     $("#cp-lista-simple")?.removeAttribute("hidden");
     $("#cp-carta-embebida")?.setAttribute("hidden", "");
-    expandirModal(false);
   });
-  // "Confirmar venta" solo existe para la lista simple (venta de mostrador,
-  // sin mesa) -- al elegir mesa, esta lista se oculta y el pedido se manda
-  // desde ADENTRO de la carta embebida, nunca desde este botón.
-  $("#cp-confirmar")?.addEventListener("click", async () => {
-    const btn = $("#cp-confirmar");
-    if (!carrito.size) { toast("Elige al menos un producto"); return; }
+
+  // "Cobrar" solo existe para la grilla de mostrador (sin mesa) -- al elegir
+  // mesa, esta grilla se oculta y el pedido se manda desde ADENTRO de la
+  // carta embebida, nunca desde este botón. El pago ya se cobró en el
+  // mostrador al tocar este botón, así que el pedido entra ya "pagado";
+  // solo falta que el cajero lo marque "Entregado" cuando se lo dé al
+  // cliente -- por eso entra a negocio_carta_pedidos (no directo a
+  // negocio_ingresos) igual que cualquier pedido de la carta.
+  $("#cp-pos-cobrar")?.addEventListener("click", async () => {
+    const btn = $("#cp-pos-cobrar");
+    if (!carritoPos.length) return;
     btn.disabled = true; btn.textContent = "Guardando…";
-    const items = [...carrito.entries()].map(([producto_id, it]) => ({ producto_id, nombre: it.nombre, precio: it.precio, cantidad: it.cantidad }));
+    const items = carritoPos.map(it => ({
+      producto_id: it.producto_id, nombre: it.nombre, precio: it.precioUnit, cantidad: it.cantidad,
+      ...(it.modificadores.length ? { modificadores: it.modificadores } : {}),
+    }));
     const total = items.reduce((s, it) => s + it.precio * it.cantidad, 0);
-    const nota = $("#cp-nota")?.value.trim() || null;
-    const descripcion = items.map(it => `${it.cantidad}× ${it.nombre}`).join(", ");
-    const { error } = await supabase.from("negocio_ingresos").insert({
-      negocio_id: _contaNegocioId, origen: "manual", descripcion, items, monto: total,
-      fecha: new Date().toISOString().slice(0, 10), nota,
+    const nota = $("#cp-pos-nota")?.value.trim() || null;
+    const ahora = new Date().toISOString();
+    const { data: pedido, error } = await supabase.from("negocio_carta_pedidos").insert({
+      negocio_id: _contaNegocioId, cliente_nombre: "Mostrador", nota, items, monto_total: total,
+      estado: "pendiente", origen: "manual", pagado: true, pagado_at: ahora,
+    }).select().single();
+    if (error) { toast("Error: " + error.message); btn.disabled = false; renderCart(); return; }
+    await supabase.from("negocio_ingresos").insert({
+      negocio_id: _contaNegocioId, origen: "manual", pedido_id: pedido.id,
+      descripcion: items.map(it => `${it.cantidad}× ${it.nombre}`).join(", "),
+      items, monto: total, fecha: ahora.slice(0, 10),
     });
-    if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Confirmar venta"; return; }
-    // Una venta manual de mostrador nunca pasa por negocio_carta_pedidos
-    // (ahí vive el trigger que descuenta stock de los pedidos por QR), así
-    // que acá hay que descontarlo a mano -- si no, el stock quedaría
-    // desactualizado para cualquier negocio que también venda de mostrador.
+    // Una venta manual de mostrador nunca pasa por el trigger de stock de
+    // los pedidos por QR, así que acá hay que descontarlo a mano -- si no,
+    // el stock quedaría desactualizado para cualquier negocio que también
+    // venda de mostrador.
     for (const it of items) {
       const prod = _contaCartaProductos.find(p => p.id === it.producto_id);
       if (prod?.stock_activo) {
@@ -2846,7 +2977,7 @@ function abrirConstructorPedido() {
       }
     }
     cerrarModalTienda();
-    toast("Venta registrada ✓");
+    toast("Pedido registrado ✓");
     cargarContabilidadNegocio(_contaNegocioId);
   });
 }
@@ -3747,6 +3878,7 @@ function filaPedidoHtml(ped) {
         ${ped.tipo_entrega === "domicilio" ? `<div style="font-size:12px;font-weight:700;color:var(--verde);margin-top:2px">🛵 Domicilio${ped.domicilio_valor ? ` (+${COP(ped.domicilio_valor)})` : ""} · ${esc(ped.domicilio_direccion || "")}</div>` : ped.tipo_entrega === "recoger" ? `<div style="font-size:12px;color:#777;margin-top:2px">🏪 Recoge en el local</div>` : ""}
         ${ped.cubre_mesa_completa ? `<div style="font-size:12px;font-weight:700;color:#b8860b;margin-top:4px">💰 Este comprobante cubre TODA la mesa -- revísalo y usa "Cobrar mesa completa"</div>` : ""}
       </div>
+      <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${ped.origen === "manual" ? "#eef2ff" : "#e8f5ee"};color:${ped.origen === "manual" ? "#4338ca" : "#095544"};white-space:nowrap">${ped.origen === "manual" ? "🧾 Manual" : "📱 Carta"}</span>
       <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${est.bg};color:${est.c};white-space:nowrap">${est.t}</span>
       ${ped.pagado ? `<span style="font-size:11px;font-weight:700;color:#0e7a3e;white-space:nowrap">Pagado ✓</span>` : ""}
     </div>
