@@ -201,7 +201,12 @@ body { background: #0b0b0c; position: relative; }
   background: rgba(30,30,35,.7); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(255,255,255,.15);
 }
-.carta-qty__menos, .carta-qty__n { display: none; }
+/* Selector con 2 clases a propósito (no solo ".carta-qty__menos") -- sin
+   eso, ".carta-qty button{display:inline-flex}" más abajo (misma
+   especificidad por clase, pero SUMA un selector de tipo) le ganaba y el
+   "−" quedaba visible siempre, incluso en un producto que nunca se agregó
+   al carrito. */
+.carta-qty .carta-qty__menos, .carta-qty .carta-qty__n { display: none; }
 .carta-qty.en-uso .carta-qty__menos, .carta-qty.en-uso .carta-qty__n { display: inline-flex; align-items: center; justify-content: center; }
 .carta-qty .mas-texto { display: inline-flex; align-items: center; gap: 6px; }
 .carta-qty.en-uso .mas-texto { display: none; }
