@@ -421,6 +421,28 @@ async function iniciar() {
       }
     }
 
+    // Scroll infinito: al llegar al final del feed, vuelve al principio.
+    // Se clona la PRIMERA tarjeta y se pega al final como "centinela" -- en
+    // cuanto esa copia queda asentada a pantalla completa (scroll-snap ya
+    // terminó), se salta sin animación al inicio real del feed. Como el
+    // centinela es idéntico a la primera tarjeta de verdad (misma foto,
+    // mismo texto), el salto es imperceptible -- sus botones no tienen
+    // listeners propios (los selectores por id ya apuntan a la tarjeta real,
+    // que va primero en el DOM), pero eso no importa porque nunca se queda
+    // ahí el tiempo suficiente para tocarlos.
+    if (items.length > 1) {
+      const primeraSlide = grid.querySelector(".carta-slide");
+      if (primeraSlide) {
+        const centinela = primeraSlide.cloneNode(true);
+        centinela.setAttribute("data-carta-sentinel", "1");
+        grid.appendChild(centinela);
+        const observerLoop = new IntersectionObserver((entries) => {
+          entries.forEach(entry => { if (entry.isIntersecting) grid.scrollTop = 0; });
+        }, { root: grid, threshold: 0.98 });
+        observerLoop.observe(centinela);
+      }
+    }
+
     // "Me gusta" ya dados desde este celular (por negocio) -- para no dejar
     // que el mismo aparato infle el contador a punta de toques repetidos, y
     // para que el corazón salga lleno de entrada si ya le dio like antes.
