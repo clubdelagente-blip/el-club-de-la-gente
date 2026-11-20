@@ -3197,7 +3197,8 @@ function abrirFormInsumo(i = {}) {
       <div class="cfg-campo"><label class="cfg-label">Cantidad comprada *</label><input class="cfg-input" id="ins-cantidad" type="number" min="0" step="any" value="${i.cantidad_comprada || ""}" placeholder="Ej: 50"></div>
       <div class="cfg-campo"><label class="cfg-label">Costo de la compra *</label><input class="cfg-input" id="ins-costo" type="text" inputmode="numeric" value="${i.costo_compra ? Number(i.costo_compra).toLocaleString("es-CO") : ""}" placeholder="Ej: 150.000"></div>
     </div>
-    <p id="ins-costo-unitario-preview" style="font-size:12.5px;color:var(--tinta-60);margin:-4px 0 14px">Costo por unidad: --</p>
+    <p id="ins-costo-unitario-preview" style="font-size:12.5px;color:var(--tinta-60);margin:-4px 0 4px">Costo por unidad: --</p>
+    <p style="font-size:12px;color:var(--tinta-45);margin:0 0 14px">Esto es solo lo que te cuesta en general. Cuánto usa CADA producto (ej. cuánta crema lleva un vaso) se define en "Costo y margen por producto" → Armar receta.</p>
     <button class="btn btn--primario" id="ins-save" data-id="${i.id || ""}">${i.id ? "Guardar cambios" : "Agregar insumo"}</button>
   `);
   formatearInputMoneda($("#ins-costo"));
@@ -3275,7 +3276,8 @@ function abrirFormReceta(p) {
       <select class="cfg-input receta-insumo" style="flex:1;min-width:140px">
         ${_contaInsumos.map(i => `<option value="${i.id}" ${r.insumo_id === i.id ? "selected" : ""}>${esc(i.nombre)} (${esc(unidadLabel(i.unidad))})</option>`).join("")}
       </select>
-      <input class="cfg-input receta-cantidad" type="number" min="0" step="any" value="${r.cantidad_usada || ""}" placeholder="Cantidad" style="width:110px">
+      <input class="cfg-input receta-cantidad" type="number" min="0" step="any" value="${r.cantidad_usada || ""}" placeholder="Cantidad" style="width:90px">
+      <span class="receta-unidad" style="font-size:12px;color:var(--tinta-45);min-width:34px">${esc(unidadLabel((_contaInsumos.find(i => i.id === (r.insumo_id || _contaInsumos[0]?.id)) || {}).unidad))}</span>
       <button type="button" class="receta-quitar" style="border:none;background:none;cursor:pointer;color:#c0392b;font-size:16px">✕</button>
     </div>`;
   abrirModalTienda(`Receta de "${p.nombre}"`, `
@@ -3307,14 +3309,24 @@ function abrirFormReceta(p) {
     const preview = $("#receta-costo-preview");
     if (preview) preview.textContent = `Costo: ${COP(costoTotal)}${margen != null ? ` · Margen: ${margen.toFixed(0)}% (precio de venta ${COP(precio)})` : ""}`;
   };
-  const reenlazarCambios = () => $$(".receta-insumo, .receta-cantidad").forEach(el => el.addEventListener("input", actualizarPreviewReceta));
+  const actualizarUnidadesReceta = () => {
+    $$(".receta-fila").forEach(fila => {
+      const insumoId = fila.querySelector(".receta-insumo")?.value;
+      const insumo = _contaInsumos.find(i => i.id === insumoId);
+      const span = fila.querySelector(".receta-unidad");
+      if (span) span.textContent = unidadLabel(insumo?.unidad);
+    });
+  };
+  const reenlazarCambios = () => $$(".receta-insumo, .receta-cantidad").forEach(el => el.addEventListener("input", () => { actualizarUnidadesReceta(); actualizarPreviewReceta(); }));
   reenlazarQuitar();
   reenlazarCambios();
+  actualizarUnidadesReceta();
   actualizarPreviewReceta();
   $("#receta-add")?.addEventListener("click", () => {
     $("#receta-filas").insertAdjacentHTML("beforeend", filaInsumoHtml());
     reenlazarQuitar();
     reenlazarCambios();
+    actualizarUnidadesReceta();
     actualizarPreviewReceta();
   });
   $("#receta-save")?.addEventListener("click", async () => {
