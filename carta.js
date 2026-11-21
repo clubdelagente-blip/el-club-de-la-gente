@@ -254,6 +254,13 @@ async function iniciar() {
     return;
   }
 
+  // Bienvenida (nombre+WhatsApp) antes que cualquier otra cosa -- el
+  // overlay tapa toda la pantalla, así que no hace falta pausar el resto
+  // de esta función: si hace falta, bloquea la interacción sola hasta que
+  // se resuelva; si no, aplicarIdentidadConocida() ya deja todo listo.
+  mostrarBienvenidaSiHaceFalta();
+  aplicarIdentidadConocida();
+
   // Métricas del negocio (pestaña "Métricas" en Mi Contabilidad): una visita
   // = una carga de esta página, sin dato personal -- solo negocio_id + hora.
   // "Fire and forget": si falla (ej. sin internet), la carta sigue
@@ -580,6 +587,109 @@ async function iniciar() {
     } catch {}
   }
 
+  // ---------- Bienvenida: resuelve nombre+WhatsApp UNA sola vez por
+  // negocio en este celular, antes de dejar hacer nada más -- después ni el
+  // pago ni los comentarios lo vuelven a pedir (ver aplicarIdentidadConocida
+  // y el comentario-form más abajo). El WhatsApp mismo ES el "código" de
+  // "Ya la he usado": se busca en negocio_carta_clientes (negocio_id +
+  // whatsapp) en vez de inventar un código aparte que haya que anotar. ----------
+  function claveIdentidad() { return `carta_identidad_${aliadoId}`; }
+  function obtenerIdentidad() {
+    try { return JSON.parse(localStorage.getItem(claveIdentidad()) || "null"); } catch { return null; }
+  }
+  function guardarIdentidad(nombre, whatsapp) {
+    try { localStorage.setItem(claveIdentidad(), JSON.stringify({ nombre, whatsapp })); } catch {}
+    try { localStorage.setItem("carta_mi_whatsapp", whatsapp); } catch {}
+  }
+  // El pago ya no vuelve a pedir nombre/WhatsApp -- los inputs de siempre
+  // (#carta-cliente-nombre/#carta-cliente-wa) se rellenan solos y se
+  // esconden; el resto de la lectura/el envío del pedido sigue leyendo esos
+  // mismos inputs sin cambios.
+  function aplicarIdentidadConocida() {
+    const identidad = obtenerIdentidad();
+    if (!identidad) return;
+    const nombreEl = $("#carta-cliente-nombre"); if (nombreEl) nombreEl.value = identidad.nombre;
+    const waEl = $("#carta-cliente-wa"); if (waEl) waEl.value = identidad.whatsapp;
+    const wrapEl = $("#carta-sheet-identidad"); if (wrapEl) wrapEl.hidden = true;
+  }
+  function mostrarBienvenidaSiHaceFalta() {
+    if (obtenerIdentidad()) return;
+    const overlay = $("#carta-bienvenida-overlay");
+    if (!overlay) return;
+    const logoEl = $("#carta-bienvenida-logo");
+    if (logoEl) logoEl.innerHTML = negocio.imagen_url ? `<img src="${esc(negocio.imagen_url)}" alt="">` : "";
+    const nombreNegocioEl = $("#carta-bienvenida-nombre-negocio"); if (nombreNegocioEl) nombreNegocioEl.textContent = negocio.nombre;
+    const msgEl = $("#carta-bienvenida-msg");
+    if (msgEl) msgEl.textContent = (negocio.carta_bienvenida_mensaje && negocio.carta_bienvenida_mensaje.trim()) || `¡Bienvenido a la carta de ${negocio.nombre}!`;
+    overlay.hidden = false;
+
+    const botones = $("#carta-bienvenida-botones");
+    const formNueva = $("#carta-bienvenida-form-nueva");
+    const formVolver = $("#carta-bienvenida-form-volver");
+    const volverAOpciones = () => {
+      if (botones) botones.hidden = false;
+      if (formNueva) formNueva.hidden = true;
+      if (formVolver) formVolver.hidden = true;
+    };
+    const cerrarConIdentidad = (nombre, whatsapp) => {
+      guardarIdentidad(nombre, whatsapp);
+      overlay.hidden = true;
+      aplicarIdentidadConocida();
+    };
+
+    $("#carta-bienvenida-nueva")?.addEventListener("click", () => {
+      if (botones) botones.hidden = true;
+      if (formNueva) formNueva.hidden = false;
+    });
+    $("#carta-bienvenida-volver")?.addEventListener("click", () => {
+      if (botones) botones.hidden = true;
+      if (formVolver) formVolver.hidden = false;
+    });
+    $$("[data-bienvenida-atras]").forEach(btn => btn.addEventListener("click", volverAOpciones));
+
+    $("#carta-bienvenida-nueva-confirmar")?.addEventListener("click", async () => {
+      const btn = $("#carta-bienvenida-nueva-confirmar");
+      const nombre = $("#carta-bienvenida-nombre")?.value.trim();
+      const wa = $("#carta-bienvenida-wa-nueva")?.value.trim();
+      if (!nombre) { alert("Escribe tu nombre"); return; }
+      if (!wa) { alert("Escribe tu WhatsApp"); return; }
+      btn.disabled = true; btn.textContent = "Entrando…";
+      await supabase.from("negocio_carta_clientes").upsert(
+        { negocio_id: aliadoId, whatsapp: wa, nombre }, { onConflict: "negocio_id,whatsapp" }
+      );
+      btn.disabled = false; btn.textContent = "Entrar";
+      cerrarConIdentidad(nombre, wa);
+    });
+
+    // "Ya la he usado" busca por WhatsApp -- si no está registrado en ESTE
+    // negocio (ej. celular nuevo y nunca lo había dado acá), deja
+    // registrarse ahí mismo en vez de dejarlo en un callejón sin salida.
+    $("#carta-bienvenida-volver-confirmar")?.addEventListener("click", async () => {
+      const btn = $("#carta-bienvenida-volver-confirmar");
+      const wa = $("#carta-bienvenida-wa-volver")?.value.trim();
+      if (!wa) { alert("Escribe tu WhatsApp"); return; }
+      const campoNombreEl = $("#carta-bienvenida-campo-nombre-fallback");
+      const modoRegistro = campoNombreEl && !campoNombreEl.hidden;
+      if (modoRegistro) {
+        const nombre = $("#carta-bienvenida-nombre-fallback")?.value.trim();
+        if (!nombre) { alert("Escribe tu nombre"); return; }
+        btn.disabled = true; btn.textContent = "Entrando…";
+        await supabase.from("negocio_carta_clientes").upsert(
+          { negocio_id: aliadoId, whatsapp: wa, nombre }, { onConflict: "negocio_id,whatsapp" }
+        );
+        btn.disabled = false; btn.textContent = "Entrar";
+        cerrarConIdentidad(nombre, wa);
+        return;
+      }
+      btn.disabled = true; btn.textContent = "Buscando…";
+      const { data } = await supabase.from("negocio_carta_clientes").select("nombre").eq("negocio_id", aliadoId).eq("whatsapp", wa).maybeSingle();
+      btn.disabled = false; btn.textContent = "Entrar";
+      if (data?.nombre) { cerrarConIdentidad(data.nombre, wa); return; }
+      const avisoEl = $("#carta-bienvenida-no-encontrado"); if (avisoEl) avisoEl.hidden = false;
+      if (campoNombreEl) campoNombreEl.hidden = false;
+    });
+  }
+
   function compartirProducto(p) {
     const url = `${location.origin}${location.pathname}?aliado=${aliadoId}`;
     const texto = `${p.nombre} -- ${COP(p.precio)} en ${negocio.nombre}`;
@@ -603,7 +713,6 @@ async function iniciar() {
     if (comentariosTitulo) comentariosTitulo.textContent = `Comentarios de ${p.nombre}`;
     if (comentariosLista) comentariosLista.innerHTML = `<p class="carta-comentarios-vacio">Cargando…</p>`;
     const aviso = $("#carta-comentario-aviso"); if (aviso) aviso.classList.remove("mostrar");
-    const nombreInput = $("#carta-comentario-nombre"); if (nombreInput) nombreInput.value = "";
     const textoInput = $("#carta-comentario-texto"); if (textoInput) textoInput.value = "";
     comentariosOverlay.hidden = false;
     const { data } = await supabase.from("negocio_carta_comentarios").select("cliente_nombre, texto").eq("producto_id", p.id).eq("aprobado", true).order("created_at", { ascending: false });
@@ -617,9 +726,12 @@ async function iniciar() {
   comentariosOverlay?.addEventListener("click", (e) => { if (e.target === comentariosOverlay) comentariosOverlay.hidden = true; });
   $("#carta-comentario-enviar")?.addEventListener("click", async () => {
     const btn = $("#carta-comentario-enviar");
-    const nombre = $("#carta-comentario-nombre")?.value.trim();
+    // Estilo Instagram: sin campo de nombre -- ya se sabe quién es por la
+    // bienvenida (ver obtenerIdentidad más arriba), nunca hace falta
+    // volver a preguntarlo acá.
+    const nombre = obtenerIdentidad()?.nombre || "Cliente";
     const texto = $("#carta-comentario-texto")?.value.trim();
-    if (!nombre || !texto) { alert("Escribe tu nombre y tu comentario"); return; }
+    if (!texto) { alert("Escribe tu comentario"); return; }
     if (!comentarioProductoActual) return;
     btn.disabled = true;
     const { error } = await supabase.rpc("enviar_comentario_producto", {

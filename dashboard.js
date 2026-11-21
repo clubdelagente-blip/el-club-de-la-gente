@@ -2178,7 +2178,7 @@ async function cargarContabilidadNegocio(negocioId) {
 
   const hace90Dias = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
   const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }, { data: mesas }, { data: comentarios }, { data: insumos }, { data: recetaItems }, { data: visitas }] = await Promise.all([
-    supabase.from("aliados").select("imagen_url, instagram, carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio, carta_precio_desde, carta_costo_operativo_pct").eq("id", negocioId).maybeSingle(),
+    supabase.from("aliados").select("imagen_url, instagram, carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio, carta_precio_desde, carta_costo_operativo_pct, carta_bienvenida_mensaje").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
     supabase.from("negocio_categorias_ingreso").select("*").eq("negocio_id", negocioId).order("nombre"),
@@ -2269,6 +2269,7 @@ async function cargarContabilidadNegocio(negocioId) {
   const colorPedidoInput = $("#conta-carta-color-pedido"); if (colorPedidoInput) colorPedidoInput.value = _contaNegocio.carta_color_pedido || "#ffffff";
   const avisoActivoInput = $("#conta-carta-aviso-activo"); if (avisoActivoInput) avisoActivoInput.checked = !!_contaNegocio.carta_aviso_activo;
   const precioDesdeInput = $("#conta-carta-precio-desde"); if (precioDesdeInput) precioDesdeInput.checked = !!_contaNegocio.carta_precio_desde;
+  const bienvenidaMensajeInput = $("#conta-carta-bienvenida-mensaje"); if (bienvenidaMensajeInput) bienvenidaMensajeInput.value = _contaNegocio.carta_bienvenida_mensaje || "";
   const avisoColorInput = $("#conta-carta-aviso-color"); if (avisoColorInput) avisoColorInput.value = _contaNegocio.carta_aviso_color || "#164a2c";
   const domicilioActivoInput = $("#conta-carta-domicilio-activo"); if (domicilioActivoInput) domicilioActivoInput.checked = !!_contaNegocio.carta_domicilio_activo;
   const domicilioValorInput = $("#conta-carta-domicilio-valor"); if (domicilioValorInput) domicilioValorInput.value = _contaNegocio.carta_domicilio_valor ? Number(_contaNegocio.carta_domicilio_valor).toLocaleString("es-CO") : "";
@@ -3060,10 +3061,11 @@ async function guardarPersonalizacionCarta(btnDisparado) {
   const domicilioValor = valorMoneda($("#conta-carta-domicilio-valor"));
   const domicilioMinimo = valorMoneda($("#conta-carta-domicilio-minimo")) || null;
   const domicilioTiempo = $("#conta-carta-domicilio-tiempo")?.value.trim() || null;
+  const bienvenidaMensaje = $("#conta-carta-bienvenida-mensaje")?.value.trim() || null;
   if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
   const payload = {
     imagen_url: logoUrl, instagram,
-    carta_color: color, carta_portada_url: portadaUrl,
+    carta_color: color, carta_portada_url: portadaUrl, carta_bienvenida_mensaje: bienvenidaMensaje,
     carta_sellos_activo: sellosActivo, carta_sellos_meta: sellosMeta,
     carta_sellos_premio_tipo: sellosTipo, carta_sellos_premio_desc: sellosPremio,
     tienda_llave_pago: llave, tienda_llave_qr_url: llaveQrUrl,

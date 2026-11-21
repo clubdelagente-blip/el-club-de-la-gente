@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=143">
-  <link rel="stylesheet" href="carta.css?v=36">
+  <link rel="stylesheet" href="carta.css?v=37">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -115,11 +115,18 @@
       <div class="carta-sheet__total"><span>Total</span><span id="carta-sheet-total">$0</span></div>
 
       <div id="carta-sheet-form">
-        <div class="carta-campo"><label>Tu nombre *</label><input id="carta-cliente-nombre" type="text" placeholder="¿Cómo te llamas?"></div>
-        <div class="carta-campo">
-          <label>WhatsApp (opcional)</label>
-          <input id="carta-cliente-wa" type="tel" placeholder="300 000 0000">
-          <p id="carta-sellos-hint" hidden style="font-size:12px;color:var(--verde);margin-top:6px;line-height:1.5"></p>
+        <!-- Se oculta sola cuando ya se resolvió la bienvenida (nombre+
+             WhatsApp quedan guardados ahí) -- ver aplicarIdentidadConocida
+             en carta.js. Los inputs siguen ahí (solo ocultos) con el valor
+             ya puesto, para no tener que tocar la lectura/el envío del
+             pedido más abajo. -->
+        <div id="carta-sheet-identidad">
+          <div class="carta-campo"><label>Tu nombre *</label><input id="carta-cliente-nombre" type="text" placeholder="¿Cómo te llamas?"></div>
+          <div class="carta-campo">
+            <label>WhatsApp (opcional)</label>
+            <input id="carta-cliente-wa" type="tel" placeholder="300 000 0000">
+            <p id="carta-sellos-hint" hidden style="font-size:12px;color:var(--verde);margin-top:6px;line-height:1.5"></p>
+          </div>
         </div>
         <div class="carta-campo"><label>Nota <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label><input id="carta-cliente-nota" type="text" placeholder="Ej: sin cebolla, tocar el timbre..."></div>
 
@@ -233,15 +240,53 @@
       <h2 class="carta-sheet__titulo" id="carta-comentarios-titulo">Comentarios</h2>
       <div id="carta-comentarios-lista"></div>
       <div class="carta-comentario-form">
-        <div class="carta-campo"><label>Tu nombre</label><input id="carta-comentario-nombre" type="text" placeholder="¿Cómo te llamas?"></div>
-        <div class="carta-campo"><label>Tu comentario</label><textarea id="carta-comentario-texto" placeholder="¿Qué te pareció?"></textarea></div>
+        <div class="carta-campo"><textarea id="carta-comentario-texto" placeholder="Escribe un comentario..."></textarea></div>
         <button type="button" class="btn btn--primario" id="carta-comentario-enviar" style="width:100%">Enviar comentario</button>
         <p class="carta-comentario-aviso" id="carta-comentario-aviso">Tu comentario quedará visible cuando el negocio lo apruebe. ¡Gracias!</p>
       </div>
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=38"></script>
+  <!-- Bienvenida: se muestra UNA sola vez por negocio en este celular (ver
+       carta.js) -- resuelve nombre+WhatsApp de una vez para que el pago y
+       los comentarios nunca lo vuelvan a pedir. El WhatsApp mismo ES el
+       "código" para "Ya la he usado" -- no hace falta inventar uno aparte. -->
+  <div class="carta-bienvenida-overlay" id="carta-bienvenida-overlay" hidden>
+    <div class="carta-bienvenida-caja">
+      <div class="carta-bienvenida-logo" id="carta-bienvenida-logo"></div>
+      <h2 class="carta-bienvenida-titulo" id="carta-bienvenida-nombre-negocio"></h2>
+      <p class="carta-bienvenida-msg" id="carta-bienvenida-msg"></p>
+
+      <div class="carta-bienvenida-botones" id="carta-bienvenida-botones">
+        <button type="button" class="carta-bienvenida-opt carta-bienvenida-opt--primaria" id="carta-bienvenida-nueva">
+          <span class="carta-bienvenida-opt__ic">✨</span>
+          <span>Primera vez</span>
+        </button>
+        <button type="button" class="carta-bienvenida-opt" id="carta-bienvenida-volver">
+          <span class="carta-bienvenida-opt__ic">👋</span>
+          <span>Ya la he usado</span>
+        </button>
+      </div>
+
+      <div class="carta-bienvenida-form" id="carta-bienvenida-form-nueva" hidden>
+        <p class="carta-bienvenida-hint">Con tu nombre y WhatsApp participas en puntos, sorteos y productos gratis de este negocio -- no te lo volvemos a pedir.</p>
+        <div class="carta-campo"><label>Tu nombre</label><input id="carta-bienvenida-nombre" type="text" placeholder="¿Cómo te llamas?"></div>
+        <div class="carta-campo"><label>Tu WhatsApp</label><input id="carta-bienvenida-wa-nueva" type="tel" placeholder="300 000 0000"></div>
+        <button type="button" class="btn btn--primario" id="carta-bienvenida-nueva-confirmar" style="width:100%">Entrar</button>
+        <button type="button" class="carta-bienvenida-volver-link" data-bienvenida-atras>← Volver</button>
+      </div>
+
+      <div class="carta-bienvenida-form" id="carta-bienvenida-form-volver" hidden>
+        <div class="carta-campo"><label>Tu WhatsApp</label><input id="carta-bienvenida-wa-volver" type="tel" placeholder="300 000 0000"></div>
+        <p class="carta-bienvenida-hint" id="carta-bienvenida-no-encontrado" hidden>No encontramos ese WhatsApp en esta carta -- escribe tu nombre para registrarte.</p>
+        <div class="carta-campo" id="carta-bienvenida-campo-nombre-fallback" hidden><label>Tu nombre</label><input id="carta-bienvenida-nombre-fallback" type="text" placeholder="¿Cómo te llamas?"></div>
+        <button type="button" class="btn btn--primario" id="carta-bienvenida-volver-confirmar" style="width:100%">Entrar</button>
+        <button type="button" class="carta-bienvenida-volver-link" data-bienvenida-atras>← Volver</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="carta.js?v=39"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
