@@ -1214,8 +1214,8 @@ async function iniciar() {
   // aunque el gesto lo haga solo quien lanzó el reto. A quien le toque paga
   // el total de todos juntos en un solo pedido. ----------
   const COLORES_RULETA = ["#095544", "#EAB749", "#D97757", "#4F46E5", "#DB2777", "#059669", "#C2410C", "#7C3AED"];
-  function mostrar(el, display = "") { if (el) el.style.display = display; }
-  function ocultar(el) { if (el) el.style.display = "none"; }
+  function mostrar(el, display = "") { if (el) { el.hidden = false; el.style.display = display; } }
+  function ocultar(el) { if (el) { el.hidden = true; el.style.display = "none"; } }
   let retoActual = null; // fila de negocio_mesas_retos
   let retoParticipantes = []; // filas de negocio_mesas_retos_participantes (respuesta='acepto')
   let retoCanal = null;
@@ -1277,7 +1277,7 @@ async function iniciar() {
     // La ruleta recién aparece (quieta, deslizable por quien la lanzó) en
     // cuanto hay 2+ aceptados -- antes no tiene sentido pintarla.
     if (listo) { pintarSegmentosRuleta(); mostrar(wheelWrap); } else { ocultar(wheelWrap); }
-    if (girarBtn) girarBtn.style.display = soyLanzador && listo ? "" : "none";
+    if (soyLanzador && listo) mostrar(girarBtn); else ocultar(girarBtn);
     if (!listo) {
       if (hintEl) hintEl.textContent = "Esperando que al menos una persona más acepte (mínimo 2)...";
     } else if (soyLanzador) {
