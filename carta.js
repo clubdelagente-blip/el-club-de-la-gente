@@ -657,6 +657,45 @@ async function iniciar() {
     el.textContent = genero === "f" ? `👋 ¡Bienvenida, ${primero}!` : genero === "m" ? `👋 ¡Bienvenido, ${primero}!` : `👋 ¡Hola, ${primero}!`;
     el.hidden = false;
   }
+  // ---------- Mi perfil: sellos + puntos acumulados por el cliente, en una
+  // hoja aparte accesible desde el ícono de arriba a la derecha -- hasta
+  // ahora esos datos solo se veían de pasada en un toast/mensaje temporal. ----------
+  async function abrirPerfil() {
+    const overlay = $("#carta-perfil-overlay");
+    const identidad = obtenerIdentidad();
+    if (!overlay || !identidad?.whatsapp) return;
+    const saludoEl = $("#carta-perfil-saludo");
+    if (saludoEl) saludoEl.textContent = `Hola, ${identidad.nombre.trim().split(/\s+/)[0]} 👋`;
+    overlay.hidden = false;
+
+    try {
+      const { data: total } = await supabase.rpc("mis_puntos_carta", { p_negocio_id: aliadoId, p_whatsapp: identidad.whatsapp });
+      const puntos = Math.min(Number(total) || 0, META_PUNTOS);
+      const nEl = $("#carta-perfil-puntos-n"); if (nEl) nEl.textContent = `${Number(total) || 0}/${META_PUNTOS}`;
+      const barraEl = $("#carta-perfil-puntos-barra"); if (barraEl) barraEl.style.width = `${Math.round((puntos / META_PUNTOS) * 100)}%`;
+    } catch {}
+
+    const sellosBloque = $("#carta-perfil-sellos-bloque");
+    if (negocio.carta_sellos_activo) {
+      try {
+        const { data: estado } = await supabase.rpc("sellos_carta_estado", { p_negocio_id: aliadoId, p_whatsapp: identidad.whatsapp });
+        if (estado?.activo && sellosBloque) {
+          sellosBloque.hidden = false;
+          const nEl = $("#carta-perfil-sellos-n"); if (nEl) nEl.textContent = `${estado.sellos}/${estado.meta}`;
+          const barraEl = $("#carta-perfil-sellos-barra"); if (barraEl) barraEl.style.width = `${Math.min(100, Math.round((estado.sellos / estado.meta) * 100))}%`;
+          const premioEl = $("#carta-perfil-premio");
+          if (premioEl) {
+            const premio = estado.premio_desc || (estado.premio_tipo === "gratis" ? "un premio gratis" : "un descuento");
+            premioEl.textContent = estado.completado ? `🎉 ¡Completaste la tarjeta! Premio: ${premio}. Muéstrale esto al negocio.` : `Premio al completarla: ${premio}.`;
+          }
+        } else if (sellosBloque) sellosBloque.hidden = true;
+      } catch {}
+    } else if (sellosBloque) sellosBloque.hidden = true;
+  }
+  $("#carta-perfil-btn")?.addEventListener("click", abrirPerfil);
+  $("#carta-perfil-cerrar")?.addEventListener("click", () => { const o = $("#carta-perfil-overlay"); if (o) o.hidden = true; });
+  $("#carta-perfil-overlay")?.addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.hidden = true; });
+
   function mostrarBienvenidaSiHaceFalta() {
     if (obtenerIdentidad()) return;
     const overlay = $("#carta-bienvenida-overlay");

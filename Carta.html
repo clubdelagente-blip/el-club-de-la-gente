@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=143">
-  <link rel="stylesheet" href="carta.css?v=45">
+  <link rel="stylesheet" href="carta.css?v=46">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -46,11 +46,9 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
       </button>
       <span class="carta-mesa-pill" id="carta-mesa-indicador" hidden></span>
-      <a href="#" target="_blank" rel="noopener" class="carta-sigue-pill" id="carta-instagram" hidden>
-        <span class="carta-sigue-pill__dot"></span>
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
-        Síguenos
-      </a>
+      <button type="button" class="carta-grid-toggle carta-perfil-btn" id="carta-perfil-btn" aria-label="Mi perfil">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7" stroke-linecap="round"/></svg>
+      </button>
     </div>
     <!-- Saludo personalizado: aparece apenas se resuelve la identidad (ver
          pintarSaludoPersona en carta.js) -- "Bienvenido/Bienvenida" según
@@ -297,6 +295,40 @@
     </div>
   </div>
 
+  <!-- Mi perfil: sellos + puntos acumulados por el cliente (identidad ya
+       resuelta por la bienvenida) y su link de Instagram -- ver
+       abrirPerfil() en carta.js. -->
+  <div class="carta-overlay" id="carta-perfil-overlay" hidden>
+    <div class="carta-sheet">
+      <button type="button" class="carta-sheet__cerrar" id="carta-perfil-cerrar" aria-label="Cerrar">✕</button>
+      <h2 class="carta-sheet__titulo">Mi perfil</h2>
+      <p class="carta-perfil-saludo" id="carta-perfil-saludo"></p>
+
+      <div class="carta-perfil-bloque" id="carta-perfil-puntos-bloque">
+        <div class="carta-perfil-bloque__cabeza">
+          <span>🎯 Puntos para sorteos</span>
+          <span id="carta-perfil-puntos-n">0/30</span>
+        </div>
+        <div class="carta-perfil-barra"><div class="carta-perfil-barra__fill" id="carta-perfil-puntos-barra"></div></div>
+      </div>
+
+      <div class="carta-perfil-bloque" id="carta-perfil-sellos-bloque" hidden>
+        <div class="carta-perfil-bloque__cabeza">
+          <span>🎟️ Tarjeta de sellos</span>
+          <span id="carta-perfil-sellos-n">0/0</span>
+        </div>
+        <div class="carta-perfil-barra"><div class="carta-perfil-barra__fill" id="carta-perfil-sellos-barra"></div></div>
+        <p class="carta-perfil-premio" id="carta-perfil-premio"></p>
+      </div>
+
+      <a href="#" target="_blank" rel="noopener" class="carta-sigue-pill carta-perfil-sigue" id="carta-instagram" hidden>
+        <span class="carta-sigue-pill__dot"></span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+        Síguenos
+      </a>
+    </div>
+  </div>
+
   <!-- Bienvenida: se muestra UNA sola vez por negocio en este celular (ver
        carta.js) -- resuelve nombre+WhatsApp de una vez para que el pago y
        los comentarios nunca lo vuelvan a pedir. El WhatsApp mismo ES el
@@ -336,7 +368,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=46"></script>
+  <script type="module" src="carta.js?v=47"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

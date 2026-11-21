@@ -83,6 +83,24 @@ body { background: #0b0b0c; position: relative; }
 .carta-sigue-pill { margin-left: auto; }
 .carta-sigue-pill__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--verde-claro, var(--verde)); flex: none; }
 
+/* Botón "Mi perfil": mismo círculo que el toggle de cuadrícula, empujado a
+   la derecha (ahí vivía antes "Síguenos" -- ahora ese link se mudó DENTRO
+   del perfil, ver más abajo, para no amontonar un tercer elemento acá). */
+.carta-perfil-btn { margin-left: auto; }
+
+/* Hoja "Mi perfil": sellos + puntos del cliente + su Instagram, reusa
+   .carta-overlay/.carta-sheet del checkout. */
+.carta-perfil-saludo { font-size: 14px; color: var(--tinta-60); margin: -6px 0 18px; }
+.carta-perfil-bloque { margin-bottom: 18px; }
+.carta-perfil-bloque__cabeza { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; color: var(--tinta); margin-bottom: 8px; }
+.carta-perfil-barra { height: 10px; border-radius: 100px; background: var(--crema-2); overflow: hidden; }
+.carta-perfil-barra__fill { height: 100%; border-radius: 100px; background: var(--verde); transition: width .4s; }
+.carta-perfil-premio { font-size: 12.5px; color: var(--tinta-60); margin-top: 8px; line-height: 1.5; }
+/* Ahora vive centrado dentro del perfil, no pegado a la derecha de la fila
+   de arriba -- misma pastilla, otro contexto. */
+.carta-perfil-sigue { display: flex; width: fit-content; margin: 18px auto 0; }
+.carta-perfil-sigue[hidden] { display: none; }
+
 /* Saludo con nombre: aparece apenas se resuelve la identidad (ver
    pintarSaludoPersona en carta.js) -- debajo de la fila de la cuadrícula. */
 /* No usa .wrap: .carta-util-row (el ícono de cuadrícula/mesa, justo arriba)
