@@ -611,6 +611,49 @@ async function iniciar() {
     const nombreEl = $("#carta-cliente-nombre"); if (nombreEl) nombreEl.value = identidad.nombre;
     const waEl = $("#carta-cliente-wa"); if (waEl) waEl.value = identidad.whatsapp;
     const wrapEl = $("#carta-sheet-identidad"); if (wrapEl) wrapEl.hidden = true;
+    pintarSaludoPersona(identidad.nombre);
+  }
+  // ---------- Saludo con género detectado del nombre -- no hay campo de
+  // género en el formulario, así que es un heurístico: diccionario corto de
+  // nombres comunes que no siguen la terminación típica (a=femenino,
+  // o=masculino) + esa regla general como respaldo. Ante un nombre ambiguo
+  // (termina en otra letra y no está en los diccionarios) se cae a un saludo
+  // neutro en vez de arriesgarse a adivinar mal. ----------
+  const GENERO_EXCEPCIONES_M_TERMINAN_A = new Set(["luca", "nicola"]);
+  const GENERO_EXCEPCIONES_F_TERMINAN_O = new Set(["consuelo", "socorro", "amparo", "rosario"]);
+  const GENERO_NOMBRES_F = new Set([
+    "carmen", "isabel", "soledad", "pilar", "mar", "flor", "luz", "paz", "esther", "ruth", "raquel",
+    "abigail", "itzel", "belen", "nieves", "dolores", "montserrat", "guadalupe", "noemi", "yanet",
+    "yaneth", "nohemi", "ingrid", "lilibeth", "scarlet", "jennifer", "jazmin", "yurani", "maite",
+    "nury", "mayerly", "leidy", "leidi", "shirley", "estefany", "britanny", "katherine", "heather",
+    "jennyfer", "elizabeth", "juli", "juliet", "marilyn", "evelyn", "carolyn", "lizeth", "yurley",
+    "deisy", "nidia", "gledys", "mabel", "isis", "iris", "eunice",
+  ]);
+  const GENERO_NOMBRES_M = new Set([
+    "miguel", "rafael", "gabriel", "daniel", "samuel", "ismael", "abel", "ezequiel", "nicolas",
+    "andres", "carlos", "luis", "jesus", "tomas", "sebastian", "cristian", "esteban", "ivan", "ruben",
+    "oscar", "victor", "hector", "walter", "edgar", "omar", "cesar", "javier", "xavier", "angel",
+    "yeison", "yeferson", "brayan", "jonathan", "jhon", "jhonatan", "edwin", "elkin", "albeiro",
+    "deiby", "fabian", "duvan", "harold", "yesid", "alexander", "jair", "yair", "anderson", "wilmer",
+    "wilson", "nelson", "robinson", "harrison", "jefferson",
+  ]);
+  function quitarAcentos(s) { return s.normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+  function detectarGenero(nombre) {
+    const primero = quitarAcentos((nombre || "").trim().split(/\s+/)[0] || "").toLowerCase();
+    if (!primero) return null;
+    if (GENERO_NOMBRES_F.has(primero)) return "f";
+    if (GENERO_NOMBRES_M.has(primero)) return "m";
+    if (primero.endsWith("a")) return GENERO_EXCEPCIONES_M_TERMINAN_A.has(primero) ? "m" : "f";
+    if (primero.endsWith("o")) return GENERO_EXCEPCIONES_F_TERMINAN_O.has(primero) ? "f" : "m";
+    return null;
+  }
+  function pintarSaludoPersona(nombre) {
+    const el = $("#carta-saludo-persona");
+    if (!el || !nombre) return;
+    const primero = nombre.trim().split(/\s+/)[0];
+    const genero = detectarGenero(nombre);
+    el.textContent = genero === "f" ? `👋 ¡Bienvenida, ${primero}!` : genero === "m" ? `👋 ¡Bienvenido, ${primero}!` : `👋 ¡Hola, ${primero}!`;
+    el.hidden = false;
   }
   function mostrarBienvenidaSiHaceFalta() {
     if (obtenerIdentidad()) return;

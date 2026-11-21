@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=143">
-  <link rel="stylesheet" href="carta.css?v=38">
+  <link rel="stylesheet" href="carta.css?v=39">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -51,6 +51,12 @@
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
         Síguenos
       </a>
+    </div>
+    <!-- Saludo personalizado: aparece apenas se resuelve la identidad (ver
+         pintarSaludoPersona en carta.js) -- "Bienvenido/Bienvenida" según
+         género detectado del nombre, o neutro si no se pudo detectar. -->
+    <div class="wrap carta-saludo-row">
+      <span class="carta-saludo-persona" id="carta-saludo-persona" hidden></span>
     </div>
   </div>
 
@@ -323,7 +329,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=44"></script>
+  <script type="module" src="carta.js?v=45"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

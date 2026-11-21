@@ -83,6 +83,17 @@ body { background: #0b0b0c; position: relative; }
 .carta-sigue-pill { margin-left: auto; }
 .carta-sigue-pill__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--verde-claro, var(--verde)); flex: none; }
 
+/* Saludo con nombre: aparece apenas se resuelve la identidad (ver
+   pintarSaludoPersona en carta.js) -- debajo de la fila de la cuadrícula. */
+.carta-saludo-row { display: flex; justify-content: center; margin-top: 8px; }
+.carta-saludo-persona {
+  pointer-events: none; display: inline-flex; align-items: center; height: 30px; padding: 0 14px;
+  border-radius: 100px; background: rgba(20,20,24,.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  color: #fff; font-family: var(--cuerpo); font-size: 12.5px; font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.carta-saludo-persona[hidden] { display: none; }
+
 /* El carrusel de avisos reutiliza tal cual .tienda-hero/.tienda-banner-track/
    .tienda-banner-dots de styles.css (mismo diseño que el banner de "Tienda
    del Club") -- acá solo hace falta el respaldo de ".carta-aviso-wrap[hidden]"
