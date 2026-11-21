@@ -510,6 +510,22 @@ async function iniciar() {
       }
     }
 
+    // El texto (nombre/descripción/precio) de cada tarjeta se desvanece
+    // mientras no está CASI del todo en pantalla -- sin esto, durante un
+    // scroll lento/controlado se alcanza a ver la descripción de la
+    // tarjeta de arriba "colgando" al mismo tiempo que entra la foto de la
+    // siguiente, dando la sensación de que chocan. Con el texto invisible
+    // hasta que la tarjeta ya casi terminó de asentarse, la transición se
+    // siente más rápida y limpia (la foto sigue viéndose todo el tiempo,
+    // solo el texto aparece/desaparece).
+    const observerTexto = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const body = entry.target.querySelector(".carta-card__body");
+        if (body) body.classList.toggle("carta-card__body--oculto", entry.intersectionRatio < 0.85);
+      });
+    }, { root: grid, threshold: [0, 0.5, 0.7, 0.85, 0.95, 1] });
+    grid.querySelectorAll(".carta-slide").forEach(s => observerTexto.observe(s));
+
     // Scroll infinito: al llegar al final del feed, vuelve al principio.
     // Se clona la PRIMERA tarjeta y se pega al final como "centinela" -- en
     // cuanto esa copia queda asentada a pantalla completa (scroll-snap ya
