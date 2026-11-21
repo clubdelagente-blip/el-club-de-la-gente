@@ -717,7 +717,8 @@
           <div id="negtab-contabilidad" style="display:none">
             <div class="seg-opts" style="margin-bottom:22px" id="contasub-nav">
               <button class="seg-opt is-on" data-contasub="balance" type="button">📊 Balance</button>
-              <button class="seg-opt" data-contasub="pedido" type="button">🧾 Nuevo pedido</button>
+              <button class="seg-opt" data-contasub="pedido" type="button">🧾 Pedidos</button>
+              <button class="seg-opt" data-contasub="carta" type="button">🎨 Carta</button>
               <button class="seg-opt" data-contasub="gasto" type="button">➖ Nuevo gasto</button>
               <button class="seg-opt" data-contasub="costos" type="button">🧮 Costos</button>
               <button class="seg-opt" data-contasub="metricas" type="button">📈 Métricas</button>
@@ -815,201 +816,261 @@
               </div>
             </div>
 
-            <!-- ---------- NUEVO PEDIDO ---------- -->
+            <!-- ---------- PEDIDOS ---------- -->
             <div id="contasub-pedido" style="display:none">
               <button class="btn btn--primario" id="conta-nuevo-pedido-btn" type="button" style="margin-bottom:20px;width:100%;justify-content:center">🧾 Nuevo pedido</button>
+              <div class="card__head" style="padding:0 0 10px"><span class="card__title">Pedidos</span></div>
+              <div id="conta-carta-pedidos-list" style="padding:4px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
+            </div>
 
-              <div class="card" style="margin-bottom:20px">
-                <div class="card__head"><span class="card__title">Mi carta digital (pedidos por QR)</span></div>
-                <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;padding:8px 0 16px">
-                  <img id="conta-carta-qr" src="" alt="Código QR de tu carta" style="width:140px;height:140px;border-radius:10px;border:1px solid var(--linea)">
-                  <div style="flex:1;min-width:220px">
-                    <p style="font-size:13px;color:var(--tinta-60);line-height:1.6;margin-bottom:10px">Imprime este código y ponlo en tus mesas o mostrador. Tus clientes lo escanean, escogen de tu carta y el pedido te llega aquí mismo.</p>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap">
-                      <a id="conta-carta-descargar" class="btn" download="carta-qr.png">Descargar QR</a>
-                      <button class="btn" id="conta-carta-copiar" type="button">Copiar link</button>
+            <!-- ---------- CARTA: hub + secciones ---------- -->
+            <div id="contasub-carta" style="display:none">
+
+              <div id="carta-hub">
+                <div class="card" style="margin-bottom:20px">
+                  <div class="card__head"><span class="card__title">Tu carta digital</span></div>
+                  <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;padding:8px 0 16px">
+                    <img id="conta-carta-qr" src="" alt="Código QR de tu carta" style="width:140px;height:140px;border-radius:10px;border:1px solid var(--linea)">
+                    <div style="flex:1;min-width:220px">
+                      <p style="font-size:13px;color:var(--tinta-60);line-height:1.6;margin-bottom:10px">Imprime este código y ponlo en tus mesas o mostrador. Tus clientes lo escanean, escogen de tu carta y el pedido te llega a "Pedidos".</p>
+                      <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <a id="conta-carta-descargar" class="btn" download="carta-qr.png">Descargar QR</a>
+                        <button class="btn" id="conta-carta-copiar" type="button">Copiar link</button>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <details style="margin-bottom:16px">
-                  <summary style="cursor:pointer;font-family:'Anton',sans-serif;font-size:15px;font-weight:700">Personalizar mi carta</summary>
-                  <div style="padding:14px 0 4px">
-                    <div style="margin-bottom:18px">
-                      <label class="cfg-label" style="margin-bottom:8px;display:block;text-align:center">Vista previa en vivo</label>
-                      <div style="max-width:300px;margin:0 auto;border:8px solid #021B1A;border-radius:28px;overflow:hidden;box-shadow:0 10px 30px -10px rgba(0,0,0,.35)">
-                        <iframe id="conta-carta-preview" style="width:100%;height:520px;border:none;display:block" title="Vista previa de tu carta" loading="lazy"></iframe>
-                      </div>
-                      <p style="font-size:11.5px;color:var(--tinta-45);text-align:center;margin-top:8px">Se actualiza al momento mientras cambias los colores -- nada se publica hasta que le des a "Guardar personalización".</p>
-                    </div>
-                    <div class="cfg-campo">
-                      <label class="cfg-label">Llave de pago para la carta (Nequi, Bre-B...)</label>
-                      <input class="cfg-input" id="conta-carta-llave" type="text" placeholder="Ej: 300 123 4567">
-                      <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Es la misma llave de "Mi tienda" -- si la cambias acá, también se actualiza ahí.</span>
-                    </div>
-                    <div class="cfg-campo">
-                      <label class="cfg-label">Foto de tu QR de pago (Nequi, Daviplata...) <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label>
-                      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
-                        <img id="conta-carta-llave-qr-preview" src="" alt="" style="width:72px;height:72px;object-fit:contain;border-radius:10px;border:1px solid var(--linea);background:#fff;display:none">
-                        <div style="flex:1;min-width:180px">
-                          <input type="file" id="conta-carta-llave-qr" accept="image/*">
-                          <input type="hidden" id="conta-carta-llave-qr-url">
-                          <a id="conta-carta-llave-qr-descargar" class="btn" href="" download="qr-de-pago.png" style="display:none;margin-top:8px">Descargar QR</a>
-                          <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Si lo subes, tus clientes lo ven al elegir "Transferencia" y lo escanean directo desde su app del banco, en vez de copiar la llave a mano.</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="cfg-campo">
-                      <label class="cfg-label">Logo de tu negocio <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label>
-                      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
-                        <img id="conta-carta-logo-preview" src="" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:50%;border:1px solid var(--linea);background:#fff;display:none">
-                        <div style="flex:1;min-width:180px">
-                          <input type="file" id="conta-carta-logo" accept="image/*">
-                          <input type="hidden" id="conta-carta-logo-url">
-                          <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Se ve en pequeño, flotando sobre la carta.</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="cfg-campo">
-                      <label class="cfg-label">Instagram <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label>
-                      <input class="cfg-input" id="conta-carta-instagram" type="text" placeholder="@tunegocio o tunegocio">
-                      <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Aparece como un botón "Síguenos" en tu carta.</span>
-                    </div>
-                    <div class="cfg-campo">
-                      <label class="cfg-label">Color de acento</label>
-                      <div style="display:flex;gap:8px;align-items:center">
-                        <input type="color" id="conta-carta-color" value="#095544" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
-                        <input type="text" id="conta-carta-color-hex" placeholder="#095544" style="width:92px;padding:9px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
-                      </div>
-                    </div>
-                    <div class="cfg-campo">
-                      <label class="cfg-label">Imagen de portada (opcional)</label>
-                      <input type="file" id="conta-carta-portada" accept="image/*">
-                      <input type="hidden" id="conta-carta-portada-url">
-                    </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                      <div class="cfg-campo"><label class="cfg-label">Fondo de los productos</label>
-                        <div style="display:flex;gap:8px;align-items:center">
-                          <input type="color" id="conta-carta-color-tarjeta" value="#ffffff" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
-                          <input type="text" id="conta-carta-color-tarjeta-hex" placeholder="#ffffff" style="width:92px;padding:9px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
-                        </div>
-                      </div>
-                      <div class="cfg-campo"><label class="cfg-label">Borde de los productos</label>
-                        <div style="display:flex;gap:8px;align-items:center">
-                          <input type="color" id="conta-carta-color-borde" value="#e5e5e5" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
-                          <input type="text" id="conta-carta-color-borde-hex" placeholder="#e5e5e5" style="width:92px;padding:9px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
-                        </div>
-                      </div>
-                    </div>
-                    <div class="cfg-campo">
-                      <label class="cfg-label">Fondo de la caja "Tu pedido"</label>
-                      <div style="display:flex;gap:8px;align-items:center">
-                        <input type="color" id="conta-carta-color-pedido" value="#ffffff" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
-                        <input type="text" id="conta-carta-color-pedido-hex" placeholder="#ffffff" style="width:92px;padding:9px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
-                      </div>
-                    </div>
+                <button type="button" class="carta-fila" data-carta-ir="apariencia">
+                  <span class="carta-fila__ic"><i data-lucide="palette"></i></span>
+                  <span class="carta-fila__body">
+                    <span class="carta-fila__title">Apariencia</span>
+                    <span class="carta-fila__sub">Colores, logo, portada, Instagram y orden de categorías</span>
+                  </span>
+                  <span class="carta-fila__chev"><i data-lucide="chevron-right"></i></span>
+                </button>
 
-                    <div style="background:rgba(9,85,68,.08);border:1px solid rgba(9,85,68,.3);border-radius:10px;padding:12px 14px;margin-bottom:14px">
-                      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--tinta-70)">
-                        <input id="conta-carta-precio-desde" type="checkbox" style="width:16px;height:16px;accent-color:#095544">
-                        🏷️ Mostrar precios como "Desde $..." y el botón "Elegir" siempre, incluso en productos sin toppings
-                      </label>
-                    </div>
+                <button type="button" class="carta-fila" data-carta-ir="catalogo">
+                  <span class="carta-fila__ic"><i data-lucide="utensils"></i></span>
+                  <span class="carta-fila__body">
+                    <span class="carta-fila__title">Catálogo</span>
+                    <span class="carta-fila__sub">Productos de tu carta y sus toppings/modificadores</span>
+                  </span>
+                  <span class="carta-fila__chev"><i data-lucide="chevron-right"></i></span>
+                </button>
 
-                    <div style="background:rgba(9,85,68,.08);border:1px solid rgba(9,85,68,.3);border-radius:10px;padding:12px 14px;margin-bottom:14px">
-                      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--tinta-70);margin-bottom:10px">
-                        <input id="conta-carta-sellos-activo" type="checkbox" style="width:16px;height:16px;accent-color:#095544">
-                        🎟️ Tarjeta de sellos para quien pide por la carta
-                      </label>
-                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                        <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Pedidos necesarios</label><input class="cfg-input" id="conta-carta-sellos-meta" type="number" min="1" value="10"></div>
-                        <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Tipo de premio</label>
-                          <select class="cfg-input" id="conta-carta-sellos-tipo">
-                            <option value="descuento">Descuento</option>
-                            <option value="gratis">Gratis</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div class="cfg-campo" style="margin-bottom:0"><label class="cfg-label">Describe el premio</label><input class="cfg-input" id="conta-carta-sellos-premio" type="text" placeholder="Ej: Un postre gratis / 20% de descuento"></div>
-                    </div>
+                <button type="button" class="carta-fila" data-carta-ir="mesas">
+                  <span class="carta-fila__ic"><i data-lucide="armchair"></i></span>
+                  <span class="carta-fila__body">
+                    <span class="carta-fila__title">Mesas</span>
+                    <span class="carta-fila__sub">Pedidos compartidos que se cobran como una sola cuenta</span>
+                  </span>
+                  <span class="carta-fila__chev"><i data-lucide="chevron-right"></i></span>
+                </button>
 
-                    <div style="background:rgba(234,183,73,.12);border:1px solid rgba(234,183,73,.4);border-radius:10px;padding:12px 14px;margin-bottom:14px">
-                      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--tinta-70);margin-bottom:10px">
-                        <input id="conta-carta-aviso-activo" type="checkbox" style="width:16px;height:16px;accent-color:#095544">
-                        📣 Mostrar avisos arriba de la carta
-                      </label>
-                      <div class="cfg-campo" style="margin-bottom:10px">
-                        <label class="cfg-label">Color del aviso</label>
-                        <div style="display:flex;gap:8px;align-items:center">
-                          <input type="color" id="conta-carta-aviso-color" value="#164a2c" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
-                          <input type="text" id="conta-carta-aviso-color-hex" placeholder="#164a2c" style="width:92px;padding:9px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
-                        </div>
-                      </div>
-                      <div id="conta-carta-avisos-lista"></div>
-                      <button class="btn" type="button" id="conta-carta-aviso-add" style="font-size:12.5px">+ Agregar aviso</button>
-                      <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:8px">Si agregas más de uno, se ven como un carrusel que la gente puede deslizar.</span>
-                    </div>
+                <button type="button" class="carta-fila" data-carta-ir="promos">
+                  <span class="carta-fila__ic"><i data-lucide="megaphone"></i></span>
+                  <span class="carta-fila__body">
+                    <span class="carta-fila__title">Promociones y avisos</span>
+                    <span class="carta-fila__sub">Tarjeta de sellos, avisos destacados y domicilio</span>
+                  </span>
+                  <span class="carta-fila__chev"><i data-lucide="chevron-right"></i></span>
+                </button>
 
-                    <div style="background:rgba(9,85,68,.08);border:1px solid rgba(9,85,68,.3);border-radius:10px;padding:12px 14px;margin-bottom:14px">
-                      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--tinta-70);margin-bottom:10px">
-                        <input id="conta-carta-domicilio-activo" type="checkbox" style="width:16px;height:16px;accent-color:#095544">
-                        🛵 Ofrecer domicilio en la carta
-                      </label>
-                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                        <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Valor del domicilio</label><input class="cfg-input" id="conta-carta-domicilio-valor" type="text" inputmode="numeric" placeholder="Ej: 5.000"></div>
-                        <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Pedido mínimo <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label><input class="cfg-input" id="conta-carta-domicilio-minimo" type="text" inputmode="numeric" placeholder="Ej: 20.000"></div>
-                      </div>
-                      <div class="cfg-campo" style="margin-bottom:0"><label class="cfg-label">Tiempo estimado <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label><input class="cfg-input" id="conta-carta-domicilio-tiempo" type="text" placeholder="Ej: 30-45 min"></div>
-                    </div>
-
-                    <div class="cfg-campo">
-                      <label class="cfg-label">Orden de las categorías</label>
-                      <div id="conta-carta-cat-orden" style="display:flex;flex-direction:column;gap:6px"></div>
-                      <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Solo aparecen las categorías que ya usaste en "Productos de mi carta" (abajo).</span>
-                    </div>
-
-                    <button class="btn btn--primario" id="conta-carta-personalizar-guardar" type="button">Guardar personalización</button>
-                  </div>
-                </details>
-
-                <details class="card" style="margin-bottom:16px">
-                  <summary style="cursor:pointer;font-family:'Anton',sans-serif;font-size:17px;font-weight:700">Toppings y modificadores</summary>
-                  <div style="padding:16px 0 4px">
-                    <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:14px">Arma grupos como "Salsas" o "Tamaño" una sola vez y pégalos a los productos que los necesiten desde su formulario.</p>
-                    <button class="btn btn--primario" id="conta-mod-grupo-add" type="button" style="margin-bottom:14px">+ Nuevo grupo</button>
-                    <div id="conta-mod-grupos-list"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
-                  </div>
-                </details>
-
-                <details class="card" style="margin-bottom:16px">
-                  <summary style="cursor:pointer;font-family:'Anton',sans-serif;font-size:17px;font-weight:700">Productos de mi carta</summary>
-                  <div style="padding:16px 0 4px">
-                    <p id="conta-carta-tipo-hint" hidden style="font-size:12.5px;color:var(--tinta-60);background:var(--crema-2);border-radius:8px;padding:10px 12px;margin-bottom:14px"></p>
-                    <button class="btn btn--primario" id="conta-carta-producto-add" type="button" style="margin-bottom:14px">+ Agregar producto</button>
-                    <div id="conta-carta-productos-list"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
-                  </div>
-                </details>
-
-                <details class="card" id="conta-mesas-seccion" style="margin-bottom:16px">
-                  <summary style="cursor:pointer;font-family:'Anton',sans-serif;font-size:17px;font-weight:700">Mesas (pedidos compartidos)</summary>
-                  <div style="padding:16px 0 4px">
-                    <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:14px">Crea una mesa y pega su QR en ella -- todos los que lo escaneen arman su propio pedido, pero te llegan agrupados como uno solo en "Pedidos". Nadie paga individual: cobras la mesa completa cuando termina.</p>
-                    <button class="btn btn--primario" id="conta-mesa-add" type="button" style="margin-bottom:14px">+ Nueva mesa</button>
-                    <div id="conta-mesas-list"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
-                  </div>
-                </details>
-
-                <div class="card__head" style="padding:0 0 10px"><span class="card__title">Pedidos</span></div>
-                <div id="conta-carta-pedidos-list" style="padding:4px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
-
-                <details class="card" style="margin-top:16px">
-                  <summary style="cursor:pointer;font-family:'Anton',sans-serif;font-size:17px;font-weight:700">Comentarios de clientes</summary>
-                  <div style="padding:16px 0 4px">
-                    <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:14px">Los clientes comentan tus productos desde la carta -- nadie los ve en público hasta que tú los apruebes acá.</p>
-                    <div id="conta-carta-comentarios-list"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
-                  </div>
-                </details>
+                <button type="button" class="carta-fila" data-carta-ir="comentarios">
+                  <span class="carta-fila__ic"><i data-lucide="message-square"></i></span>
+                  <span class="carta-fila__body">
+                    <span class="carta-fila__title">Comentarios de clientes</span>
+                    <span class="carta-fila__sub">Aprueba lo que se publica en tus productos</span>
+                  </span>
+                  <span class="carta-fila__chev"><i data-lucide="chevron-right"></i></span>
+                </button>
               </div>
+
+              <div id="carta-seccion-apariencia" class="carta-seccion" style="display:none">
+                <button type="button" class="carta-volver" data-carta-volver><i data-lucide="arrow-left"></i> Carta</button>
+                <h3 class="carta-seccion__titulo">Apariencia</h3>
+                <div class="card">
+                  <div style="margin-bottom:18px">
+                    <label class="cfg-label" style="margin-bottom:8px;display:block;text-align:center">Vista previa en vivo</label>
+                    <div style="max-width:300px;margin:0 auto;border:8px solid #021B1A;border-radius:28px;overflow:hidden;box-shadow:0 10px 30px -10px rgba(0,0,0,.35)">
+                      <iframe id="conta-carta-preview" style="width:100%;height:520px;border:none;display:block" title="Vista previa de tu carta" loading="lazy"></iframe>
+                    </div>
+                    <p style="font-size:11.5px;color:var(--tinta-45);text-align:center;margin-top:8px">Se actualiza al momento mientras cambias los colores -- nada se publica hasta que le des a "Guardar personalización".</p>
+                  </div>
+                  <div class="cfg-campo">
+                    <label class="cfg-label">Llave de pago para la carta (Nequi, Bre-B...)</label>
+                    <input class="cfg-input" id="conta-carta-llave" type="text" placeholder="Ej: 300 123 4567">
+                    <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Es la misma llave de "Mi tienda" -- si la cambias acá, también se actualiza ahí.</span>
+                  </div>
+                  <div class="cfg-campo">
+                    <label class="cfg-label">Foto de tu QR de pago (Nequi, Daviplata...) <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label>
+                    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+                      <img id="conta-carta-llave-qr-preview" src="" alt="" style="width:72px;height:72px;object-fit:contain;border-radius:10px;border:1px solid var(--linea);background:#fff;display:none">
+                      <div style="flex:1;min-width:180px">
+                        <input type="file" id="conta-carta-llave-qr" accept="image/*">
+                        <input type="hidden" id="conta-carta-llave-qr-url">
+                        <a id="conta-carta-llave-qr-descargar" class="btn" href="" download="qr-de-pago.png" style="display:none;margin-top:8px">Descargar QR</a>
+                        <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Si lo subes, tus clientes lo ven al elegir "Transferencia" y lo escanean directo desde su app del banco, en vez de copiar la llave a mano.</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="cfg-campo">
+                    <label class="cfg-label">Logo de tu negocio <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label>
+                    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+                      <img id="conta-carta-logo-preview" src="" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:50%;border:1px solid var(--linea);background:#fff;display:none">
+                      <div style="flex:1;min-width:180px">
+                        <input type="file" id="conta-carta-logo" accept="image/*">
+                        <input type="hidden" id="conta-carta-logo-url">
+                        <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Se ve en pequeño, flotando sobre la carta.</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="cfg-campo">
+                    <label class="cfg-label">Instagram <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label>
+                    <input class="cfg-input" id="conta-carta-instagram" type="text" placeholder="@tunegocio o tunegocio">
+                    <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Aparece como un botón "Síguenos" en tu carta.</span>
+                  </div>
+                  <div class="cfg-campo">
+                    <label class="cfg-label">Color de acento</label>
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <input type="color" id="conta-carta-color" value="#095544" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
+                      <input type="text" id="conta-carta-color-hex" placeholder="#095544" style="width:92px;padding:9px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
+                    </div>
+                  </div>
+                  <div class="cfg-campo">
+                    <label class="cfg-label">Imagen de portada (opcional)</label>
+                    <input type="file" id="conta-carta-portada" accept="image/*">
+                    <input type="hidden" id="conta-carta-portada-url">
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div class="cfg-campo"><label class="cfg-label">Fondo de los productos</label>
+                      <div style="display:flex;gap:8px;align-items:center">
+                        <input type="color" id="conta-carta-color-tarjeta" value="#ffffff" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
+                        <input type="text" id="conta-carta-color-tarjeta-hex" placeholder="#ffffff" style="width:92px;padding:9px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
+                      </div>
+                    </div>
+                    <div class="cfg-campo"><label class="cfg-label">Borde de los productos</label>
+                      <div style="display:flex;gap:8px;align-items:center">
+                        <input type="color" id="conta-carta-color-borde" value="#e5e5e5" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
+                        <input type="text" id="conta-carta-color-borde-hex" placeholder="#e5e5e5" style="width:92px;padding:9px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
+                      </div>
+                    </div>
+                  </div>
+                  <div class="cfg-campo">
+                    <label class="cfg-label">Fondo de la caja "Tu pedido"</label>
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <input type="color" id="conta-carta-color-pedido" value="#ffffff" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
+                      <input type="text" id="conta-carta-color-pedido-hex" placeholder="#ffffff" style="width:92px;padding:9px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
+                    </div>
+                  </div>
+
+                  <div style="background:rgba(9,85,68,.08);border:1px solid rgba(9,85,68,.3);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--tinta-70)">
+                      <input id="conta-carta-precio-desde" type="checkbox" style="width:16px;height:16px;accent-color:#095544">
+                      🏷️ Mostrar precios como "Desde $..." y el botón "Elegir" siempre, incluso en productos sin toppings
+                    </label>
+                  </div>
+
+                  <div class="cfg-campo">
+                    <label class="cfg-label">Orden de las categorías</label>
+                    <div id="conta-carta-cat-orden" style="display:flex;flex-direction:column;gap:6px"></div>
+                    <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:4px">Solo aparecen las categorías que ya usaste en "Catálogo".</span>
+                  </div>
+
+                  <button class="btn btn--primario" id="conta-carta-personalizar-guardar" type="button">Guardar personalización</button>
+                </div>
+              </div>
+
+              <div id="carta-seccion-catalogo" class="carta-seccion" style="display:none">
+                <button type="button" class="carta-volver" data-carta-volver><i data-lucide="arrow-left"></i> Carta</button>
+                <h3 class="carta-seccion__titulo">Catálogo</h3>
+                <div class="card" style="margin-bottom:16px">
+                  <div class="card__head"><span class="card__title">Productos de mi carta</span></div>
+                  <p id="conta-carta-tipo-hint" hidden style="font-size:12.5px;color:var(--tinta-60);background:var(--crema-2);border-radius:8px;padding:10px 12px;margin-bottom:14px"></p>
+                  <button class="btn btn--primario" id="conta-carta-producto-add" type="button" style="margin-bottom:14px">+ Agregar producto</button>
+                  <div id="conta-carta-productos-list"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
+                </div>
+                <div class="card">
+                  <div class="card__head"><span class="card__title">Toppings y modificadores</span></div>
+                  <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:14px">Arma grupos como "Salsas" o "Tamaño" una sola vez y pégalos a los productos que los necesiten desde su formulario.</p>
+                  <button class="btn btn--primario" id="conta-mod-grupo-add" type="button" style="margin-bottom:14px">+ Nuevo grupo</button>
+                  <div id="conta-mod-grupos-list"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
+                </div>
+              </div>
+
+              <div id="carta-seccion-mesas" class="carta-seccion" style="display:none">
+                <button type="button" class="carta-volver" data-carta-volver><i data-lucide="arrow-left"></i> Carta</button>
+                <h3 class="carta-seccion__titulo">Mesas</h3>
+                <div class="card" id="conta-mesas-seccion">
+                  <div class="card__head"><span class="card__title">Mesas (pedidos compartidos)</span></div>
+                  <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:14px">Crea una mesa y pega su QR en ella -- todos los que lo escaneen arman su propio pedido, pero te llegan agrupados como uno solo en "Pedidos". Nadie paga individual: cobras la mesa completa cuando termina.</p>
+                  <button class="btn btn--primario" id="conta-mesa-add" type="button" style="margin-bottom:14px">+ Nueva mesa</button>
+                  <div id="conta-mesas-list"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
+                </div>
+              </div>
+
+              <div id="carta-seccion-promos" class="carta-seccion" style="display:none">
+                <button type="button" class="carta-volver" data-carta-volver><i data-lucide="arrow-left"></i> Carta</button>
+                <h3 class="carta-seccion__titulo">Promociones y avisos</h3>
+                <div style="background:rgba(9,85,68,.08);border:1px solid rgba(9,85,68,.3);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+                  <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--tinta-70);margin-bottom:10px">
+                    <input id="conta-carta-sellos-activo" type="checkbox" style="width:16px;height:16px;accent-color:#095544">
+                    🎟️ Tarjeta de sellos para quien pide por la carta
+                  </label>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Pedidos necesarios</label><input class="cfg-input" id="conta-carta-sellos-meta" type="number" min="1" value="10"></div>
+                    <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Tipo de premio</label>
+                      <select class="cfg-input" id="conta-carta-sellos-tipo">
+                        <option value="descuento">Descuento</option>
+                        <option value="gratis">Gratis</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="cfg-campo" style="margin-bottom:0"><label class="cfg-label">Describe el premio</label><input class="cfg-input" id="conta-carta-sellos-premio" type="text" placeholder="Ej: Un postre gratis / 20% de descuento"></div>
+                </div>
+
+                <div style="background:rgba(234,183,73,.12);border:1px solid rgba(234,183,73,.4);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+                  <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--tinta-70);margin-bottom:10px">
+                    <input id="conta-carta-aviso-activo" type="checkbox" style="width:16px;height:16px;accent-color:#095544">
+                    📣 Mostrar avisos arriba de la carta
+                  </label>
+                  <div class="cfg-campo" style="margin-bottom:10px">
+                    <label class="cfg-label">Color del aviso</label>
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <input type="color" id="conta-carta-aviso-color" value="#164a2c" style="width:60px;height:38px;padding:2px;border:1px solid var(--linea-fuerte);border-radius:8px">
+                      <input type="text" id="conta-carta-aviso-color-hex" placeholder="#164a2c" style="width:92px;padding:9px 8px;border:1px solid var(--linea-fuerte);border-radius:6px;font-size:12px">
+                    </div>
+                  </div>
+                  <div id="conta-carta-avisos-lista"></div>
+                  <button class="btn" type="button" id="conta-carta-aviso-add" style="font-size:12.5px">+ Agregar aviso</button>
+                  <span style="font-size:12px;color:var(--tinta-45);display:block;margin-top:8px">Si agregas más de uno, se ven como un carrusel que la gente puede deslizar.</span>
+                </div>
+
+                <div style="background:rgba(9,85,68,.08);border:1px solid rgba(9,85,68,.3);border-radius:10px;padding:12px 14px">
+                  <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--tinta-70);margin-bottom:10px">
+                    <input id="conta-carta-domicilio-activo" type="checkbox" style="width:16px;height:16px;accent-color:#095544">
+                    🛵 Ofrecer domicilio en la carta
+                  </label>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Valor del domicilio</label><input class="cfg-input" id="conta-carta-domicilio-valor" type="text" inputmode="numeric" placeholder="Ej: 5.000"></div>
+                    <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Pedido mínimo <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label><input class="cfg-input" id="conta-carta-domicilio-minimo" type="text" inputmode="numeric" placeholder="Ej: 20.000"></div>
+                  </div>
+                  <div class="cfg-campo" style="margin-bottom:0"><label class="cfg-label">Tiempo estimado <span style="font-weight:400;color:var(--tinta-45)">(opcional)</span></label><input class="cfg-input" id="conta-carta-domicilio-tiempo" type="text" placeholder="Ej: 30-45 min"></div>
+                </div>
+
+                <button class="btn btn--primario" id="conta-carta-promos-guardar" type="button">Guardar cambios</button>
+              </div>
+
+              <div id="carta-seccion-comentarios" class="carta-seccion" style="display:none">
+                <button type="button" class="carta-volver" data-carta-volver><i data-lucide="arrow-left"></i> Carta</button>
+                <h3 class="carta-seccion__titulo">Comentarios de clientes</h3>
+                <div class="card">
+                  <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:14px">Los clientes comentan tus productos desde la carta -- nadie los ve en público hasta que tú los apruebes acá.</p>
+                  <div id="conta-carta-comentarios-list"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
+                </div>
+              </div>
+
             </div>
 
             <!-- ---------- NUEVO GASTO ---------- -->
@@ -1480,6 +1541,31 @@
     }
     textarea.cfg-input { resize: vertical; }
 
+    /* Hub de "Carta" (Mi Contabilidad) -- fila tipo app de ajustes: ícono,
+       título+descripción, flecha. Reemplaza el acordeón de <details> de
+       siempre por una navegación real (ver mostrarCartaSeccion en dashboard.js). */
+    .carta-fila {
+      display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+      background: #fff; border: 1px solid var(--linea); border-radius: 14px;
+      padding: 16px 18px; margin-bottom: 10px; cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+    }
+    .carta-fila:hover { border-color: var(--verde); transform: translateY(-1px); box-shadow: 0 10px 24px -16px rgba(0,0,0,.25); }
+    .carta-fila__ic { width: 44px; height: 44px; border-radius: 12px; background: var(--verde-soft); color: var(--verde); display: grid; place-items: center; flex: none; }
+    .carta-fila__ic i { width: 21px; height: 21px; }
+    .carta-fila__body { flex: 1; min-width: 0; }
+    .carta-fila__title { display: block; font-family: 'Anton', sans-serif; font-size: 15px; font-weight: 700; color: #021B1A; }
+    .carta-fila__sub { display: block; font-size: 12.5px; color: var(--tinta-60); margin-top: 2px; }
+    .carta-fila__chev { color: var(--tinta-45); flex: none; display: flex; }
+    .carta-fila__chev i { width: 18px; height: 18px; }
+    .carta-volver {
+      display: inline-flex; align-items: center; gap: 6px; border: none; background: none;
+      color: var(--verde); font-weight: 700; font-size: 13.5px; cursor: pointer; padding: 6px 0;
+      margin-bottom: 10px; font-family: 'Inter', sans-serif;
+    }
+    .carta-volver i { width: 16px; height: 16px; }
+    .carta-seccion__titulo { font-family: 'Anton', sans-serif; font-size: 19px; margin: 0 0 16px; color: #021B1A; }
+
     /* Tabs de Mi negocio */
     .neg-tab-btn {
       padding: 8px 16px; border-radius: 20px; border: 1px solid #ebebeb;
@@ -1507,7 +1593,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=265"></script>
+  <script type="module" src="dashboard.js?v=266"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">

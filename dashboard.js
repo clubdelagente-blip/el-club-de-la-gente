@@ -2169,7 +2169,10 @@ async function cargarContabilidadNegocio(negocioId) {
   $$("#contasub-nav [data-contasub]").forEach(b => {
     b.onclick = () => {
       $$("#contasub-nav [data-contasub]").forEach(x => x.classList.toggle("is-on", x === b));
-      ["balance", "pedido", "gasto", "costos", "metricas"].forEach(s => { const el = $(`#contasub-${s}`); if (el) el.style.display = s === b.dataset.contasub ? "" : "none"; });
+      ["balance", "pedido", "carta", "gasto", "costos", "metricas"].forEach(s => { const el = $(`#contasub-${s}`); if (el) el.style.display = s === b.dataset.contasub ? "" : "none"; });
+      // Siempre entra al hub de "Carta", nunca dejado a mitad de una
+      // sección de la visita anterior -- más predecible.
+      if (b.dataset.contasub === "carta") mostrarCartaSeccion(null);
     };
   });
 
@@ -2306,7 +2309,9 @@ async function cargarContabilidadNegocio(negocioId) {
   const btnModGrupoAdd = $("#conta-mod-grupo-add"); if (btnModGrupoAdd) btnModGrupoAdd.onclick = () => abrirFormModGrupo();
   const btnMesaAdd = $("#conta-mesa-add"); if (btnMesaAdd) btnMesaAdd.onclick = () => abrirFormMesa();
   const btnNuevoPedido = $("#conta-nuevo-pedido-btn"); if (btnNuevoPedido) btnNuevoPedido.onclick = () => abrirConstructorPedido();
-  const btnPersonalizar = $("#conta-carta-personalizar-guardar"); if (btnPersonalizar) btnPersonalizar.onclick = () => guardarPersonalizacionCarta();
+  const btnPersonalizar = $("#conta-carta-personalizar-guardar"); if (btnPersonalizar) btnPersonalizar.onclick = () => guardarPersonalizacionCarta(btnPersonalizar);
+  const btnPromosGuardar = $("#conta-carta-promos-guardar"); if (btnPromosGuardar) btnPromosGuardar.onclick = () => guardarPersonalizacionCarta(btnPromosGuardar);
+  wireCartaHub();
   const inputLogo = $("#conta-carta-logo");
   if (inputLogo) inputLogo.onchange = async (e) => {
     const file = e.target.files?.[0];
@@ -3011,8 +3016,26 @@ function abrirConstructorPedido() {
   });
 }
 
-async function guardarPersonalizacionCarta() {
-  const btn = $("#conta-carta-personalizar-guardar");
+// Hub de "Carta" (ver Perfil.html #contasub-carta): un solo nivel de
+// navegación -- la fila de un tema oculta el hub y muestra esa sección con
+// una flecha "← Carta" para volver. null/"" vuelve al hub.
+function mostrarCartaSeccion(id) {
+  const hub = $("#carta-hub");
+  if (hub) hub.style.display = id ? "none" : "";
+  $$(".carta-seccion").forEach(sec => { sec.style.display = sec.id === `carta-seccion-${id}` ? "" : "none"; });
+}
+function wireCartaHub() {
+  $$("[data-carta-ir]").forEach(btn => btn.onclick = () => mostrarCartaSeccion(btn.dataset.cartaIr));
+  $$("[data-carta-volver]").forEach(btn => btn.onclick = () => mostrarCartaSeccion(null));
+}
+
+async function guardarPersonalizacionCarta(btnDisparado) {
+  // "Apariencia" y "Promociones y avisos" son dos pantallas distintas del
+  // hub de Carta, pero un solo guardado -- cada una tiene su propio botón,
+  // así que el que se desactiva/avisa "Guardando…" es el que de verdad se
+  // tocó, no siempre el de "Apariencia".
+  const btn = btnDisparado || $("#conta-carta-personalizar-guardar");
+  const textoOriginalBtn = btn?.textContent;
   const color = $("#conta-carta-color")?.value || "#095544";
   const logoUrl = $("#conta-carta-logo-url")?.value || null;
   let instagram = $("#conta-carta-instagram")?.value.trim() || null;
@@ -3052,7 +3075,7 @@ async function guardarPersonalizacionCarta() {
     carta_domicilio_minimo: domicilioActivo ? domicilioMinimo : null, carta_domicilio_tiempo: domicilioTiempo,
   };
   const { error } = await supabase.from("aliados").update(payload).eq("id", _contaNegocioId);
-  if (btn) { btn.disabled = false; btn.textContent = "Guardar personalización"; }
+  if (btn) { btn.disabled = false; btn.textContent = textoOriginalBtn; }
   if (error) { toast("Error: " + error.message); return; }
   if (_contaNegocio) Object.assign(_contaNegocio, payload);
   const logoEl = document.getElementById("contaclub-logo");
@@ -3617,10 +3640,14 @@ function cargarMetricas() {
 // sin que nadie tenga que pagar individual (se cobra la mesa completa).
 function cargarMesas() {
   const seccion = $("#conta-mesas-seccion");
-  if (seccion) {
-    const cfg = TIPOS_NEGOCIO_CARTA[_contaNegocio.carta_tipo_negocio];
-    seccion.hidden = cfg?.mesas === false;
-  }
+  const oculto = TIPOS_NEGOCIO_CARTA[_contaNegocio.carta_tipo_negocio]?.mesas === false;
+  if (seccion) seccion.hidden = oculto;
+  // La fila del hub de Carta también se oculta -- si no, el negocio entra
+  // a una pantalla "Mesas" vacía. .carta-fila fija "display:flex" en su
+  // propia clase, así que [hidden] (mismo peso, pero de la hoja de estilos
+  // del navegador) no le gana -- hay que apagarla por display directo.
+  const filaMesas = $('[data-carta-ir="mesas"]');
+  if (filaMesas) filaMesas.style.display = oculto ? "none" : "";
   const list = $("#conta-mesas-list");
   if (!list) return;
   if (!_contaMesas.length) { list.innerHTML = `<p style="padding:8px 0">Aún no tienes mesas. Crea una y pega su QR en ella.</p>`; return; }
