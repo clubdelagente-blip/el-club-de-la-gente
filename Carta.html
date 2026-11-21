@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=143">
-  <link rel="stylesheet" href="carta.css?v=46">
+  <link rel="stylesheet" href="carta.css?v=47">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -313,12 +313,14 @@
       </div>
 
       <div class="carta-perfil-bloque" id="carta-perfil-sellos-bloque" hidden>
-        <div class="carta-perfil-bloque__cabeza">
-          <span>🎟️ Tarjeta de sellos</span>
-          <span id="carta-perfil-sellos-n">0/0</span>
+        <div class="carta-sellos-card" id="carta-sellos-card">
+          <div class="carta-sellos-card__negocio" id="carta-sellos-card__negocio"></div>
+          <div class="carta-sellos-card__grid" id="carta-perfil-sellos-grid"></div>
+          <div class="carta-sellos-card__pie">
+            <div><span class="carta-sellos-card__n" id="carta-perfil-sellos-n">0</span><span class="carta-sellos-card__label">sellos</span></div>
+            <p class="carta-perfil-premio" id="carta-perfil-premio"></p>
+          </div>
         </div>
-        <div class="carta-perfil-barra"><div class="carta-perfil-barra__fill" id="carta-perfil-sellos-barra"></div></div>
-        <p class="carta-perfil-premio" id="carta-perfil-premio"></p>
       </div>
 
       <a href="#" target="_blank" rel="noopener" class="carta-sigue-pill carta-perfil-sigue" id="carta-instagram" hidden>
@@ -368,7 +370,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=48"></script>
+  <script type="module" src="carta.js?v=49"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

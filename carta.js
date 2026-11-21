@@ -681,12 +681,21 @@ async function iniciar() {
         const { data: estado } = await supabase.rpc("sellos_carta_estado", { p_negocio_id: aliadoId, p_whatsapp: identidad.whatsapp });
         if (estado?.activo && sellosBloque) {
           sellosBloque.hidden = false;
-          const nEl = $("#carta-perfil-sellos-n"); if (nEl) nEl.textContent = `${estado.sellos}/${estado.meta}`;
-          const barraEl = $("#carta-perfil-sellos-barra"); if (barraEl) barraEl.style.width = `${Math.min(100, Math.round((estado.sellos / estado.meta) * 100))}%`;
+          const negocioEl = $("#carta-sellos-card__negocio"); if (negocioEl) negocioEl.textContent = negocio.nombre;
+          const nEl = $("#carta-perfil-sellos-n"); if (nEl) nEl.textContent = estado.sellos;
+          const gridEl = $("#carta-perfil-sellos-grid");
+          if (gridEl) {
+            const cols = Math.min(estado.meta, 5);
+            gridEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            gridEl.innerHTML = Array.from({ length: estado.meta }, (_, i) => `
+              <div class="carta-sellos-card__sello${i < estado.sellos ? " is-on" : ""}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              </div>`).join("");
+          }
           const premioEl = $("#carta-perfil-premio");
           if (premioEl) {
             const premio = negocio.carta_sellos_premio_desc || (negocio.carta_sellos_premio_tipo === "gratis" ? "un premio gratis" : "un descuento");
-            premioEl.textContent = estado.completado ? `🎉 ¡Completaste la tarjeta! Premio: ${premio}. Muéstrale esto al negocio.` : `Premio al completarla: ${premio}.`;
+            premioEl.textContent = estado.completado ? `🎉 ¡Completaste la tarjeta! Premio: ${premio}. Muéstrale esto al negocio.` : `Premio: ${premio}`;
           }
         } else if (sellosBloque) sellosBloque.hidden = true;
       } catch {}

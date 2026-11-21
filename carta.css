@@ -95,7 +95,20 @@ body { background: #0b0b0c; position: relative; }
 .carta-perfil-bloque__cabeza { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; color: var(--tinta); margin-bottom: 8px; }
 .carta-perfil-barra { height: 10px; border-radius: 100px; background: var(--crema-2); overflow: hidden; }
 .carta-perfil-barra__fill { height: 100%; border-radius: 100px; background: var(--verde); transition: width .4s; }
-.carta-perfil-premio { font-size: 12.5px; color: var(--tinta-60); margin-top: 8px; line-height: 1.5; }
+
+/* Tarjeta de sellos tipo "tarjeta de fidelidad" (circulitos en vez de barra
+   de progreso) -- cada sello es un círculo, lleno si ya se ganó. */
+.carta-sellos-card { border-radius: 18px; padding: 20px 18px 16px; background: linear-gradient(160deg, var(--verde) 0%, #063324 100%); color: #fff; }
+.carta-sellos-card__negocio { font-family: var(--display); font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+.carta-sellos-card__grid { display: grid; gap: 10px; margin-bottom: 16px; }
+.carta-sellos-card__sello { aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.12); border: 1.5px solid rgba(255,255,255,.3); }
+.carta-sellos-card__sello svg { width: 17px; height: 17px; color: #fff; opacity: .4; }
+.carta-sellos-card__sello.is-on { background: #fff; border-color: #fff; }
+.carta-sellos-card__sello.is-on svg { color: var(--verde); opacity: 1; }
+.carta-sellos-card__pie { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; border-top: 1px solid rgba(255,255,255,.22); padding-top: 12px; }
+.carta-sellos-card__n { font-family: var(--display); font-size: 26px; font-weight: 700; display: block; line-height: 1; }
+.carta-sellos-card__label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; opacity: .75; }
+.carta-perfil-premio { font-size: 12px; color: #fff; opacity: .9; margin: 0; line-height: 1.5; text-align: right; max-width: 170px; }
 /* Ahora vive centrado dentro del perfil, no pegado a la derecha de la fila
    de arriba -- misma pastilla, otro contexto. */
 .carta-perfil-sigue { display: flex; width: fit-content; margin: 18px auto 0; }
