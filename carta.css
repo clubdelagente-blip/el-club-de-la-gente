@@ -223,16 +223,18 @@ body { background: #0b0b0c; position: relative; }
 /* ---------- Feed a pantalla completa, tipo Reels/TikTok: un producto por
    pantalla, deslizando verticalmente con scroll-snap nativo (sin librería,
    sin manejo manual de touch -- el navegador ya hace el gesto bien). ---------- */
-/* height:100svh explícito (no solo inset:0) -- en algunos navegadores
-   móviles, un position:fixed con inset:0 mide contra el viewport "grande"
-   (ignora la barra de navegación), mientras cada tarjeta de abajo mide
-   contra el viewport "chico" (100svh). Si el contenedor queda más alto que
-   cada tarjeta, se alcanza a ver un pedacito de la tarjeta siguiente
-   asomando arriba durante el scroll -- medir las dos cosas igual lo evita. */
-.carta-feed { position: fixed; inset: 0; height: 100svh; overflow-y: auto; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; background: #0b0b0c; z-index: 1; }
+.carta-feed { position: fixed; inset: 0; overflow-y: auto; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; background: #0b0b0c; z-index: 1; }
 .carta-feed::-webkit-scrollbar { display: none; }
 
-.carta-slide { position: relative; height: 100svh; width: 100%; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; display: flex; align-items: flex-end; }
+/* height:100% (del padre, .carta-feed), NO una unidad de viewport propia
+   (100svh/100vh) -- fijar una unidad de viewport en la tarjeta congela su
+   alto mientras la barra del navegador se anima durante el gesto de
+   scroll, mientras el padre (position:fixed+inset:0) sí se ajusta en
+   tiempo real: el desfase entre los dos daba la sensación de que la
+   descripción "se quedaba pegada" un instante al pasar a la siguiente
+   tarjeta. Con 100% nunca pueden desincronizarse -- miden lo mismo por
+   definición, sea lo que sea que haga el navegador con su barra. */
+.carta-slide { position: relative; height: 100%; width: 100%; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; display: flex; align-items: flex-end; }
 /* Junto al título, no flotando arriba -- ahí chocaba visualmente con la
    barra fija de categorías (siempre encima del feed) durante la transición
    del scroll entre tarjetas. */
