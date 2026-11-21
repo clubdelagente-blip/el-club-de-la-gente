@@ -227,6 +227,7 @@ body { background: #0b0b0c; position: relative; }
 .carta-feed::-webkit-scrollbar { display: none; }
 
 .carta-slide { position: relative; height: 100svh; width: 100%; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; display: flex; align-items: flex-end; }
+.carta-anuncio__badge { position: absolute; top: calc(16px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); background: rgba(20,20,24,.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 5px 12px; border-radius: 100px; z-index: 2; }
 .carta-slide.en-carrito::before { content: ""; position: absolute; inset: 0; border: 3px solid var(--verde); z-index: 1; pointer-events: none; }
 .carta-slide.agotada .carta-card__img, .carta-slide.agotada .carta-card__ph { filter: grayscale(.5) brightness(.6); }
 

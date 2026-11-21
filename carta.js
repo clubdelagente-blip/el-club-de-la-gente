@@ -158,6 +158,23 @@ function feedSlideHtml(p, tieneGrupos, categoria, modoDesde) {
   </div>`;
 }
 
+// Slide de publicidad intercalada en el feed (solo negocios de ContaClub --
+// ver más arriba, en iniciar()). Misma estructura que feedSlideHtml para
+// heredar tamaño/scroll-snap, sin carrito ni "me gusta"/comentar.
+function anuncioSlideHtml(a) {
+  return `
+  <div class="carta-slide carta-slide--anuncio" data-anuncio="${a.id}">
+    <img class="carta-card__img" src="${esc(a.imagen_url)}" alt="${esc(a.titulo)}" loading="lazy">
+    <div class="carta-slide__scrim"></div>
+    <span class="carta-anuncio__badge">Publicidad</span>
+    <div class="carta-card__body">
+      <div class="carta-card__nombre">${esc(a.titulo)}</div>
+      ${a.descripcion ? `<div class="carta-card__desc">${esc(a.descripcion)}</div>` : ""}
+      ${a.link ? `<a href="${esc(a.link)}" target="_blank" rel="noopener" class="btn btn--primario" style="margin-top:10px;display:inline-block">Ver más</a>` : ""}
+    </div>
+  </div>`;
+}
+
 // Celda de la vista de cuadrícula (toggle debajo del logo): foto + precio
 // para hojear rápido, y un botón de agregar/elegir que reusa exactamente la
 // misma lógica de carrito que el feed (abrirModalProducto/sumarProducto) --
@@ -408,7 +425,32 @@ async function iniciar() {
     // negocio; las cápsulas de arriba saltan a la categoría elegida, pero
     // el scroll sigue corriendo natural hacia las siguientes -- nunca se
     // "acaba" de golpe al terminar una categoría.
-    grid.innerHTML = grupos.map(([cat, prods]) => prods.map(p => feedSlideHtml(p, gruposPorProducto.has(p.id), cat, modoDesde)).join("")).join("");
+    //
+    // Publicidad intermedia -- SOLO negocios de ContaClub (contaclub_standalone):
+    // se intercala un anuncio cada CADA_N_PRODUCTOS, rotando entre los
+    // anuncios activos (ver panel admin de ContaClub, tabla
+    // contaclub_anuncios). Usa la misma clase .carta-slide que un producto
+    // (mismo tamaño/scroll-snap), así que no rompe el conteo de nada: no
+    // forma parte de "items", solo se mete al HTML final.
+    let anunciosActivos = [];
+    if (negocio.contaclub_standalone) {
+      const { data: anuncios } = await supabase.from("contaclub_anuncios").select("*").eq("activo", true).order("orden");
+      anunciosActivos = anuncios || [];
+    }
+    const CADA_N_PRODUCTOS = 5;
+    const slidesHtml = [];
+    let contadorProductos = 0;
+    grupos.forEach(([cat, prods]) => {
+      prods.forEach(p => {
+        slidesHtml.push(feedSlideHtml(p, gruposPorProducto.has(p.id), cat, modoDesde));
+        contadorProductos++;
+        if (anunciosActivos.length && contadorProductos % CADA_N_PRODUCTOS === 0) {
+          const idx = (contadorProductos / CADA_N_PRODUCTOS - 1) % anunciosActivos.length;
+          slidesHtml.push(anuncioSlideHtml(anunciosActivos[idx]));
+        }
+      });
+    });
+    grid.innerHTML = slidesHtml.join("");
 
     // Cápsulas de categoría arriba -- saltan a la primera tarjeta de esa
     // categoría (scrollIntoView, no esconden nada) y se resaltan solas
