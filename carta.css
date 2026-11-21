@@ -402,7 +402,11 @@ body { background: #0b0b0c; position: relative; }
 .carta-comentario__texto { font-size: 13.5px; color: var(--tinta-70, var(--tinta-60)); line-height: 1.5; margin-top: 2px; }
 .carta-comentarios-vacio { text-align: center; padding: 20px 0; font-size: 13px; color: var(--tinta-45); }
 .carta-comentario-form { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--linea); }
-.carta-comentario-form textarea { width: 100%; padding: 13px 14px; border: 1px solid var(--linea-fuerte); border-radius: 10px; font-family: var(--cuerpo); font-size: 14px; box-sizing: border-box; resize: vertical; min-height: 64px; }
+/* font-size: 16px a propósito (no 14px) -- por debajo de 16px, iOS hace
+   zoom automático al enfocar el campo, y ESO es lo que desencuadraba toda
+   la hoja al abrir el teclado (mismo motivo por el que .carta-campo input
+   ya usa 16px arriba). */
+.carta-comentario-form textarea { width: 100%; padding: 13px 14px; border: 1px solid var(--linea-fuerte); border-radius: 10px; font-family: var(--cuerpo); font-size: 16px; box-sizing: border-box; resize: vertical; min-height: 64px; }
 .carta-comentario-aviso { font-size: 12px; color: var(--verde); margin-top: 8px; display: none; }
 .carta-comentario-aviso.mostrar { display: block; }
 
