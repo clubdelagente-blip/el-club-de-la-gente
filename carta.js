@@ -685,7 +685,7 @@ async function iniciar() {
           const barraEl = $("#carta-perfil-sellos-barra"); if (barraEl) barraEl.style.width = `${Math.min(100, Math.round((estado.sellos / estado.meta) * 100))}%`;
           const premioEl = $("#carta-perfil-premio");
           if (premioEl) {
-            const premio = estado.premio_desc || (estado.premio_tipo === "gratis" ? "un premio gratis" : "un descuento");
+            const premio = negocio.carta_sellos_premio_desc || (negocio.carta_sellos_premio_tipo === "gratis" ? "un premio gratis" : "un descuento");
             premioEl.textContent = estado.completado ? `🎉 ¡Completaste la tarjeta! Premio: ${premio}. Muéstrale esto al negocio.` : `Premio al completarla: ${premio}.`;
           }
         } else if (sellosBloque) sellosBloque.hidden = true;
@@ -1845,7 +1845,7 @@ async function iniciar() {
         if (estado?.activo) {
           resultadoEl.hidden = false;
           resultadoEl.textContent = estado.completado
-            ? `🎉 ¡Completaste tu tarjeta de sellos! Premio: ${estado.premio_desc || (estado.premio_tipo === "gratis" ? "Gratis" : "Descuento")}. Muéstrale esto al negocio.`
+            ? `🎉 ¡Completaste tu tarjeta de sellos! Premio: ${negocio.carta_sellos_premio_desc || (negocio.carta_sellos_premio_tipo === "gratis" ? "Gratis" : "Descuento")}. Muéstrale esto al negocio.`
             : `🎟️ Llevas ${estado.sellos} de ${estado.meta} sellos en este negocio.`;
         }
       } catch {} // si falla, no pasa nada -- el pedido ya quedó guardado igual
