@@ -1364,7 +1364,7 @@ async function iniciar() {
     reproducirSonidoRuleta("giro");
     const wheelEl = $("#carta-reto-wheel");
     const inicio = new Date(retoActual.giro_inicio_at).getTime();
-    const duracion = retoActual.giro_duracion_ms || 4200;
+    const duracion = retoActual.giro_duracion_ms || 7000;
     const restante = Math.max(300, duracion - (Date.now() - inicio));
     const vueltas = 6;
     const anguloTotal = vueltas * 360 + (retoActual.angulo_final || 0);
@@ -1390,7 +1390,7 @@ async function iniciar() {
         items: retoParticipantes.flatMap(p => (Array.isArray(p.items) ? p.items : []).map(it => ({ ...it, cliente: p.cliente_nombre }))),
         monto: total,
       };
-      setTimeout(() => continuarPagoGanadorReto(), 1800);
+      setTimeout(() => continuarPagoGanadorReto(), 4000);
     } else {
       if (icEl) icEl.textContent = "😅";
       if (tituloEl) tituloEl.textContent = "¡Te salvaste!";
@@ -1398,7 +1398,7 @@ async function iniciar() {
       carrito.clear();
       items.forEach(p => renderQty(p.id));
       renderBarra();
-      setTimeout(() => { if (overlay) overlay.hidden = true; limpiarReto(); }, 2600);
+      setTimeout(() => { if (overlay) overlay.hidden = true; limpiarReto(); }, 4000);
     }
   }
   function continuarPagoGanadorReto() {
@@ -1437,7 +1437,7 @@ async function iniciar() {
     const angulo = anguloGanador(ganador.cliente_whatsapp);
     await supabase.from("negocio_mesas_retos").update({
       estado: "girando", ganador_whatsapp: ganador.cliente_whatsapp,
-      giro_inicio_at: new Date().toISOString(), giro_duracion_ms: 4200, angulo_final: angulo,
+      giro_inicio_at: new Date().toISOString(), giro_duracion_ms: 7000, angulo_final: angulo,
     }).eq("id", retoActual.id);
   }
 
