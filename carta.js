@@ -158,9 +158,10 @@ function feedSlideHtml(p, tieneGrupos, categoria, modoDesde) {
   </div>`;
 }
 
-// Slide de publicidad intercalada en el feed (solo negocios de ContaClub --
-// ver más arriba, en iniciar()). Misma estructura que feedSlideHtml para
-// heredar tamaño/scroll-snap, sin carrito ni "me gusta"/comentar.
+// Slide de anuncio de ContaClub intercalado en el feed (solo negocios con
+// contaclub_standalone -- ver más arriba, en iniciar()). Misma estructura
+// que feedSlideHtml para heredar tamaño/scroll-snap, sin carrito ni
+// "me gusta"/comentar.
 function anuncioSlideHtml(a) {
   return `
   <div class="carta-slide carta-slide--anuncio" data-anuncio="${a.id}">
@@ -170,6 +171,24 @@ function anuncioSlideHtml(a) {
     <div class="carta-card__body">
       <div class="carta-card__nombre">${esc(a.titulo)}</div>
       ${a.descripcion ? `<div class="carta-card__desc">${esc(a.descripcion)}</div>` : ""}
+      ${a.link ? `<a href="${esc(a.link)}" target="_blank" rel="noopener" class="btn btn--primario" style="margin-top:10px;display:inline-block">Ver más</a>` : ""}
+    </div>
+  </div>`;
+}
+
+// Slide del aviso PROPIO del negocio (carta_avisos, el mismo que ya se veía
+// solo como carrusel arriba de la carta) intercalado en el feed -- misma
+// insignia distinta ("Promoción", no "Publicidad") porque es contenido del
+// propio negocio, no de un tercero. Mismo fondo degradado que el carrusel
+// de arriba (sin foto propia: esos avisos nunca tuvieron campo de imagen).
+function avisoSlideHtml(a, colorBase) {
+  const bg = `radial-gradient(120% 140% at 15% 0%, ${esc(colorBase)} 0%, #0c2e1b 55%, #05160d 100%)`;
+  return `
+  <div class="carta-slide carta-slide--anuncio" style="background:${bg}">
+    <span class="carta-anuncio__badge carta-anuncio__badge--promo">Promoción</span>
+    <div class="carta-card__body">
+      <div class="carta-card__nombre">${esc(a.titulo)}</div>
+      ${a.subtitulo ? `<div class="carta-card__desc">${esc(a.subtitulo)}</div>` : ""}
       ${a.link ? `<a href="${esc(a.link)}" target="_blank" rel="noopener" class="btn btn--primario" style="margin-top:10px;display:inline-block">Ver más</a>` : ""}
     </div>
   </div>`;
@@ -426,17 +445,27 @@ async function iniciar() {
     // el scroll sigue corriendo natural hacia las siguientes -- nunca se
     // "acaba" de golpe al terminar una categoría.
     //
-    // Publicidad intermedia -- SOLO negocios de ContaClub (contaclub_standalone):
-    // se intercala un anuncio cada CADA_N_PRODUCTOS, rotando entre los
-    // anuncios activos (ver panel admin de ContaClub, tabla
-    // contaclub_anuncios). Usa la misma clase .carta-slide que un producto
-    // (mismo tamaño/scroll-snap), así que no rompe el conteo de nada: no
-    // forma parte de "items", solo se mete al HTML final.
+    // Publicidad intermedia: se intercala una tarjeta cada CADA_N_PRODUCTOS,
+    // rotando entre dos fuentes mezcladas en una sola bolsa --
+    // (a) los avisos propios del negocio (carta_avisos, los que ya
+    //     configura en Mi Contabilidad -- cualquier negocio, Club o
+    //     ContaClub), con la insignia "Promoción" porque es SU propio
+    //     contenido, y
+    // (b) los anuncios de ContaClub (tabla contaclub_anuncios, panel admin),
+    //     con la insignia "Publicidad" -- SOLO para negocios con
+    //     contaclub_standalone=true.
+    // Usan la misma clase .carta-slide que un producto (mismo tamaño/
+    // scroll-snap), así que no rompen el conteo de nada: no forman parte de
+    // "items", solo se meten al HTML final.
     let anunciosActivos = [];
     if (negocio.contaclub_standalone) {
       const { data: anuncios } = await supabase.from("contaclub_anuncios").select("*").eq("activo", true).order("orden");
       anunciosActivos = anuncios || [];
     }
+    const bolsaAnuncios = [
+      ...avisosValidos.map(a => avisoSlideHtml(a, negocio.carta_aviso_color || "#164a2c")),
+      ...anunciosActivos.map(a => anuncioSlideHtml(a)),
+    ];
     const CADA_N_PRODUCTOS = 5;
     const slidesHtml = [];
     let contadorProductos = 0;
@@ -444,9 +473,9 @@ async function iniciar() {
       prods.forEach(p => {
         slidesHtml.push(feedSlideHtml(p, gruposPorProducto.has(p.id), cat, modoDesde));
         contadorProductos++;
-        if (anunciosActivos.length && contadorProductos % CADA_N_PRODUCTOS === 0) {
-          const idx = (contadorProductos / CADA_N_PRODUCTOS - 1) % anunciosActivos.length;
-          slidesHtml.push(anuncioSlideHtml(anunciosActivos[idx]));
+        if (bolsaAnuncios.length && contadorProductos % CADA_N_PRODUCTOS === 0) {
+          const idx = (contadorProductos / CADA_N_PRODUCTOS - 1) % bolsaAnuncios.length;
+          slidesHtml.push(bolsaAnuncios[idx]);
         }
       });
     });
