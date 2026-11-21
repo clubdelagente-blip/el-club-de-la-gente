@@ -170,8 +170,8 @@ function anuncioSlideHtml(a) {
   <div class="carta-slide carta-slide--anuncio" data-anuncio="${a.id}"${a.imagen_url ? "" : ` style="background:${fondoDegradado}"`}>
     ${a.imagen_url ? `<img class="carta-card__img" src="${esc(a.imagen_url)}" alt="${esc(a.titulo)}" loading="lazy">` : ""}
     <div class="carta-slide__scrim"></div>
-    <span class="carta-anuncio__badge">Publicidad</span>
     <div class="carta-card__body">
+      <span class="carta-anuncio__badge">Publicidad</span>
       <div class="carta-card__nombre">${esc(a.titulo)}</div>
       ${a.descripcion ? `<div class="carta-card__desc">${esc(a.descripcion)}</div>` : ""}
       ${a.link ? `<a href="${esc(a.link)}" target="_blank" rel="noopener" class="btn btn--primario" style="margin-top:10px;display:inline-block">Ver más</a>` : ""}
@@ -188,8 +188,8 @@ function avisoSlideHtml(a, colorBase) {
   const bg = `radial-gradient(120% 140% at 15% 0%, ${esc(colorBase)} 0%, #0c2e1b 55%, #05160d 100%)`;
   return `
   <div class="carta-slide carta-slide--anuncio" style="background:${bg}">
-    <span class="carta-anuncio__badge carta-anuncio__badge--promo">Promoción</span>
     <div class="carta-card__body">
+      <span class="carta-anuncio__badge carta-anuncio__badge--promo">Promoción</span>
       <div class="carta-card__nombre">${esc(a.titulo)}</div>
       ${a.subtitulo ? `<div class="carta-card__desc">${esc(a.subtitulo)}</div>` : ""}
       ${a.link ? `<a href="${esc(a.link)}" target="_blank" rel="noopener" class="btn btn--primario" style="margin-top:10px;display:inline-block">Ver más</a>` : ""}
