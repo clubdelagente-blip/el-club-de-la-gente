@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=143">
-  <link rel="stylesheet" href="carta.css?v=44">
+  <link rel="stylesheet" href="carta.css?v=45">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -65,7 +65,14 @@
        el feed a pantalla completa. -->
   <div class="carta-gridview-overlay" id="carta-gridview-overlay" hidden>
     <div class="carta-gridview-head">
-      <span>Todos los productos</span>
+      <div class="carta-gridview-head__negocio">
+        <span class="carta-gridview-head__logo" id="carta-gridview-logo"></span>
+        <span class="carta-gridview-head__nombre" id="carta-gridview-nombre"></span>
+        <svg class="carta-gridview-head__check" width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="10" fill="#3897f0"/>
+          <path d="M8 12.5l2.5 2.5L16 9.5" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+      </div>
       <button type="button" id="carta-gridview-cerrar" aria-label="Cerrar">✕</button>
     </div>
     <div class="carta-gridview-grid" id="carta-gridview-grid"></div>
@@ -329,7 +336,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=45"></script>
+  <script type="module" src="carta.js?v=46"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

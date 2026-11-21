@@ -298,6 +298,8 @@ async function iniciar() {
   if (nombreEl) nombreEl.textContent = negocio.nombre;
   document.title = `Carta de ${negocio.nombre} — El Club de la Gente`;
   if (logoEl && negocio.imagen_url) { logoEl.innerHTML = `<img src="${esc(negocio.imagen_url)}" alt="">`; logoEl.hidden = false; }
+  const gridviewLogoEl = $("#carta-gridview-logo"); if (gridviewLogoEl && negocio.imagen_url) gridviewLogoEl.innerHTML = `<img src="${esc(negocio.imagen_url)}" alt="">`;
+  const gridviewNombreEl = $("#carta-gridview-nombre"); if (gridviewNombreEl) gridviewNombreEl.textContent = negocio.nombre;
   if (negocio.instagram) {
     const igEl = $("#carta-instagram");
     if (igEl) { igEl.href = negocio.instagram; igEl.hidden = false; }
