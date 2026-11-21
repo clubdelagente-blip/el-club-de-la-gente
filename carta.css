@@ -101,10 +101,12 @@ body { background: #0b0b0c; position: relative; }
 .carta-sellos-card { border-radius: 18px; padding: 20px 18px 16px; background: linear-gradient(160deg, var(--verde) 0%, #063324 100%); color: #fff; }
 .carta-sellos-card__negocio { font-family: var(--display); font-size: 18px; font-weight: 700; margin-bottom: 16px; }
 .carta-sellos-card__grid { display: grid; gap: 10px; margin-bottom: 16px; }
-.carta-sellos-card__sello { aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.12); border: 1.5px solid rgba(255,255,255,.3); }
+.carta-sellos-card__sello { aspect-ratio: 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.12); border: 1.5px solid rgba(255,255,255,.3); overflow: hidden; }
 .carta-sellos-card__sello svg { width: 17px; height: 17px; color: #fff; opacity: .4; }
 .carta-sellos-card__sello.is-on { background: #fff; border-color: #fff; }
 .carta-sellos-card__sello.is-on svg { color: var(--verde); opacity: 1; }
+.carta-sellos-card__sello img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: .35; filter: grayscale(.4); }
+.carta-sellos-card__sello.is-on img { opacity: 1; filter: none; }
 .carta-sellos-card__pie { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; border-top: 1px solid rgba(255,255,255,.22); padding-top: 12px; }
 .carta-sellos-card__n { font-family: var(--display); font-size: 26px; font-weight: 700; display: block; line-height: 1; }
 .carta-sellos-card__label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; opacity: .75; }

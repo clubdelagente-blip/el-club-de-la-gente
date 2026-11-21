@@ -687,10 +687,11 @@ async function iniciar() {
           if (gridEl) {
             const cols = Math.min(estado.meta, 5);
             gridEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            const contenidoSello = negocio.imagen_url
+              ? `<img src="${esc(negocio.imagen_url)}" alt="">`
+              : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
             gridEl.innerHTML = Array.from({ length: estado.meta }, (_, i) => `
-              <div class="carta-sellos-card__sello${i < estado.sellos ? " is-on" : ""}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-              </div>`).join("");
+              <div class="carta-sellos-card__sello${i < estado.sellos ? " is-on" : ""}">${contenidoSello}</div>`).join("");
           }
           const premioEl = $("#carta-perfil-premio");
           if (premioEl) {
