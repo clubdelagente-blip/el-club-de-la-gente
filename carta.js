@@ -1298,16 +1298,57 @@ async function iniciar() {
     const m = Math.floor(restanteMs / 60000), s = Math.floor((restanteMs % 60000) / 1000);
     if (timerEl) timerEl.textContent = `${m}:${String(s).padStart(2, "0")}`;
   }
-  function suscribirReto(retoId) {
+  // Suscripción a nivel de MESA (no de un reto puntual) -- así, si alguien
+  // abre su hoja de pago y todavía no hay reto, igual se entera apenas otro
+  // de la mesa lo lanza, sin tener que tocar "Dejarlo al azar" él mismo.
+  function suscribirMesaReto() {
+    if (!mesaSesionId) return;
     if (retoCanal) { supabase.removeChannel(retoCanal); retoCanal = null; }
     retoCanal = supabase.channel(`mesa-reto-${mesaSesionId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "negocio_mesas_retos", filter: `id=eq.${retoId}` }, (payload) => {
-        if (payload.eventType === "DELETE") return;
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "negocio_mesas_retos", filter: `mesa_sesion_id=eq.${mesaSesionId}` }, (payload) => {
+        if (retoActual || payload.new.creado_whatsapp === miWhatsAppOCreado()) return;
+        retoActual = payload.new;
+        mostrarVistaReto("responder");
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "negocio_mesas_retos", filter: `mesa_sesion_id=eq.${mesaSesionId}` }, (payload) => {
+        if (!retoActual || payload.new.id !== retoActual.id) return;
         retoActual = payload.new;
         manejarCambioReto();
       })
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "negocio_mesas_retos_participantes", filter: `reto_id=eq.${retoId}` }, () => cargarParticipantesReto())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "negocio_mesas_retos_participantes", filter: `mesa_sesion_id=eq.${mesaSesionId}` }, (payload) => {
+        if (!retoActual || payload.new.reto_id !== retoActual.id) return;
+        cargarParticipantesReto();
+      })
       .subscribe();
+  }
+  // ¿Ya hay un reto activo en esta mesa cuando se abre la hoja de pago? (lo
+  // lanzó o lo aceptó alguien antes de que yo abriera, o yo mismo lo había
+  // aceptado y volví a entrar) -- se muestra de una vez en vez del selector.
+  async function revisarRetoAlAbrir() {
+    if (!mesaSesionId) return;
+    const { data: existente } = await supabase.from("negocio_mesas_retos")
+      .select("*").eq("mesa_sesion_id", mesaSesionId).in("estado", ["esperando", "girando"])
+      .gt("expira_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (!existente) return;
+    retoActual = existente;
+    const miWa = miWhatsAppOCreado();
+    let yaDentro = existente.creado_whatsapp === miWa;
+    if (!yaDentro && miWa) {
+      const { data: miFila } = await supabase.from("negocio_mesas_retos_participantes")
+        .select("respuesta").eq("reto_id", existente.id).eq("cliente_whatsapp", miWa).maybeSingle();
+      yaDentro = miFila?.respuesta === "acepto";
+    }
+    if (yaDentro) {
+      await cargarParticipantesReto();
+      mostrarVistaReto("esperando");
+      if (existente.estado === "girando") { animarRuletaSincronizada(); return; }
+      retoTimerInterval = setInterval(actualizarTimerReto, 1000);
+      actualizarTimerReto();
+      mesaAlcance = "azar";
+      $$("#carta-campo-mesa-alcance [data-alcance]").forEach(x => x.classList.toggle("is-on", x.dataset.alcance === "azar"));
+    } else {
+      mostrarVistaReto("responder");
+    }
   }
   function manejarCambioReto() {
     if (!retoActual) return;
@@ -1461,7 +1502,7 @@ async function iniciar() {
       reto_id: nuevo.id, mesa_sesion_id: mesaSesionId, cliente_nombre: miNombre, cliente_whatsapp: miWa,
       respuesta: "acepto", items: [...carrito.values()], monto: total,
     });
-    suscribirReto(nuevo.id);
+    suscribirMesaReto();
     await cargarParticipantesReto();
     mostrarVistaReto("esperando");
     retoTimerInterval = setInterval(actualizarTimerReto, 1000);
@@ -1476,7 +1517,7 @@ async function iniciar() {
       reto_id: retoActual.id, mesa_sesion_id: mesaSesionId, cliente_nombre: miNombre, cliente_whatsapp: miWa,
       respuesta: "acepto", items: [...carrito.values()], monto: total,
     }, { onConflict: "reto_id,cliente_whatsapp" });
-    suscribirReto(retoActual.id);
+    suscribirMesaReto();
     await cargarParticipantesReto();
     mostrarVistaReto("esperando");
     retoTimerInterval = setInterval(actualizarTimerReto, 1000);
@@ -1518,7 +1559,7 @@ async function iniciar() {
 
   // ---------- Resumen / checkout ----------
   const overlay = $("#carta-overlay");
-  const abrirResumen = () => {
+  const abrirResumen = async () => {
     const { total } = totalCarrito();
     const itemsHtml = [...carrito.values()].map(it => `
       <div class="carta-sheet__item"><span>${it.cantidad}× ${esc(it.nombre)}${it.modText ? `<br><small style="color:var(--tinta-45);font-weight:400">${esc(it.modText)}</small>` : ""}</span><span>${COP(it.precio * it.cantidad)}</span></div>`).join("");
@@ -1557,6 +1598,10 @@ async function iniciar() {
     $("#carta-sheet-form").hidden = false;
     $("#carta-sheet-exito").hidden = true;
     overlay.hidden = false;
+    // Si estamos en mesa, de una vez se escucha por si alguien lanza el
+    // reto de pago al azar mientras esta hoja está abierta, y se revisa si
+    // ya había uno activo antes de abrirla (lo lanzó o lo aceptó alguien).
+    if (mesaSesionId) { suscribirMesaReto(); await revisarRetoAlAbrir(); }
   };
   $("#carta-ver-pedido")?.addEventListener("click", abrirResumen);
   $("#carta-sheet-cerrar")?.addEventListener("click", () => { overlay.hidden = true; });
