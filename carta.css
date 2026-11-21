@@ -85,12 +85,11 @@ body { background: #0b0b0c; position: relative; }
 
 /* Saludo con nombre: aparece apenas se resuelve la identidad (ver
    pintarSaludoPersona en carta.js) -- debajo de la fila de la cuadrícula. */
-/* No usa .wrap -- se calca su mismo padding responsivo acá mismo (40px /
-   22px en celular) para que quede pegado exactamente al mismo punto que la
-   fila de la cuadrícula de arriba, sin depender del orden de cascada entre
-   hojas de estilo. */
-.carta-saludo-row { display: flex; justify-content: flex-start; margin-top: 8px; padding: 0 40px; }
-@media (max-width: 720px) { .carta-saludo-row { padding: 0 22px; } }
+/* No usa .wrap: .carta-util-row (el ícono de cuadrícula/mesa, justo arriba)
+   tiene su propio padding que en la cascada LE GANA al de .wrap y lo deja
+   en 0 a los lados -- por eso se ve pegado al borde real. Esta fila calca
+   exactamente eso (0 a los lados) para quedar en el mismo punto. */
+.carta-saludo-row { display: flex; justify-content: flex-start; margin-top: 8px; padding: 0; }
 .carta-saludo-persona {
   pointer-events: none; display: inline-flex; align-items: center; height: 30px; padding: 0 12px;
   border-radius: 100px; background: rgba(20,20,24,.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
