@@ -223,7 +223,13 @@ body { background: #0b0b0c; position: relative; }
 /* ---------- Feed a pantalla completa, tipo Reels/TikTok: un producto por
    pantalla, deslizando verticalmente con scroll-snap nativo (sin librería,
    sin manejo manual de touch -- el navegador ya hace el gesto bien). ---------- */
-.carta-feed { position: fixed; inset: 0; overflow-y: auto; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; background: #0b0b0c; z-index: 1; }
+/* height:100svh explícito (no solo inset:0) -- en algunos navegadores
+   móviles, un position:fixed con inset:0 mide contra el viewport "grande"
+   (ignora la barra de navegación), mientras cada tarjeta de abajo mide
+   contra el viewport "chico" (100svh). Si el contenedor queda más alto que
+   cada tarjeta, se alcanza a ver un pedacito de la tarjeta siguiente
+   asomando arriba durante el scroll -- medir las dos cosas igual lo evita. */
+.carta-feed { position: fixed; inset: 0; height: 100svh; overflow-y: auto; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; background: #0b0b0c; z-index: 1; }
 .carta-feed::-webkit-scrollbar { display: none; }
 
 .carta-slide { position: relative; height: 100svh; width: 100%; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; display: flex; align-items: flex-end; }
