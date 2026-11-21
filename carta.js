@@ -163,9 +163,12 @@ function feedSlideHtml(p, tieneGrupos, categoria, modoDesde) {
 // que feedSlideHtml para heredar tamaño/scroll-snap, sin carrito ni
 // "me gusta"/comentar.
 function anuncioSlideHtml(a) {
+  // La imagen es opcional -- sin ella, fondo degradado igual que un aviso
+  // propio (ver avisoSlideHtml), solo que marcado "Publicidad".
+  const fondoDegradado = `radial-gradient(120% 140% at 15% 0%, var(--verde) 0%, #0c2e1b 55%, #05160d 100%)`;
   return `
-  <div class="carta-slide carta-slide--anuncio" data-anuncio="${a.id}">
-    <img class="carta-card__img" src="${esc(a.imagen_url)}" alt="${esc(a.titulo)}" loading="lazy">
+  <div class="carta-slide carta-slide--anuncio" data-anuncio="${a.id}"${a.imagen_url ? "" : ` style="background:${fondoDegradado}"`}>
+    ${a.imagen_url ? `<img class="carta-card__img" src="${esc(a.imagen_url)}" alt="${esc(a.titulo)}" loading="lazy">` : ""}
     <div class="carta-slide__scrim"></div>
     <span class="carta-anuncio__badge">Publicidad</span>
     <div class="carta-card__body">
