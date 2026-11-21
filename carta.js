@@ -1185,7 +1185,17 @@ async function iniciar() {
   $$("#carta-campo-mesa-alcance [data-alcance]").forEach(b => b.addEventListener("click", () => {
     mesaAlcance = b.dataset.alcance;
     $$("#carta-campo-mesa-alcance [data-alcance]").forEach(x => x.classList.toggle("is-on", x === b));
+    if (mesaAlcance === "azar") { activarRetoAzar(); return; }
+    // Si veníamos de un reto (lo lancé, o lo acepté, o me lo propusieron) y
+    // se elige otra opción, se cancela/limpia -- este botón ya no aplica.
+    if (retoActual) {
+      if (retoActual.creado_whatsapp === miWhatsAppOCreado()) {
+        supabase.from("negocio_mesas_retos").update({ estado: "cancelado" }).eq("id", retoActual.id).then(() => {}, () => {});
+      }
+      limpiarReto();
+    }
     const enviarBtn = $("#carta-enviar-pedido");
+    mostrar(enviarBtn);
     if (enviarBtn) enviarBtn.textContent = mesaAlcance === "nadie" ? "Enviar pedido" : "Ya pagué";
     // Los sellos son una recompensa por pagar -- si alguien más va a pagar
     // por esta persona, no tiene sentido ofrecerle sellos a ella acá.
@@ -1193,6 +1203,293 @@ async function iniciar() {
     if (hintEl && negocio.carta_sellos_activo) hintEl.hidden = mesaAlcance === "nadie";
     actualizarTotalMesa();
   }));
+
+  // ---------- Reto de pago al azar: solo en mesa compartida. La primera
+  // persona que lo activa "lanza" el reto (fila en negocio_mesas_retos);
+  // los demás ven "Acepto el reto"/"Yo pago lo mío" en vez del selector
+  // normal. Con 2+ aceptados, quien lo lanzó gira una ruleta (con los
+  // nombres de quienes aceptaron) deslizándola con el dedo -- todos los que
+  // aceptaron la ven girar EN VIVO: Supabase Realtime manda el ángulo final
+  // y la hora exacta de inicio, así que cada celular anima la MISMA vuelta,
+  // aunque el gesto lo haga solo quien lanzó el reto. A quien le toque paga
+  // el total de todos juntos en un solo pedido. ----------
+  const COLORES_RULETA = ["#095544", "#EAB749", "#D97757", "#4F46E5", "#DB2777", "#059669", "#C2410C", "#7C3AED"];
+  function mostrar(el, display = "") { if (el) el.style.display = display; }
+  function ocultar(el) { if (el) el.style.display = "none"; }
+  let retoActual = null; // fila de negocio_mesas_retos
+  let retoParticipantes = []; // filas de negocio_mesas_retos_participantes (respuesta='acepto')
+  let retoCanal = null;
+  let retoTimerInterval = null;
+  let retoGanadorPendiente = null; // { items, monto } cuando YO soy quien tiene que pagar
+  let _girandoLocal = false;
+
+  function miWhatsAppOCreado() { return obtenerIdentidad()?.whatsapp || $("#carta-cliente-wa")?.value.trim() || null; }
+  function miNombreOCreado() { return obtenerIdentidad()?.nombre || $("#carta-cliente-nombre")?.value.trim() || "Alguien"; }
+
+  function mostrarVistaReto(vista) {
+    mostrar($("#carta-reto-panel"), vista ? "" : "none");
+    ["responder", "esperando", "resultado"].forEach(v => {
+      const el = $(`#carta-reto-${v}`);
+      if (v === vista) mostrar(el); else ocultar(el);
+    });
+    // Cada vez que se ENTRA a "esperando" de cero (lanzar o aceptar) el
+    // link de cancelar vuelve a verse -- animarRuletaSincronizada lo
+    // esconde mientras gira, sin pasar por acá de nuevo.
+    if (vista === "esperando") mostrar($("#carta-reto-cancelar"));
+    mostrar($("#carta-campo-mesa-alcance"), vista ? "none" : "");
+    if (vista) {
+      ocultar($("#carta-campo-pago")); ocultar($("#carta-pago-efectivo")); ocultar($("#carta-pago-transferencia"));
+      ocultar($("#carta-enviar-pedido"));
+    } else {
+      mostrar($("#carta-enviar-pedido"));
+    }
+  }
+  function limpiarReto() {
+    if (retoCanal) { supabase.removeChannel(retoCanal); retoCanal = null; }
+    if (retoTimerInterval) { clearInterval(retoTimerInterval); retoTimerInterval = null; }
+    retoActual = null; retoParticipantes = []; retoGanadorPendiente = null; _girandoLocal = false;
+    mostrarVistaReto(null);
+  }
+  async function cancelarReto(mensaje) {
+    if (retoActual && retoActual.creado_whatsapp === miWhatsAppOCreado()) {
+      await supabase.from("negocio_mesas_retos").update({ estado: "cancelado" }).eq("id", retoActual.id);
+    }
+    limpiarReto();
+    mesaAlcance = null;
+    $$("#carta-campo-mesa-alcance [data-alcance]").forEach(x => x.classList.remove("is-on"));
+    if (mensaje) alert(mensaje);
+  }
+  async function cargarParticipantesReto() {
+    if (!retoActual) return;
+    const { data } = await supabase.from("negocio_mesas_retos_participantes").select("*").eq("reto_id", retoActual.id).eq("respuesta", "acepto");
+    retoParticipantes = data || [];
+    pintarEsperando();
+  }
+  function pintarEsperando() {
+    if (!retoActual) return;
+    const cont = $("#carta-reto-participantes");
+    if (cont) cont.innerHTML = retoParticipantes.map(p => `<span class="carta-reto-chip">${esc(p.cliente_nombre)}${p.cliente_whatsapp === miWhatsAppOCreado() ? " (tú)" : ""}</span>`).join("");
+    const soyLanzador = retoActual.creado_whatsapp === miWhatsAppOCreado();
+    const listo = retoParticipantes.length >= 2;
+    const wheelWrap = $("#carta-reto-wheel-wrap");
+    const girarBtn = $("#carta-reto-girar");
+    const hintEl = $("#carta-reto-hint");
+    // La ruleta recién aparece (quieta, deslizable por quien la lanzó) en
+    // cuanto hay 2+ aceptados -- antes no tiene sentido pintarla.
+    if (listo) { pintarSegmentosRuleta(); mostrar(wheelWrap); } else { ocultar(wheelWrap); }
+    if (girarBtn) girarBtn.style.display = soyLanzador && listo ? "" : "none";
+    if (!listo) {
+      if (hintEl) hintEl.textContent = "Esperando que al menos una persona más acepte (mínimo 2)...";
+    } else if (soyLanzador) {
+      if (hintEl) hintEl.textContent = "¡Ya pueden girar! Desliza la ruleta con el dedo (o toca el botón).";
+    } else if (hintEl) {
+      hintEl.textContent = `Esperando a que ${esc(retoActual.creado_nombre)} gire la ruleta...`;
+    }
+  }
+  function actualizarTimerReto() {
+    if (!retoActual) return;
+    const restanteMs = new Date(retoActual.expira_at).getTime() - Date.now();
+    const timerEl = $("#carta-reto-timer");
+    if (restanteMs <= 0) {
+      if (retoParticipantes.length < 2) { cancelarReto("Se acabó el tiempo y no hubo suficientes personas -- cada quien paga lo suyo."); return; }
+      if (timerEl) timerEl.textContent = "¡Tiempo cumplido!";
+      return;
+    }
+    const m = Math.floor(restanteMs / 60000), s = Math.floor((restanteMs % 60000) / 1000);
+    if (timerEl) timerEl.textContent = `${m}:${String(s).padStart(2, "0")}`;
+  }
+  function suscribirReto(retoId) {
+    if (retoCanal) { supabase.removeChannel(retoCanal); retoCanal = null; }
+    retoCanal = supabase.channel(`mesa-reto-${mesaSesionId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "negocio_mesas_retos", filter: `id=eq.${retoId}` }, (payload) => {
+        if (payload.eventType === "DELETE") return;
+        retoActual = payload.new;
+        manejarCambioReto();
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "negocio_mesas_retos_participantes", filter: `reto_id=eq.${retoId}` }, () => cargarParticipantesReto())
+      .subscribe();
+  }
+  function manejarCambioReto() {
+    if (!retoActual) return;
+    if (retoActual.estado === "cancelado") {
+      limpiarReto();
+      mesaAlcance = null;
+      $$("#carta-campo-mesa-alcance [data-alcance]").forEach(x => x.classList.remove("is-on"));
+      alert("Se canceló el reto de pago al azar -- cada quien paga lo suyo.");
+      return;
+    }
+    if (retoActual.estado === "girando" && !_girandoLocal) animarRuletaSincronizada();
+  }
+
+  function pintarSegmentosRuleta() {
+    const wheelEl = $("#carta-reto-wheel");
+    if (!wheelEl || !retoParticipantes.length) return;
+    const n = retoParticipantes.length, porcion = 360 / n;
+    wheelEl.style.background = `conic-gradient(${retoParticipantes.map((p, i) => `${COLORES_RULETA[i % COLORES_RULETA.length]} ${i * porcion}deg ${(i + 1) * porcion}deg`).join(", ")})`;
+    wheelEl.innerHTML = retoParticipantes.map((p, i) => `<div class="carta-reto-wheel__seg" style="transform:rotate(${i * porcion + porcion / 2}deg)"><span>${esc(p.cliente_nombre)}</span></div>`).join("");
+  }
+  function anguloGanador(ganadorWhatsapp) {
+    const n = retoParticipantes.length;
+    const idx = retoParticipantes.findIndex(p => p.cliente_whatsapp === ganadorWhatsapp);
+    if (idx < 0) return 0;
+    const porcion = 360 / n;
+    // El puntero apunta hacia arriba (0deg) -- la rueda tiene que girar
+    // hasta que la MITAD del segmento ganador quede justo ahí.
+    return 360 - (idx * porcion + porcion / 2);
+  }
+  function reproducirSonidoRuleta(tipo) {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const tono = (freq, inicio, dur, vol = 0.15) => {
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + inicio);
+        gain.gain.setValueAtTime(vol, ctx.currentTime + inicio);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + inicio + dur);
+        osc.start(ctx.currentTime + inicio); osc.stop(ctx.currentTime + inicio + dur);
+      };
+      if (tipo === "giro") { tono(520, 0, 0.18); tono(420, 0.12, 0.18); tono(520, 0.24, 0.18); }
+      else { tono(660, 0, 0.14); tono(880, 0.12, 0.16); tono(1100, 0.26, 0.3); }
+    } catch {}
+  }
+  async function animarRuletaSincronizada() {
+    _girandoLocal = true;
+    // La ruleta ya está quieta y pintada en pantalla desde que hubo 2+
+    // aceptados (ver pintarEsperando) -- acá solo se anima el MISMO
+    // elemento en su sitio, nada de cambiar de vista. Mientras gira, no se
+    // puede volver a tocar ni cancelar.
+    mostrarVistaReto("esperando");
+    ocultar($("#carta-reto-girar"));
+    ocultar($("#carta-reto-cancelar"));
+    reproducirSonidoRuleta("giro");
+    const wheelEl = $("#carta-reto-wheel");
+    const inicio = new Date(retoActual.giro_inicio_at).getTime();
+    const duracion = retoActual.giro_duracion_ms || 4200;
+    const restante = Math.max(300, duracion - (Date.now() - inicio));
+    const vueltas = 6;
+    const anguloTotal = vueltas * 360 + (retoActual.angulo_final || 0);
+    if (wheelEl) {
+      wheelEl.style.transition = `transform ${restante}ms cubic-bezier(.17,.67,.21,1)`;
+      requestAnimationFrame(() => { wheelEl.style.transform = `rotate(${anguloTotal}deg)`; });
+    }
+    setTimeout(() => mostrarResultadoReto(), restante);
+  }
+  async function mostrarResultadoReto() {
+    _girandoLocal = false;
+    reproducirSonidoRuleta("resultado");
+    const soyGanador = retoActual.ganador_whatsapp === miWhatsAppOCreado();
+    const ganadorNombre = retoParticipantes.find(p => p.cliente_whatsapp === retoActual.ganador_whatsapp)?.cliente_nombre || "Alguien";
+    const total = retoParticipantes.reduce((s, p) => s + Number(p.monto || 0), 0);
+    mostrarVistaReto("resultado");
+    const icEl = $("#carta-reto-resultado-ic"), tituloEl = $("#carta-reto-resultado-titulo"), textoEl = $("#carta-reto-resultado-texto");
+    if (soyGanador) {
+      if (icEl) icEl.textContent = "💸";
+      if (tituloEl) tituloEl.textContent = "¡Te tocó pagar!";
+      if (textoEl) textoEl.textContent = `Perdiste la ruleta -- te toca pagar el total de todos: ${COP(total)}`;
+      retoGanadorPendiente = {
+        items: retoParticipantes.flatMap(p => (Array.isArray(p.items) ? p.items : []).map(it => ({ ...it, cliente: p.cliente_nombre }))),
+        monto: total,
+      };
+      setTimeout(() => continuarPagoGanadorReto(), 1800);
+    } else {
+      if (icEl) icEl.textContent = "😅";
+      if (tituloEl) tituloEl.textContent = "¡Te salvaste!";
+      if (textoEl) textoEl.textContent = `${esc(ganadorNombre)} pagó la ruleta -- tu pedido ya quedó cubierto, no tienes que hacer nada más.`;
+      carrito.clear();
+      items.forEach(p => renderQty(p.id));
+      renderBarra();
+      setTimeout(() => { if (overlay) overlay.hidden = true; limpiarReto(); }, 2600);
+    }
+  }
+  function continuarPagoGanadorReto() {
+    if (!retoGanadorPendiente) return;
+    mostrarVistaReto(null);
+    mostrar($("#carta-campo-mesa-alcance"), "none");
+    const cont = $("#carta-sheet-items");
+    if (cont) cont.innerHTML = retoGanadorPendiente.items.map(it => `
+      <div class="carta-sheet__item"><span>${it.cantidad}× ${esc(it.nombre)} <small style="color:var(--tinta-45)">· ${esc(it.cliente)}</small></span><span>${COP(it.precio * it.cantidad)}</span></div>`).join("");
+    const totSpan = $("#carta-sheet-total"); if (totSpan) totSpan.textContent = COP(retoGanadorPendiente.monto);
+    sincronizarMontoPago();
+    mostrar($("#carta-campo-pago"));
+    mostrar($("#carta-enviar-pedido"));
+    const enviarBtn = $("#carta-enviar-pedido"); if (enviarBtn) enviarBtn.textContent = "Ya pagué";
+  }
+
+  $("#carta-reto-girar")?.addEventListener("click", () => lanzarGiro());
+  // Deslizar la ruleta con el dedo también la lanza -- basta con soltar
+  // para que gire, no hace falta medir la fuerza del gesto: el resultado ya
+  // está decidido antes de animarse (es al azar de verdad, no depende de
+  // qué tan fuerte deslizaron).
+  let _arrastreInicioX = null;
+  $("#carta-reto-wheel")?.addEventListener("pointerdown", (e) => {
+    if (!retoActual || retoActual.creado_whatsapp !== miWhatsAppOCreado() || retoParticipantes.length < 2 || _girandoLocal) return;
+    _arrastreInicioX = e.clientX;
+  });
+  $("#carta-reto-wheel")?.addEventListener("pointerup", (e) => {
+    if (_arrastreInicioX == null) return;
+    const delta = Math.abs(e.clientX - _arrastreInicioX);
+    _arrastreInicioX = null;
+    if (delta > 10) lanzarGiro();
+  });
+  async function lanzarGiro() {
+    if (!retoActual || _girandoLocal || retoParticipantes.length < 2) return;
+    const ganador = retoParticipantes[Math.floor(Math.random() * retoParticipantes.length)];
+    const angulo = anguloGanador(ganador.cliente_whatsapp);
+    await supabase.from("negocio_mesas_retos").update({
+      estado: "girando", ganador_whatsapp: ganador.cliente_whatsapp,
+      giro_inicio_at: new Date().toISOString(), giro_duracion_ms: 4200, angulo_final: angulo,
+    }).eq("id", retoActual.id);
+  }
+
+  async function activarRetoAzar() {
+    // ¿Ya hay un reto activo (esperando o girando, sin vencer) en esta
+    // mesa? Entonces esta persona se une a ÉSE en vez de lanzar uno nuevo.
+    const { data: existente } = await supabase.from("negocio_mesas_retos")
+      .select("*").eq("mesa_sesion_id", mesaSesionId).in("estado", ["esperando", "girando"])
+      .gt("expira_at", new Date().toISOString()).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (existente) { retoActual = existente; mostrarVistaReto("responder"); return; }
+    const miWa = miWhatsAppOCreado(), miNombre = miNombreOCreado();
+    if (!miWa) { alert("Escribe tu WhatsApp arriba para poder participar en el reto"); return; }
+    const { data: nuevo, error } = await supabase.from("negocio_mesas_retos").insert({
+      negocio_id: aliadoId, mesa_sesion_id: mesaSesionId, estado: "esperando",
+      creado_whatsapp: miWa, creado_nombre: miNombre, expira_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+    }).select().single();
+    if (error || !nuevo) { alert("No pudimos lanzar el reto. Intenta de nuevo."); return; }
+    retoActual = nuevo;
+    const { total } = totalCarrito();
+    await supabase.from("negocio_mesas_retos_participantes").insert({
+      reto_id: nuevo.id, mesa_sesion_id: mesaSesionId, cliente_nombre: miNombre, cliente_whatsapp: miWa,
+      respuesta: "acepto", items: [...carrito.values()], monto: total,
+    });
+    suscribirReto(nuevo.id);
+    await cargarParticipantesReto();
+    mostrarVistaReto("esperando");
+    retoTimerInterval = setInterval(actualizarTimerReto, 1000);
+    actualizarTimerReto();
+  }
+  $("#carta-reto-aceptar")?.addEventListener("click", async () => {
+    if (!retoActual) return;
+    const miWa = miWhatsAppOCreado(), miNombre = miNombreOCreado();
+    if (!miWa) { alert("Escribe tu WhatsApp arriba para poder participar en el reto"); return; }
+    const { total } = totalCarrito();
+    await supabase.from("negocio_mesas_retos_participantes").upsert({
+      reto_id: retoActual.id, mesa_sesion_id: mesaSesionId, cliente_nombre: miNombre, cliente_whatsapp: miWa,
+      respuesta: "acepto", items: [...carrito.values()], monto: total,
+    }, { onConflict: "reto_id,cliente_whatsapp" });
+    suscribirReto(retoActual.id);
+    await cargarParticipantesReto();
+    mostrarVistaReto("esperando");
+    retoTimerInterval = setInterval(actualizarTimerReto, 1000);
+    actualizarTimerReto();
+  });
+  $("#carta-reto-rechazar")?.addEventListener("click", () => {
+    limpiarReto();
+    mesaAlcance = "mio";
+    $$("#carta-campo-mesa-alcance [data-alcance]").forEach(x => x.classList.toggle("is-on", x.dataset.alcance === "mio"));
+    const enviarBtn = $("#carta-enviar-pedido"); if (enviarBtn) enviarBtn.textContent = "Ya pagué";
+    actualizarTotalMesa();
+  });
+  $("#carta-reto-cancelar")?.addEventListener("click", () => cancelarReto(null));
 
   // ---------- Recoger o domicilio (solo cuando NO es pedido de mesa -- si
   // ya estás comiendo en el local, no aplica). Si el negocio no activó
@@ -1230,6 +1527,10 @@ async function iniciar() {
     sincronizarMontoPago();
     // Reinicia la elección de método de pago (y de alcance, si hay mesa) en
     // cada pedido nuevo -- no debe quedar pegada la del pedido anterior.
+    // Si había un reto de pago al azar en pantalla, también se limpia (no
+    // se cancela en el servidor: puede que otros de la mesa lo sigan
+    // viendo, solo se deja de mostrar acá).
+    limpiarReto();
     metodoPago = null;
     mesaAlcance = null;
     $$(".carta-metodo-btn[data-metodo]").forEach(x => x.classList.remove("is-on"));
@@ -1272,9 +1573,58 @@ async function iniciar() {
   function preguntarAlgoMas() { if (masAlgoOverlay) masAlgoOverlay.hidden = false; }
 
   let _cartaEnviando = false;
+  // Si perdí la ruleta, este mismo botón ("Ya pagué") manda UN pedido
+  // combinado con los ítems de todos los que aceptaron el reto, en vez del
+  // carrito propio -- ver continuarPagoGanadorReto() más arriba.
+  async function enviarPagoGanadorReto() {
+    const btn = $("#carta-enviar-pedido");
+    if (_cartaEnviando || !retoGanadorPendiente) return;
+    if (!metodoPago) { alert("Elige cómo vas a pagar"); return; }
+    const comprobanteFile = $("#carta-comprobante")?.files?.[0];
+    if (metodoPago === "transferencia" && !comprobanteFile) { alert("Sube el comprobante de pago"); return; }
+    _cartaEnviando = true;
+    btn.disabled = true; btn.textContent = "Enviando…";
+    let comprobanteUrl = null;
+    if (metodoPago === "transferencia" && comprobanteFile) {
+      try {
+        const file = await comprimirImagen(comprobanteFile);
+        const ext = file.name.split(".").pop();
+        const path = `comprobante-carta-${aliadoId}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("contenido").upload(path, file, { upsert: true });
+        if (upErr) throw upErr;
+        comprobanteUrl = supabase.storage.from("contenido").getPublicUrl(path).data.publicUrl;
+      } catch {
+        _cartaEnviando = false; btn.disabled = false; btn.textContent = "Ya pagué";
+        alert("No pudimos subir el comprobante. Intenta de nuevo.");
+        return;
+      }
+    }
+    const miNombre = miNombreOCreado(), miWa = miWhatsAppOCreado();
+    const payload = {
+      negocio_id: aliadoId, cliente_nombre: miNombre, cliente_whatsapp: miWa || null,
+      nota: "🎲 Pago de la ruleta -- cubre los pedidos de todos los que aceptaron el reto.",
+      items: retoGanadorPendiente.items, monto_total: retoGanadorPendiente.monto, estado: "pendiente",
+      metodo_pago: metodoPago, comprobante_url: comprobanteUrl,
+      mesa_id: mesaId, mesa_sesion_id: mesaSesionId, mesa_nombre: mesaNombre,
+    };
+    const { error } = await supabase.from("negocio_carta_pedidos").insert(payload);
+    btn.disabled = false; btn.textContent = "Ya pagué";
+    _cartaEnviando = false;
+    if (error) { alert("No pudimos enviar el pago. Intenta de nuevo."); return; }
+    if (retoActual) supabase.from("negocio_mesas_retos").update({ estado: "terminado" }).eq("id", retoActual.id).then(() => {}, () => {});
+    carrito.clear();
+    items.forEach(p => renderQty(p.id));
+    renderBarra();
+    limpiarReto();
+    $("#carta-sheet-form").hidden = true;
+    $("#carta-sheet-exito").hidden = false;
+    const tituloExito = $("#carta-sheet-exito h3"); if (tituloExito) tituloExito.textContent = "¡Pago enviado!";
+    const textoExito = $("#carta-sheet-exito p"); if (textoExito) textoExito.textContent = "Pagaste por todos los que aceptaron el reto -- el negocio lo confirma al revisar tu comprobante.";
+  }
   $("#carta-enviar-pedido")?.addEventListener("click", async () => {
     const btn = $("#carta-enviar-pedido");
     if (_cartaEnviando) return; // blindaje extra contra doble clic/doble submit, además de disabled
+    if (retoGanadorPendiente) { await enviarPagoGanadorReto(); return; }
     const nombre = $("#carta-cliente-nombre")?.value.trim();
     const wa = $("#carta-cliente-wa")?.value.trim();
     const nota = $("#carta-cliente-nota")?.value.trim();

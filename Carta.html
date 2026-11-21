@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=143">
-  <link rel="stylesheet" href="carta.css?v=37">
+  <link rel="stylesheet" href="carta.css?v=38">
 </head>
 <body>
   <div class="page-loader" id="page-loader"><img src="icon-club-isotipo.png" alt=""></div>
@@ -149,9 +149,46 @@
             <button type="button" class="carta-metodo-btn" data-alcance="mio">🙋 Pago lo mío</button>
             <button type="button" class="carta-metodo-btn" data-alcance="mesa">🍽️ Pago toda la mesa</button>
             <button type="button" class="carta-metodo-btn" data-alcance="nadie">🙌 Alguien más paga</button>
+            <button type="button" class="carta-metodo-btn" data-alcance="azar">🎲 Dejarlo al azar</button>
           </div>
           <p id="carta-mesa-alcance-total" style="font-size:12.5px;color:var(--verde);margin-top:8px"></p>
           <div id="carta-mesa-factura" style="margin-top:6px"></div>
+        </div>
+
+        <!-- Reto de pago al azar: reemplaza el selector de arriba y el resto
+             del formulario mientras está activo (ver carta.js). -->
+        <div class="carta-reto" id="carta-reto-panel" hidden>
+          <div id="carta-reto-responder" hidden>
+            <div class="carta-reto-aviso">🎲 Alguien de tu mesa propuso dejar el pago al azar.</div>
+            <div class="carta-metodo-pago" style="flex-wrap:wrap">
+              <button type="button" class="btn btn--primario" id="carta-reto-aceptar">Acepto el reto</button>
+              <button type="button" class="btn" id="carta-reto-rechazar">Yo pago lo mío</button>
+            </div>
+          </div>
+
+          <div id="carta-reto-esperando" hidden>
+            <div class="carta-reto-aviso">🎲 Reto de pago al azar</div>
+            <div id="carta-reto-participantes" class="carta-reto-participantes"></div>
+            <div class="carta-reto-timer" id="carta-reto-timer"></div>
+
+            <!-- Aparece apenas hay 2+ aceptados -- quien lanzó el reto ya
+                 puede deslizarla con el dedo; los demás la ven igual,
+                 quieta, esperando a que gire. -->
+            <div class="carta-reto-wheel-wrap" id="carta-reto-wheel-wrap" hidden>
+              <div class="carta-reto-wheel-puntero">▼</div>
+              <div class="carta-reto-wheel" id="carta-reto-wheel"></div>
+            </div>
+
+            <p class="carta-reto-hint" id="carta-reto-hint"></p>
+            <button type="button" class="btn btn--primario" id="carta-reto-girar" style="width:100%" hidden>🎡 Girar la ruleta</button>
+            <button type="button" class="carta-bienvenida-volver-link" id="carta-reto-cancelar">Cancelar y pagar yo lo mío</button>
+          </div>
+
+          <div id="carta-reto-resultado" hidden>
+            <div class="carta-reto-resultado-ic" id="carta-reto-resultado-ic"></div>
+            <h3 id="carta-reto-resultado-titulo"></h3>
+            <p id="carta-reto-resultado-texto"></p>
+          </div>
         </div>
 
         <div class="carta-campo" id="carta-campo-pago">
@@ -286,7 +323,7 @@
     </div>
   </div>
 
-  <script type="module" src="carta.js?v=39"></script>
+  <script type="module" src="carta.js?v=41"></script>
 
   <template id="__bundler_thumbnail">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

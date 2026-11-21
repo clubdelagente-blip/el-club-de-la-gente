@@ -428,3 +428,34 @@ body { background: #0b0b0c; position: relative; }
 .carta-bienvenida-form { margin-top: 18px; text-align: left; }
 .carta-bienvenida-hint { font-size: 12px; color: var(--tinta-60); line-height: 1.55; margin: 0 0 14px; background: var(--verde-soft); padding: 10px 12px; border-radius: 10px; }
 .carta-bienvenida-volver-link { display: block; width: 100%; text-align: center; background: none; border: none; color: var(--tinta-45); font-size: 12.5px; font-weight: 600; margin-top: 10px; cursor: pointer; padding: 6px; }
+
+/* ---------- Reto de pago al azar (solo mesa compartida) -- ver carta.js
+   (activarRetoAzar y compañía). Los toggles de este bloque se hacen por
+   JS con .style.display directo (no con el atributo [hidden]) para no
+   repetir el mismo problema de especificidad que ya tapó otros toggles de
+   esta carta: ninguna clase de acá declara "display" a propósito, así que
+   cualquiera de las dos formas sería segura, pero se mantiene la
+   convención de .style.display por si el día de mañana alguna sí lo hace. ---------- */
+.carta-reto-aviso { font-size: 14px; font-weight: 700; color: var(--tinta); margin-bottom: 14px; text-align: center; }
+.carta-reto-participantes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 14px; }
+.carta-reto-chip { background: var(--verde-soft); color: var(--verde); font-size: 12.5px; font-weight: 700; padding: 6px 12px; border-radius: 100px; }
+.carta-reto-timer { text-align: center; font-family: var(--display); font-size: 28px; color: var(--tinta); margin-bottom: 8px; }
+.carta-reto-hint { text-align: center; font-size: 12.5px; color: var(--tinta-60); margin: 10px 0; }
+
+.carta-reto-wheel-wrap { position: relative; width: 260px; height: 260px; margin: 6px auto 18px; touch-action: none; }
+.carta-reto-wheel-puntero { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); font-size: 26px; color: var(--verde); z-index: 2; filter: drop-shadow(0 2px 3px rgba(0,0,0,.3)); }
+.carta-reto-wheel {
+  width: 100%; height: 100%; border-radius: 50%; position: relative; cursor: grab;
+  border: 6px solid #fff; box-shadow: 0 8px 28px -10px rgba(0,0,0,.45), 0 0 0 2px var(--verde);
+  transform: rotate(0deg);
+}
+.carta-reto-wheel:active { cursor: grabbing; }
+.carta-reto-wheel__seg { position: absolute; inset: 0; display: flex; justify-content: center; transform-origin: 50% 50%; }
+.carta-reto-wheel__seg span {
+  display: inline-block; margin-top: 14px; font-size: 11px; font-weight: 700; color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.4); max-width: 68px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.carta-reto-resultado { text-align: center; padding: 10px 0; }
+.carta-reto-resultado-ic { font-size: 44px; margin-bottom: 10px; }
+.carta-reto-resultado h3 { font-family: var(--display); font-size: 20px; margin-bottom: 6px; }
+.carta-reto-resultado p { font-size: 13.5px; color: var(--tinta-60); line-height: 1.5; }
