@@ -511,20 +511,35 @@ async function iniciar() {
     }
 
     // El texto (nombre/descripción/precio) de cada tarjeta se desvanece
-    // mientras no está CASI del todo en pantalla -- sin esto, durante un
-    // scroll lento/controlado se alcanza a ver la descripción de la
-    // tarjeta de arriba "colgando" al mismo tiempo que entra la foto de la
-    // siguiente, dando la sensación de que chocan. Con el texto invisible
-    // hasta que la tarjeta ya casi terminó de asentarse, la transición se
-    // siente más rápida y limpia (la foto sigue viéndose todo el tiempo,
-    // solo el texto aparece/desaparece).
-    const observerTexto = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        const body = entry.target.querySelector(".carta-card__body");
-        if (body) body.classList.toggle("carta-card__body--oculto", entry.intersectionRatio < 0.85);
+    // mientras no está CASI del todo en pantalla -- sin esto, se alcanza a
+    // ver la descripción de la tarjeta de arriba "colgando" todavía
+    // mientras entra la foto de la siguiente, dando la sensación de que
+    // chocan. IntersectionObserver (lo que se usaba antes acá) NO corre en
+    // cada frame del scroll -- tiene su propio retraso/throttling interno,
+    // así que el texto quedaba atrasado respecto a lo que ya se veía en
+    // pantalla ("la cola" subiendo lento). Esto en cambio recalcula la
+    // opacidad de cada tarjeta EN VIVO, en cada frame del scroll real
+    // (requestAnimationFrame), para que quede exactamente sincronizado con
+    // el dedo -- sin transición CSS de por medio, que también sumaría
+    // retraso.
+    let _textoRaf = null;
+    function actualizarOpacidadTextos() {
+      _textoRaf = null;
+      const gridRect = grid.getBoundingClientRect();
+      grid.querySelectorAll(".carta-slide").forEach(slide => {
+        const body = slide.querySelector(".carta-card__body");
+        if (!body) return;
+        const rect = slide.getBoundingClientRect();
+        const visible = Math.max(0, Math.min(rect.bottom, gridRect.bottom) - Math.max(rect.top, gridRect.top));
+        const ratio = gridRect.height ? visible / gridRect.height : 1;
+        // Se queda a opacidad plena hasta el 90% visible, y de ahí a 55%
+        // cae a 0 -- una ventana angosta a propósito, para que el texto
+        // desaparezca casi apenas la tarjeta empieza a moverse.
+        body.style.opacity = ratio >= 0.9 ? "1" : String(Math.max(0, (ratio - 0.55) / 0.35));
       });
-    }, { root: grid, threshold: [0, 0.5, 0.7, 0.85, 0.95, 1] });
-    grid.querySelectorAll(".carta-slide").forEach(s => observerTexto.observe(s));
+    }
+    grid.addEventListener("scroll", () => { if (!_textoRaf) _textoRaf = requestAnimationFrame(actualizarOpacidadTextos); }, { passive: true });
+    actualizarOpacidadTextos();
 
     // Scroll infinito: al llegar al final del feed, vuelve al principio.
     // Se clona la PRIMERA tarjeta y se pega al final como "centinela" -- en
