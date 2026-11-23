@@ -2848,6 +2848,7 @@ function abrirConstructorPedido() {
             <button class="btn btn--primario" id="cp-pos-cobrar" style="width:100%;justify-content:center;flex:none" disabled>Elige un producto</button>
           </div>
           <div id="cp-pos-detalle-view" style="display:none;flex-direction:column;flex:1;min-height:0"></div>
+          <div id="cp-pos-confirm-view" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;flex:1;min-height:0;gap:6px"></div>
         </div>
       </div>
     </div>
@@ -2895,8 +2896,10 @@ function abrirConstructorPedido() {
     let cantidad = 1;
     const cartView = $("#cp-pos-cart-view");
     const detView = $("#cp-pos-detalle-view");
+    const confirmView = $("#cp-pos-confirm-view");
     if (!detView) return;
     if (cartView) cartView.style.display = "none";
+    if (confirmView) confirmView.style.display = "none";
     detView.style.display = "flex";
 
     const calcularExtra = () => {
@@ -2960,18 +2963,40 @@ function abrirConstructorPedido() {
     const tope = () => p.stock_activo ? Math.max(0, p.stock_cantidad ?? 0) : Infinity;
     $("#cp-det-qty-mas")?.addEventListener("click", () => { if (cantidad < tope()) { cantidad++; pintar(); } });
     $("#cp-det-qty-menos")?.addEventListener("click", () => { if (cantidad > 1) { cantidad--; pintar(); } });
-    const volverAlCarrito = () => { detView.style.display = "none"; if (cartView) cartView.style.display = "flex"; };
+    const volverAlCarrito = () => { detView.style.display = "none"; if (confirmView) confirmView.style.display = "none"; if (cartView) cartView.style.display = "flex"; };
     $("#cp-det-volver")?.addEventListener("click", volverAlCarrito);
+    // Pantalla aparte confirmando qué se acaba de agregar (producto +
+    // toppings + su precio) antes de volver al carrito -- antes el
+    // "Agregar" volvía derecho al carrito sin pausa, y no quedaba claro que
+    // de verdad se había agregado.
+    const mostrarConfirmacion = (item) => {
+      detView.style.display = "none";
+      if (cartView) cartView.style.display = "none";
+      if (!confirmView) { volverAlCarrito(); return; }
+      confirmView.style.display = "flex";
+      const totalPedido = carritoPos.reduce((s, it) => s + it.precioUnit * it.cantidad, 0);
+      const modTxt = item.modificadores.map(m => m.opcion).join(", ");
+      confirmView.innerHTML = `
+        <div style="width:52px;height:52px;border-radius:50%;background:var(--verde-soft);color:var(--verde);display:flex;align-items:center;justify-content:center;font-size:24px">✓</div>
+        <div style="font-weight:700;font-size:15px">${item.cantidad}× ${esc(item.nombre)}</div>
+        ${modTxt ? `<div style="font-size:12.5px;color:#777">${esc(modTxt)}</div>` : ""}
+        <div style="font-weight:700;font-size:14px;color:var(--verde)">+${COP(item.precioUnit * item.cantidad)}</div>
+        <div style="font-size:12px;color:#999;margin-top:6px">Total del pedido: ${COP(totalPedido)}</div>
+        <button class="btn btn--primario" id="cp-confirm-continuar" style="margin-top:14px;width:100%;justify-content:center">Continuar</button>
+      `;
+      $("#cp-confirm-continuar")?.addEventListener("click", volverAlCarrito);
+    };
     $("#cp-det-agregar")?.addEventListener("click", () => {
       const modificadores = [];
       grupos.forEach(g => {
         const sel = seleccion.get(g.id) || new Set();
         g.opciones.forEach(o => { if (sel.has(o.id)) modificadores.push({ grupo: g.nombre, opcion: o.nombre, precio_adicional: Number(o.precio_adicional) || 0 }); });
       });
-      carritoPos.push({ id: crypto.randomUUID(), producto_id: p.id, nombre: p.nombre, precioUnit: Number(p.precio) + calcularExtra(), cantidad, modificadores });
-      volverAlCarrito();
+      const item = { id: crypto.randomUUID(), producto_id: p.id, nombre: p.nombre, precioUnit: Number(p.precio) + calcularExtra(), cantidad, modificadores };
+      carritoPos.push(item);
       renderCart();
       renderGrid(busquedaActual);
+      mostrarConfirmacion(item);
     });
     pintar();
   };
