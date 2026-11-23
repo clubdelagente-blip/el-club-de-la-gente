@@ -130,7 +130,13 @@
 .dash-greet p { font-size: 15px; color: var(--tinta-60); margin-top: 8px; }
 
 /* ---------- Stats ---------- */
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+/* auto-fit/minmax, no un número fijo de columnas -- con un sidebar fijo al
+   lado, el ancho real del contenido no es el mismo que el del viewport
+   (que es lo único que miden los @media de abajo), así que un "repeat(4,
+   1fr)" se podía quedar sin espacio real y cortar la última tarjeta aunque
+   la ventana pareciera "ancha". Con esto, el grid se acomoda solo al
+   espacio que de verdad tiene disponible. */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 28px; }
 .stat { background: var(--crema); border: 1px solid var(--linea); border-radius: 12px; padding: 22px 24px; }
 .stat__top { display: flex; align-items: center; justify-content: space-between; }
 .stat__ic { width: 36px; height: 36px; border-radius: 9px; background: var(--verde-soft); color: var(--verde); display: grid; place-items: center; }
@@ -452,7 +458,6 @@
    RESPONSIVE
    ============================================================ */
 @media (max-width: 1080px) {
-  .stats { grid-template-columns: repeat(2, 1fr); }
   .dash-grid, .perfil-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 860px) {
@@ -495,7 +500,6 @@
 }
 @media (max-width: 560px) {
   .dash-content { padding: 22px; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 88px); }
-  .stats { grid-template-columns: 1fr; }
   .aliados-strip { grid-template-columns: 1fr; }
   .topbar { padding: 14px 20px; }
   .seg-opts { gap: 8px; }
