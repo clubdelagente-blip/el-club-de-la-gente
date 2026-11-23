@@ -2813,6 +2813,7 @@ function gruposDeProducto(productoId) {
 function abrirConstructorPedido() {
   if (!_contaCartaProductos.length) { toast("Agrega productos a tu carta antes de crear un pedido"); return; }
   const carritoPos = []; // { id, producto_id, nombre, precioUnit, cantidad, modificadores }
+  let metodoPagoPos = "efectivo"; // arranca en efectivo -- el caso más común de mostrador, para no sumar un click extra al 90% de las ventas
 
   abrirModalTienda("Nuevo pedido", `
     ${_contaMesas.length ? `
@@ -2842,6 +2843,10 @@ function abrirConstructorPedido() {
             <div style="font-weight:700;font-size:14px;margin-bottom:8px">Pedido</div>
             <div id="cp-pos-cart-items" style="flex:1;overflow-y:auto;margin-bottom:10px"></div>
             <input class="cfg-input" id="cp-pos-nota" type="text" placeholder="Nota (opcional)" style="margin-bottom:8px;flex:none">
+            <div style="display:flex;gap:8px;margin-bottom:10px;flex:none">
+              <button type="button" class="btn" data-pos-metodo="efectivo" style="flex:1;padding:8px;font-size:12.5px;justify-content:center">💵 Efectivo</button>
+              <button type="button" class="btn" data-pos-metodo="transferencia" style="flex:1;padding:8px;font-size:12.5px;justify-content:center">🏦 Transferencia</button>
+            </div>
             <div style="display:flex;justify-content:space-between;font-weight:800;font-size:16px;padding:6px 0 10px;flex:none">
               <span>Total</span><span id="cp-pos-total">${COP(0)}</span>
             </div>
@@ -3019,6 +3024,19 @@ function abrirConstructorPedido() {
     }));
   };
 
+  // Método de pago de la venta de mostrador -- arranca en "efectivo"
+  // marcado para que no haya que elegir en el caso más común.
+  const pintarMetodoPos = () => {
+    $$("[data-pos-metodo]").forEach(b => {
+      const on = b.dataset.posMetodo === metodoPagoPos;
+      b.style.background = on ? "var(--verde)" : "";
+      b.style.color = on ? "#fff" : "";
+      b.style.borderColor = on ? "var(--verde)" : "";
+    });
+  };
+  $$("[data-pos-metodo]").forEach(b => b.addEventListener("click", () => { metodoPagoPos = b.dataset.posMetodo; pintarMetodoPos(); }));
+  pintarMetodoPos();
+
   renderGrid();
   renderCart();
   $("#cp-pos-buscar")?.addEventListener("input", (e) => renderGrid(e.target.value));
@@ -3070,7 +3088,7 @@ function abrirConstructorPedido() {
     const ahora = new Date().toISOString();
     const { data: pedido, error } = await supabase.from("negocio_carta_pedidos").insert({
       negocio_id: _contaNegocioId, cliente_nombre: "Mostrador", nota, items, monto_total: total,
-      estado: "pendiente", origen: "manual", pagado: true, pagado_at: ahora,
+      estado: "pendiente", origen: "manual", pagado: true, pagado_at: ahora, metodo_pago: metodoPagoPos,
     }).select().single();
     if (error) { toast("Error: " + error.message); btn.disabled = false; renderCart(); return; }
     await supabase.from("negocio_ingresos").insert({
