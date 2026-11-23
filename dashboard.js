@@ -2417,6 +2417,56 @@ function mostrarSugerenciaCategorias() {
   }
 }
 
+// Costo de lo vendido en el periodo: cada pedido de la carta (ni cancelado)
+// trae sus items con producto_id -- se multiplica cada cantidad por el
+// costo de receta de ESE producto (costoInsumosProducto, misma función que
+// ya usa la pestaña Costos) + el % operativo del negocio. "created_at" es
+// timestamp completo (no solo fecha), así que "hasta" necesita hora de
+// cierre del día o contaEnRango excluye el último día del periodo entero.
+function calcularCostoVentasPeriodo(desde, hasta) {
+  const pct = Number(_contaNegocio.carta_costo_operativo_pct) || 0;
+  const hastaConHora = `${hasta}T23:59:59`;
+  return _contaCartaPedidos
+    .filter(p => p.estado !== "cancelado" && contaEnRango(p.created_at, desde, hastaConHora))
+    .reduce((total, p) => {
+      const items = Array.isArray(p.items) ? p.items : [];
+      return total + items.reduce((s, it) => s + (Number(it.cantidad) || 0) * costoInsumosProducto(it.producto_id) * (1 + pct / 100), 0);
+    }, 0);
+}
+
+// Desglose "Ingresos -> Costo de ventas -> Utilidad bruta -> Gastos ->
+// Utilidad neta", para que se entienda de dónde sale la utilidad neta (el
+// stat de arriba) en vez de solo ver el número final. El último renglón
+// (utilidad neta) es el mismo valor que #conta-stat-balance -- misma
+// cuenta, dos lugares.
+function renderDesgloseUtilidad(ingresos, costoVentas, gastos) {
+  const cont = $("#conta-utilidad-desglose");
+  if (!cont) return;
+  const utilidadBruta = ingresos - costoVentas;
+  const utilidadNeta = utilidadBruta - gastos;
+  const fila = (label, valor, o = {}) => `
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:${o.grande ? "16px 0 4px" : "10px 0"};${o.borde ? "border-top:1.5px solid var(--linea-fuerte);margin-top:4px" : ""}">
+      <span style="font-size:${o.grande ? "14.5px" : "13px"};font-weight:${o.grande ? 700 : 600};color:${o.muted ? "var(--tinta-60)" : "var(--tinta)"}">${esc(label)}</span>
+      <span style="font-family:var(--display);font-size:${o.grande ? "26px" : "16px"};font-weight:700;color:${o.color || "var(--tinta)"};white-space:nowrap">${o.signo || ""}${COP(Math.abs(valor))}</span>
+    </div>`;
+  cont.innerHTML =
+    fila("Ingresos", ingresos) +
+    fila("Costo de ventas (tus recetas)", costoVentas, { signo: "− ", muted: true, color: "#c0392b" }) +
+    fila("Utilidad bruta", utilidadBruta, { borde: true }) +
+    fila("Gastos operativos", gastos, { signo: "− ", muted: true, color: "#c0392b" }) +
+    fila("Utilidad neta", utilidadNeta, { borde: true, grande: true, color: utilidadNeta >= 0 ? "var(--verde)" : "#c0392b" });
+}
+function renderGaugeMargen(margenPct) {
+  const cont = $("#conta-margen-gauge");
+  if (!cont) return;
+  const pct = Math.max(0, Math.min(100, margenPct));
+  const color = margenPct >= 20 ? "var(--verde)" : margenPct >= 0 ? "#b45309" : "#c0392b";
+  cont.innerHTML = `
+    <div class="conta-gauge" style="background:conic-gradient(${color} ${pct * 3.6}deg, var(--linea) 0)">
+      <span class="conta-gauge__n">${margenPct.toFixed(0)}%</span>
+    </div>`;
+}
+
 function renderContabilidadNegocioUI() {
   const { desde, hasta, desdeAnt, hastaAnt } = calcularRangoConta();
   const gastosPeriodo = _contaGastos.filter(g => contaEnRango(g.fecha, desde, hasta));
@@ -2426,7 +2476,8 @@ function renderContabilidadNegocioUI() {
 
   const totalGastos = gastosPeriodo.reduce((s, g) => s + Number(g.monto || 0), 0);
   const totalIngresos = ingresosPeriodoTodos.reduce((s, i) => s + Number(i.monto || 0), 0);
-  const balance = totalIngresos - totalGastos;
+  const costoVentas = calcularCostoVentasPeriodo(desde, hasta);
+  const balance = totalIngresos - costoVentas - totalGastos;
   const rentabilidad = totalIngresos > 0 ? (balance / totalIngresos * 100) : 0;
 
   const elIng = $("#conta-stat-ingresos"); if (elIng) elIng.textContent = COP(totalIngresos);
@@ -2435,6 +2486,8 @@ function renderContabilidadNegocioUI() {
   const elGasChip = $("#conta-stat-gastos-chip"); if (elGasChip) elGasChip.innerHTML = pctChipConta(totalGastos, gastosAnt);
   const elBal = $("#conta-stat-balance"); if (elBal) elBal.textContent = COP(balance);
   const elRent = $("#conta-stat-rentabilidad"); if (elRent) elRent.textContent = rentabilidad.toFixed(1) + "%";
+  renderDesgloseUtilidad(totalIngresos, costoVentas, totalGastos);
+  renderGaugeMargen(rentabilidad);
 
   const chartWrap = $("#conta-chart-wrap");
   if (chartWrap) {

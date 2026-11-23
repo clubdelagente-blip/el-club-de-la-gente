@@ -20,7 +20,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=143">
   <link rel="stylesheet" href="estilos.css?v=22">
-  <link rel="stylesheet" href="dashboard.css?v=47">
+  <link rel="stylesheet" href="dashboard.css?v=48">
   <link rel="stylesheet" href="agente.css?v=2">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
@@ -755,13 +755,26 @@
                 <div class="stat">
                   <div class="stat__top"><span class="stat__ic"><i data-lucide="scale"></i></span></div>
                   <div class="stat__num" id="conta-stat-balance">—</div>
-                  <div class="stat__lbl">Balance</div>
+                  <div class="stat__lbl">Utilidad neta</div>
                 </div>
                 <div class="stat">
                   <div class="stat__top"><span class="stat__ic"><i data-lucide="trending-up"></i></span></div>
                   <div class="stat__num" id="conta-stat-rentabilidad">—</div>
-                  <div class="stat__lbl">Rentabilidad</div>
+                  <div class="stat__lbl">Margen neto</div>
                 </div>
+              </div>
+
+              <!-- "Cómo se calculó tu utilidad": de dónde sale la utilidad
+                   neta de arriba -- ingresos menos el costo de ventas (tus
+                   recetas, ver pestaña Costos) menos los gastos operativos.
+                   Antes "Balance" era solo ingresos-gastos (ignoraba el
+                   costo de lo vendido); ahora los dos números coinciden. -->
+              <div class="card" id="conta-utilidad-wrap" style="margin-bottom:20px">
+                <div class="card__head" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+                  <span class="card__title">Cómo se calculó tu utilidad</span>
+                  <div id="conta-margen-gauge" style="margin-left:auto"></div>
+                </div>
+                <div id="conta-utilidad-desglose"></div>
               </div>
 
               <div class="card" id="conta-chart-wrap" style="margin-bottom:20px">
@@ -1598,7 +1611,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=268"></script>
+  <script type="module" src="dashboard.js?v=269"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">

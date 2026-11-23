@@ -200,6 +200,14 @@
 /* ---------- grid principal ---------- */
 .dash-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 20px; align-items: start; margin-bottom: 20px; }
 .card { background: var(--crema); border: 1px solid var(--linea); border-radius: 14px; padding: 26px; }
+
+/* Gauge circular del margen neto -- "Cómo se calculó tu utilidad" (ver
+   renderDesgloseUtilidad en dashboard.js). Un solo valor (%), no varias
+   categorías -- acá sí tiene sentido lo redondo (un velocímetro), a
+   diferencia de comparar categorías entre sí (ahí gana la barra). */
+.conta-gauge { position: relative; width: 84px; height: 84px; border-radius: 50%; flex: none; }
+.conta-gauge::before { content: ""; position: absolute; inset: 8px; border-radius: 50%; background: var(--crema); }
+.conta-gauge__n { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 17px; font-weight: 700; color: var(--tinta); }
 .card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .card__title { font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 .card__link { font-size: 12.5px; font-weight: 600; color: var(--verde); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: none; border: none; font-family: var(--cuerpo); }
