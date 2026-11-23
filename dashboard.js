@@ -2537,14 +2537,21 @@ function renderGraficaConta() {
     svg += `<rect x="${gx + 52}" y="${baseline - hGas}" width="26" height="${hGas}" rx="3" fill="#D97757"></rect>`;
     svg += `<text x="${gx + anchoGrupo / 2}" y="${baseline + 18}" text-anchor="middle" font-size="11" fill="rgba(2,27,26,.5)">${esc(d.label)}</text>`;
     if (i === datos.length - 1) {
-      svg += `<text x="${gx + 33}" y="${baseline - hIng - 6}" text-anchor="middle" font-size="10" font-weight="700" fill="#021B1A">${COP(d.ingresos)}</text>`;
-      svg += `<text x="${gx + 65}" y="${baseline - hGas - 6}" text-anchor="middle" font-size="10" font-weight="700" fill="rgba(2,27,26,.6)">${COP(d.gastos)}</text>`;
+      // Cada valor apunta hacia AFUERA de su propia barra (ingresos hacia
+      // la izquierda, gastos hacia la derecha) en vez de quedar centrado
+      // sobre una barra angosta de 26px -- un monto largo como "$1.209.990"
+      // centrado ahí se desbordaba sobre la barra vecina.
+      svg += `<text x="${gx + 46}" y="${baseline - hIng - 6}" text-anchor="end" font-size="10" font-weight="700" fill="#021B1A">${COP(d.ingresos)}</text>`;
+      svg += `<text x="${gx + 52}" y="${baseline - hGas - 6}" text-anchor="start" font-size="10" font-weight="700" fill="rgba(2,27,26,.6)">${COP(d.gastos)}</text>`;
     }
     const cy = d.utilidad > 0 ? baseline - escala(d.utilidad) : baseline;
     puntos.push(`${gx + anchoGrupo / 2},${cy}`);
   });
   svg += `<polyline points="${puntos.join(" ")}" fill="none" stroke="#EAB749" stroke-width="2"></polyline>`;
-  cont.innerHTML = `<svg viewBox="0 0 ${w} ${baseline + 26}" style="width:${Math.max(w, 320)}px;height:auto;display:block">${svg}</svg>`;
+  // +35 de margen a la derecha -- el valor de "Gastos" del último mes ahora
+  // se extiende hacia afuera de su barra (ver arriba) y podía quedar
+  // recortado contra el borde del viewBox.
+  cont.innerHTML = `<svg viewBox="0 0 ${w + 35} ${baseline + 26}" style="width:${Math.max(w + 35, 320)}px;height:auto;display:block">${svg}</svg>`;
 }
 
 // Gastos recurrentes (ej. arriendo mensual): en vez de un cron aparte, se
