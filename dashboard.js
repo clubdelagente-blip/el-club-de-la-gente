@@ -2447,7 +2447,7 @@ function renderDesgloseUtilidad(ingresos, costoVentas, gastos) {
   const fila = (label, valor, o = {}) => `
     <div style="display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:${o.grande ? "16px 0 4px" : "10px 0"};${o.borde ? "border-top:1.5px solid var(--linea-fuerte);margin-top:4px" : ""}">
       <span style="font-size:${o.grande ? "14.5px" : "13px"};font-weight:${o.grande ? 700 : 600};color:${o.muted ? "var(--tinta-60)" : "var(--tinta)"}">${esc(label)}</span>
-      <span style="font-family:var(--cuerpo);font-variant-numeric:tabular-nums;letter-spacing:-.01em;font-size:${o.grande ? "26px" : "16px"};font-weight:600;color:${o.color || "var(--tinta)"};white-space:nowrap">${o.signo || ""}${COP(Math.abs(valor))}</span>
+      <span style="font-family:var(--cuerpo);font-variant-numeric:tabular-nums;letter-spacing:-.01em;font-size:${o.grande ? "26px" : "16px"};font-weight:400;color:${o.color || "var(--tinta)"};white-space:nowrap">${o.signo || ""}${COP(Math.abs(valor))}</span>
     </div>`;
   cont.innerHTML =
     fila("Ingresos", ingresos) +
