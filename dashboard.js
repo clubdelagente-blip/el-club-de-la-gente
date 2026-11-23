@@ -4317,7 +4317,11 @@ function inicializarBloqueo() {
 }
 
 /* ---------- TIENDA ---------- */
-const COP = n => n != null ? '$' + Number(n).toLocaleString('es-CO') : '';
+// Redondeado a propósito -- sin esto, un monto con decimales (ej. un costo
+// de receta que no da un número exacto) se mostraba con centavos
+// ("$51.757,333"), algo que ningún banco/billetera hace con pesos
+// colombianos.
+const COP = n => n != null ? '$' + Math.round(Number(n)).toLocaleString('es-CO') : '';
 let _tiendaCargada = false;
 let _miembroId = null;
 
