@@ -4022,11 +4022,12 @@ function filaPedidoHtml(ped) {
     return `${it.cantidad}× ${esc(it.nombre)}${mods}`;
   }).join(", ");
   const folio = "#" + String(ped.id).slice(0, 8).toUpperCase();
+  const hora = ped.created_at ? new Date(ped.created_at).toLocaleTimeString("es-CO", { hour: "numeric", minute: "2-digit" }) : "";
   return `
   <div style="padding:14px 0;border-bottom:1px solid #ebebeb">
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
       <div style="flex:1;min-width:180px">
-        <div style="font-weight:600;font-size:14px">${folio} · ${esc(ped.cliente_nombre)} — ${COP(ped.monto_total)}</div>
+        <div style="font-weight:600;font-size:14px">${folio} · ${esc(ped.cliente_nombre)} — ${COP(ped.monto_total)}${hora ? ` <span style="font-weight:400;color:#999;font-size:12px">· ${hora}</span>` : ""}</div>
         <div style="font-size:12px;color:#777">${esc(resumenItems)}${ped.nota ? " · " + esc(ped.nota) : ""}${ped.cliente_whatsapp ? " · " + esc(ped.cliente_whatsapp) : ""}</div>
         <div style="font-size:12px;color:#777;margin-top:2px">${ped.metodo_pago === "transferencia" ? "🏦 Transferencia" : ped.metodo_pago === "efectivo" ? "💵 Efectivo" : ""}${ped.comprobante_url ? ` · <a href="${esc(ped.comprobante_url)}" target="_blank" style="color:var(--verde)">Ver comprobante ↗</a>` : ""}</div>
         ${ped.tipo_entrega === "domicilio" ? `<div style="font-size:12px;font-weight:700;color:var(--verde);margin-top:2px">🛵 Domicilio${ped.domicilio_valor ? ` (+${COP(ped.domicilio_valor)})` : ""} · ${esc(ped.domicilio_direccion || "")}</div>` : ped.tipo_entrega === "recoger" ? `<div style="font-size:12px;color:#777;margin-top:2px">🏪 Recoge en el local</div>` : ""}
