@@ -2930,6 +2930,7 @@ function abrirConstructorPedido() {
             ${g.opciones.map(o => `
               <label style="display:flex;align-items:center;gap:8px;padding:7px 0;cursor:pointer;font-size:13px">
                 <input type="${g.tipo === "unica" ? "radio" : "checkbox"}" name="cp-det-grupo-${g.id}" data-cp-det-opcion="${o.id}" data-cp-det-grupo="${g.id}" style="flex:none">
+                ${o.imagen_url ? `<img src="${esc(o.imagen_url)}" alt="" style="width:34px;height:34px;border-radius:8px;object-fit:cover;flex:none">` : ""}
                 <span style="flex:1;min-width:0">${esc(o.nombre)}</span>
                 ${Number(o.precio_adicional) > 0 ? `<span style="color:#777">+${COP(o.precio_adicional)}</span>` : ""}
               </label>`).join("")}
