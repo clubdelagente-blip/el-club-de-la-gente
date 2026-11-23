@@ -2837,8 +2837,15 @@ function abrirConstructorPedido() {
           <input class="cfg-input" id="cp-pos-buscar" type="text" placeholder="🔍 Buscar producto..." style="margin-bottom:10px;flex:none">
           <div id="cp-pos-grid" style="flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;align-content:start"></div>
         </div>
-        <div style="width:280px;flex:none;display:flex;flex-direction:column;background:#f7faf8;border-radius:12px;padding:12px;min-height:0">
-          <div id="cp-pos-cart-view" style="display:flex;flex-direction:column;flex:1;min-height:0">
+        <div style="width:280px;flex:none;display:flex;flex-direction:column;gap:10px;min-height:0">
+          <!-- Arriba: personalización del producto que se acaba de tocar en
+               la grilla -- placeholder cuando no hay ninguno seleccionado
+               todavía. Abajo: el pedido, SIEMPRE visible (no una pantalla
+               que se reemplaza) -- al confirmar un producto, "baja" solo a
+               esta lista porque renderCart() ya la repinta. -->
+          <div id="cp-pos-detalle-vacio" style="display:flex;align-items:center;justify-content:center;text-align:center;color:#999;font-size:12.5px;background:#f7faf8;border-radius:12px;padding:18px 14px;flex:1 1 50%;min-height:0">Toca un producto de la izquierda para personalizarlo.</div>
+          <div id="cp-pos-detalle-view" style="display:none;flex-direction:column;background:#f7faf8;border-radius:12px;padding:12px;flex:1 1 50%;min-height:0;overflow:hidden"></div>
+          <div id="cp-pos-cart-view" style="display:flex;flex-direction:column;background:#f7faf8;border-radius:12px;padding:12px;flex:1 1 50%;min-height:0">
             <div style="font-weight:700;font-size:14px;margin-bottom:8px">Pedido</div>
             <div id="cp-pos-cart-items" style="flex:1;overflow-y:auto;margin-bottom:10px"></div>
             <input class="cfg-input" id="cp-pos-nota" type="text" placeholder="Nota (opcional)" style="margin-bottom:8px;flex:none">
@@ -2847,8 +2854,6 @@ function abrirConstructorPedido() {
             </div>
             <button class="btn btn--primario" id="cp-pos-cobrar" style="width:100%;justify-content:center;flex:none" disabled>Elige un producto</button>
           </div>
-          <div id="cp-pos-detalle-view" style="display:none;flex-direction:column;flex:1;min-height:0"></div>
-          <div id="cp-pos-confirm-view" style="display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;flex:1;min-height:0;gap:6px"></div>
         </div>
       </div>
     </div>
@@ -2871,6 +2876,7 @@ function abrirConstructorPedido() {
           <div style="font-weight:600;font-size:13px">${it.cantidad}× ${esc(it.nombre)}</div>
           ${it.modificadores.length ? `<div style="font-size:11.5px;color:#777">${esc(it.modificadores.map(m => m.opcion).join(", "))}</div>` : ""}
           <div style="font-size:12px;color:#777;margin-top:2px">${COP(it.precioUnit * it.cantidad)}</div>
+          ${it.modificadores.length ? `<button type="button" data-pos-vermas="${it.id}" style="border:none;background:none;color:var(--verde);cursor:pointer;font-size:11.5px;font-weight:700;padding:2px 0">Ver más</button>` : ""}
         </div>
         <button type="button" data-pos-quitar="${it.id}" style="border:none;background:none;color:#c0392b;cursor:pointer;font-size:14px;flex:none">✕</button>
       </div>`).join("") : `<p style="color:#777;font-size:13px">Toca un producto de la grilla para agregarlo aquí.</p>`;
@@ -2883,6 +2889,7 @@ function abrirConstructorPedido() {
       renderCart();
       renderGrid(busquedaActual);
     }));
+    itemsEl.querySelectorAll("[data-pos-vermas]").forEach(btn => btn.addEventListener("click", () => verMasItemPedido(btn.dataset.posVermas)));
   };
 
   // Al tocar un producto de la grilla, el panel de la derecha deja de
@@ -2894,12 +2901,10 @@ function abrirConstructorPedido() {
     const grupos = gruposDeProducto(productoId);
     const seleccion = new Map(); // grupo_id -> Set(opcion_id)
     let cantidad = 1;
-    const cartView = $("#cp-pos-cart-view");
+    const detVacio = $("#cp-pos-detalle-vacio");
     const detView = $("#cp-pos-detalle-view");
-    const confirmView = $("#cp-pos-confirm-view");
     if (!detView) return;
-    if (cartView) cartView.style.display = "none";
-    if (confirmView) confirmView.style.display = "none";
+    if (detVacio) detVacio.style.display = "none";
     detView.style.display = "flex";
 
     const calcularExtra = () => {
@@ -2963,29 +2968,11 @@ function abrirConstructorPedido() {
     const tope = () => p.stock_activo ? Math.max(0, p.stock_cantidad ?? 0) : Infinity;
     $("#cp-det-qty-mas")?.addEventListener("click", () => { if (cantidad < tope()) { cantidad++; pintar(); } });
     $("#cp-det-qty-menos")?.addEventListener("click", () => { if (cantidad > 1) { cantidad--; pintar(); } });
-    const volverAlCarrito = () => { detView.style.display = "none"; if (confirmView) confirmView.style.display = "none"; if (cartView) cartView.style.display = "flex"; };
-    $("#cp-det-volver")?.addEventListener("click", volverAlCarrito);
-    // Pantalla aparte confirmando qué se acaba de agregar (producto +
-    // toppings + su precio) antes de volver al carrito -- antes el
-    // "Agregar" volvía derecho al carrito sin pausa, y no quedaba claro que
-    // de verdad se había agregado.
-    const mostrarConfirmacion = (item) => {
-      detView.style.display = "none";
-      if (cartView) cartView.style.display = "none";
-      if (!confirmView) { volverAlCarrito(); return; }
-      confirmView.style.display = "flex";
-      const totalPedido = carritoPos.reduce((s, it) => s + it.precioUnit * it.cantidad, 0);
-      const modTxt = item.modificadores.map(m => m.opcion).join(", ");
-      confirmView.innerHTML = `
-        <div style="width:52px;height:52px;border-radius:50%;background:var(--verde-soft);color:var(--verde);display:flex;align-items:center;justify-content:center;font-size:24px">✓</div>
-        <div style="font-weight:700;font-size:15px">${item.cantidad}× ${esc(item.nombre)}</div>
-        ${modTxt ? `<div style="font-size:12.5px;color:#777">${esc(modTxt)}</div>` : ""}
-        <div style="font-weight:700;font-size:14px;color:var(--verde)">+${COP(item.precioUnit * item.cantidad)}</div>
-        <div style="font-size:12px;color:#999;margin-top:6px">Total del pedido: ${COP(totalPedido)}</div>
-        <button class="btn btn--primario" id="cp-confirm-continuar" style="margin-top:14px;width:100%;justify-content:center">Continuar</button>
-      `;
-      $("#cp-confirm-continuar")?.addEventListener("click", volverAlCarrito);
-    };
+    // Cierra el panel de arriba y vuelve al placeholder -- el pedido de
+    // abajo (#cp-pos-cart-view) NUNCA se tapa, así que no hace falta "ir" a
+    // verlo: ya se repintó solo (ver renderCart) apenas se agregó.
+    const cerrarDetalle = () => { detView.style.display = "none"; if (detVacio) detVacio.style.display = "flex"; };
+    $("#cp-det-volver")?.addEventListener("click", cerrarDetalle);
     $("#cp-det-agregar")?.addEventListener("click", () => {
       const modificadores = [];
       grupos.forEach(g => {
@@ -2996,9 +2983,39 @@ function abrirConstructorPedido() {
       carritoPos.push(item);
       renderCart();
       renderGrid(busquedaActual);
-      mostrarConfirmacion(item);
+      cerrarDetalle();
     });
     pintar();
+  };
+
+  // "Ver más" de una fila del pedido (abajo) -- muestra arriba, en modo
+  // solo lectura, qué trae exactamente ese producto ya agregado (sin volver
+  // a abrir el selector de toppings: eso es para agregar uno NUEVO, esto es
+  // para consultar uno que ya está en el pedido).
+  const verMasItemPedido = (itemId) => {
+    const item = carritoPos.find(it => it.id === itemId);
+    const detVacio = $("#cp-pos-detalle-vacio");
+    const detView = $("#cp-pos-detalle-view");
+    if (!item || !detView) return;
+    if (detVacio) detVacio.style.display = "none";
+    detView.style.display = "flex";
+    detView.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex:none">
+        <button type="button" id="cp-vermas-cerrar" style="border:none;background:none;cursor:pointer;font-size:18px;line-height:1">←</button>
+        <div style="font-weight:700;font-size:14.5px">${item.cantidad}× ${esc(item.nombre)}</div>
+      </div>
+      <div style="flex:1;overflow-y:auto;min-height:0;font-size:13px">
+        ${item.modificadores.length ? item.modificadores.map(m => `
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e5efe9">
+            <span>${esc(m.opcion)}</span>
+            ${Number(m.precio_adicional) > 0 ? `<span style="color:#777">+${COP(m.precio_adicional)}</span>` : ""}
+          </div>`).join("") : `<p style="color:#777">Sin toppings/opciones elegidas.</p>`}
+      </div>
+      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:14px;padding:10px 0 0;flex:none">
+        <span>Subtotal</span><span>${COP(item.precioUnit * item.cantidad)}</span>
+      </div>
+    `;
+    $("#cp-vermas-cerrar")?.addEventListener("click", () => { detView.style.display = "none"; if (detVacio) detVacio.style.display = "flex"; });
   };
 
   // Un producto SIN toppings configurados no necesita el panel de
