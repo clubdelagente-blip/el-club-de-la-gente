@@ -137,6 +137,14 @@
 .stat__ic i { width: 18px; height: 18px; }
 .stat__trend { font-size: 11.5px; font-weight: 700; color: var(--verde); display: inline-flex; align-items: center; gap: 3px; }
 .stat__num { font-family: var(--display); font-size: 40px; font-weight: 600; line-height: 1; margin: 18px 0 5px; }
+/* Mi Contabilidad: números con la tipografía de cuerpo (Inter), no la de
+   títulos (Anton) -- Anton es un display condensado, bueno para un titular
+   corto, malo para leer un monto de un vistazo. Con números tabulares
+   (mismo ancho cada dígito) para que las cifras se alineen prolijo, tipo
+   banco. */
+#negtab-contabilidad .stat__num, .conta-gauge__n {
+  font-family: var(--cuerpo); font-weight: 800; letter-spacing: -.01em; font-variant-numeric: tabular-nums;
+}
 .stat__lbl { font-size: 12.5px; color: var(--tinta-60); }
 
 /* ---------- Hero de ahorro + stats mini (Inicio) ---------- */
@@ -207,7 +215,7 @@
    diferencia de comparar categorías entre sí (ahí gana la barra). */
 .conta-gauge { position: relative; width: 84px; height: 84px; border-radius: 50%; flex: none; }
 .conta-gauge::before { content: ""; position: absolute; inset: 8px; border-radius: 50%; background: var(--crema); }
-.conta-gauge__n { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 17px; font-weight: 700; color: var(--tinta); }
+.conta-gauge__n { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 17px; color: var(--tinta); }
 .card__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .card__title { font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 .card__link { font-size: 12.5px; font-weight: 600; color: var(--verde); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; background: none; border: none; font-family: var(--cuerpo); }
