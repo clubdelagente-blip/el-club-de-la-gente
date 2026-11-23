@@ -1723,6 +1723,8 @@ let _contaModProdGrupos = [];
 let _contaMesas = [];
 let _contaInsumos = [];
 let _contaRecetaItems = [];
+let _contaRecetasPrimarias = [];
+let _contaRecetasPrimariasInsumos = [];
 let _contaVisitas = [];
 let _contaCategoriasOrdenCarta = [];
 let _contaAvisosCarta = [];
@@ -2177,7 +2179,7 @@ async function cargarContabilidadNegocio(negocioId) {
   });
 
   const hace90Dias = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
-  const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }, { data: mesas }, { data: comentarios }, { data: insumos }, { data: recetaItems }, { data: visitas }] = await Promise.all([
+  const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }, { data: mesas }, { data: comentarios }, { data: insumos }, { data: recetaItems }, { data: visitas }, { data: recetasPrimarias }, { data: recetasPrimariasInsumos }] = await Promise.all([
     supabase.from("aliados").select("imagen_url, instagram, carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio, carta_precio_desde, carta_costo_operativo_pct, carta_bienvenida_mensaje").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
@@ -2193,6 +2195,8 @@ async function cargarContabilidadNegocio(negocioId) {
     supabase.from("negocio_insumos").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_carta_producto_insumos").select("*").eq("negocio_id", negocioId),
     supabase.from("negocio_carta_visitas").select("created_at").eq("negocio_id", negocioId).gte("created_at", hace90Dias),
+    supabase.from("negocio_recetas_primarias").select("*").eq("negocio_id", negocioId).order("nombre"),
+    supabase.from("negocio_recetas_primarias_insumos").select("*").eq("negocio_id", negocioId),
   ]);
 
   _contaNegocio = negocio || {};
@@ -2209,6 +2213,8 @@ async function cargarContabilidadNegocio(negocioId) {
   _contaComentarios = comentarios || [];
   _contaInsumos = insumos || [];
   _contaRecetaItems = recetaItems || [];
+  _contaRecetasPrimarias = recetasPrimarias || [];
+  _contaRecetasPrimariasInsumos = recetasPrimariasInsumos || [];
   _contaVisitas = visitas || [];
   await renovarGastosRecurrentes();
 
@@ -2393,6 +2399,8 @@ async function cargarContabilidadNegocio(negocioId) {
   const btnOperativoGuardar = $("#costos-operativo-guardar"); if (btnOperativoGuardar) btnOperativoGuardar.onclick = () => guardarCostoOperativoPct();
   const btnInsumoAdd = $("#costos-insumo-add"); if (btnInsumoAdd) btnInsumoAdd.onclick = () => abrirFormInsumo();
   cargarInsumos();
+  const btnPrimariaAdd = $("#costos-primaria-add"); if (btnPrimariaAdd) btnPrimariaAdd.onclick = () => abrirFormRecetaPrimaria();
+  cargarRecetasPrimarias();
   cargarCostosProductos();
   cargarMetricas();
 
@@ -3428,28 +3436,67 @@ function abrirFormModGrupo(g = {}) {
 // una sola vez para todos sus productos.
 function unidadLabel(u) { return { g: "g", kg: "kg", ml: "ml", l: "L", unidad: "unidad", paquete: "paquete" }[u] || u || "unidad"; }
 
-// Fila reutilizable del editor de receta (insumo + cantidad + unidad) --
-// la usan tanto el modal dedicado "Receta de..." (desde Costos) como la
-// sección "Receta de este producto" embebida en "Agregar/editar producto"
-// (desde Productos de mi carta), para no tener que ir y venir de pestaña
-// por cada producto nuevo.
-function filaRecetaInsumoHtml(r = {}) {
+// Costo de una receta primaria (suma de sus propios insumos) y su costo POR
+// UNIDAD de lo que rinde (ej. una salsa que rinde 500g y cuesta $5.000 en
+// insumos sale a $10/g) -- ese costo por unidad es lo que se usa cuando un
+// producto la toma como ingrediente, igual que el costo_unitario de un
+// insumo cualquiera.
+function costoRecetaPrimariaTotal(recetaPrimariaId) {
+  return _contaRecetasPrimariasInsumos.filter(r => r.receta_primaria_id === recetaPrimariaId).reduce((sum, r) => {
+    const insumo = _contaInsumos.find(i => i.id === r.insumo_id);
+    return insumo ? sum + (Number(r.cantidad_usada) || 0) * (Number(insumo.costo_unitario) || 0) : sum;
+  }, 0);
+}
+function costoUnitarioRecetaPrimaria(recetaPrimariaId) {
+  const rp = _contaRecetasPrimarias.find(x => x.id === recetaPrimariaId);
+  const rendimiento = Number(rp?.rendimiento_cantidad) || 0;
+  return rendimiento > 0 ? costoRecetaPrimariaTotal(recetaPrimariaId) / rendimiento : 0;
+}
+// El <select> de una fila de receta guarda "insumo:ID" o "primaria:ID" en
+// el mismo valor -- esto resuelve cuál es y da su unidad + costo por
+// unidad, sin que el resto del editor tenga que distinguir los dos casos.
+function resolverIngredienteReceta(valor) {
+  if (!valor) return null;
+  const [tipo, id] = valor.split(":");
+  if (tipo === "primaria") {
+    const rp = _contaRecetasPrimarias.find(x => x.id === id);
+    return rp ? { unidad: rp.rendimiento_unidad, costoUnitario: costoUnitarioRecetaPrimaria(id) } : null;
+  }
+  const insumo = _contaInsumos.find(x => x.id === id);
+  return insumo ? { unidad: insumo.unidad, costoUnitario: Number(insumo.costo_unitario) || 0 } : null;
+}
+
+// Fila reutilizable del editor de receta (insumo o receta primaria +
+// cantidad + unidad) -- la usan el modal dedicado "Receta final de..."
+// (desde Costos), la sección "Receta final de este producto" embebida en
+// "Agregar/editar producto" (desde Productos de mi carta), y el editor de
+// una Receta primaria misma (esa última SIN la opción de volver a elegir
+// otra receta primaria -- evita anidar una dentro de otra).
+function filaRecetaInsumoHtml(r = {}, incluirPrimarias = false) {
+  const valorActual = r.receta_primaria_id ? `primaria:${r.receta_primaria_id}` : r.insumo_id ? `insumo:${r.insumo_id}` : "";
+  const opcionesInsumos = _contaInsumos.map(i => `<option value="insumo:${i.id}" ${valorActual === `insumo:${i.id}` ? "selected" : ""}>${esc(i.nombre)} (${esc(unidadLabel(i.unidad))})</option>`).join("");
+  const opcionesHtml = incluirPrimarias && _contaRecetasPrimarias.length
+    ? `<optgroup label="Insumos">${opcionesInsumos}</optgroup><optgroup label="Recetas primarias">${_contaRecetasPrimarias.map(rp => `<option value="primaria:${rp.id}" ${valorActual === `primaria:${rp.id}` ? "selected" : ""}>${esc(rp.nombre)} (${esc(unidadLabel(rp.rendimiento_unidad))})</option>`).join("")}</optgroup>`
+    : opcionesInsumos;
+  const ingActual = resolverIngredienteReceta(valorActual) || resolverIngredienteReceta(`insumo:${_contaInsumos[0]?.id}`);
   return `
     <div class="receta-fila" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
       <select class="cfg-input receta-insumo" style="flex:1;min-width:140px">
-        ${_contaInsumos.map(i => `<option value="${i.id}" ${r.insumo_id === i.id ? "selected" : ""}>${esc(i.nombre)} (${esc(unidadLabel(i.unidad))})</option>`).join("")}
+        ${opcionesHtml}
       </select>
       <input class="cfg-input receta-cantidad" type="number" min="0" step="any" value="${r.cantidad_usada || ""}" placeholder="Cantidad" style="width:90px">
-      <span class="receta-unidad" style="font-size:12px;color:var(--tinta-45);min-width:34px">${esc(unidadLabel((_contaInsumos.find(i => i.id === (r.insumo_id || _contaInsumos[0]?.id)) || {}).unidad))}</span>
+      <span class="receta-unidad" style="font-size:12px;color:var(--tinta-45);min-width:34px">${esc(unidadLabel(ingActual?.unidad))}</span>
       <button type="button" class="receta-quitar" style="border:none;background:none;cursor:pointer;color:#c0392b;font-size:16px">✕</button>
     </div>`;
 }
 
 // Arma toda la interactividad del editor de receta (agregar/quitar filas,
-// mostrar la unidad del insumo elegido, calcular costo/margen en vivo) --
-// devuelve leerFilas() para el guardado y actualizar() para recalcular
-// desde afuera (ej. cuando cambia el precio en el mismo formulario).
-function configurarEditorReceta({ contenedorId, addId, previewId, obtenerPrecio }) {
+// mostrar la unidad del ingrediente elegido, calcular costo/margen en
+// vivo) -- devuelve leerFilas() para el guardado y actualizar() para
+// recalcular desde afuera (ej. cuando cambia el precio en el mismo
+// formulario). incluirPrimarias controla si el selector de cada fila
+// también ofrece recetas primarias (ver filaRecetaInsumoHtml).
+function configurarEditorReceta({ contenedorId, addId, previewId, obtenerPrecio, incluirPrimarias = false }) {
   const contenedor = $(`#${contenedorId}`);
   if (!contenedor) return null;
   const reenlazarQuitar = () => {
@@ -3461,10 +3508,9 @@ function configurarEditorReceta({ contenedorId, addId, previewId, obtenerPrecio 
   };
   const actualizarUnidades = () => {
     $$(".receta-fila").forEach(fila => {
-      const insumoId = fila.querySelector(".receta-insumo")?.value;
-      const insumo = _contaInsumos.find(i => i.id === insumoId);
+      const valor = fila.querySelector(".receta-insumo")?.value;
       const span = fila.querySelector(".receta-unidad");
-      if (span) span.textContent = unidadLabel(insumo?.unidad);
+      if (span) span.textContent = unidadLabel(resolverIngredienteReceta(valor)?.unidad);
     });
   };
   const actualizar = () => {
@@ -3472,10 +3518,10 @@ function configurarEditorReceta({ contenedorId, addId, previewId, obtenerPrecio 
     const pct = Number(_contaNegocio.carta_costo_operativo_pct) || 0;
     let costoInsumos = 0;
     $$(".receta-fila").forEach(fila => {
-      const insumoId = fila.querySelector(".receta-insumo")?.value;
+      const valor = fila.querySelector(".receta-insumo")?.value;
       const cantidad = parseFloat(fila.querySelector(".receta-cantidad")?.value) || 0;
-      const insumo = _contaInsumos.find(i => i.id === insumoId);
-      if (insumo) costoInsumos += cantidad * (Number(insumo.costo_unitario) || 0);
+      const ing = resolverIngredienteReceta(valor);
+      if (ing) costoInsumos += cantidad * ing.costoUnitario;
     });
     const costoTotal = costoInsumos * (1 + pct / 100);
     const precio = obtenerPrecio();
@@ -3488,17 +3534,22 @@ function configurarEditorReceta({ contenedorId, addId, previewId, obtenerPrecio 
   reenlazarCambios();
   actualizar();
   $(`#${addId}`)?.addEventListener("click", () => {
-    contenedor.insertAdjacentHTML("beforeend", filaRecetaInsumoHtml());
+    contenedor.insertAdjacentHTML("beforeend", filaRecetaInsumoHtml({}, incluirPrimarias));
     reenlazarQuitar();
     reenlazarCambios();
     actualizar();
   });
   return {
     actualizar,
-    leerFilas: () => $$(".receta-fila").map(fila => ({
-      insumo_id: fila.querySelector(".receta-insumo")?.value,
-      cantidad_usada: parseFloat(fila.querySelector(".receta-cantidad")?.value) || 0,
-    })).filter(f => f.insumo_id && f.cantidad_usada > 0),
+    leerFilas: () => $$(".receta-fila").map(fila => {
+      const valor = fila.querySelector(".receta-insumo")?.value || "";
+      const [tipo, id] = valor.split(":");
+      return {
+        insumo_id: tipo === "insumo" ? id : null,
+        receta_primaria_id: tipo === "primaria" ? id : null,
+        cantidad_usada: parseFloat(fila.querySelector(".receta-cantidad")?.value) || 0,
+      };
+    }).filter(f => (f.insumo_id || f.receta_primaria_id) && f.cantidad_usada > 0),
   };
 }
 
@@ -3558,7 +3609,7 @@ function abrirFormInsumo(i = {}) {
       <div class="cfg-campo"><label class="cfg-label">Costo de la compra *</label><input class="cfg-input" id="ins-costo" type="text" inputmode="numeric" value="${i.costo_compra ? Number(i.costo_compra).toLocaleString("es-CO") : ""}" placeholder="Ej: 150.000"></div>
     </div>
     <p id="ins-costo-unitario-preview" style="font-size:12.5px;color:var(--tinta-60);margin:-4px 0 4px">Costo por unidad: --</p>
-    <p style="font-size:12px;color:var(--tinta-45);margin:0 0 14px">Esto es solo lo que te cuesta en general. Cuánto usa CADA producto (ej. cuánta crema lleva un vaso) se define en "Costo y margen por producto" → Armar receta.</p>
+    <p style="font-size:12px;color:var(--tinta-45);margin:0 0 14px">Esto es solo lo que te cuesta en general. Cuánto usa CADA producto (ej. cuánta crema lleva un vaso) se define en "Costo y margen por producto" → Armar receta final.</p>
     <button class="btn btn--primario" id="ins-save" data-id="${i.id || ""}">${i.id ? "Guardar cambios" : "Agregar insumo"}</button>
   `);
   formatearInputMoneda($("#ins-costo"));
@@ -3596,6 +3647,7 @@ function abrirFormInsumo(i = {}) {
 
 function costoInsumosProducto(productoId) {
   return _contaRecetaItems.filter(r => r.producto_id === productoId).reduce((sum, r) => {
+    if (r.receta_primaria_id) return sum + (Number(r.cantidad_usada) || 0) * costoUnitarioRecetaPrimaria(r.receta_primaria_id);
     const insumo = _contaInsumos.find(i => i.id === r.insumo_id);
     return insumo ? sum + (Number(r.cantidad_usada) || 0) * (Number(insumo.costo_unitario) || 0) : sum;
   }, 0);
@@ -3619,7 +3671,7 @@ function cargarCostosProductos() {
         <div style="font-size:12px;color:#777">Precio ${COP(precio)}${tieneReceta ? ` · Costo ${COP(costoTotal)}` : ""}</div>
       </div>
       <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${colorMargen}22;color:${colorMargen};white-space:nowrap">${margenPct != null ? `${margenPct.toFixed(0)}% margen` : "Sin receta"}</span>
-      <button data-ed-receta="${p.id}" class="btn" style="padding:7px 12px;font-size:12px">${tieneReceta ? "Editar receta" : "Armar receta"}</button>
+      <button data-ed-receta="${p.id}" class="btn" style="padding:7px 12px;font-size:12px">${tieneReceta ? "Editar receta final" : "Armar receta final"}</button>
     </div>`;
   }).join("");
   list.querySelectorAll("[data-ed-receta]").forEach(btn => btn.addEventListener("click", () => {
@@ -3631,14 +3683,14 @@ function cargarCostosProductos() {
 function abrirFormReceta(p) {
   if (!_contaInsumos.length) { toast("Primero agrega al menos un insumo"); return; }
   const itemsActuales = _contaRecetaItems.filter(r => r.producto_id === p.id);
-  abrirModalTienda(`Receta de "${p.nombre}"`, `
-    <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:14px">¿Qué insumos usa este producto y cuánto de cada uno?</p>
-    <div id="receta-filas">${itemsActuales.length ? itemsActuales.map(filaRecetaInsumoHtml).join("") : filaRecetaInsumoHtml()}</div>
-    <button type="button" class="btn" id="receta-add" style="margin-bottom:14px">+ Agregar insumo</button>
+  abrirModalTienda(`Receta final de "${p.nombre}"`, `
+    <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:14px">¿Qué insumos (o recetas primarias) usa este producto y cuánto de cada uno?</p>
+    <div id="receta-filas">${itemsActuales.length ? itemsActuales.map(r => filaRecetaInsumoHtml(r, true)).join("") : filaRecetaInsumoHtml({}, true)}</div>
+    <button type="button" class="btn" id="receta-add" style="margin-bottom:14px">+ Agregar</button>
     <div id="receta-costo-preview" style="font-size:13px;font-weight:600;color:var(--tinta);margin-bottom:14px"></div>
-    <button class="btn btn--primario" id="receta-save" data-id="${p.id}">Guardar receta</button>
+    <button class="btn btn--primario" id="receta-save" data-id="${p.id}">Guardar receta final</button>
   `);
-  const editor = configurarEditorReceta({ contenedorId: "receta-filas", addId: "receta-add", previewId: "receta-costo-preview", obtenerPrecio: () => Number(p.precio) || 0 });
+  const editor = configurarEditorReceta({ contenedorId: "receta-filas", addId: "receta-add", previewId: "receta-costo-preview", obtenerPrecio: () => Number(p.precio) || 0, incluirPrimarias: true });
   $("#receta-save")?.addEventListener("click", async () => {
     const btn = $("#receta-save");
     btn.disabled = true; btn.textContent = "Guardando…";
@@ -3646,12 +3698,98 @@ function abrirFormReceta(p) {
     await supabase.from("negocio_carta_producto_insumos").delete().eq("producto_id", p.id);
     if (filas.length) {
       const { error } = await supabase.from("negocio_carta_producto_insumos").insert(
-        filas.map(f => ({ negocio_id: _contaNegocioId, producto_id: p.id, insumo_id: f.insumo_id, cantidad_usada: f.cantidad_usada }))
+        filas.map(f => ({ negocio_id: _contaNegocioId, producto_id: p.id, insumo_id: f.insumo_id, receta_primaria_id: f.receta_primaria_id, cantidad_usada: f.cantidad_usada }))
       );
-      if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Guardar receta"; return; }
+      if (error) { toast("Error: " + error.message); btn.disabled = false; btn.textContent = "Guardar receta final"; return; }
     }
     cerrarModalTienda();
-    toast("Receta guardada ✓");
+    toast("Receta final guardada ✓");
+    cargarContabilidadNegocio(_contaNegocioId);
+  });
+}
+
+// ---------- Recetas primarias: mezclas base reusables (ej. una salsa) que
+// se pueden usar como un ingrediente más dentro de la Receta final de
+// cualquier producto, sin repetir sus insumos cada vez. ----------
+function cargarRecetasPrimarias() {
+  const list = $("#costos-primarias-list");
+  if (!list) return;
+  if (!_contaRecetasPrimarias.length) { list.innerHTML = `<p style="padding:8px 0">Aún no tienes recetas primarias.</p>`; return; }
+  list.innerHTML = _contaRecetasPrimarias.map(rp => {
+    const costoTotal = costoRecetaPrimariaTotal(rp.id);
+    const costoUnit = costoUnitarioRecetaPrimaria(rp.id);
+    return `
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #ebebeb">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:14px">${esc(rp.nombre)}</div>
+        <div style="font-size:12px;color:#777">Rinde ${rp.rendimiento_cantidad} ${esc(unidadLabel(rp.rendimiento_unidad))} · Costo total ${COP(costoTotal)} · ${COP(costoUnit)} / ${esc(unidadLabel(rp.rendimiento_unidad))}</div>
+      </div>
+      <button data-ed-primaria="${rp.id}" style="border:none;background:none;cursor:pointer;color:#777">${ic("pencil")}</button>
+      <button data-rm-primaria="${rp.id}" style="border:none;background:none;cursor:pointer;color:#c0392b">${ic("trash-2")}</button>
+    </div>`;
+  }).join("");
+  if (window.lucide) lucide.createIcons();
+  list.querySelectorAll("[data-ed-primaria]").forEach(btn => btn.addEventListener("click", () => {
+    const rp = _contaRecetasPrimarias.find(x => x.id === btn.dataset.edPrimaria);
+    if (rp) abrirFormRecetaPrimaria(rp);
+  }));
+  list.querySelectorAll("[data-rm-primaria]").forEach(btn => btn.addEventListener("click", async () => {
+    if (!confirm("¿Eliminar esta receta primaria? Se quita de los productos que la usen.")) return;
+    await supabase.from("negocio_recetas_primarias").delete().eq("id", btn.dataset.rmPrimaria);
+    toast("Receta primaria eliminada");
+    cargarContabilidadNegocio(_contaNegocioId);
+  }));
+}
+
+function abrirFormRecetaPrimaria(rp = {}) {
+  if (!_contaInsumos.length) { toast("Primero agrega al menos un insumo"); return; }
+  const itemsActuales = _contaRecetasPrimariasInsumos.filter(r => r.receta_primaria_id === rp.id);
+  abrirModalTienda(rp.id ? "Editar receta primaria" : "Nueva receta primaria", `
+    <div class="cfg-campo"><label class="cfg-label">Nombre *</label><input class="cfg-input" id="rp-nombre" type="text" value="${esc(rp.nombre || "")}" placeholder="Ej: Salsa de chocolate"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="cfg-campo"><label class="cfg-label">Esta receta rinde *</label><input class="cfg-input" id="rp-rendimiento" type="number" min="0" step="any" value="${rp.rendimiento_cantidad || ""}" placeholder="Ej: 500"></div>
+      <div class="cfg-campo"><label class="cfg-label">Unidad *</label>
+        <select class="cfg-input" id="rp-unidad">
+          <option value="g" ${rp.rendimiento_unidad === "g" ? "selected" : ""}>Gramos (g)</option>
+          <option value="kg" ${rp.rendimiento_unidad === "kg" ? "selected" : ""}>Kilogramos (kg)</option>
+          <option value="ml" ${rp.rendimiento_unidad === "ml" ? "selected" : ""}>Mililitros (ml)</option>
+          <option value="l" ${rp.rendimiento_unidad === "l" ? "selected" : ""}>Litros (L)</option>
+          <option value="unidad" ${!rp.rendimiento_unidad || rp.rendimiento_unidad === "unidad" ? "selected" : ""}>Unidad</option>
+          <option value="paquete" ${rp.rendimiento_unidad === "paquete" ? "selected" : ""}>Paquete</option>
+        </select>
+      </div>
+    </div>
+    <p style="font-size:12.5px;color:var(--tinta-60);margin:4px 0 14px">¿Qué insumos usa esta receta y cuánto de cada uno?</p>
+    <div id="rp-filas">${itemsActuales.length ? itemsActuales.map(r => filaRecetaInsumoHtml(r)).join("") : filaRecetaInsumoHtml()}</div>
+    <button type="button" class="btn" id="rp-add" style="margin-bottom:14px">+ Agregar insumo</button>
+    <div id="rp-costo-preview" style="font-size:13px;font-weight:600;color:var(--tinta);margin-bottom:14px"></div>
+    <button class="btn btn--primario" id="rp-save" data-id="${rp.id || ""}">${rp.id ? "Guardar cambios" : "Agregar receta primaria"}</button>
+  `);
+  const editor = configurarEditorReceta({ contenedorId: "rp-filas", addId: "rp-add", previewId: "rp-costo-preview", obtenerPrecio: () => 0 });
+  $("#rp-save")?.addEventListener("click", async () => {
+    const btn = $("#rp-save");
+    const resetBtn = () => { btn.disabled = false; btn.textContent = rp.id ? "Guardar cambios" : "Agregar receta primaria"; };
+    const nombre = $("#rp-nombre")?.value.trim();
+    const rendimiento = parseFloat($("#rp-rendimiento")?.value) || 0;
+    const unidad = $("#rp-unidad")?.value;
+    if (!nombre) { toast("El nombre es obligatorio"); return; }
+    if (!rendimiento) { toast("El rendimiento debe ser mayor a 0"); return; }
+    btn.disabled = true; btn.textContent = "Guardando…";
+    const payload = { negocio_id: _contaNegocioId, nombre, rendimiento_cantidad: rendimiento, rendimiento_unidad: unidad };
+    const { data: guardada, error } = rp.id
+      ? await supabase.from("negocio_recetas_primarias").update(payload).eq("id", rp.id).select().single()
+      : await supabase.from("negocio_recetas_primarias").insert(payload).select().single();
+    if (error) { toast("Error: " + error.message); resetBtn(); return; }
+    const filas = editor.leerFilas();
+    await supabase.from("negocio_recetas_primarias_insumos").delete().eq("receta_primaria_id", guardada.id);
+    if (filas.length) {
+      const { error: errFilas } = await supabase.from("negocio_recetas_primarias_insumos").insert(
+        filas.map(f => ({ negocio_id: _contaNegocioId, receta_primaria_id: guardada.id, insumo_id: f.insumo_id, cantidad_usada: f.cantidad_usada }))
+      );
+      if (errFilas) { toast("Error: " + errFilas.message); resetBtn(); return; }
+    }
+    cerrarModalTienda();
+    toast(rp.id ? "Receta primaria actualizada ✓" : "Receta primaria agregada ✓");
     cargarContabilidadNegocio(_contaNegocioId);
   });
 }
@@ -3919,10 +4057,10 @@ function abrirFormProductoCarta(p = {}) {
     </div>` : ""}
     ${_contaInsumos.length ? `
     <details class="cfg-campo" style="margin-bottom:14px">
-      <summary class="cfg-label" style="cursor:pointer">Receta de este producto <span style="font-weight:400;color:var(--tinta-45)">(opcional -- calcula el costo y el margen de una vez)</span></summary>
+      <summary class="cfg-label" style="cursor:pointer">Receta final de este producto <span style="font-weight:400;color:var(--tinta-45)">(opcional -- calcula el costo y el margen de una vez)</span></summary>
       <div style="margin-top:10px">
-        <div id="ccp-receta-filas">${(p.id ? _contaRecetaItems.filter(r => r.producto_id === p.id) : []).length ? _contaRecetaItems.filter(r => r.producto_id === p.id).map(filaRecetaInsumoHtml).join("") : filaRecetaInsumoHtml()}</div>
-        <button type="button" class="btn" id="ccp-receta-add" style="margin-bottom:10px">+ Agregar insumo</button>
+        <div id="ccp-receta-filas">${(p.id ? _contaRecetaItems.filter(r => r.producto_id === p.id) : []).length ? _contaRecetaItems.filter(r => r.producto_id === p.id).map(r => filaRecetaInsumoHtml(r, true)).join("") : filaRecetaInsumoHtml({}, true)}</div>
+        <button type="button" class="btn" id="ccp-receta-add" style="margin-bottom:10px">+ Agregar</button>
         <div id="ccp-receta-costo-preview" style="font-size:12.5px;font-weight:600;color:var(--tinta)"></div>
       </div>
     </details>` : `<p style="font-size:12px;color:var(--tinta-45);margin:-4px 0 14px">Agrega insumos en la pestaña Costos si quieres calcular el costo de este producto.</p>`}
@@ -3931,7 +4069,7 @@ function abrirFormProductoCarta(p = {}) {
   formatearInputMoneda($("#ccp-precio"));
   const editorRecetaProducto = _contaInsumos.length ? configurarEditorReceta({
     contenedorId: "ccp-receta-filas", addId: "ccp-receta-add", previewId: "ccp-receta-costo-preview",
-    obtenerPrecio: () => valorMoneda($("#ccp-precio")),
+    obtenerPrecio: () => valorMoneda($("#ccp-precio")), incluirPrimarias: true,
   }) : null;
   $("#ccp-precio")?.addEventListener("input", () => editorRecetaProducto?.actualizar());
   const inputFotoProducto = $("#ccp-foto");
@@ -3992,7 +4130,7 @@ function abrirFormProductoCarta(p = {}) {
       await supabase.from("negocio_carta_producto_insumos").delete().eq("producto_id", productoId);
       if (filasReceta.length) {
         await supabase.from("negocio_carta_producto_insumos").insert(
-          filasReceta.map(f => ({ negocio_id: _contaNegocioId, producto_id: productoId, insumo_id: f.insumo_id, cantidad_usada: f.cantidad_usada }))
+          filasReceta.map(f => ({ negocio_id: _contaNegocioId, producto_id: productoId, insumo_id: f.insumo_id, receta_primaria_id: f.receta_primaria_id, cantidad_usada: f.cantidad_usada }))
         );
       }
     }
