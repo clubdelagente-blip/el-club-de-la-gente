@@ -4078,10 +4078,21 @@ function facturaMesaHtml(peds) {
 async function cargarCartaPedidos() {
   const list = $("#conta-carta-pedidos-list");
   if (!list) return;
-  const pedidos = _contaCartaPedidos.filter(p => p.estado !== "cancelado" && !(p.estado === "entregado" && p.pagado));
-  if (!pedidos.length) { list.innerHTML = `<p style="padding:8px 0">No tienes pedidos activos de la carta.</p>`; return; }
+  // Solo los de HOY -- antes se quedaban acumulando días si nadie le daba
+  // "Marcar entregado" (el único filtro era el estado, nunca la fecha), y la
+  // lista de un negocio con movimiento diario se volvía interminable. Esto
+  // reinicia la vista cada día sin cambiar nada del historial (Balance/
+  // Métricas siguen viendo todos los pedidos, nunca se borra nada).
+  const hoy = contaFechaISO(new Date());
+  const pedidos = _contaCartaPedidos.filter(p => p.estado !== "cancelado" && !(p.estado === "entregado" && p.pagado) && p.created_at?.slice(0, 10) === hoy);
+  if (!pedidos.length) { list.innerHTML = `<p style="padding:8px 0">No tienes pedidos activos de hoy.</p>`; return; }
 
   const sueltos = pedidos.filter(p => !p.mesa_sesion_id);
+  // Pendientes de pago primero (lo que todavía falta cobrar), ya pagados
+  // después (solo falta entregarlos) -- antes salían mezclados, sin ningún
+  // orden que ayudara a priorizar qué cobrar.
+  const sueltosPendientes = sueltos.filter(p => !p.pagado);
+  const sueltosPagados = sueltos.filter(p => p.pagado);
   const porSesion = new Map();
   pedidos.filter(p => p.mesa_sesion_id).forEach(p => {
     if (!porSesion.has(p.mesa_sesion_id)) porSesion.set(p.mesa_sesion_id, []);
@@ -4103,7 +4114,10 @@ async function cargarCartaPedidos() {
     </div>`;
   }).join("");
 
-  list.innerHTML = gruposHtml + sueltos.map(p => filaPedidoHtml(p)).join("");
+  const tituloSeccion = (txt) => `<div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta-45);margin:4px 0 8px">${txt}</div>`;
+  list.innerHTML = gruposHtml
+    + (sueltosPendientes.length ? tituloSeccion(`Pendientes de pago · ${sueltosPendientes.length}`) + sueltosPendientes.map(p => filaPedidoHtml(p)).join("") : "")
+    + (sueltosPagados.length ? tituloSeccion(`Pagados · ${sueltosPagados.length}`) + sueltosPagados.map(p => filaPedidoHtml(p)).join("") : "");
 
   list.querySelectorAll("[data-avanzar-ccped]").forEach(btn => btn.addEventListener("click", async () => {
     const id = btn.dataset.avanzarCcped;
