@@ -2417,6 +2417,22 @@ function mostrarSugerenciaCategorias() {
   }
 }
 
+// Achica la letra de un monto SOLO lo necesario para que quepa en su
+// tarjeta -- en vez de truncar o dejar que se salga (un monto no se puede
+// cortar con "..." como un texto cualquiera, hay que verlo completo).
+// Empieza en el tamaño base (el de la hoja de estilos) y baja de a 1px
+// hasta que deje de desbordar, con un piso para que nunca quede ilegible.
+function ajustarTamanoStat(el) {
+  if (!el) return;
+  const BASE = 40, MIN = 20;
+  el.style.fontSize = "";
+  let fontSize = parseFloat(getComputedStyle(el).fontSize) || BASE;
+  while (el.scrollWidth > el.clientWidth && fontSize > MIN) {
+    fontSize -= 1;
+    el.style.fontSize = fontSize + "px";
+  }
+}
+
 // Costo de lo vendido en el periodo: cada pedido de la carta (ni cancelado)
 // trae sus items con producto_id -- se multiplica cada cantidad por el
 // costo de receta de ESE producto (costoInsumosProducto, misma función que
@@ -2486,6 +2502,7 @@ function renderContabilidadNegocioUI() {
   const elGasChip = $("#conta-stat-gastos-chip"); if (elGasChip) elGasChip.innerHTML = pctChipConta(totalGastos, gastosAnt);
   const elBal = $("#conta-stat-balance"); if (elBal) elBal.textContent = COP(balance);
   const elRent = $("#conta-stat-rentabilidad"); if (elRent) elRent.textContent = rentabilidad.toFixed(1) + "%";
+  [elIng, elGas, elBal, elRent].forEach(ajustarTamanoStat);
   renderDesgloseUtilidad(totalIngresos, costoVentas, totalGastos);
   renderGaugeMargen(rentabilidad);
 
