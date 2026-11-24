@@ -1728,6 +1728,11 @@ let _contaRecetasPrimariasInsumos = [];
 let _contaVisitas = [];
 let _contaCategoriasOrdenCarta = [];
 let _contaAvisosCarta = [];
+// Solo se llenan dentro de iniciarContaClubDashboard() -- el dashboard del
+// Club (Perfil.html) nunca las toca, así que quedan en null/false y
+// aplicarGatesContaClub() no restringe nada ahí.
+let _contaClubNivel = null;
+let _contaClubImplPagada = false;
 let _cartaPedidosRealtimeCh = null;
 let _audioCtxPedido = null;
 let _pedidosNuevosSinVer = 0;
@@ -2127,12 +2132,22 @@ async function iniciarContaClubDashboard() {
     location.href = "login.html";
     return;
   }
-  const { data: negocio } = await supabase.from("aliados").select("id, nombre, imagen_url").eq("user_id", session.user.id).maybeSingle();
+  const { data: negocio } = await supabase.from("aliados").select("id, nombre, imagen_url, contaclub_plan_id, contaclub_implementacion_pagada").eq("user_id", session.user.id).maybeSingle();
   if (!negocio) {
     const root = document.getElementById("contaclub-root");
     if (root) root.innerHTML = `<p style="padding:40px 20px;text-align:center;color:#c0392b">No encontramos un negocio vinculado a esta cuenta. Escríbenos si crees que es un error.</p>`;
     return;
   }
+  _contaClubImplPagada = !!negocio.contaclub_implementacion_pagada;
+  // Sin plan asignado todavía (recién registrado, Admin no lo ha
+  // configurado) = acceso completo -- nunca se bloquea a nadie por un dato
+  // que todavía no existe.
+  _contaClubNivel = 2;
+  if (negocio.contaclub_plan_id) {
+    const { data: plan } = await supabase.from("contaclub_planes").select("nivel").eq("id", negocio.contaclub_plan_id).maybeSingle();
+    if (plan?.nivel) _contaClubNivel = plan.nivel;
+  }
+  aplicarGatesContaClub();
   const nombreEl = document.getElementById("contaclub-negocio-nombre");
   if (nombreEl) nombreEl.textContent = negocio.nombre;
   const logoEl = document.getElementById("contaclub-logo");
@@ -2140,6 +2155,47 @@ async function iniciarContaClubDashboard() {
   const salirBtn = document.getElementById("contaclub-salir");
   if (salirBtn) salirBtn.addEventListener("click", async () => { await supabase.auth.signOut(); location.href = "login.html"; });
   cargarContabilidadNegocio(negocio.id);
+}
+
+// Restricciones reales por plan de ContaClub (Básico/Pro/Premium) -- nunca
+// corre para el dashboard del Club (_contaClubNivel sigue null ahí). Nivel
+// 1 = Básico: sin carta pública/QR (apariencia, mesas, promociones y
+// avisos, comentarios) ni Métricas, pero SÍ catálogo de productos (lo
+// necesita "Nuevo pedido" en mostrador) y Fidelización. Costos se bloquea
+// aparte, por haber pagado o no la implementación, sin importar el plan.
+function aplicarGatesContaClub() {
+  if (_contaClubNivel === null) return;
+  const sinCartaPublica = _contaClubNivel === 1;
+  ["apariencia", "mesas", "promos", "comentarios"].forEach(id => {
+    const fila = $(`[data-carta-ir="${id}"]`);
+    // Mismo motivo que ya explica cargarMesas() más abajo: .carta-fila/
+    // .cc-hub-fila fijan su propio "display" en la hoja de estilos, así que
+    // [hidden] solo no les gana -- hay que apagarlas por display directo.
+    if (fila) fila.style.display = sinCartaPublica ? "none" : "";
+    const panel = $(`#carta-seccion-${id}`);
+    if (panel) panel.hidden = sinCartaPublica;
+  });
+  const metricasBtn = $('[data-contasub="metricas"]');
+  if (metricasBtn) metricasBtn.style.display = sinCartaPublica ? "none" : "";
+  const costosBtn = $('[data-contasub="costos"]');
+  if (costosBtn) costosBtn.style.display = _contaClubImplPagada ? "" : "none";
+
+  const hub = $("#carta-hub");
+  if (hub) {
+    let hint = document.getElementById("carta-hub-nivel-hint");
+    if (sinCartaPublica) {
+      if (!hint) {
+        hint = document.createElement("p");
+        hint.id = "carta-hub-nivel-hint";
+        hint.style.cssText = "font-size:12.5px;color:var(--tinta-45);margin:0 0 14px";
+        hint.textContent = "Apariencia, Mesas, Promociones y avisos, y Comentarios están disponibles desde el plan Pro.";
+        hub.insertBefore(hint, hub.children[1] || null);
+      }
+      hint.style.display = "";
+    } else if (hint) {
+      hint.style.display = "none";
+    }
+  }
 }
 
 async function cargarContabilidadNegocio(negocioId) {
@@ -2171,7 +2227,7 @@ async function cargarContabilidadNegocio(negocioId) {
   $$("#contasub-nav [data-contasub]").forEach(b => {
     b.onclick = () => {
       $$("#contasub-nav [data-contasub]").forEach(x => x.classList.toggle("is-on", x === b));
-      ["balance", "pedido", "carta", "gasto", "costos", "metricas"].forEach(s => { const el = $(`#contasub-${s}`); if (el) el.style.display = s === b.dataset.contasub ? "" : "none"; });
+      ["balance", "pedido", "fidelizacion", "carta", "gasto", "costos", "metricas"].forEach(s => { const el = $(`#contasub-${s}`); if (el) el.style.display = s === b.dataset.contasub ? "" : "none"; });
       // Siempre entra al hub de "Carta", nunca dejado a mitad de una
       // sección de la visita anterior -- más predecible.
       if (b.dataset.contasub === "carta") mostrarCartaSeccion(null);
@@ -2318,6 +2374,7 @@ async function cargarContabilidadNegocio(negocioId) {
   const btnNuevoPedido = $("#conta-nuevo-pedido-btn"); if (btnNuevoPedido) btnNuevoPedido.onclick = () => abrirConstructorPedido();
   const btnPersonalizar = $("#conta-carta-personalizar-guardar"); if (btnPersonalizar) btnPersonalizar.onclick = () => guardarPersonalizacionCarta(btnPersonalizar);
   const btnPromosGuardar = $("#conta-carta-promos-guardar"); if (btnPromosGuardar) btnPromosGuardar.onclick = () => guardarPersonalizacionCarta(btnPromosGuardar);
+  const btnFidelizacionGuardar = $("#conta-fidelizacion-guardar"); if (btnFidelizacionGuardar) btnFidelizacionGuardar.onclick = () => guardarPersonalizacionCarta(btnFidelizacionGuardar);
   wireCartaHub();
   const inputLogo = $("#conta-carta-logo");
   if (inputLogo) inputLogo.onchange = async (e) => {
@@ -3876,7 +3933,7 @@ function cargarMetricas() {
 // sin que nadie tenga que pagar individual (se cobra la mesa completa).
 function cargarMesas() {
   const seccion = $("#conta-mesas-seccion");
-  const oculto = TIPOS_NEGOCIO_CARTA[_contaNegocio.carta_tipo_negocio]?.mesas === false;
+  const oculto = TIPOS_NEGOCIO_CARTA[_contaNegocio.carta_tipo_negocio]?.mesas === false || _contaClubNivel === 1;
   if (seccion) seccion.hidden = oculto;
   // La fila del hub de Carta también se oculta -- si no, el negocio entra
   // a una pantalla "Mesas" vacía. .carta-fila fija "display:flex" en su

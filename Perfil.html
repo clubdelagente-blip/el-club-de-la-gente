@@ -718,6 +718,7 @@
             <div class="seg-opts" style="margin-bottom:22px" id="contasub-nav">
               <button class="seg-opt is-on" data-contasub="balance" type="button">📊 Balance</button>
               <button class="seg-opt" data-contasub="pedido" type="button">🧾 Pedidos</button>
+              <button class="seg-opt" data-contasub="fidelizacion" type="button">🎟️ Fidelización</button>
               <button class="seg-opt" data-contasub="carta" type="button">🎨 Carta</button>
               <button class="seg-opt" data-contasub="gasto" type="button">➖ Nuevo gasto</button>
               <button class="seg-opt" data-contasub="costos" type="button">🧮 Costos</button>
@@ -836,6 +837,32 @@
               <div id="conta-carta-pedidos-list" style="padding:4px 0"><span class="brand-loader"><img src="icon-club.png" alt=""></span></div>
             </div>
 
+            <!-- ---------- FIDELIZACIÓN: tarjeta de sellos (antes vivía
+                 anidada dentro de Carta → Promos; se sacó a su propia
+                 pestaña porque ContaClub la incluye desde el plan Básico,
+                 que no tiene la carta pública/QR) ---------- -->
+            <div id="contasub-fidelizacion" style="display:none">
+              <div class="card">
+                <div class="card__head"><span class="card__title">Tarjeta de sellos</span></div>
+                <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:14px">Premia a quien vuelve a pedir -- sin una app ni una tarjeta física, todo por WhatsApp.</p>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--tinta-70);margin-bottom:14px">
+                  <input id="conta-carta-sellos-activo" type="checkbox" style="width:16px;height:16px;accent-color:#095544">
+                  🎟️ Tarjeta de sellos para quien pide por la carta
+                </label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Pedidos necesarios</label><input class="cfg-input" id="conta-carta-sellos-meta" type="number" min="1" value="10"></div>
+                  <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Tipo de premio</label>
+                    <select class="cfg-input" id="conta-carta-sellos-tipo">
+                      <option value="descuento">Descuento</option>
+                      <option value="gratis">Gratis</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="cfg-campo" style="margin-bottom:14px"><label class="cfg-label">Describe el premio</label><input class="cfg-input" id="conta-carta-sellos-premio" type="text" placeholder="Ej: Un postre gratis / 20% de descuento"></div>
+                <button class="btn btn--primario" id="conta-fidelizacion-guardar" type="button">Guardar cambios</button>
+              </div>
+            </div>
+
             <!-- ---------- CARTA: hub + secciones ---------- -->
             <div id="contasub-carta" style="display:none">
 
@@ -885,7 +912,7 @@
                   <span class="carta-fila__ic"><i data-lucide="megaphone"></i></span>
                   <span class="carta-fila__body">
                     <span class="carta-fila__title">Promociones y avisos</span>
-                    <span class="carta-fila__sub">Tarjeta de sellos, avisos destacados y domicilio</span>
+                    <span class="carta-fila__sub">Avisos destacados y domicilio</span>
                   </span>
                   <span class="carta-fila__chev"><i data-lucide="chevron-right"></i></span>
                 </button>
@@ -1031,23 +1058,6 @@
               <div id="carta-seccion-promos" class="carta-seccion" style="display:none">
                 <button type="button" class="carta-volver" data-carta-volver><i data-lucide="arrow-left"></i> Carta</button>
                 <h3 class="carta-seccion__titulo">Promociones y avisos</h3>
-                <div style="background:rgba(9,85,68,.08);border:1px solid rgba(9,85,68,.3);border-radius:10px;padding:12px 14px;margin-bottom:14px">
-                  <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--tinta-70);margin-bottom:10px">
-                    <input id="conta-carta-sellos-activo" type="checkbox" style="width:16px;height:16px;accent-color:#095544">
-                    🎟️ Tarjeta de sellos para quien pide por la carta
-                  </label>
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-                    <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Pedidos necesarios</label><input class="cfg-input" id="conta-carta-sellos-meta" type="number" min="1" value="10"></div>
-                    <div class="cfg-campo" style="margin-bottom:10px"><label class="cfg-label">Tipo de premio</label>
-                      <select class="cfg-input" id="conta-carta-sellos-tipo">
-                        <option value="descuento">Descuento</option>
-                        <option value="gratis">Gratis</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="cfg-campo" style="margin-bottom:0"><label class="cfg-label">Describe el premio</label><input class="cfg-input" id="conta-carta-sellos-premio" type="text" placeholder="Ej: Un postre gratis / 20% de descuento"></div>
-                </div>
-
                 <div style="background:rgba(234,183,73,.12);border:1px solid rgba(234,183,73,.4);border-radius:10px;padding:12px 14px;margin-bottom:14px">
                   <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--tinta-70);margin-bottom:10px">
                     <input id="conta-carta-aviso-activo" type="checkbox" style="width:16px;height:16px;accent-color:#095544">
@@ -1620,7 +1630,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=282"></script>
+  <script type="module" src="dashboard.js?v=283"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">
