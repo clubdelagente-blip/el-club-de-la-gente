@@ -2132,10 +2132,25 @@ async function iniciarContaClubDashboard() {
     location.href = "login.html";
     return;
   }
-  const { data: negocio } = await supabase.from("aliados").select("id, nombre, imagen_url, contaclub_plan_id, contaclub_implementacion_pagada").eq("user_id", session.user.id).maybeSingle();
+  const { data: negocio } = await supabase.from("aliados").select("id, nombre, imagen_url, contaclub_plan_id, contaclub_activo, contaclub_implementacion_pagada").eq("user_id", session.user.id).maybeSingle();
   if (!negocio) {
     const root = document.getElementById("contaclub-root");
     if (root) root.innerHTML = `<p style="padding:40px 20px;text-align:center;color:#c0392b">No encontramos un negocio vinculado a esta cuenta. Escríbenos si crees que es un error.</p>`;
+    return;
+  }
+  // Planes con mensualidad fija (Básico/Pro) nacen con esto en false (ver
+  // activacion.js) hasta que el Admin apruebe el comprobante del primer
+  // pago -- mientras tanto, nada del panel es visible, solo este mensaje.
+  if (negocio.contaclub_activo === false) {
+    const root = document.getElementById("contaclub-root");
+    if (root) root.innerHTML = `
+      <div style="max-width:420px;margin:60px auto;padding:0 20px;text-align:center">
+        <h2 style="font-family:'Space Grotesk',sans-serif;margin-bottom:10px">Tu cuenta está pendiente de activación</h2>
+        <p style="color:#5C6C61;line-height:1.5;margin-bottom:20px">Ya recibimos tu registro. Estamos revisando tu comprobante de pago -- en cuanto lo confirmemos, tu panel queda disponible.</p>
+        <a href="pagar-implementacion.html" style="color:#0E6B52;font-weight:600;text-decoration:none">Ver de nuevo los datos de pago</a>
+        <div style="margin-top:28px"><button type="button" id="contaclub-root-salir" style="border:none;background:none;color:#5C6C61;cursor:pointer;font-size:13px;text-decoration:underline">Salir</button></div>
+      </div>`;
+    document.getElementById("contaclub-root-salir")?.addEventListener("click", async () => { await supabase.auth.signOut(); location.href = "login.html"; });
     return;
   }
   _contaClubImplPagada = !!negocio.contaclub_implementacion_pagada;
