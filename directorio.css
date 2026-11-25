@@ -214,6 +214,7 @@ body { background: transparent; }
 .calc__field label { font-size: 12px; font-weight: 600; color: rgba(241, 247, 246,.72); letter-spacing: .03em; }
 .calc__input-wrap { position: relative; }
 .calc__input-wrap .peso { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 15px; color: rgba(241, 247, 246,.55); pointer-events: none; }
+.calc__input-wrap .sufijo { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 15px; color: rgba(241, 247, 246,.55); pointer-events: none; }
 .calc input, .calc select {
   width: 100%; font-family: var(--cuerpo); font-size: 16px; font-weight: 500; color: var(--crema);
   padding: 14px 16px; border: 1.5px solid var(--linea-clara); border-radius: 6px; background: rgba(241, 247, 246,.04);
