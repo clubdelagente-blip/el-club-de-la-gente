@@ -2251,7 +2251,7 @@ async function cargarContabilidadNegocio(negocioId) {
 
   const hace90Dias = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
   const [{ data: negocio }, { data: catsG }, { data: gastos }, { data: catsI }, { data: ingresos }, { data: cartaProd }, { data: cartaPed }, { data: modGrupos }, { data: modOpciones }, { data: modProdGrupos }, { data: mesas }, { data: comentarios }, { data: insumos }, { data: recetaItems }, { data: visitas }, { data: recetasPrimarias }, { data: recetasPrimariasInsumos }] = await Promise.all([
-    supabase.from("aliados").select("imagen_url, instagram, carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio, carta_precio_desde, carta_costo_operativo_pct, carta_bienvenida_mensaje").eq("id", negocioId).maybeSingle(),
+    supabase.from("aliados").select("imagen_url, instagram, carta_color, carta_portada_url, carta_sellos_activo, carta_sellos_meta, carta_sellos_premio_tipo, carta_sellos_premio_desc, tienda_llave_pago, carta_color_tarjeta, carta_color_borde, carta_color_pedido, carta_categorias_orden, carta_aviso_activo, carta_avisos, carta_aviso_color, carta_tipo_negocio, carta_precio_desde, carta_costo_operativo_pct, carta_margen_objetivo_pct, carta_bienvenida_mensaje").eq("id", negocioId).maybeSingle(),
     supabase.from("negocio_categorias_gasto").select("*").eq("negocio_id", negocioId).order("nombre"),
     supabase.from("negocio_gastos").select("*, negocio_categorias_gasto(nombre)").eq("negocio_id", negocioId).order("fecha", { ascending: false }),
     supabase.from("negocio_categorias_ingreso").select("*").eq("negocio_id", negocioId).order("nombre"),
@@ -2478,6 +2478,8 @@ async function cargarContabilidadNegocio(negocioId) {
   mostrarSugerenciaCategorias();
   const operativoPctInput = $("#costos-operativo-pct"); if (operativoPctInput) operativoPctInput.value = _contaNegocio.carta_costo_operativo_pct ?? 0;
   const btnOperativoGuardar = $("#costos-operativo-guardar"); if (btnOperativoGuardar) btnOperativoGuardar.onclick = () => guardarCostoOperativoPct();
+  const margenObjetivoInput = $("#costos-margen-objetivo"); if (margenObjetivoInput) margenObjetivoInput.value = _contaNegocio.carta_margen_objetivo_pct ?? 30;
+  const btnMargenObjetivoGuardar = $("#costos-margen-objetivo-guardar"); if (btnMargenObjetivoGuardar) btnMargenObjetivoGuardar.onclick = () => guardarMargenObjetivoPct();
   const btnInsumoAdd = $("#costos-insumo-add"); if (btnInsumoAdd) btnInsumoAdd.onclick = () => abrirFormInsumo();
   cargarInsumos();
   const btnPrimariaAdd = $("#costos-primaria-add"); if (btnPrimariaAdd) btnPrimariaAdd.onclick = () => abrirFormRecetaPrimaria();
@@ -3657,6 +3659,18 @@ async function guardarCostoOperativoPct() {
   cargarCostosProductos();
 }
 
+async function guardarMargenObjetivoPct() {
+  const btn = $("#costos-margen-objetivo-guardar");
+  const pct = Math.max(0, Math.min(95, parseFloat($("#costos-margen-objetivo")?.value) || 0));
+  if (btn) { btn.disabled = true; btn.textContent = "Guardando…"; }
+  const { error } = await supabase.from("aliados").update({ carta_margen_objetivo_pct: pct }).eq("id", _contaNegocioId);
+  if (btn) { btn.disabled = false; btn.textContent = "Guardar"; }
+  if (error) { toast("Error: " + error.message); return; }
+  _contaNegocio.carta_margen_objetivo_pct = pct;
+  toast("Guardado ✓");
+  cargarCostosProductos();
+}
+
 function cargarInsumos() {
   const list = $("#costos-insumos-list");
   if (!list) return;
@@ -3750,17 +3764,23 @@ function cargarCostosProductos() {
   if (!list) return;
   if (!_contaCartaProductos.length) { list.innerHTML = `<p style="padding:8px 0">Primero agrega productos en "Productos de mi carta".</p>`; return; }
   const pct = Number(_contaNegocio.carta_costo_operativo_pct) || 0;
+  // Precio sugerido = el que haría que el margen (ganancia / precio de venta,
+  // misma cuenta de "margenPct" de abajo) sea exactamente el objetivo que
+  // puso el negocio -- despejando precio de esa fórmula: precio = costo / (1 - margen).
+  const margenObjetivo = Math.min(95, Math.max(0, Number(_contaNegocio.carta_margen_objetivo_pct ?? 30))) / 100;
   list.innerHTML = _contaCartaProductos.map(p => {
     const tieneReceta = _contaRecetaItems.some(r => r.producto_id === p.id);
     const costoTotal = costoInsumosProducto(p.id) * (1 + pct / 100);
     const precio = Number(p.precio) || 0;
     const margenPct = tieneReceta && precio > 0 ? ((precio - costoTotal) / precio) * 100 : null;
     const colorMargen = margenPct == null ? "#999" : margenPct < 0 ? "#c0392b" : margenPct < 20 ? "#b45309" : "#0e7a3e";
+    const precioSugerido = tieneReceta ? costoTotal / (1 - margenObjetivo) : null;
     return `
     <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #ebebeb;flex-wrap:wrap">
       <div style="flex:1;min-width:160px">
         <div style="font-weight:600;font-size:14px">${esc(p.nombre)}</div>
         <div style="font-size:12px;color:#777">Precio ${COP(precio)}${tieneReceta ? ` · Costo ${COP(costoTotal)}` : ""}</div>
+        ${precioSugerido != null ? `<div style="font-size:12px;color:var(--verde);font-weight:600">Precio sugerido para ${(margenObjetivo * 100).toFixed(0)}% de margen: ${COP(precioSugerido)}</div>` : ""}
       </div>
       <span style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:${colorMargen}22;color:${colorMargen};white-space:nowrap">${margenPct != null ? `${margenPct.toFixed(0)}% margen` : "Sin receta"}</span>
       <button data-ed-receta="${p.id}" class="btn" style="padding:7px 12px;font-size:12px">${tieneReceta ? "Editar receta final" : "Armar receta final"}</button>

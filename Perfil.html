@@ -1131,6 +1131,16 @@
                 </div>
               </div>
 
+              <div class="card" style="margin-bottom:16px">
+                <div class="card__head"><span class="card__title">Margen de ganancia que quieres</span></div>
+                <p style="font-size:12.5px;color:var(--tinta-60);margin-bottom:12px">Con esto calculamos el precio sugerido de cada producto en "Costo y margen por producto" -- cuánto deberías cobrar para ganar ese % sobre el precio de venta.</p>
+                <div style="display:flex;gap:10px;align-items:center">
+                  <input class="cfg-input" id="costos-margen-objetivo" type="number" min="0" max="95" step="1" style="max-width:120px" placeholder="30">
+                  <span style="font-size:14px;color:var(--tinta-60)">%</span>
+                  <button class="btn btn--primario" id="costos-margen-objetivo-guardar" style="margin-left:auto">Guardar</button>
+                </div>
+              </div>
+
               <details class="card" open>
                 <summary style="cursor:pointer;font-family:'Anton',sans-serif;font-size:17px;font-weight:700">Insumos</summary>
                 <div style="padding:16px 0 4px">
@@ -1642,7 +1652,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="gesto-volver.js?v=1"></script>
   <script src="carrusel-auto.js?v=5"></script>
-  <script type="module" src="dashboard.js?v=285"></script>
+  <script type="module" src="dashboard.js?v=286"></script>
   <script type="module" src="agente.js?v=3"></script>
 
   <template id="__bundler_thumbnail">
