@@ -15,7 +15,9 @@
 // podría regalarse a sí mismo (o a quien sea) una membresía gratis de por
 // vida, igual que se protegió aprobar-membresia.ts.
 //
-// POST { nombre, whatsapp }
+// POST { nombre, whatsapp, fecha_nacimiento? } -- la fecha es opcional, pero
+// sin ella el agente de WhatsApp no puede hablarle según su numerología
+// (ver calcularNumerologia en revisar-membresias.ts / whatsapp-receive-v2.ts).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -59,7 +61,7 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "No tienes permisos de administrador" }), { status: 403, headers: corsHeaders });
   }
 
-  const { nombre, whatsapp } = await req.json().catch(() => ({}));
+  const { nombre, whatsapp, fecha_nacimiento } = await req.json().catch(() => ({}));
   if (!nombre?.trim() || !whatsapp) {
     return new Response(JSON.stringify({ error: "Nombre y WhatsApp son obligatorios" }), { status: 400, headers: corsHeaders });
   }
@@ -72,7 +74,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: existente } = await supabase
     .from("perfiles")
-    .select("id, plan")
+    .select("id, plan, fecha_nacimiento")
     .eq("whatsapp", digits)
     .maybeSingle();
 
@@ -84,7 +86,11 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ ok: true, aviso: "Ya tenía Vitalicia" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     miembroId = existente.id;
-    const { error: updErr } = await supabase.from("perfiles").update({ plan: "vitalicia" }).eq("id", miembroId);
+    // Nunca pisa una fecha que ya tenía -- solo la completa si le faltaba,
+    // para no corromper el número de alguien que ya la había dado antes.
+    const updatePayload: Record<string, unknown> = { plan: "vitalicia" };
+    if (fecha_nacimiento && !existente.fecha_nacimiento) updatePayload.fecha_nacimiento = fecha_nacimiento;
+    const { error: updErr } = await supabase.from("perfiles").update(updatePayload).eq("id", miembroId);
     if (updErr) {
       console.error("Error subiendo a Vitalicia:", updErr);
       return new Response(JSON.stringify({ error: updErr.message }), { status: 500, headers: corsHeaders });
@@ -108,6 +114,7 @@ Deno.serve(async (req: Request) => {
       whatsapp: digits,
       rol: "miembro",
       plan: "vitalicia",
+      fecha_nacimiento: fecha_nacimiento || null,
     });
     if (perfError) {
       console.error("Error creando perfil:", perfError);

@@ -3966,6 +3966,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
       abrirModal('🎁 Regalar membresía Vitalicia','Crea o sube la cuenta a Vitalicia y le manda el WhatsApp de bienvenida solo.',`
         <div class="ad-field"><label>Nombre completo</label><input id="rv-nombre" type="text" placeholder="Ej: María Pérez"></div>
         <div class="ad-field"><label>WhatsApp (10 dígitos, sin indicativo)</label><input id="rv-whatsapp" type="tel" placeholder="Ej: 3001234567"></div>
+        <div class="ad-field"><label>Fecha de nacimiento (opcional)</label><input id="rv-fecha-nacimiento" type="date"></div>
         <button class="btn btn--primario" id="rv-enviar" style="margin-top:8px;width:100%">Regalar Vitalicia</button>
       `);
       return;
@@ -3974,13 +3975,14 @@ document.addEventListener('DOMContentLoaded',async()=>{
       const btn=e.target.closest('#rv-enviar');
       const nombre=$('#rv-nombre')?.value.trim();
       const whatsapp=$('#rv-whatsapp')?.value.trim();
+      const fecha_nacimiento=$('#rv-fecha-nacimiento')?.value||null;
       if(!nombre||!whatsapp){toast('Completa nombre y WhatsApp');return;}
       btn.disabled=true;btn.textContent='Regalando…';
       try{
         const{data:sesion}=await supabase.auth.getSession();
         const r=await fetch('https://egwaedadpqfwnbfosiao.supabase.co/functions/v1/regalar-vitalicia',{
           method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(sesion?.session?.access_token||'')},
-          body:JSON.stringify({nombre,whatsapp}),
+          body:JSON.stringify({nombre,whatsapp,fecha_nacimiento}),
         });
         const j=await r.json().catch(()=>({}));
         if(!r.ok){toast('Error: '+(j.error||r.status));btn.disabled=false;btn.textContent='Regalar Vitalicia';return;}
