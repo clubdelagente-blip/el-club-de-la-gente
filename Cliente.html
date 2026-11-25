@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Únete a los sellos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --verde: #095544; --crema: #F1F7F6; --crema-2: #EAF3EF; --tinta: #021B1A; --tinta-60: rgba(2,27,26,.6); --tinta-45: rgba(2,27,26,.42); --linea: rgba(2,27,26,.12); }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: var(--crema); font-family: 'Inter', system-ui, sans-serif; color: var(--tinta); display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+  .wrap { width: 100%; max-width: 380px; }
+  .logo { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; display: block; margin: 0 auto 14px; background: #fff; border: 1px solid var(--linea); }
+  h1 { font-size: 21px; font-weight: 700; text-align: center; margin: 0 0 4px; letter-spacing: -.01em; }
+  .sub { font-size: 13.5px; color: var(--tinta-60); text-align: center; margin: 0 0 22px; line-height: 1.5; }
+  .card { background: #fff; border: 1px solid var(--linea); border-radius: 18px; padding: 24px 22px; }
+  .campo { margin-bottom: 14px; }
+  .campo label { display: block; font-size: 12px; font-weight: 600; color: var(--tinta-60); margin-bottom: 6px; }
+  .campo input { width: 100%; padding: 13px 14px; border: 1px solid var(--linea); border-radius: 10px; font-family: inherit; font-size: 15px; box-sizing: border-box; }
+  .btn { display: flex; align-items: center; justify-content: center; width: 100%; padding: 14px; border: none; border-radius: 100px; background: var(--verde); color: #fff; font-weight: 700; font-size: 14.5px; cursor: pointer; margin-top: 4px; }
+  .btn:disabled { opacity: .6; }
+  .error { font-size: 12.5px; color: #c0392b; background: #fdecea; border-radius: 8px; padding: 10px 12px; margin-bottom: 14px; }
+  .exito { text-align: center; }
+  .exito .check { width: 52px; height: 52px; border-radius: 50%; background: var(--crema-2); color: var(--verde); display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 14px; }
+  .exito .numero { font-size: 26px; font-weight: 700; color: var(--verde); letter-spacing: .02em; margin: 14px 0; }
+  .exito p { font-size: 13.5px; color: var(--tinta-60); line-height: 1.5; margin: 0; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <img class="logo" id="cl-logo" src="icon-club.png" alt="">
+    <h1 id="cl-titulo">Únete a los sellos</h1>
+    <p class="sub" id="cl-sub">Regístrate una vez -- da tu nombre y WhatsApp en el mostrador cada vez que pidas, y vas sumando sellos.</p>
+    <div class="card">
+      <div id="cl-form-wrap">
+        <p class="error" id="cl-error" hidden></p>
+        <form id="cl-form">
+          <div class="campo"><label>Tu nombre</label><input id="cl-nombre" type="text" required></div>
+          <div class="campo"><label>Tu WhatsApp</label><input id="cl-wa" type="tel" inputmode="numeric" placeholder="300 000 0000" required></div>
+          <button type="submit" class="btn" id="cl-btn">Registrarme</button>
+        </form>
+      </div>
+      <div class="exito" id="cl-exito" hidden>
+        <div class="check">✓</div>
+        <p>Listo -- da este número en el mostrador cuando pidas:</p>
+        <div class="numero" id="cl-exito-numero"></div>
+        <p>Así te van sumando los sellos de tu tarjeta.</p>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="cliente.js"></script>
+</body>
+</html>

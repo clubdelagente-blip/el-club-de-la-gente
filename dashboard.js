@@ -2313,6 +2313,15 @@ async function cargarContabilidadNegocio(negocioId) {
   const qrDescargar = $("#conta-carta-descargar"); if (qrDescargar) qrDescargar.href = qrSrc;
   const btnCopiar = $("#conta-carta-copiar");
   if (btnCopiar) btnCopiar.onclick = () => copiarTextoConRespaldo(cartaUrl).then(() => toast("Link copiado ✓"));
+
+  // QR de registro de clientes para el mostrador (ver Cliente.html/cliente.js)
+  // -- mismo patrón que el de arriba, apunta a Cliente.html en vez de Carta.html.
+  const clienteUrl = `${location.origin}/Cliente.html?aliado=${negocioId}`;
+  const clienteQrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(clienteUrl)}`;
+  const clienteQrImg = $("#conta-cliente-qr"); if (clienteQrImg) clienteQrImg.src = clienteQrSrc;
+  const clienteQrDescargar = $("#conta-cliente-descargar"); if (clienteQrDescargar) clienteQrDescargar.href = clienteQrSrc;
+  const btnClienteCopiar = $("#conta-cliente-copiar");
+  if (btnClienteCopiar) btnClienteCopiar.onclick = () => copiarTextoConRespaldo(clienteUrl).then(() => toast("Link copiado ✓"));
   const colorInput = $("#conta-carta-color"); if (colorInput) colorInput.value = _contaNegocio.carta_color || "#095544";
   const logoUrlInput = $("#conta-carta-logo-url"); if (logoUrlInput) logoUrlInput.value = _contaNegocio.imagen_url || "";
   const instagramInput = $("#conta-carta-instagram"); if (instagramInput) instagramInput.value = _contaNegocio.instagram || "";
@@ -2922,6 +2931,7 @@ function abrirConstructorPedido() {
           <div id="cp-pos-cart-view" style="display:flex;flex-direction:column;flex:1;min-height:0">
             <div style="font-weight:700;font-size:14px;margin-bottom:8px">Pedido</div>
             <div id="cp-pos-cart-items" style="flex:1;overflow-y:auto;margin-bottom:10px"></div>
+            <input class="cfg-input" id="cp-pos-whatsapp" type="tel" inputmode="numeric" placeholder="WhatsApp del cliente (opcional, para sellos)" style="margin-bottom:8px;flex:none">
             <input class="cfg-input" id="cp-pos-nota" type="text" placeholder="Nota (opcional)" style="margin-bottom:8px;flex:none">
             <div style="display:flex;gap:8px;margin-bottom:10px;flex:none">
               <button type="button" class="btn" data-pos-metodo="efectivo" style="flex:1;padding:8px;font-size:12.5px;justify-content:center">💵 Efectivo</button>
@@ -3165,9 +3175,19 @@ function abrirConstructorPedido() {
     }));
     const total = items.reduce((s, it) => s + it.precio * it.cantidad, 0);
     const nota = $("#cp-pos-nota")?.value.trim() || null;
+    // Si el cliente da su WhatsApp (ya registrado antes con el QR de
+    // Cliente.html, o uno nuevo), esta venta también cuenta para su tarjeta
+    // de sellos -- sellos_carta_estado cuenta pedidos por (negocio_id,
+    // cliente_whatsapp), sin importar si vinieron de la carta o de acá.
+    const wa = $("#cp-pos-whatsapp")?.value.trim().replace(/\D/g, "") || null;
+    let clienteNombre = "Mostrador";
+    if (wa) {
+      const { data: cliente } = await supabase.from("negocio_carta_clientes").select("nombre").eq("negocio_id", _contaNegocioId).eq("whatsapp", wa).maybeSingle();
+      if (cliente?.nombre) clienteNombre = cliente.nombre;
+    }
     const ahora = new Date().toISOString();
     const { data: pedido, error } = await supabase.from("negocio_carta_pedidos").insert({
-      negocio_id: _contaNegocioId, cliente_nombre: "Mostrador", nota, items, monto_total: total,
+      negocio_id: _contaNegocioId, cliente_nombre: clienteNombre, cliente_whatsapp: wa, nota, items, monto_total: total,
       estado: "pendiente", origen: "manual", pagado: true, pagado_at: ahora, metodo_pago: metodoPagoPos,
     }).select().single();
     if (error) { toast("Error: " + error.message); btn.disabled = false; renderCart(); return; }
