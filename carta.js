@@ -158,27 +158,6 @@ function feedSlideHtml(p, tieneGrupos, categoria, modoDesde) {
   </div>`;
 }
 
-// Slide de anuncio de ContaClub intercalado en el feed (solo negocios con
-// contaclub_standalone -- ver más arriba, en iniciar()). Misma estructura
-// que feedSlideHtml para heredar tamaño/scroll-snap, sin carrito ni
-// "me gusta"/comentar.
-function anuncioSlideHtml(a) {
-  // La imagen es opcional -- sin ella, fondo degradado igual que un aviso
-  // propio (ver avisoSlideHtml), solo que marcado "Publicidad".
-  const fondoDegradado = `radial-gradient(120% 140% at 15% 0%, var(--verde) 0%, #0c2e1b 55%, #05160d 100%)`;
-  return `
-  <div class="carta-slide carta-slide--anuncio" data-anuncio="${a.id}"${a.imagen_url ? "" : ` style="background:${fondoDegradado}"`}>
-    ${a.imagen_url ? `<img class="carta-card__img" src="${esc(a.imagen_url)}" alt="${esc(a.titulo)}" loading="lazy">` : ""}
-    <div class="carta-slide__scrim"></div>
-    <div class="carta-card__body">
-      <span class="carta-anuncio__badge">Publicidad</span>
-      <div class="carta-card__nombre">${esc(a.titulo)}</div>
-      ${a.descripcion ? `<div class="carta-card__desc">${esc(a.descripcion)}</div>` : ""}
-      ${a.link ? `<a href="${esc(a.link)}" target="_blank" rel="noopener" class="btn btn--primario" style="margin-top:10px;display:inline-block">Ver más</a>` : ""}
-    </div>
-  </div>`;
-}
-
 // Slide del aviso PROPIO del negocio (carta_avisos, el mismo que ya se veía
 // solo como carrusel arriba de la carta) intercalado en el feed -- misma
 // insignia distinta ("Promoción", no "Publicidad") porque es contenido del
@@ -448,27 +427,13 @@ async function iniciar() {
     // el scroll sigue corriendo natural hacia las siguientes -- nunca se
     // "acaba" de golpe al terminar una categoría.
     //
-    // Publicidad intermedia: se intercala una tarjeta cada CADA_N_PRODUCTOS,
-    // rotando entre dos fuentes mezcladas en una sola bolsa --
-    // (a) los avisos propios del negocio (carta_avisos, los que ya
-    //     configura en Mi Contabilidad -- cualquier negocio, Club o
-    //     ContaClub), con la insignia "Promoción" porque es SU propio
-    //     contenido, y
-    // (b) los anuncios de ContaClub (tabla contaclub_anuncios, panel admin),
-    //     con la insignia "Publicidad" -- SOLO para negocios con
-    //     contaclub_standalone=true.
-    // Usan la misma clase .carta-slide que un producto (mismo tamaño/
-    // scroll-snap), así que no rompen el conteo de nada: no forman parte de
-    // "items", solo se meten al HTML final.
-    let anunciosActivos = [];
-    if (negocio.contaclub_standalone) {
-      const { data: anuncios } = await supabase.from("contaclub_anuncios").select("*").eq("activo", true).order("orden");
-      anunciosActivos = anuncios || [];
-    }
-    const bolsaAnuncios = [
-      ...avisosValidos.map(a => avisoSlideHtml(a, negocio.carta_aviso_color || "#164a2c")),
-      ...anunciosActivos.map(a => anuncioSlideHtml(a)),
-    ];
+    // Publicidad intermedia: se intercala una tarjeta cada CADA_N_PRODUCTOS
+    // con los avisos propios del negocio (carta_avisos, los que ya
+    // configura en Mi Contabilidad), con la insignia "Promoción". Usan la
+    // misma clase .carta-slide que un producto (mismo tamaño/scroll-snap),
+    // así que no rompen el conteo de nada: no forman parte de "items",
+    // solo se meten al HTML final.
+    const bolsaAnuncios = avisosValidos.map(a => avisoSlideHtml(a, negocio.carta_aviso_color || "#164a2c"));
     const CADA_N_PRODUCTOS = 5;
     const slidesHtml = [];
     let contadorProductos = 0;
