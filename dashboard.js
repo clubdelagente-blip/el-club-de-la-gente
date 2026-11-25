@@ -1722,6 +1722,7 @@ let _contaModOpciones = [];
 let _contaModProdGrupos = [];
 let _contaMesas = [];
 let _contaInsumos = [];
+let _contaInsumosBusqueda = "";
 let _contaRecetaItems = [];
 let _contaRecetasPrimarias = [];
 let _contaRecetasPrimariasInsumos = [];
@@ -2481,6 +2482,11 @@ async function cargarContabilidadNegocio(negocioId) {
   const margenObjetivoInput = $("#costos-margen-objetivo"); if (margenObjetivoInput) margenObjetivoInput.value = _contaNegocio.carta_margen_objetivo_pct ?? 30;
   const btnMargenObjetivoGuardar = $("#costos-margen-objetivo-guardar"); if (btnMargenObjetivoGuardar) btnMargenObjetivoGuardar.onclick = () => guardarMargenObjetivoPct();
   const btnInsumoAdd = $("#costos-insumo-add"); if (btnInsumoAdd) btnInsumoAdd.onclick = () => abrirFormInsumo();
+  const insumosBuscarInput = $("#costos-insumos-buscar");
+  if (insumosBuscarInput) {
+    insumosBuscarInput.value = _contaInsumosBusqueda;
+    insumosBuscarInput.oninput = (e) => { _contaInsumosBusqueda = e.target.value; cargarInsumos(); };
+  }
   cargarInsumos();
   const btnPrimariaAdd = $("#costos-primaria-add"); if (btnPrimariaAdd) btnPrimariaAdd.onclick = () => abrirFormRecetaPrimaria();
   cargarRecetasPrimarias();
@@ -3675,7 +3681,10 @@ function cargarInsumos() {
   const list = $("#costos-insumos-list");
   if (!list) return;
   if (!_contaInsumos.length) { list.innerHTML = `<p style="padding:8px 0">Aún no tienes insumos. Agrega harina, queso, vasos... lo que uses para preparar tus productos.</p>`; return; }
-  list.innerHTML = _contaInsumos.map(i => `
+  const termino = _contaInsumosBusqueda.trim().toLowerCase();
+  const insumosFiltrados = termino ? _contaInsumos.filter(i => i.nombre.toLowerCase().includes(termino)) : _contaInsumos;
+  if (!insumosFiltrados.length) { list.innerHTML = `<p style="padding:8px 0">Ningún insumo coincide con "${esc(_contaInsumosBusqueda.trim())}".</p>`; return; }
+  list.innerHTML = insumosFiltrados.map(i => `
     <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #ebebeb">
       <div style="flex:1;min-width:0">
         <div style="font-weight:600;font-size:14px">${esc(i.nombre)}</div>
