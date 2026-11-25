@@ -3704,6 +3704,7 @@ function abrirFormInsumo(i = {}) {
       <select class="cfg-input" id="ins-unidad">
         <option value="g" ${i.unidad === "g" ? "selected" : ""}>Gramos (g)</option>
         <option value="kg" ${i.unidad === "kg" ? "selected" : ""}>Kilogramos (kg)</option>
+        <option value="lb" ${i.unidad === "lb" ? "selected" : ""}>Libras (lb)</option>
         <option value="ml" ${i.unidad === "ml" ? "selected" : ""}>Mililitros (ml)</option>
         <option value="l" ${i.unidad === "l" ? "selected" : ""}>Litros (L)</option>
         <option value="unidad" ${!i.unidad || i.unidad === "unidad" ? "selected" : ""}>Unidad</option>
@@ -3864,6 +3865,7 @@ function abrirFormRecetaPrimaria(rp = {}) {
         <select class="cfg-input" id="rp-unidad">
           <option value="g" ${rp.rendimiento_unidad === "g" ? "selected" : ""}>Gramos (g)</option>
           <option value="kg" ${rp.rendimiento_unidad === "kg" ? "selected" : ""}>Kilogramos (kg)</option>
+          <option value="lb" ${rp.rendimiento_unidad === "lb" ? "selected" : ""}>Libras (lb)</option>
           <option value="ml" ${rp.rendimiento_unidad === "ml" ? "selected" : ""}>Mililitros (ml)</option>
           <option value="l" ${rp.rendimiento_unidad === "l" ? "selected" : ""}>Litros (L)</option>
           <option value="unidad" ${!rp.rendimiento_unidad || rp.rendimiento_unidad === "unidad" ? "selected" : ""}>Unidad</option>
