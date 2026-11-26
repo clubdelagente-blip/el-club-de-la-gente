@@ -61,9 +61,23 @@ function avisarRevisionManual(waDigits, primerNombre, planLabel) {
 let pendingPago = null;     // { plan, precio, planLabel, file }
 let pagoPrevioState = null; // fila de "planes" validada para ?comprar=1
 
+// Precio de Black Friday -- SOLO para el primer pago de un miembro NUEVO
+// (este archivo). checkout.js (renovaciones/cambios de plan de miembros ya
+// existentes) no se toca, así que ellos siempre pagan el precio normal. Se
+// autoexpira solo -- después de esa fecha vuelve al precio de la tabla
+// "planes" sin que haya que cambiar nada a mano.
+const BLACK_FRIDAY_HASTA = new Date("2026-12-01T00:00:00-05:00"); // fin del 30-nov, hora Colombia
+const PRECIOS_BLACK_FRIDAY = {
+  basica: { precio: 7900, precio_texto: "$7.900" },
+  premium: { precio: 14900, precio_texto: "$14.900" },
+};
+
 async function cargarPlanPago(slug) {
   const { data } = await supabase.from("planes").select("*").eq("slug", slug).maybeSingle();
-  return data || null;
+  if (!data) return null;
+  const promo = PRECIOS_BLACK_FRIDAY[slug];
+  if (promo && Date.now() < BLACK_FRIDAY_HASTA.getTime()) return { ...data, ...promo };
+  return data;
 }
 async function cargarLlavePago() {
   const { data } = await supabase.from("configuracion").select("valor").eq("clave", "club_llave_pago").maybeSingle();
@@ -99,8 +113,11 @@ function ppAvanzar(completado, siguiente) {
   }
 }
 function mostrarPagoPrevio(plan) {
+  const esBlackFriday = !!PRECIOS_BLACK_FRIDAY[plan.slug] && Date.now() < BLACK_FRIDAY_HASTA.getTime();
   $("#pp-title").textContent = `Paga tu membresía ${plan.tag || plan.nombre}.`;
-  $("#pp-sub").textContent = `Vas a pagar tu membresía ${plan.tag || plan.nombre}.`;
+  $("#pp-sub").textContent = esBlackFriday
+    ? `Precio especial de Black Friday en tu primer mes de ${plan.tag || plan.nombre} — válido hasta el 30 de noviembre.`
+    : `Vas a pagar tu membresía ${plan.tag || plan.nombre}.`;
   $("#pp-monto").textContent = new Intl.NumberFormat("es-CO").format(Number(plan.precio)) + " COP";
   $("#pp-llave").value = "Cargando…";
   resetPagoPrevioPasos();
