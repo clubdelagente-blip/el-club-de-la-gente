@@ -161,17 +161,20 @@ async function abrirPagoManual(plan, card, miembroIdForzado = null) {
     return;
   }
 
-  // Precio fijo de por vida ganado por registrarse durante Black Friday
-  // (ver auth.js) -- solo aplica si sigue renovando el MISMO plan con el
-  // que entró; si cambia de plan, paga el precio normal de ese otro plan.
+  // Precio fijo por UN AÑO ganado por registrarse durante Black Friday (ver
+  // auth.js) -- solo aplica si sigue renovando el MISMO plan con el que
+  // entró y todavía no se cumplió el año; pasado ese año, o si cambia de
+  // plan, paga el precio normal.
   const { data: perfilBf } = await supabase
     .from("perfiles")
-    .select("bf_plan_renovacion, bf_precio_renovacion")
+    .select("bf_plan_renovacion, bf_precio_renovacion, bf_precio_renovacion_hasta")
     .eq("id", miembroId)
     .maybeSingle();
-  const precioFinal = (perfilBf?.bf_plan_renovacion === plan && Number(perfilBf?.bf_precio_renovacion) > 0)
-    ? Number(perfilBf.bf_precio_renovacion)
-    : precio;
+  const bfVigente = perfilBf?.bf_plan_renovacion === plan
+    && Number(perfilBf?.bf_precio_renovacion) > 0
+    && perfilBf?.bf_precio_renovacion_hasta
+    && Date.now() < new Date(perfilBf.bf_precio_renovacion_hasta).getTime();
+  const precioFinal = bfVigente ? Number(perfilBf.bf_precio_renovacion) : precio;
 
   estadoPago = { plan, precio: precioFinal, planLabel: p.tag || p.nombre || plan, miembroId };
   estadoEl.textContent = textoOriginal;

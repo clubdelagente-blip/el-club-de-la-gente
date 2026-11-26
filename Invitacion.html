@@ -48,6 +48,19 @@
 
     .inv-ref-banner { display: inline-flex; align-items: center; gap: 10px; background: rgba(0,223,129,.1); border: 1px solid rgba(0,223,129,.3); color: var(--crema-en-negro); font-size: 14px; padding: 12px 20px; border-radius: 100px; margin-bottom: 20px; max-width: 90%; }
 
+    /* Callout del precio fijo de por vida -- tiene que verse como el premio
+       gordo de la página, no como un dato más, por eso el borde dorado con
+       glow y los precios en grande. */
+    .inv-fijo { position: relative; max-width: 480px; margin: 0 auto 26px; background: linear-gradient(160deg, rgba(234,183,73,.14), rgba(0,223,129,.06)); border: 1.5px solid #EAB749; border-radius: 18px; padding: 20px 22px; box-shadow: 0 0 0 1px rgba(234,183,73,.15), 0 16px 40px rgba(234,183,73,.12); }
+    .inv-fijo__eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #021B1A; background: #EAB749; padding: 5px 12px; border-radius: 100px; margin-bottom: 12px; }
+    .inv-fijo__linea { display: flex; align-items: baseline; justify-content: center; gap: 22px; flex-wrap: wrap; margin-bottom: 8px; }
+    .inv-fijo__plan { text-align: center; }
+    .inv-fijo__plan-tag { display: block; font-size: 11px; color: rgba(241,247,246,.55); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+    .inv-fijo__plan-precio { font-family: var(--display); font-size: clamp(26px, 6vw, 34px); color: #EAB749; line-height: 1; }
+    .inv-fijo__plan-precio small { font-family: var(--cuerpo, inherit); font-size: 13px; color: rgba(241,247,246,.5); font-weight: 400; }
+    .inv-fijo__nota { font-size: 13px; color: rgba(241,247,246,.75); margin: 0; }
+    .inv-fijo__nota strong { color: var(--verde-claro); }
+
     .inv-stats { display: flex; justify-content: center; gap: 28px; flex-wrap: wrap; margin: 0 auto 28px; }
     .inv-stat { text-align: center; }
     .inv-stat strong { display: block; font-family: var(--display); font-size: 28px; color: var(--verde-claro); line-height: 1; }
@@ -82,7 +95,22 @@
 
       <div>
         <span class="inv-eyebrow">🚀 Lanzamiento · Black Friday</span>
-        <p class="inv-sub" style="margin-bottom:18px;color:#EAB749;font-weight:700">Precio especial en tu primer mes y lo dejas fijo de por vida si te unes ahora — y nos ayudas a financiar más obras sociales.</p>
+        <p class="inv-sub" style="margin-bottom:18px;color:#EAB749;font-weight:700">Precio especial en tu primer mes</p>
+
+        <div class="inv-fijo">
+          <span class="inv-fijo__eyebrow">🔒 Precio fijo por un año</span>
+          <div class="inv-fijo__linea">
+            <div class="inv-fijo__plan">
+              <span class="inv-fijo__plan-tag">Básica</span>
+              <div class="inv-fijo__plan-precio">$9.900<small> /mes</small></div>
+            </div>
+            <div class="inv-fijo__plan">
+              <span class="inv-fijo__plan-tag">Premium</span>
+              <div class="inv-fijo__plan-precio">$19.900<small> /mes</small></div>
+            </div>
+          </div>
+          <p class="inv-fijo__nota">Desde tu <strong>segundo mes</strong> y durante todo un año — solo si te unes antes del 30 de noviembre. Y nos ayudas a financiar más obras sociales.</p>
+        </div>
 
         <div class="inv-countdown" id="inv-countdown" hidden>
           <span class="inv-countdown__lbl">Termina en</span>

@@ -746,11 +746,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         // Si está pagando una membresía durante Black Friday, además del
         // precio especial del primer mes (arriba) se le deja marcado un
-        // precio fijo de por vida para sus renovaciones desde el mes 2 --
-        // checkout.js lo revisa cada vez que esta persona renueve.
+        // precio fijo durante UN AÑO (no de por vida) para sus renovaciones
+        // desde el mes 2 -- checkout.js lo revisa, y respeta la fecha límite,
+        // cada vez que esta persona renueve.
         const esPagoBlackFriday = pendingPago
           && PRECIO_FIJO_RENOVACION_BF[pendingPago.plan]
           && Date.now() < BLACK_FRIDAY_HASTA.getTime();
+        const unAnioDespues = new Date();
+        unAnioDespues.setFullYear(unAnioDespues.getFullYear() + 1);
 
         const { error: perfError } = await supabase.from("perfiles").upsert({
           id: data.user.id,
@@ -764,6 +767,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           ...(esPagoBlackFriday ? {
             bf_plan_renovacion: pendingPago.plan,
             bf_precio_renovacion: PRECIO_FIJO_RENOVACION_BF[pendingPago.plan],
+            bf_precio_renovacion_hasta: unAnioDespues.toISOString(),
           } : {}),
         });
         if (perfError) {
