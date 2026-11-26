@@ -161,11 +161,23 @@ async function abrirPagoManual(plan, card, miembroIdForzado = null) {
     return;
   }
 
-  estadoPago = { plan, precio, planLabel: p.tag || p.nombre || plan, miembroId };
+  // Precio fijo de por vida ganado por registrarse durante Black Friday
+  // (ver auth.js) -- solo aplica si sigue renovando el MISMO plan con el
+  // que entró; si cambia de plan, paga el precio normal de ese otro plan.
+  const { data: perfilBf } = await supabase
+    .from("perfiles")
+    .select("bf_plan_renovacion, bf_precio_renovacion")
+    .eq("id", miembroId)
+    .maybeSingle();
+  const precioFinal = (perfilBf?.bf_plan_renovacion === plan && Number(perfilBf?.bf_precio_renovacion) > 0)
+    ? Number(perfilBf.bf_precio_renovacion)
+    : precio;
+
+  estadoPago = { plan, precio: precioFinal, planLabel: p.tag || p.nombre || plan, miembroId };
   estadoEl.textContent = textoOriginal;
 
   $("#pago-sub").textContent = `Vas a pagar tu membresía ${estadoPago.planLabel}.`;
-  $("#pago-monto").textContent = fmt.format(precio) + " COP";
+  $("#pago-monto").textContent = fmt.format(precioFinal) + " COP";
   $("#pago-llave").value = "Cargando…";
   $("#pago-comprobante").value = "";
   mostrar("view-pago", 3);

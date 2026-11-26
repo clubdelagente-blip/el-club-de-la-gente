@@ -62,15 +62,20 @@ let pendingPago = null;     // { plan, precio, planLabel, file }
 let pagoPrevioState = null; // fila de "planes" validada para ?comprar=1
 
 // Precio de Black Friday -- SOLO para el primer pago de un miembro NUEVO
-// (este archivo). checkout.js (renovaciones/cambios de plan de miembros ya
-// existentes) no se toca, así que ellos siempre pagan el precio normal. Se
-// autoexpira solo -- después de esa fecha vuelve al precio de la tabla
-// "planes" sin que haya que cambiar nada a mano.
+// (este archivo). Se autoexpira solo -- después de esa fecha vuelve al
+// precio de la tabla "planes" sin que haya que cambiar nada a mano.
 const BLACK_FRIDAY_HASTA = new Date("2026-12-01T00:00:00-05:00"); // fin del 30-nov, hora Colombia
 const PRECIOS_BLACK_FRIDAY = {
   basica: { precio: 7900, precio_texto: "$7.900" },
   premium: { precio: 14900, precio_texto: "$14.900" },
 };
+
+// FOMO: quien se registre durante Black Friday se queda con este precio fijo
+// DE POR VIDA desde el segundo mes en adelante (el primero ya tiene su propio
+// precio especial de arriba) -- se guarda en el perfil del miembro
+// (bf_plan_renovacion/bf_precio_renovacion) y lo respeta checkout.js en cada
+// renovación futura, sin fecha de vencimiento para ese beneficio ya ganado.
+const PRECIO_FIJO_RENOVACION_BF = { basica: 9900, premium: 19900 };
 
 async function cargarPlanPago(slug) {
   const { data } = await supabase.from("planes").select("*").eq("slug", slug).maybeSingle();
@@ -739,6 +744,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             localStorage.removeItem("ecdlg_ref");
           }
         }
+        // Si está pagando una membresía durante Black Friday, además del
+        // precio especial del primer mes (arriba) se le deja marcado un
+        // precio fijo de por vida para sus renovaciones desde el mes 2 --
+        // checkout.js lo revisa cada vez que esta persona renueve.
+        const esPagoBlackFriday = pendingPago
+          && PRECIO_FIJO_RENOVACION_BF[pendingPago.plan]
+          && Date.now() < BLACK_FRIDAY_HASTA.getTime();
+
         const { error: perfError } = await supabase.from("perfiles").upsert({
           id: data.user.id,
           nombre,
@@ -748,6 +761,10 @@ document.addEventListener("DOMContentLoaded", async () => {
           plan: "gratis",
           mision: mision || null,
           referido_por: refPor,
+          ...(esPagoBlackFriday ? {
+            bf_plan_renovacion: pendingPago.plan,
+            bf_precio_renovacion: PRECIO_FIJO_RENOVACION_BF[pendingPago.plan],
+          } : {}),
         });
         if (perfError) {
           console.error("Error guardando perfil:", perfError);
