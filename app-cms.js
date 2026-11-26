@@ -416,9 +416,26 @@ function abrirModalClubCard(slug) {
   document.getElementById('cc-modal-ov')?.classList.add('is-open');
 }
 
+// Precio de Black Friday, solo para mostrar en las tarjetas públicas (landing
+// y link de invitación) -- el cobro real lo decide auth.js por separado, esto
+// es únicamente para que el texto de la tarjeta no diga un precio distinto al
+// que de verdad se va a cobrar. Se autoexpira solo, misma fecha que auth.js.
+const BLACK_FRIDAY_HASTA_VISTA = new Date("2026-12-01T00:00:00-05:00");
+const PRECIOS_BLACK_FRIDAY_VISTA = {
+  basica: { precio_texto: "$7.900", antes_texto: "Antes $10.000", ahorra_texto: "Black Friday" },
+  premium: { precio_texto: "$14.900", antes_texto: "Antes $20.000", ahorra_texto: "Black Friday" },
+};
+
 async function cargarPlanesPub() {
   const { data, error } = await supabase.from('planes').select('*').order('orden');
   if (error || !data?.length) return; // sin datos: deja el contenido estático de respaldo tal cual
+
+  if (Date.now() < BLACK_FRIDAY_HASTA_VISTA.getTime()) {
+    data.forEach(p => {
+      const promo = PRECIOS_BLACK_FRIDAY_VISTA[p.slug];
+      if (promo) Object.assign(p, promo);
+    });
+  }
 
   const cont = document.querySelector('.planes');
   if (!cont) return;
