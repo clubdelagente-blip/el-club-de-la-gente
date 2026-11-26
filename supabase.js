@@ -3,8 +3,31 @@
    ============================================================ */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-export const SUPABASE_URL = "https://egwaedadpqfwnbfosiao.supabase.co";
-export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4";
+/* ContaClub tiene su propio proyecto de Supabase, separado del Club --
+   dashboard.js/carta.js/cliente.js se cargan cruzados desde contaclub.online
+   (<script src="https://elclubdelagente.com/...">), así que location.hostname
+   aquí es el dominio de la PÁGINA que cargó el script, no el del script
+   mismo -- eso es lo que permite elegir el proyecto correcto sin partir el
+   código en dos copias. */
+const PROYECTOS = {
+  "contaclub.online": {
+    url: "https://jfoycuylxpgdocfdsusg.supabase.co",
+    anon: "sb_publishable_XJcLa6YbJppw0qVfpzPweg_sNgi5RnP",
+  },
+};
+function resolverProyecto() {
+  const host = (typeof location !== "undefined" && location.hostname) || "";
+  for (const dominio in PROYECTOS) {
+    if (host === dominio || host.endsWith("." + dominio)) return PROYECTOS[dominio];
+  }
+  return {
+    url: "https://egwaedadpqfwnbfosiao.supabase.co",
+    anon: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnd2FlZGFkcHFmd25iZm9zaWFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Njc2ODcsImV4cCI6MjA5NjM0MzY4N30.NrBPX8HhTcs_y-QG3o_GoEAednFc0TqUunkQe1dblT4",
+  };
+}
+const _proyecto = resolverProyecto();
+export const SUPABASE_URL = _proyecto.url;
+export const SUPABASE_ANON_KEY = _proyecto.anon;
 
 /* ---------- Respaldo de sesión en cookie ----------
    iOS puede borrar el localStorage de una web "agregada a pantalla de
