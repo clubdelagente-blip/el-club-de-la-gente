@@ -1718,7 +1718,16 @@ function bindFormAliado(){
       let waCliente=$("#fa-wa-mismo")?.checked?null:($("#fa-wa-cliente")?.value||'').replace(/\D/g,'');
       while(waCliente&&waCliente.length>10&&waCliente.startsWith('57'))waCliente=waCliente.slice(2);
       let fotosCarrusel=[];try{fotosCarrusel=JSON.parse($("#fa-carrusel-urls")?.value||'[]');}catch(_){fotosCarrusel=[];}
-      const payload={nombre,nombre_responsable:$("#fa-responsable")?.value.trim()||null,fecha_nacimiento:$("#fa-fecha-nacimiento")?.value||null,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:waAliado||null,whatsapp_atencion:waCliente||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,instagram:$("#fa-instagram")?.value.trim()||null,ofrece_domicilio:$("#fa-domicilio")?.checked||false,ofrece_agenda:$("#fa-agenda")?.checked||false,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fotos_carrusel:fotosCarrusel,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:$("#fa-fecha-fin")?.value||null,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true,sellos_activo:$("#fa-sellos-activo")?.checked||false,sellos_meta:parseInt($("#fa-sellos-meta")?.value)||10,sellos_premio_tipo:$("#fa-sellos-tipo")?.value||'descuento',sellos_premio_desc:$("#fa-sellos-premio")?.value.trim()||null};
+      const faFechaFin=$("#fa-fecha-fin")?.value||null;
+      // Guardar siempre deja activo:true -- si la fecha de fin se queda vencida
+      // (ej. solo reactivaste sin extender el contrato), revisar-membresias.ts
+      // lo vuelve a desactivar solo al día siguiente, dando la impresión de que
+      // "se desactivó solo" sin motivo. Se avisa antes de guardar así.
+      if(faFechaFin&&faFechaFin<=new Date().toISOString().slice(0,10)&&!confirm('La "Fecha de fin" sigue vencida ('+faFechaFin+'). Si guardas así, el sistema va a desactivar a este aliado otra vez mañana.\n\n¿Quieres continuar igual? (Cancela y actualiza la fecha si lo que querías era reactivarlo)')){
+        btn.disabled=false;btn.innerHTML=`${ic("check")} ${btn.dataset.id?'Guardar cambios':'Agregar aliado'}`;if(window.lucide)lucide.createIcons();
+        return;
+      }
+      const payload={nombre,nombre_responsable:$("#fa-responsable")?.value.trim()||null,fecha_nacimiento:$("#fa-fecha-nacimiento")?.value||null,categoria:$("#fa-cat")?.value.trim()||null,subcategorias,descripcion:$("#fa-desc")?.value.trim()||null,whatsapp:waAliado||null,whatsapp_atencion:waCliente||null,direccion:$("#fa-dir")?.value.trim()||null,maps_url:$("#fa-maps")?.value.trim()||null,instagram:$("#fa-instagram")?.value.trim()||null,ofrece_domicilio:$("#fa-domicilio")?.checked||false,ofrece_agenda:$("#fa-agenda")?.checked||false,codigo_aliado:$("#fa-codigo")?.value.trim()||null,imagen_url,fotos_carrusel:fotosCarrusel,fecha_inicio:$("#fa-fecha-inicio")?.value||null,fecha_fin:faFechaFin,contrato_url,planes_visibles:planesSel?.length?planesSel:['basica','premium'],activo:true,sellos_activo:$("#fa-sellos-activo")?.checked||false,sellos_meta:parseInt($("#fa-sellos-meta")?.value)||10,sellos_premio_tipo:$("#fa-sellos-tipo")?.value||'descuento',sellos_premio_desc:$("#fa-sellos-premio")?.value.trim()||null};
       const id=btn.dataset.id;
       const{error}=id?await supabase.from('aliados').update(payload).eq('id',id):await supabase.from('aliados').insert(payload);
       if(error){toast('Error: '+error.message);btn.disabled=false;return;}
@@ -2318,6 +2327,12 @@ function bindFormProf(p={}){setTimeout(()=>{
   const btn=$("#pf-save");
   btn?.addEventListener('click',async()=>{
     const nombre=$("#pf-nom")?.value.trim();if(!nombre){toast('El nombre es obligatorio');return;}
+    const pfFechaFin=$("#pf-fecha-fin")?.value||null;
+    // Guardar siempre deja activo:true -- si la fecha de fin se queda vencida
+    // (ej. solo reactivaste sin extender el contrato), revisar-membresias.ts
+    // lo vuelve a desactivar (y le quita la vitalicia) solo al día siguiente,
+    // dando la impresión de que "se desactivó solo" sin motivo. Se avisa antes.
+    if(pfFechaFin&&pfFechaFin<=new Date().toISOString().slice(0,10)&&!confirm('La "Fecha de fin" sigue vencida ('+pfFechaFin+'). Si guardas así, el sistema va a desactivar a este profesional (y quitarle la vitalicia) otra vez mañana.\n\n¿Quieres continuar igual? (Cancela y actualiza la fecha si lo que querías era reactivarlo)'))return;
     btn.disabled=true;let imagen_url=$("#pf-img-url")?.value||null;
     const file=$("#pf-img")?.files?.[0];if(file)try{imagen_url=await subirImagen(file);}catch(_){}
     let contrato_url=$("#pf-contrato-url")?.value||null;
@@ -2325,7 +2340,7 @@ function bindFormProf(p={}){setTimeout(()=>{
     if(contratoFile)try{contrato_url=await subirImagen(contratoFile);}catch(_){toast('Error al subir el contrato');}
     let waProf=($("#pf-wa")?.value||"").replace(/\D/g,"");
     while(waProf.length>10&&waProf.startsWith("57"))waProf=waProf.slice(2);
-    const payload={nombre,area:$("#pf-area")?.value.trim()||null,whatsapp:waProf||null,es_conductor:!!$("#pf-es-conductor")?.checked,mostrar_landing:!!$("#pf-mostrar-landing")?.checked,mostrar_premium:!!$("#pf-mostrar-premium")?.checked,descripcion:$("#pf-desc")?.value.trim()||null,imagen_url,fecha_inicio:$("#pf-fecha-inicio")?.value||null,fecha_fin:$("#pf-fecha-fin")?.value||null,contrato_url,activo:true};
+    const payload={nombre,area:$("#pf-area")?.value.trim()||null,whatsapp:waProf||null,es_conductor:!!$("#pf-es-conductor")?.checked,mostrar_landing:!!$("#pf-mostrar-landing")?.checked,mostrar_premium:!!$("#pf-mostrar-premium")?.checked,descripcion:$("#pf-desc")?.value.trim()||null,imagen_url,fecha_inicio:$("#pf-fecha-inicio")?.value||null,fecha_fin:pfFechaFin,contrato_url,activo:true};
     const id=btn.dataset.id;
     id?await supabase.from('profesionales').update(payload).eq('id',id):await supabase.from('profesionales').insert(payload);
     window.cerrarModal?.();cargarProfesionales();toast(id?'Profesional actualizado ✓':'Profesional agregado ✓');
