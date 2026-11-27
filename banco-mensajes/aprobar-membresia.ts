@@ -94,9 +94,36 @@ Deno.serve(async (req: Request) => {
   // (si todavía no pasó), no desde hoy.
   const { data: perfilActual } = await supabase
     .from("perfiles")
-    .select("fecha_vencimiento")
+    .select("plan, fecha_vencimiento, nombre, whatsapp")
     .eq("id", solicitud.miembro_id)
     .maybeSingle();
+
+  // Quien ya es Vitalicia (ganada por 5 referidos, o regalada) NUNCA se baja
+  // a un plan temporal por un pago de más -- antes esto pisaba "vitalicia"
+  // con "basica"/"premium" + 1 mes, y cuando ese mes se vencía sin que nadie
+  // lo notara, revisar-membresias.ts la bajaba a sin_plan, "sacando" a alguien
+  // que en realidad tenía la membresía de por vida (esto fue lo que le pasó
+  // a Paola Benites -- un pago nuevo encima de su Vitalicia ya ganada). Se
+  // deja el plan intacto y se registra el pago igual, para que el Admin se
+  // entere y decida si hay que reembolsar.
+  if (perfilActual?.plan === "vitalicia") {
+    const { error: pagoErrVit } = await supabase.from("pagos").insert({
+      miembro_id: solicitud.miembro_id,
+      monto: solicitud.monto,
+      plan: solicitud.plan,
+      referencia: `MANUAL-YA-VITALICIA-${solicitud.id}`,
+    });
+    if (pagoErrVit) console.error("Error registrando pago de quien ya es vitalicia:", pagoErrVit);
+    const { error: notifErrVit } = await supabase.from("notificaciones_miembro").insert({
+      miembro_id: solicitud.miembro_id,
+      titulo: "Ya tienes la membresía Vitalicia",
+      cuerpo: "Recibimos tu pago, pero tu cuenta ya tiene la membresía Vitalicia activa (de por vida, sin costo) -- nuestro equipo te va a escribir para resolver este pago.",
+    });
+    if (notifErrVit) console.error("Error notificando pago de quien ya es vitalicia:", notifErrVit);
+    console.log(`Pago de ${solicitud.miembro_id} recibido pero ya es vitalicia -- plan NO modificado (solicitud ${solicitud_id})`);
+    return new Response(JSON.stringify({ ok: true, aviso: "Ya era vitalicia, plan no modificado" }), { status: 200, headers: corsHeaders });
+  }
+
   const hoy = new Date();
   const vencimientoActual = perfilActual?.fecha_vencimiento ? new Date(perfilActual.fecha_vencimiento + "T00:00:00") : null;
   const fechaBase = vencimientoActual && vencimientoActual > hoy ? vencimientoActual : hoy;

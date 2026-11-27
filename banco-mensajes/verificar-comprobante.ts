@@ -285,9 +285,35 @@ Deno.serve(async (req: Request) => {
   // (si todavía no pasó), no desde hoy.
   const { data: perfilActual } = await supabase
     .from("perfiles")
-    .select("fecha_vencimiento")
+    .select("plan, fecha_vencimiento")
     .eq("id", solicitud.miembro_id)
     .maybeSingle();
+
+  // Quien ya es Vitalicia NUNCA se baja a un plan temporal por un pago de más
+  // -- antes esto pisaba "vitalicia" con "basica"/"premium" + 1 mes, y al
+  // vencer ese mes sin que nadie lo notara, revisar-membresias.ts la bajaba a
+  // sin_plan ("sacando" a alguien que en realidad tenía membresía de por
+  // vida -- esto es lo que le pasó a Paola Benites). Como esta ruta aprueba
+  // sola sin que ningún humano la revise, es la más fácil de disparar sin
+  // querer, así que el mismo resguardo de aprobar-membresia.ts va aquí también.
+  if (perfilActual?.plan === "vitalicia") {
+    const { error: pagoErrVit } = await supabase.from("pagos").insert({
+      miembro_id: solicitud.miembro_id,
+      monto: solicitud.monto,
+      plan: solicitud.plan,
+      referencia: `AUTO-IA-YA-VITALICIA-${solicitud.id}`,
+    });
+    if (pagoErrVit) console.error("Error registrando pago de quien ya es vitalicia (auto-IA):", pagoErrVit);
+    const { error: notifErrVit } = await supabase.from("notificaciones_miembro").insert({
+      miembro_id: solicitud.miembro_id,
+      titulo: "Ya tienes la membresía Vitalicia",
+      cuerpo: "Recibimos tu pago, pero tu cuenta ya tiene la membresía Vitalicia activa (de por vida, sin costo) -- nuestro equipo te va a escribir para resolver este pago.",
+    });
+    if (notifErrVit) console.error("Error notificando pago de quien ya es vitalicia (auto-IA):", notifErrVit);
+    console.log(`Pago de ${solicitud.miembro_id} recibido (auto-IA) pero ya es vitalicia -- plan NO modificado (solicitud ${solicitud.id})`);
+    return new Response(JSON.stringify({ ok: true, aviso: "Ya era vitalicia, plan no modificado" }), { status: 200, headers: corsHeaders });
+  }
+
   const hoyFecha = new Date();
   const vencimientoActual = perfilActual?.fecha_vencimiento ? new Date(perfilActual.fecha_vencimiento + "T00:00:00") : null;
   const fechaBase = vencimientoActual && vencimientoActual > hoyFecha ? vencimientoActual : hoyFecha;
