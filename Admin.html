@@ -1739,6 +1739,13 @@ function bindFormAliado(){
       if(aliadoUserId&&payload.nombre_responsable){
         await supabase.from('perfiles').update({nombre:payload.nombre_responsable,whatsapp:payload.whatsapp,fecha_nacimiento:payload.fecha_nacimiento}).eq('id',aliadoUserId);
       }
+      // Autocorrectivo: todo aliado con cuenta vinculada tiene la Vitalicia
+      // como obsequio por pertenecer al Club, sin condición -- si por
+      // cualquier motivo quedó en otro plan (ej. se vinculó la cuenta sin
+      // pasar por "Crear cuenta de acceso"), guardar la ficha lo corrige solo.
+      if(aliadoUserId){
+        await supabase.from('perfiles').update({plan:'vitalicia'}).eq('id',aliadoUserId).neq('plan','vitalicia');
+      }
       window.cerrarModal?.();cargarAliados();toast(id?'Aliado actualizado ✓':'Aliado agregado ✓');
     });
     const aliadoId=btn?.dataset?.id;
@@ -4088,8 +4095,14 @@ document.addEventListener('DOMContentLoaded',async()=>{
       return;
     }
     const edAl=e.target.closest('[data-ed-aliado]');if(edAl){const a=_aliados.find(x=>x.id===edAl.dataset.edAliado);if(a){abrirModal('Editar aliado',a.nombre,htmlFormAliado(a));bindFormAliado();}return;}
-    const togAl=e.target.closest('[data-tog-aliado]');if(togAl){const activo=togAl.dataset.activo==='true';const alId=togAl.dataset.togAliado;await supabase.from('aliados').update({activo:!activo}).eq('id',alId);const alReg=_aliados.find(x=>x.id===alId);if(alReg?.user_id)await supabase.from('perfiles').update({plan:!activo?'vitalicia':'gratis'}).eq('id',alReg.user_id);cargarAliados();return;}
-    const rmAl=e.target.closest('[data-rm-aliado]');if(rmAl&&confirm('¿Eliminar este aliado?')){const alReg=_aliados.find(x=>x.id===rmAl.dataset.rmAliado);const{error}=await supabase.from('aliados').delete().eq('id',rmAl.dataset.rmAliado);if(error){toast('No se pudo eliminar -- tiene productos, promociones o pedidos asociados');return;}if(alReg?.user_id)await supabase.from('perfiles').update({plan:'gratis'}).eq('id',alReg.user_id);cargarAliados();toast('Aliado eliminado');return;}
+    // La Vitalicia de un aliado es un obsequio por pertenecer al Club -- NUNCA
+    // se condiciona a si su ficha está activa en el Directorio (a diferencia
+    // de los Profesionales, donde sí es intencional). Antes, apagar/prender
+    // esta ficha le subía y bajaba el plan personal del dueño entre vitalicia
+    // y gratis -- eso fue lo que le pasó a Paola Benites. Ahora solo toca
+    // "activo" del negocio, nunca el plan de la cuenta.
+    const togAl=e.target.closest('[data-tog-aliado]');if(togAl){const activo=togAl.dataset.activo==='true';const alId=togAl.dataset.togAliado;await supabase.from('aliados').update({activo:!activo}).eq('id',alId);cargarAliados();return;}
+    const rmAl=e.target.closest('[data-rm-aliado]');if(rmAl&&confirm('¿Eliminar este aliado?')){const{error}=await supabase.from('aliados').delete().eq('id',rmAl.dataset.rmAliado);if(error){toast('No se pudo eliminar -- tiene productos, promociones o pedidos asociados');return;}cargarAliados();toast('Aliado eliminado');return;}
     const rmMiembro=e.target.closest('[data-rm-miembro]');
     if(rmMiembro){
       const nom=rmMiembro.dataset.nomMiembro||'este miembro';
